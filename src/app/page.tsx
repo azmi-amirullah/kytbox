@@ -56,7 +56,7 @@ export default async function HomePage() {
               <Sparkles className='w-5 h-5 text-primary' />
             </div>
             <span className='font-bold text-lg tracking-tight hidden sm:inline-block'>
-              Link-in-Bio
+              Link-Base
             </span>
           </div>
 

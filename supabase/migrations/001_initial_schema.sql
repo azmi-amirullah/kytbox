@@ -1,5 +1,5 @@
 -- =============================================
--- Link-in-Bio Database Schema
+-- Link-Base Database Schema
 -- Run this in Supabase SQL Editor
 -- =============================================
 

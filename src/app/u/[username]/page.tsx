@@ -84,7 +84,7 @@ export default async function PublicProfilePage({
 
       {/* Footer */}
       <div className='mt-12 text-center text-muted-foreground text-sm'>
-        <p>Powered by Link-in-Bio</p>
+        <p>Powered by Link-Base</p>
       </div>
     </div>
   );

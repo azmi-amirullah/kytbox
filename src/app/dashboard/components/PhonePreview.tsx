@@ -87,7 +87,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
 
           {/* Footer */}
           <div className='mt-8 text-center text-muted-foreground text-[10px]'>
-            <p>Powered by Link-in-Bio</p>
+            <p>Powered by Link-Base</p>
           </div>
         </div>
       </div>

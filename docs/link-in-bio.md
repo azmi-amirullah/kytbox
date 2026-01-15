@@ -1,4 +1,4 @@
-# Link-in-Bio Documentation
+# Link-Base Documentation
 
 Focus: **Speed to functional product.** Avoid \"graveyard\" features (complex themes, payments, custom domains) in version 1.
 

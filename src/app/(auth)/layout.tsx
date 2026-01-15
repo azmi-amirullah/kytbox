@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export const metadata: Metadata = {
-  title: 'Link-in-Bio - Authentication',
+  title: 'Link-Base - Authentication',
   description: 'Login or create an account',
 };
 
@@ -26,7 +26,7 @@ export default function AuthLayout({
       </div>
 
       {/* Grid Pattern Overlay */}
-      <div className='absolute inset-0 z-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:24px_24px] opacity-50'></div>
+      <div className='absolute inset-0 z-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-size-[24px_24px] opacity-50'></div>
 
       {/* Content */}
       <div className='relative z-10 w-full max-w-md p-4'>{children}</div>
