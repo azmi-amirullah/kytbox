@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Type, Globe } from 'lucide-react';
 import { addLink, updateLink } from '../actions';
 
 interface Link {
@@ -107,67 +107,96 @@ export default function LinkModal({
   }
 
   const dialogContent = (
-    <DialogContent className='sm:max-w-[425px]'>
-      <DialogHeader>
-        <DialogTitle>{isEdit ? 'Edit Link' : 'Add New Link'}</DialogTitle>
-        <DialogDescription>
-          {isEdit
-            ? 'Update your link details.'
-            : 'Add a new link to your page.'}
-        </DialogDescription>
-      </DialogHeader>
-      <form onSubmit={handleSubmit}>
-        <div className='grid gap-4 py-4'>
-          <div className='grid gap-2'>
-            <Label htmlFor='title'>Title</Label>
-            <Input
-              id='title'
-              name='title'
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder='My Website'
-              required
-            />
-          </div>
-          <div className='grid gap-2'>
-            <Label htmlFor='url'>URL</Label>
-            <Input
-              id='url'
-              name='url'
-              type='text'
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder='https://example.com'
-              required
-            />
-          </div>
-          {error && (
-            <p className='text-sm text-destructive text-center'>{error}</p>
-          )}
-        </div>
-        <DialogFooter>
-          <Button
-            type='button'
-            variant='outline'
-            onClick={() => setOpen(false)}
-            disabled={isBusy}
-          >
-            Cancel
-          </Button>
-          <Button type='submit' disabled={isBusy}>
-            {isBusy ? (
-              <>
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                {isEdit ? 'Saving...' : 'Adding...'}
-              </>
-            ) : isEdit ? (
-              'Save Changes'
-            ) : (
-              'Add Link'
+    <DialogContent className='sm:max-w-[425px] overflow-hidden p-0 gap-0'>
+      <div className='p-6 pb-0'>
+        <DialogHeader className='mb-6'>
+          <DialogTitle className='text-xl text-center'>
+            {isEdit ? 'Edit Link' : 'Add New Link'}
+          </DialogTitle>
+          <DialogDescription className='text-center'>
+            {isEdit
+              ? 'Make changes to your link here. Click save when you&apos;re done.'
+              : 'Add a new link to share with your audience.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className='space-y-4'>
+          <div className='grid gap-4'>
+            <div className='grid gap-2'>
+              <Label
+                htmlFor='title'
+                className='font-medium text-foreground/80 gap-0.5'
+              >
+                Link Title<span className='text-destructive'>*</span>
+              </Label>
+              <div className='relative'>
+                <Type className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+                <Input
+                  id='title'
+                  name='title'
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder='My Awesome Website'
+                  required
+                  className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                />
+              </div>
+            </div>
+            <div className='grid gap-2'>
+              <Label
+                htmlFor='url'
+                className='font-medium text-foreground/80 gap-0.5'
+              >
+                Destination URL<span className='text-destructive'>*</span>
+              </Label>
+              <div className='relative'>
+                <Globe className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+                <Input
+                  id='url'
+                  name='url'
+                  type='text'
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder='https://example.com/awesome-page'
+                  required
+                  className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                />
+              </div>
+            </div>
+            {error && (
+              <p className='text-sm text-destructive text-center bg-destructive/10 p-2 rounded-md font-medium'>
+                {error}
+              </p>
             )}
-          </Button>
-        </DialogFooter>
-      </form>
+          </div>
+
+          <DialogFooter className='py-4 mt-4'>
+            <div className='flex w-full gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => setOpen(false)}
+                disabled={isBusy}
+                className='flex-1'
+              >
+                Cancel
+              </Button>
+              <Button type='submit' disabled={isBusy} className='flex-1'>
+                {isBusy ? (
+                  <>
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    {isEdit ? 'Saving...' : 'Adding...'}
+                  </>
+                ) : isEdit ? (
+                  'Save Changes'
+                ) : (
+                  'Add Link'
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
+        </form>
+      </div>
     </DialogContent>
   );
 

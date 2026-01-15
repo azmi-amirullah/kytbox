@@ -1,21 +1,10 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-import {
-  ExternalLink,
-  BarChart3,
-  Link as LinkIcon,
-  MousePointerClick,
-  Sparkles,
-} from 'lucide-react';
+import { ExternalLink, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { UserNav } from '@/components/user-nav';
-import LinkList from './dashboard/components/LinkList';
-import LinkModal from './dashboard/components/LinkModal';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import DashboardClient from './dashboard/components/DashboardClient';
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -46,8 +35,6 @@ export default async function HomePage() {
     .eq('user_id', user.id)
     .order('sort_order', { ascending: true });
 
-  const totalClicks = links?.reduce((sum, link) => sum + link.clicks, 0) || 0;
-  const activeLinks = links?.filter((l) => l.is_active).length || 0;
   const publicUrl = `/u/${profile.username}`;
 
   return (
@@ -63,7 +50,7 @@ export default async function HomePage() {
 
       {/* Header */}
       <header className='border-b bg-background/60 backdrop-blur-md sticky top-0 z-50 transition-all duration-200'>
-        <div className='max-w-6xl mx-auto px-4 h-16 flex items-center justify-between'>
+        <div className='max-w-7xl mx-auto px-4 h-16 flex items-center justify-between'>
           <div className='flex items-center gap-2'>
             <div className='bg-primary/10 p-2 rounded-xl'>
               <Sparkles className='w-5 h-5 text-primary' />
@@ -98,100 +85,12 @@ export default async function HomePage() {
       </header>
 
       {/* Main Content */}
-      <main className='relative z-10 max-w-6xl mx-auto px-4 py-8 md:py-12'>
-        <div className='grid gap-8'>
-          {/* Welcome Section */}
-          <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
-            <div>
-              <h1 className='text-3xl font-bold tracking-tight'>Dashboard</h1>
-              <p className='text-muted-foreground mt-1'>
-                Manage your links and track your performance.
-              </p>
-            </div>
-            <div className='flex items-center gap-3'>
-              {/* Mobile Public Link Button */}
-              <a
-                href={publicUrl}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='md:hidden flex items-center justify-center p-2 rounded-full bg-secondary/50 hover:bg-secondary text-secondary-foreground transition-all'
-              >
-                <ExternalLink className='w-4 h-4' />
-              </a>
-              <LinkModal
-                mode='create'
-                trigger={
-                  <Button className='h-10 font-medium'>
-                    <Plus className='w-4 h-4' />
-                    Add Link
-                  </Button>
-                }
-              />
-            </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className='grid gap-4 md:grid-cols-3'>
-            <Card className='bg-card/50 backdrop-blur-sm border-primary/10 transition-all hover:shadow-md hover:border-primary/20'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Total Clicks
-                </CardTitle>
-                <MousePointerClick className='h-4 w-4 text-muted-foreground' />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{totalClicks}</div>
-                <p className='text-xs text-muted-foreground'>
-                  Lifetime engagement
-                </p>
-              </CardContent>
-            </Card>
-            <Card className='bg-card/50 backdrop-blur-sm border-primary/10 transition-all hover:shadow-md hover:border-primary/20'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Active Links
-                </CardTitle>
-                <LinkIcon className='h-4 w-4 text-muted-foreground' />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{activeLinks}</div>
-                <p className='text-xs text-muted-foreground'>
-                  Visible on your page
-                </p>
-              </CardContent>
-            </Card>
-            <Card className='bg-card/50 backdrop-blur-sm border-primary/10 transition-all hover:shadow-md hover:border-primary/20'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Total Links
-                </CardTitle>
-                <BarChart3 className='h-4 w-4 text-muted-foreground' />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{links?.length || 0}</div>
-                <p className='text-xs text-muted-foreground'>
-                  Links in your library
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Links Section */}
-          <div className='space-y-4'>
-            <div className='flex items-center justify-between px-1'>
-              <h2 className='text-lg font-semibold tracking-tight'>
-                Your Links
-              </h2>
-            </div>
-            <Card className='border-border/50 bg-card/40 backdrop-blur-xl shadow-sm'>
-              <CardContent className='p-0'>
-                <div className='p-6'>
-                  <LinkList links={links ?? []} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+      <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8'>
+        <DashboardClient
+          initialLinks={links ?? []}
+          profile={profile}
+          publicUrl={publicUrl}
+        />
       </main>
     </div>
   );

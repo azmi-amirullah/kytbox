@@ -1,6 +1,7 @@
 'use client';
 
-import { LogOut, User } from 'lucide-react';
+import Link from 'next/link';
+import { LogOut, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/app/(auth)/actions';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface UserNavProps {
   user: {
@@ -24,13 +26,15 @@ interface UserNavProps {
 }
 
 export function UserNav({ user }: UserNavProps) {
+  const avatarUrl = getAvatarUrl(user.avatar_url, user.email || '', 80);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
           <Avatar className='h-8 w-8'>
             <AvatarImage
-              src={user.avatar_url || ''}
+              src={avatarUrl}
               alt={user.username}
               className='object-cover'
             />
@@ -53,10 +57,12 @@ export function UserNav({ user }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled>
-            <User className='mr-2 h-4 w-4' />
-            Profile (Coming Soon)
-          </DropdownMenuItem>
+          <Link href='/settings'>
+            <DropdownMenuItem className='cursor-pointer'>
+              <Settings className='mr-2 h-4 w-4' />
+              Settings
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <form action={logout} className='w-full'>

@@ -25,21 +25,18 @@ type Link = Database['public']['Tables']['links']['Row'];
 
 interface LinkListProps {
   links: Link[];
+  setLinks: React.Dispatch<React.SetStateAction<Link[]>>;
 }
 
-export default function LinkList({ links: initialLinks }: LinkListProps) {
+export default function LinkList({ links, setLinks }: LinkListProps) {
   const router = useRouter();
-  const [links, setLinks] = useState(initialLinks);
   const [mounted, setMounted] = useState(false);
 
-  // Sync local state when server data changes (from router.refresh())
-  useEffect(() => {
-    setLinks(initialLinks);
-  }, [initialLinks]);
-
+  // Delay DndContext render to avoid hydration mismatch
   // Delay DndContext render to avoid hydration mismatch
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const sensors = useSensors(
@@ -53,16 +50,13 @@ export default function LinkList({ links: initialLinks }: LinkListProps) {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      setLinks((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        const newItems = arrayMove(items, oldIndex, newIndex);
+      const oldIndex = links.findIndex((item) => item.id === active.id);
+      const newIndex = links.findIndex((item) => item.id === over.id);
+      const newItems = arrayMove(links, oldIndex, newIndex);
 
-        // Persist order to Supabase
-        reorderLinks(newItems.map((l) => l.id));
-
-        return newItems;
-      });
+      setLinks(newItems);
+      // Persist order to Supabase (Fire and forget)
+      reorderLinks(newItems.map((l) => l.id));
     }
   }
 

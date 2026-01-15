@@ -27,6 +27,13 @@ export async function addLink(formData: FormData) {
     if (!['http:', 'https:'].includes(parsed.protocol)) {
       return { error: 'Only HTTP and HTTPS URLs are allowed' };
     }
+    // Enforce domain format: must have TLD (letters only, 2+ chars)
+    if (
+      !/^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/.test(parsed.hostname) &&
+      parsed.hostname !== 'localhost'
+    ) {
+      return { error: 'Invalid URL' };
+    }
   } catch {
     return { error: 'Invalid URL format' };
   }
@@ -81,6 +88,13 @@ export async function updateLink(linkId: string, formData: FormData) {
     if (!['http:', 'https:'].includes(parsed.protocol)) {
       return { error: 'Only HTTP and HTTPS URLs are allowed' };
     }
+    // Enforce domain format: must have TLD (letters only, 2+ chars)
+    if (
+      !/^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/.test(parsed.hostname) &&
+      parsed.hostname !== 'localhost'
+    ) {
+      return { error: 'Invalid URL' };
+    }
   } catch {
     return { error: 'Invalid URL format' };
   }
@@ -88,7 +102,8 @@ export async function updateLink(linkId: string, formData: FormData) {
   const { error } = await supabase
     .from('links')
     .update({ title, url })
-    .eq('id', linkId);
+    .eq('id', linkId)
+    .eq('user_id', user.id);
 
   if (error) {
     return { error: error.message };
@@ -109,7 +124,11 @@ export async function deleteLink(linkId: string) {
     return { error: 'Not authenticated' };
   }
 
-  const { error } = await supabase.from('links').delete().eq('id', linkId);
+  const { error } = await supabase
+    .from('links')
+    .delete()
+    .eq('id', linkId)
+    .eq('user_id', user.id);
 
   if (error) {
     return { error: error.message };
@@ -133,7 +152,8 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
   const { error } = await supabase
     .from('links')
     .update({ is_active: isActive })
-    .eq('id', linkId);
+    .eq('id', linkId)
+    .eq('user_id', user.id);
 
   if (error) {
     return { error: error.message };
@@ -156,7 +176,11 @@ export async function reorderLinks(linkIds: string[]) {
 
   // Update each link's sort_order based on its position in the array
   const updates = linkIds.map((id, index) =>
-    supabase.from('links').update({ sort_order: index }).eq('id', id)
+    supabase
+      .from('links')
+      .update({ sort_order: index })
+      .eq('id', id)
+      .eq('user_id', user.id)
   );
 
   const results = await Promise.all(updates);
@@ -166,6 +190,6 @@ export async function reorderLinks(linkIds: string[]) {
     return { error: 'Failed to reorder some links' };
   }
 
-  revalidatePath('/');
+  // revalidatePath('/'); // Optimization: Don't revalidate to prevent UI jitter. Client has optimistic state.
   return { success: true };
 }

@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protected routes (root is the dashboard)
-  const protectedPaths = ['/', '/update-password'];
+  const protectedPaths = ['/', '/update-password', '/settings'];
   const isProtectedRoute = protectedPaths.some((path) =>
     path === '/'
       ? request.nextUrl.pathname === '/'
