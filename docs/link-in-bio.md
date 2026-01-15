@@ -1,20 +1,30 @@
-# Link-in-Bio "Brutal MVP" Plan
+# Link-in-Bio Documentation
 
-Focus: **Speed to functional product.** Avoid "graveyard" features (complex themes, payments, custom domains) in version 1.
+Focus: **Speed to functional product.** Avoid \"graveyard\" features (complex themes, payments, custom domains) in version 1.
 
-## 1. Core MVP Features
+## 1. Core Features
 
-- **Auth**: Simple Login/Signup (Supabase Auth).
-- **CRUD Links**: Add, Edit, Delete, Reorder (Drag & Drop).
-- **Public Page**: `/u/[username]` (Fast, simple profile).
-- **Tracking**: Server-side redirect counting (Robust).
+- **Auth**: Login, Signup (auto-generated username), Forgot Password
+- **CRUD Links**: Add, Edit, Delete, Reorder (Drag & Drop)
+- **Public Page**: `/u/[username]` (Fast, simple profile)
+- **Tracking**: Server-side redirect counting
 
 ## 2. Tech Stack
 
-- **Framework**: **Next.js 16** (App Router).
-- **Database**: **Supabase** (Postgres + Auth + RLS).
-- **Styling**: **Tailwind CSS** (Mobile-first, Atomic).
-- **Deployment**: **Vercel**.
+- **Framework**: **Next.js 16** (App Router)
+- **Database**: **Supabase** (Postgres + Auth + RLS)
+- **Styling**: **Tailwind CSS** + **Shadcn/UI**
+- **Drag & Drop**: **@dnd-kit**
+- **Deployment**: **Vercel**
+
+### Environment Variables
+
+Create a `.env.local` file in the project root with:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
+```
 
 ## 3. Database Schema (Supabase)
 
@@ -54,34 +64,43 @@ Focus: **Speed to functional product.** Avoid "graveyard" features (complex them
 
 ```text
 app/
-├── (auth)/             # Login/Signup pages
-├── dashboard/          # User Dashboard (Protected)
-│   └── page.tsx        # Link Editor (CRUD + DndKit)
-├── u/
-│   └── [username]/     # Public Profile Page
-│       ├── page.tsx    # Fetches Profile/Links & Renders
-│       └── [linkId]/   # Redirect Route
-│           └── route.ts # GET: Increment click -> Redirect
-├── layout.tsx
-└── global.css
+├── (auth)/
+│   ├── login/page.tsx
+│   ├── signup/page.tsx
+│   ├── forgot-password/page.tsx
+│   └── actions.ts
+├── auth/callback/route.ts    # Magic link handler
+├── update-password/page.tsx  # New password form
+├── dashboard/
+│   └── components/
+│       ├── AddLinkModal.tsx
+│       ├── LinkList.tsx
+│       └── SortableLink.tsx
+├── u/[username]/
+│   ├── page.tsx              # Public profile
+│   └── [linkId]/route.ts     # Click tracking redirect
+├── page.tsx                  # Dashboard (protected)
+└── layout.tsx
 ```
 
-### Click Tracking Strategy (`/u/[username]/[linkId]`)
+### Auth Flow
 
-Instead of client-side generic events, use a "Branded Redirect" pattern.
+1. **Signup**: Email + Password → Auto-generate username → Create profile
+2. **Login**: Email + Password → Redirect to dashboard
+3. **Forgot Password**: Email → Reset link → `/auth/callback` → `/update-password`
 
-1.  **User copies link**: `mysite.com/u/azmi` -> Link buttons point to `/u/azmi/uuid-of-link`.
-2.  **Server (`route.ts`)**:
-    _ Receives request.
-    _ Increment `clicks` count in DB (RPC or direct update).
-    - Redirects (307) to actual `url`.
-      \*Benefit\*: Works with JS disabled, more accurate, prevents client-side spamming easily.
+### Click Tracking (`/u/[username]/[linkId]`)
 
-## 5. Implementation Steps
+1. Link buttons point to `/u/azmi/uuid-of-link`
+2. Server increments `clicks` count in DB
+3. Redirects (307) to actual `url`
 
-1.  **Setup**: Next.js repo, Supabase project.
-2.  **DB**: Run SQL migration for tables + RLS policies.
-3.  **Auth**: Build Login page.
-4.  **Dashboard**: Build CRUD interface with `@dnd-kit`.
-5.  **Public Page**: Build `/u/[username]` view.
-6.  **Redirect**: Implement `/u/[username]/[linkId]` route.
+## 5. Current Status
+
+✅ Auth (Login, Signup, Forgot Password)
+✅ Dashboard with Add/Delete links
+✅ Drag-and-drop reordering
+✅ Public profile with click tracking
+
+🔄 **Next**: Edit Link functionality
+📋 **Later**: Profile settings, Analytics, Custom themes
