@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Loader2, Type, Globe } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { addLink, updateLink } from '../actions';
 
 interface Link {
@@ -96,8 +97,10 @@ export default function LinkModal({
 
     if (result?.error) {
       setError(result.error);
+      toast.error(isEdit ? 'Failed to update link' : 'Failed to add link');
       setIsLoading(false);
     } else {
+      toast.success(isEdit ? 'Link updated!' : 'Link added!');
       setIsLoading(false);
       startTransition(() => {
         router.refresh();

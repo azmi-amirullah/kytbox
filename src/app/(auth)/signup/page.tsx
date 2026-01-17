@@ -179,6 +179,7 @@ export default function SignupPage() {
         </CardContent>
       </Card>
 
+      {/* TODO: Uncomment when /terms and /privacy pages are implemented
       <p className='mt-8 text-center text-xs text-muted-foreground'>
         By clicking create account, you agree to our{' '}
         <Link href='/terms' className='underline hover:text-foreground'>
@@ -190,6 +191,7 @@ export default function SignupPage() {
         </Link>
         .
       </p>
+      */}
     </motion.div>
   );
 }

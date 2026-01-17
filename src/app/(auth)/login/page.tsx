@@ -207,6 +207,7 @@ function LoginContent() {
         </CardContent>
       </Card>
 
+      {/* TODO: Uncomment when /terms and /privacy pages are implemented
       <p className='mt-8 text-center text-xs text-muted-foreground'>
         By clicking continue, you agree to our{' '}
         <Link href='/terms' className='underline hover:text-foreground'>
@@ -218,6 +219,7 @@ function LoginContent() {
         </Link>
         .
       </p>
+      */}
     </motion.div>
   );
 }

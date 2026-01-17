@@ -100,7 +100,7 @@ export async function signup(formData: FormData) {
   // If session exists, user is immediately logged in (email verification disabled)
   if (data?.session) {
     revalidatePath('/', 'layout');
-    redirect('/');
+    redirect('/dashboard');
   }
 
   // Email verification required - redirect to login with message
@@ -111,7 +111,7 @@ export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath('/', 'layout');
-  redirect('/login');
+  redirect('/');
 }
 
 export async function resetPassword(formData: FormData) {

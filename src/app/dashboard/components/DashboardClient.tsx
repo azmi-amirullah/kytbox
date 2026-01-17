@@ -25,11 +25,18 @@ interface DashboardClientProps {
   publicUrl: string;
 }
 
+/**
+ * Client component for managing dashboard links.
+ * Note: If you need to fully reset this component's state (e.g., after a major data change),
+ * pass a `key` prop from the parent to force a remount.
+ */
 export default function DashboardClient({
   initialLinks,
   profile,
   publicUrl,
 }: DashboardClientProps) {
+  // Initialize state from props. Server-side revalidation will provide fresh initialLinks
+  // on navigation, and React's default behavior handles this correctly.
   const [links, setLinks] = useState<Link[]>(initialLinks);
 
   // Derived state
@@ -40,6 +47,16 @@ export default function DashboardClient({
     <div className='grid lg:grid-cols-[1fr_400px] gap-8'>
       {/* Left Column: Editor */}
       <div className='space-y-6'>
+        {/* Dashboard Title */}
+        <div>
+          <h1 className='text-3xl font-bold tracking-tight text-foreground'>
+            Dashboard
+          </h1>
+          <p className='text-muted-foreground mt-1'>
+            Welcome back, {profile.display_name || profile.username}!
+          </p>
+        </div>
+
         {/* Stats Bar */}
         <div className='grid grid-cols-3 gap-4'>
           <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-primary/20 transition-all duration-200'>

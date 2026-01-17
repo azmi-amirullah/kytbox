@@ -19,6 +19,7 @@ import {
 import SortableLink from '@/app/dashboard/components/SortableLink';
 import { reorderLinks, toggleLinkActive, deleteLink } from '../actions';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import type { Database } from '@/types/supabase';
 
 type Link = Database['public']['Tables']['links']['Row'];
@@ -32,7 +33,6 @@ export default function LinkList({ links, setLinks }: LinkListProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
-  // Delay DndContext render to avoid hydration mismatch
   // Delay DndContext render to avoid hydration mismatch
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
@@ -54,24 +54,35 @@ export default function LinkList({ links, setLinks }: LinkListProps) {
       const newIndex = links.findIndex((item) => item.id === over.id);
       const newItems = arrayMove(links, oldIndex, newIndex);
 
+      // Optimistic update for smooth DnD UX (acceptable trade-off)
       setLinks(newItems);
-      // Persist order to Supabase (Fire and forget)
       reorderLinks(newItems.map((l) => l.id));
     }
   }
 
   async function handleToggle(linkId: string, isActive: boolean) {
+    // Wait for DB success before updating UI
+    const result = await toggleLinkActive(linkId, isActive);
+    if (result?.error) {
+      toast.error('Failed to update link status');
+      return;
+    }
     setLinks((items) =>
       items.map((item) =>
         item.id === linkId ? { ...item, is_active: isActive } : item
       )
     );
-    await toggleLinkActive(linkId, isActive);
   }
 
   async function handleDelete(linkId: string) {
+    // Wait for DB success before updating UI
+    const result = await deleteLink(linkId);
+    if (result?.error) {
+      toast.error('Failed to delete link');
+      return;
+    }
+    toast.success('Link deleted!');
     setLinks((items) => items.filter((item) => item.id !== linkId));
-    await deleteLink(linkId);
     router.refresh();
   }
 

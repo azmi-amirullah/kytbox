@@ -29,7 +29,12 @@ export default function AuthLayout({
       <div className='absolute inset-0 z-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-size-[24px_24px] opacity-50'></div>
 
       {/* Content */}
-      <div className='relative z-10 w-full max-w-md p-4'>{children}</div>
+      <div className='relative z-10 w-full max-w-md p-4'>
+        {children}
+        <div className='mt-8 text-center text-xs text-muted-foreground'>
+          <p>© {new Date().getFullYear()} Link-Base. All rights reserved.</p>
+        </div>
+      </div>
     </div>
   );
 }

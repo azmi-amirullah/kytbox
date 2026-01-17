@@ -1,0 +1,73 @@
+import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { BrandLogo } from '@/components/brand-logo';
+import { UserNav } from '@/components/user-nav';
+import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
+
+interface UserData {
+  username: string;
+  email?: string;
+  avatar_url: string | null;
+  display_name: string | null;
+}
+
+interface HeaderProps {
+  variant: 'landing' | 'dashboard';
+  user?: UserData | null;
+  publicUrl?: string;
+}
+
+export function Header({ variant, user, publicUrl }: HeaderProps) {
+  const isLanding = variant === 'landing';
+
+  return (
+    <header className='sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-md transition-all duration-200'>
+      <div className='max-w-7xl mx-auto px-4 h-16 flex items-center justify-between'>
+        {isLanding ? (
+          <BrandLogo className='cursor-default select-none' />
+        ) : (
+          <Link href='/' className='hover:opacity-80 transition-opacity'>
+            <BrandLogo />
+          </Link>
+        )}
+
+        <div className='flex items-center gap-3 md:gap-4'>
+          {/* Dashboard-specific: Public URL link */}
+          {!isLanding && user && publicUrl && (
+            <>
+              <a
+                href={publicUrl}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='hidden md:flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-secondary/50 hover:bg-secondary text-secondary-foreground transition-all group'
+              >
+                <span>{user.username}</span>
+                <ExternalLink className='w-3 h-3 group-hover:translate-x-0.5 transition-transform' />
+              </a>
+              <div className='h-6 w-px bg-border hidden md:block' />
+            </>
+          )}
+
+          <ThemeToggle />
+
+          {/* Auth state handling */}
+          {user ? (
+            <div className='flex items-center gap-4'>
+              {isLanding && (
+                <Link href='/dashboard'>
+                  <Button>Dashboard</Button>
+                </Link>
+              )}
+              <UserNav user={user} />
+            </div>
+          ) : (
+            <Link href='/login'>
+              <Button>Log in</Button>
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}

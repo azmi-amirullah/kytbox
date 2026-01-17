@@ -29,7 +29,7 @@ export async function addLink(formData: FormData) {
     }
     // Enforce domain format: must have TLD (letters only, 2+ chars)
     if (
-      !/^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/.test(parsed.hostname) &&
+      !/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(parsed.hostname) &&
       parsed.hostname !== 'localhost'
     ) {
       return { error: 'Invalid URL' };
@@ -60,7 +60,7 @@ export async function addLink(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/');
+  revalidatePath('/dashboard');
   return { success: true };
 }
 
@@ -90,7 +90,7 @@ export async function updateLink(linkId: string, formData: FormData) {
     }
     // Enforce domain format: must have TLD (letters only, 2+ chars)
     if (
-      !/^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/.test(parsed.hostname) &&
+      !/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(parsed.hostname) &&
       parsed.hostname !== 'localhost'
     ) {
       return { error: 'Invalid URL' };
@@ -109,7 +109,7 @@ export async function updateLink(linkId: string, formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/');
+  revalidatePath('/dashboard');
   return { success: true };
 }
 
@@ -134,7 +134,7 @@ export async function deleteLink(linkId: string) {
     return { error: error.message };
   }
 
-  revalidatePath('/');
+  revalidatePath('/dashboard');
   return { success: true };
 }
 
@@ -159,7 +159,7 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
     return { error: error.message };
   }
 
-  revalidatePath('/');
+  revalidatePath('/dashboard');
   return { success: true };
 }
 
