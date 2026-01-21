@@ -60,7 +60,7 @@ export async function addLink(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard');
+  revalidatePath('/app/bio');
   return { success: true };
 }
 
@@ -109,7 +109,7 @@ export async function updateLink(linkId: string, formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard');
+  revalidatePath('/app/bio');
   return { success: true };
 }
 
@@ -134,7 +134,7 @@ export async function deleteLink(linkId: string) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard');
+  revalidatePath('/app/bio');
   return { success: true };
 }
 
@@ -159,7 +159,7 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard');
+  revalidatePath('/app/bio');
   return { success: true };
 }
 
@@ -180,7 +180,7 @@ export async function reorderLinks(linkIds: string[]) {
       .from('links')
       .update({ sort_order: index })
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id),
   );
 
   const results = await Promise.all(updates);
@@ -190,6 +190,5 @@ export async function reorderLinks(linkIds: string[]) {
     return { error: 'Failed to reorder some links' };
   }
 
-  // revalidatePath('/'); // Optimization: Don't revalidate to prevent UI jitter. Client has optimistic state.
   return { success: true };
 }

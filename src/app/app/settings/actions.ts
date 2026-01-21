@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { validateUsername } from '@/lib/username';
 
 export async function updateProfile(formData: FormData) {
   const supabase = await createClient();
@@ -18,11 +19,10 @@ export async function updateProfile(formData: FormData) {
   const displayName = formData.get('displayName') as string;
   const bio = formData.get('bio') as string;
 
-  // Validate username format
-  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-    return {
-      error: 'Username must be 3-20 characters (letters, numbers, underscores)',
-    };
+  // Validate username format using UKIT spec
+  const validation = validateUsername(username);
+  if (!validation.valid) {
+    return { error: validation.error };
   }
 
   // Check if username is taken (by another user)
@@ -94,9 +94,9 @@ export async function uploadAvatar(formData: FormData) {
 
   if (profile?.avatar_url) {
     // Extract filename securely, handling potential query params
-    const fileName = profile.avatar_url.split('/').pop()?.split('?')[0];
-    if (fileName) {
-      await supabase.storage.from('avatars').remove([`avatars/${fileName}`]);
+    const oldFileName = profile.avatar_url.split('/').pop()?.split('?')[0];
+    if (oldFileName) {
+      await supabase.storage.from('avatars').remove([`avatars/${oldFileName}`]);
     }
   }
 
@@ -181,9 +181,10 @@ export async function checkUsername(username: string) {
 
   const safeUsername = username.toLowerCase().trim();
 
-  // Validate format
-  if (!/^[a-z0-9_]{3,20}$/.test(safeUsername)) {
-    return { available: false, error: 'Invalid format' };
+  // Validate format using UKIT spec
+  const validation = validateUsername(safeUsername);
+  if (!validation.valid) {
+    return { available: false, error: validation.error };
   }
 
   // Check if taken by another user

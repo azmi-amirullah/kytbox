@@ -35,7 +35,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
       <div className='overflow-hidden rounded-4xl h-full w-full bg-background scrollbar-hide'>
         <div className='h-full overflow-y-auto px-4 py-12 scrollbar-hide'>
           {/* Profile Header */}
-          <div className='text-center mb-6'>
+          <div className='text-center mb-12'>
             {profile.avatar_url ? (
               <div className='relative w-20 h-20 mx-auto mb-3'>
                 <Image
@@ -87,7 +87,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
 
           {/* Footer */}
           <div className='mt-8 text-center text-muted-foreground text-[10px]'>
-            <p>Powered by Link-Base</p>
+            <p>Powered by UKIT</p>
           </div>
         </div>
       </div>

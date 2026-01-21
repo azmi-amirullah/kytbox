@@ -3,7 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Loader2, Mail, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react';
+import {
+  LuLoader,
+  LuMail,
+  LuArrowLeft,
+  LuKeyRound,
+  LuCheck,
+} from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -54,7 +60,7 @@ export default function ForgotPasswordPage() {
               className='flex justify-center mb-4'
             >
               <div className='p-3 rounded-full bg-green-500/10 ring-1 ring-green-500/20'>
-                <CheckCircle className='w-6 h-6 text-green-500' />
+                <LuCheck className='w-6 h-6 text-green-500' />
               </div>
             </motion.div>
             <CardTitle className='text-2xl font-bold tracking-tight'>
@@ -77,7 +83,7 @@ export default function ForgotPasswordPage() {
             </p>
             <Link href='/login'>
               <Button variant='outline' className='w-full'>
-                <ArrowLeft className='mr-2 h-4 w-4' />
+                <LuArrowLeft className='mr-2 h-4 w-4' />
                 Back to login
               </Button>
             </Link>
@@ -104,7 +110,7 @@ export default function ForgotPasswordPage() {
             className='flex justify-center mb-4'
           >
             <div className='p-3 rounded-full bg-primary/10 ring-1 ring-primary/20'>
-              <KeyRound className='w-6 h-6 text-primary' />
+              <LuKeyRound className='w-6 h-6 text-primary' />
             </div>
           </motion.div>
           <CardTitle className='text-2xl font-bold tracking-tight'>
@@ -118,7 +124,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className='space-y-4'>
             <div className='space-y-2'>
               <div className='relative group'>
-                <Mail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                <LuMail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                 <Input
                   id='email'
                   name='email'
@@ -147,7 +153,7 @@ export default function ForgotPasswordPage() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <LuLoader className='mr-2 h-4 w-4 animate-spin' />
                   Sending...
                 </>
               ) : (
@@ -161,7 +167,7 @@ export default function ForgotPasswordPage() {
               href='/login'
               className='text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1'
             >
-              <ArrowLeft className='h-3 w-3' />
+              <LuArrowLeft className='h-3 w-3' />
               Back to login
             </Link>
           </div>

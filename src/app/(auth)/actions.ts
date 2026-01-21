@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { validateUsername } from '@/lib/username';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -27,7 +28,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath('/', 'layout');
-  redirect('/dashboard');
+  redirect('/app');
 }
 
 export async function signup(formData: FormData) {
@@ -35,41 +36,23 @@ export async function signup(formData: FormData) {
 
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const username = (formData.get('username') as string).toLowerCase().trim();
 
-  // Generate username from email prefix
-  const emailPrefix = email
-    .split('@')[0]
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-  const baseUsername = emailPrefix.slice(0, 20);
-  let username = baseUsername;
+  // Validate the username
+  const validation = validateUsername(username);
+  if (!validation.valid) {
+    return { error: validation.error };
+  }
 
-  // Check if username exists, if so find next available increment
-  const { data: existingProfiles } = await supabase
+  // Check if username is already taken
+  const { data: existingProfile } = await supabase
     .from('profiles')
     .select('username')
-    .or(`username.eq.${baseUsername},username.like.${baseUsername}_%`);
+    .eq('username', username)
+    .single();
 
-  if (existingProfiles && existingProfiles.length > 0) {
-    // Check if base username is taken
-    const baseIsTaken = existingProfiles.some(
-      (p) => p.username === baseUsername
-    );
-
-    if (baseIsTaken) {
-      // Find the highest increment number
-      let maxNum = 1;
-      for (const profile of existingProfiles) {
-        const match = profile.username.match(
-          new RegExp(`^${baseUsername}_(\\d+)$`)
-        );
-        if (match) {
-          maxNum = Math.max(maxNum, parseInt(match[1], 10) + 1);
-        }
-      }
-      username = `${baseUsername}_${maxNum}`;
-    }
-    // If base is NOT taken but variants exist, just use the base
+  if (existingProfile) {
+    return { error: 'Username is already taken' };
   }
 
   // Sign up the user with auto-generated username in metadata
@@ -80,7 +63,7 @@ export async function signup(formData: FormData) {
     options: {
       data: {
         username,
-        display_name: emailPrefix,
+        display_name: email.split('@')[0],
       },
     },
   });
@@ -100,7 +83,7 @@ export async function signup(formData: FormData) {
   // If session exists, user is immediately logged in (email verification disabled)
   if (data?.session) {
     revalidatePath('/', 'layout');
-    redirect('/dashboard');
+    redirect('/app');
   }
 
   // Email verification required - redirect to login with message
@@ -150,4 +133,29 @@ export async function updatePassword(formData: FormData) {
 
   revalidatePath('/', 'layout');
   redirect('/login?message=Password updated successfully');
+}
+
+/**
+ * Check username availability for signup form
+ * Does NOT require authentication
+ */
+export async function checkUsernameAvailable(username: string) {
+  const supabase = await createClient();
+
+  const safeUsername = username.toLowerCase().trim();
+
+  // Validate format using UKIT spec
+  const validation = validateUsername(safeUsername);
+  if (!validation.valid) {
+    return { available: false, error: validation.error };
+  }
+
+  // Check if username exists
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', safeUsername)
+    .single();
+
+  return { available: !existingProfile };
 }

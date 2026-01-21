@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Moon, Sun } from 'lucide-react';
+import { LuMoon, LuSun } from 'react-icons/lu';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 
@@ -17,7 +17,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <Button variant='ghost' size='icon' disabled>
-        <Sun className='h-4 w-4' />
+        <LuSun className='h-4 w-4' />
       </Button>
     );
   }
@@ -30,9 +30,9 @@ export function ThemeToggle() {
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
     >
       {theme === 'dark' ? (
-        <Sun className='h-4 w-4' />
+        <LuSun className='h-4 w-4' />
       ) : (
-        <Moon className='h-4 w-4' />
+        <LuMoon className='h-4 w-4' />
       )}
       <span className='sr-only'>Toggle theme</span>
     </Button>

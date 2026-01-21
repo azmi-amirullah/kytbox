@@ -1,32 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  ExternalLink,
-  BarChart3,
-  Link as LinkIcon,
-  MousePointerClick,
-  Eye,
-  Plus,
-} from 'lucide-react';
+  LuExternalLink,
+  LuActivity as LuBarChart,
+  LuLink,
+  LuMousePointerClick,
+  LuEye,
+  LuPlus,
+  LuChevronRight,
+} from 'react-icons/lu';
 import LinkList from './LinkList';
 import LinkModal from './LinkModal';
 import PhonePreview from './PhonePreview';
 import { Button } from '@/components/ui/button';
 import type { Database } from '@/types/supabase';
 
-type Link = Database['public']['Tables']['links']['Row'];
+type LinkType = Database['public']['Tables']['links']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface DashboardClientProps {
-  initialLinks: Link[];
+  initialLinks: LinkType[];
   profile: Profile;
   publicUrl: string;
 }
 
 /**
- * Client component for managing dashboard links.
+ * Client component for managing Bio links.
  * Note: If you need to fully reset this component's state (e.g., after a major data change),
  * pass a `key` prop from the parent to force a remount.
  */
@@ -37,7 +39,7 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   // Initialize state from props. Server-side revalidation will provide fresh initialLinks
   // on navigation, and React's default behavior handles this correctly.
-  const [links, setLinks] = useState<Link[]>(initialLinks);
+  const [links, setLinks] = useState<LinkType[]>(initialLinks);
 
   // Derived state
   const totalClicks = links.reduce((sum, link) => sum + link.clicks, 0);
@@ -47,10 +49,20 @@ export default function DashboardClient({
     <div className='grid lg:grid-cols-[1fr_400px] gap-8'>
       {/* Left Column: Editor */}
       <div className='space-y-6'>
-        {/* Dashboard Title */}
+        {/* Breadcrumb + Title */}
         <div>
+          <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
+            <Link
+              href='/app'
+              className='hover:text-foreground transition-colors'
+            >
+              UKIT
+            </Link>
+            <LuChevronRight className='w-3 h-3' />
+            <span className='text-foreground font-medium'>Bio</span>
+          </nav>
           <h1 className='text-3xl font-bold tracking-tight text-foreground'>
-            Dashboard
+            Bio
           </h1>
           <p className='text-muted-foreground mt-1'>
             Welcome back, {profile.display_name || profile.username}!
@@ -67,7 +79,7 @@ export default function DashboardClient({
               <p className='text-2xl font-bold tracking-tight'>{totalClicks}</p>
             </div>
             <div className='p-3 bg-primary/10 rounded-full text-primary'>
-              <MousePointerClick className='w-5 h-5' />
+              <LuMousePointerClick className='w-5 h-5' />
             </div>
           </div>
 
@@ -81,7 +93,7 @@ export default function DashboardClient({
               </p>
             </div>
             <div className='p-3 bg-green-500/10 rounded-full text-green-600'>
-              <LinkIcon className='w-5 h-5' />
+              <LuLink className='w-5 h-5' />
             </div>
           </div>
 
@@ -95,7 +107,7 @@ export default function DashboardClient({
               </p>
             </div>
             <div className='p-3 bg-blue-500/10 rounded-full text-blue-600'>
-              <BarChart3 className='w-5 h-5' />
+              <LuBarChart className='w-5 h-5' />
             </div>
           </div>
         </div>
@@ -113,7 +125,7 @@ export default function DashboardClient({
               mode='create'
               trigger={
                 <Button className='h-10 font-medium shadow-md shadow-primary/20'>
-                  <Plus className='w-4 h-4 mr-2' />
+                  <LuPlus className='w-4 h-4 mr-2' />
                   Add Link
                 </Button>
               }
@@ -135,7 +147,7 @@ export default function DashboardClient({
         <div className='sticky top-24'>
           <div className='flex items-center justify-center mb-4 gap-2'>
             <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2'>
-              <Eye className='w-4 h-4' /> Live Preview
+              <LuEye className='w-4 h-4' /> Live Preview
             </h3>
           </div>
           <PhonePreview
@@ -154,7 +166,7 @@ export default function DashboardClient({
               rel='noopener noreferrer'
               className='inline-flex items-center gap-2 text-sm text-primary hover:underline'
             >
-              Open public page <ExternalLink className='w-3 h-3' />
+              Open public page <LuExternalLink className='w-3 h-3' />
             </a>
           </div>
         </div>

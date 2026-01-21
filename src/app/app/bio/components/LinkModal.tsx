@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Loader2, Type, Globe } from 'lucide-react';
+import { LuLoader, LuType, LuGlobe } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { addLink, updateLink } from '../actions';
 
@@ -133,7 +133,7 @@ export default function LinkModal({
                 Link Title<span className='text-destructive'>*</span>
               </Label>
               <div className='relative'>
-                <Type className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+                <LuType className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
                 <Input
                   id='title'
                   name='title'
@@ -153,7 +153,7 @@ export default function LinkModal({
                 Destination URL<span className='text-destructive'>*</span>
               </Label>
               <div className='relative'>
-                <Globe className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+                <LuGlobe className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
                 <Input
                   id='url'
                   name='url'
@@ -187,7 +187,7 @@ export default function LinkModal({
               <Button type='submit' disabled={isBusy} className='flex-1'>
                 {isBusy ? (
                   <>
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    <LuLoader className='mr-2 h-4 w-4 animate-spin' />
                     {isEdit ? 'Saving...' : 'Adding...'}
                   </>
                 ) : isEdit ? (

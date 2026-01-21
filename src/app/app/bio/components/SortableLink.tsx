@@ -4,13 +4,13 @@ import { useState, memo } from 'react';
 import { useSortable, defaultAnimateLayoutChanges } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  GripVertical,
-  Trash2,
-  Copy,
-  BarChart2,
-  Check,
-  Pencil,
-} from 'lucide-react';
+  LuGripVertical,
+  LuTrash2,
+  LuCopy,
+  LuActivity,
+  LuCheck,
+  LuPencil,
+} from 'react-icons/lu';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import {
@@ -80,7 +80,7 @@ const LinkItemContent = memo(function LinkItemContent({
         {...listeners}
         className='p-2 cursor-move text-muted-foreground/50 hover:text-foreground touch-none select-none transition-colors'
       >
-        <GripVertical className='w-5 h-5' />
+        <LuGripVertical className='w-5 h-5' />
       </button>
 
       {/* Toggle */}
@@ -122,7 +122,7 @@ const LinkItemContent = memo(function LinkItemContent({
 
       {/* Stats */}
       <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/50 text-secondary-foreground text-xs font-medium'>
-        <BarChart2 className='w-3.5 h-3.5' />
+        <LuActivity className='w-3.5 h-3.5' />
         {link.clicks}
         <span className='opacity-70'>clicks</span>
       </div>
@@ -139,9 +139,9 @@ const LinkItemContent = memo(function LinkItemContent({
                 onClick={copyToClipboard}
               >
                 {hasCopied ? (
-                  <Check className='w-4 h-4' />
+                  <LuCheck className='w-4 h-4' />
                 ) : (
-                  <Copy className='w-4 h-4' />
+                  <LuCopy className='w-4 h-4' />
                 )}
                 <span className='sr-only'>Copy URL</span>
               </Button>
@@ -161,7 +161,7 @@ const LinkItemContent = memo(function LinkItemContent({
                 className='w-8 h-8 text-primary hover:text-primary hover:bg-primary/10'
                 onClick={() => setShowEditModal(true)}
               >
-                <Pencil className='w-4 h-4' />
+                <LuPencil className='w-4 h-4' />
                 <span className='sr-only'>Edit</span>
               </Button>
             </TooltipTrigger>
@@ -180,7 +180,7 @@ const LinkItemContent = memo(function LinkItemContent({
                 className='w-8 h-8 text-destructive hover:text-destructive hover:bg-destructive/10'
                 onClick={handleDeleteClick}
               >
-                <Trash2 className='w-4 h-4' />
+                <LuTrash2 className='w-4 h-4' />
                 <span className='sr-only'>Delete</span>
               </Button>
             </TooltipTrigger>

@@ -2,7 +2,14 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Lock, Eye, EyeOff, KeyRound, ArrowRight } from 'lucide-react';
+import {
+  LuLoader,
+  LuLock,
+  LuEye,
+  LuEyeOff,
+  LuKeyRound,
+  LuArrowRight,
+} from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -74,7 +81,7 @@ export default function UpdatePasswordPage() {
               className='flex justify-center mb-4'
             >
               <div className='p-3 rounded-full bg-primary/10 ring-1 ring-primary/20'>
-                <KeyRound className='w-6 h-6 text-primary' />
+                <LuKeyRound className='w-6 h-6 text-primary' />
               </div>
             </motion.div>
             <CardTitle className='text-2xl font-bold tracking-tight'>
@@ -86,7 +93,7 @@ export default function UpdatePasswordPage() {
             <form onSubmit={handleSubmit} className='space-y-4'>
               <div className='space-y-2'>
                 <div className='relative group'>
-                  <Lock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                  <LuLock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                   <Input
                     id='password'
                     name='password'
@@ -102,9 +109,9 @@ export default function UpdatePasswordPage() {
                     className='absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors focus:outline-none'
                   >
                     {showPassword ? (
-                      <EyeOff className='h-4 w-4' />
+                      <LuEyeOff className='h-4 w-4' />
                     ) : (
-                      <Eye className='h-4 w-4' />
+                      <LuEye className='h-4 w-4' />
                     )}
                   </button>
                 </div>
@@ -112,7 +119,7 @@ export default function UpdatePasswordPage() {
 
               <div className='space-y-2'>
                 <div className='relative group'>
-                  <Lock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                  <LuLock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                   <Input
                     id='confirmPassword'
                     name='confirmPassword'
@@ -128,9 +135,9 @@ export default function UpdatePasswordPage() {
                     className='absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors focus:outline-none'
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className='h-4 w-4' />
+                      <LuEyeOff className='h-4 w-4' />
                     ) : (
-                      <Eye className='h-4 w-4' />
+                      <LuEye className='h-4 w-4' />
                     )}
                   </button>
                 </div>
@@ -153,13 +160,13 @@ export default function UpdatePasswordPage() {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    <LuLoader className='mr-2 h-4 w-4 animate-spin' />
                     Updating...
                   </>
                 ) : (
                   <>
                     Update password
-                    <ArrowRight className='h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                    <LuArrowRight className='h-4 w-4 group-hover:translate-x-1 transition-transform' />
                   </>
                 )}
               </Button>

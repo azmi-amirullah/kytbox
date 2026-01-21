@@ -3,7 +3,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { BrandLogo } from '@/components/brand-logo';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { LuExternalLink } from 'react-icons/lu';
 
 interface UserData {
   username: string;
@@ -27,7 +27,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
         {isLanding ? (
           <BrandLogo className='cursor-default select-none' />
         ) : (
-          <Link href='/' className='hover:opacity-80 transition-opacity'>
+          <Link href='/app' className='hover:opacity-80 transition-opacity'>
             <BrandLogo />
           </Link>
         )}
@@ -43,7 +43,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
                 className='hidden md:flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-secondary/50 hover:bg-secondary text-secondary-foreground transition-all group'
               >
                 <span>{user.username}</span>
-                <ExternalLink className='w-3 h-3 group-hover:translate-x-0.5 transition-transform' />
+                <LuExternalLink className='w-3 h-3 group-hover:translate-x-0.5 transition-transform' />
               </a>
               <div className='h-6 w-px bg-border hidden md:block' />
             </>
@@ -55,7 +55,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           {user ? (
             <div className='flex items-center gap-4'>
               {isLanding && (
-                <Link href='/dashboard'>
+                <Link href='/app'>
                   <Button>Dashboard</Button>
                 </Link>
               )}

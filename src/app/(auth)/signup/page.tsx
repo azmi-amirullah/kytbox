@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-  Eye,
-  EyeOff,
-  Loader2,
-  Mail,
-  Lock,
-  Sparkles,
-  ArrowRight,
-} from 'lucide-react';
+  LuEye,
+  LuEyeOff,
+  LuLoader,
+  LuMail,
+  LuLock,
+  LuSparkles,
+  LuArrowRight,
+  LuCheck,
+  LuInfo,
+} from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,12 +23,62 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { signup } from '../actions';
+import { signup, checkUsernameAvailable } from '../actions';
 
 export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Username state
+  const [username, setUsername] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState<
+    'idle' | 'checking' | 'available' | 'taken' | 'invalid'
+  >('idle');
+  const usernameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check username availability with debounce
+  useEffect(() => {
+    if (usernameTimeoutRef.current) {
+      clearTimeout(usernameTimeoutRef.current);
+    }
+
+    const normalized = username.toLowerCase().trim();
+
+    // Reset if too short
+    if (normalized.length < 3) {
+      queueMicrotask(() => setUsernameStatus('idle'));
+      return;
+    }
+
+    // Basic format check: a-z, 0-9, hyphen (not at start/end)
+    if (
+      !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(normalized) &&
+      normalized.length > 2
+    ) {
+      if (!/^[a-z0-9]+$/.test(normalized)) {
+        queueMicrotask(() => setUsernameStatus('invalid'));
+        return;
+      }
+    }
+
+    queueMicrotask(() => setUsernameStatus('checking'));
+
+    usernameTimeoutRef.current = setTimeout(async () => {
+      const result = await checkUsernameAvailable(normalized);
+      if (result.error) {
+        setUsernameStatus('invalid');
+      } else {
+        setUsernameStatus(result.available ? 'available' : 'taken');
+      }
+    }, 500);
+
+    return () => {
+      if (usernameTimeoutRef.current) {
+        clearTimeout(usernameTimeoutRef.current);
+      }
+    };
+  }, [username]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,8 +92,10 @@ export default function SignupPage() {
       setError(result.error);
       setIsLoading(false);
     }
-    // On success, the server action redirects to /login with a message
+    // On success, the server action redirects
   }
+
+  const isUsernameValid = usernameStatus === 'available';
 
   return (
     <motion.div
@@ -61,7 +115,7 @@ export default function SignupPage() {
             className='flex justify-center mb-4'
           >
             <div className='p-3 rounded-full bg-primary/10 ring-1 ring-primary/20'>
-              <Sparkles className='w-6 h-6 text-primary' />
+              <LuSparkles className='w-6 h-6 text-primary' />
             </div>
           </motion.div>
           <CardTitle className='text-2xl font-bold tracking-tight'>
@@ -70,36 +124,11 @@ export default function SignupPage() {
           <CardDescription>Sign up to start sharing your links</CardDescription>
         </CardHeader>
         <CardContent className='space-y-4 relative z-10'>
-          {/* Social Auth - Commented out for future implementation
-          <div className="grid grid-cols-2 gap-4">
-             <Button variant="outline">
-              <Github className="mr-2 h-4 w-4" />
-              Github
-            </Button>
-            <Button variant="outline">
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                <path d="M22.56..." fill="#4285F4" />
-              </svg>
-              Google
-            </Button>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-          */}
-
           <form onSubmit={handleSubmit} className='space-y-4'>
             {/* Email Field */}
             <div className='space-y-2'>
               <div className='relative group'>
-                <Mail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                <LuMail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                 <Input
                   id='email'
                   name='email'
@@ -111,10 +140,58 @@ export default function SignupPage() {
               </div>
             </div>
 
+            {/* Username Field */}
+            <div className='space-y-1'>
+              <div className='flex'>
+                <span className='inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm'>
+                  ukit.app/
+                </span>
+                <div className='relative flex-1'>
+                  <Input
+                    id='username'
+                    name='username'
+                    type='text'
+                    placeholder='username'
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                    required
+                    minLength={3}
+                    maxLength={20}
+                    pattern='[a-z0-9-]+'
+                    className='rounded-l-none pr-9'
+                  />
+                  {/* Status indicator */}
+                  <div className='absolute right-3 top-2.5'>
+                    {usernameStatus === 'checking' && (
+                      <LuLoader className='h-4 w-4 animate-spin text-muted-foreground' />
+                    )}
+                    {usernameStatus === 'available' && (
+                      <LuCheck className='h-4 w-4 text-green-500' />
+                    )}
+                    {(usernameStatus === 'taken' ||
+                      usernameStatus === 'invalid') && (
+                      <LuInfo className='h-4 w-4 text-destructive' />
+                    )}
+                  </div>
+                </div>
+              </div>
+              {usernameStatus === 'taken' || usernameStatus === 'invalid' ? (
+                <p className='text-xs text-destructive px-1'>
+                  {usernameStatus === 'taken' && 'Username already taken'}
+                  {usernameStatus === 'invalid' &&
+                    'Only letters, numbers, and hyphens allowed'}
+                </p>
+              ) : (
+                <p className='text-xs text-muted-foreground px-1'>
+                  This will become your page URL
+                </p>
+              )}
+            </div>
+
             {/* Password Field */}
             <div className='space-y-2'>
               <div className='relative group'>
-                <Lock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                <LuLock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                 <Input
                   id='password'
                   name='password'
@@ -130,9 +207,9 @@ export default function SignupPage() {
                   className='absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors focus:outline-none'
                 >
                   {showPassword ? (
-                    <EyeOff className='h-4 w-4' />
+                    <LuEyeOff className='h-4 w-4' />
                   ) : (
-                    <Eye className='h-4 w-4' />
+                    <LuEye className='h-4 w-4' />
                   )}
                 </button>
               </div>
@@ -150,18 +227,18 @@ export default function SignupPage() {
 
             <Button
               type='submit'
-              disabled={isLoading}
+              disabled={isLoading || !isUsernameValid}
               className='w-full h-10 font-semibold group'
             >
               {isLoading ? (
                 <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <LuLoader className='mr-2 h-4 w-4 animate-spin' />
                   Creating account...
                 </>
               ) : (
                 <>
                   Create Account
-                  <ArrowRight className='h-4 w-4 group-hover:translate-x-1 transition-transform' />
+                  <LuArrowRight className='h-4 w-4 group-hover:translate-x-1 transition-transform' />
                 </>
               )}
             </Button>
@@ -178,20 +255,6 @@ export default function SignupPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* TODO: Uncomment when /terms and /privacy pages are implemented
-      <p className='mt-8 text-center text-xs text-muted-foreground'>
-        By clicking create account, you agree to our{' '}
-        <Link href='/terms' className='underline hover:text-foreground'>
-          Terms of Service
-        </Link>{' '}
-        and{' '}
-        <Link href='/privacy' className='underline hover:text-foreground'>
-          Privacy Policy
-        </Link>
-        .
-      </p>
-      */}
     </motion.div>
   );
 }

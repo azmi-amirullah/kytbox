@@ -5,17 +5,16 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
-  User,
-  Mail,
-  AtSign,
-  FileText,
-  Camera,
-  Trash2,
-  Loader2,
-  Check,
-  ArrowLeft,
-  AlertCircle,
-} from 'lucide-react';
+  LuUser,
+  LuMail,
+  LuFileText,
+  LuCamera,
+  LuTrash2,
+  LuLoader,
+  LuCheck,
+  LuArrowLeft,
+  LuInfo,
+} from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,7 +33,6 @@ import {
   checkUsername,
 } from './actions';
 import { getAvatarUrl } from '@/lib/avatar';
-import Link from 'next/link';
 
 interface Profile {
   id: string;
@@ -82,8 +80,8 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
       clearTimeout(usernameTimeoutRef.current);
     }
 
-    // Validate format first
-    if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+    // Validate format first (UKIT spec: a-z, 0-9, hyphen)
+    if (username.length < 3 || !/^[a-z0-9-]+$/.test(username)) {
       queueMicrotask(() => setUsernameStatus('idle'));
       return;
     }
@@ -103,7 +101,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
     };
   }, [username, profile.username, profile.id]);
 
-  const currentAvatarUrl = getAvatarUrl(avatarUrl, email, 200);
+  const currentAvatarUrl = getAvatarUrl(avatarUrl);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -170,37 +168,41 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
   return (
     <div className='space-y-6'>
       {/* Back Button */}
-      <Link
-        href='/'
-        className='inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors'
+      <button
+        onClick={() => router.back()}
+        className='inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer'
       >
-        <ArrowLeft className='w-4 h-4' />
-        Back to Dashboard
-      </Link>
+        <LuArrowLeft className='w-4 h-4' />
+        Back
+      </button>
 
       {/* Avatar Section */}
       <Card>
         <CardHeader>
           <CardTitle className='text-lg'>Profile Picture</CardTitle>
-          <CardDescription>
-            Upload a custom avatar or use your Gravatar
-          </CardDescription>
+          <CardDescription>Upload a profile picture</CardDescription>
         </CardHeader>
         <CardContent>
           <div className='flex items-center gap-6'>
             <div className='relative'>
-              <div className='w-24 h-24 rounded-full overflow-hidden bg-muted ring-2 ring-border'>
-                <Image
-                  src={currentAvatarUrl}
-                  alt='Avatar'
-                  width={96}
-                  height={96}
-                  className='w-full h-full object-cover'
-                />
+              <div className='w-24 h-24 rounded-full overflow-hidden bg-muted ring-2 ring-border flex items-center justify-center'>
+                {currentAvatarUrl ? (
+                  <Image
+                    src={currentAvatarUrl}
+                    alt='Avatar'
+                    width={96}
+                    height={96}
+                    className='w-full h-full object-cover'
+                  />
+                ) : (
+                  <span className='text-muted-foreground text-3xl font-semibold'>
+                    {(displayName || profile.username).charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               {isUploading && (
                 <div className='absolute inset-0 flex items-center justify-center bg-background/80 rounded-full'>
-                  <Loader2 className='w-6 h-6 animate-spin' />
+                  <LuLoader className='w-6 h-6 animate-spin' />
                 </div>
               )}
             </div>
@@ -219,7 +221,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
               >
-                <Camera className='w-4 h-4 mr-2' />
+                <LuCamera className='w-4 h-4 mr-2' />
                 Upload Photo
               </Button>
               {avatarUrl && (
@@ -231,7 +233,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
                   disabled={isUploading}
                   className='text-destructive hover:text-destructive'
                 >
-                  <Trash2 className='w-4 h-4 mr-2' />
+                  <LuTrash2 className='w-4 h-4 mr-2' />
                   Remove
                 </Button>
               )}
@@ -255,7 +257,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
             <div className='space-y-2'>
               <Label htmlFor='email'>Email</Label>
               <div className='relative'>
-                <Mail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground' />
+                <LuMail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground' />
                 <Input
                   id='email'
                   value={email}
@@ -266,44 +268,49 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
             </div>
 
             {/* Username */}
-            <div className='space-y-2'>
+            <div className='space-y-1'>
               <Label htmlFor='username' className='gap-0.5'>
                 Username<span className='text-destructive'>*</span>
               </Label>
-              <div className='relative'>
-                <AtSign className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground' />
-                <Input
-                  id='username'
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder='yourname'
-                  className='pl-9 pr-9'
-                  required
-                  minLength={3}
-                  maxLength={20}
-                  pattern='[a-zA-Z0-9_]+'
-                />
-                {/* Status indicator */}
-                <div className='absolute right-3 top-2.5'>
-                  {usernameStatus === 'checking' && (
-                    <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
-                  )}
-                  {usernameStatus === 'available' && (
-                    <Check className='h-4 w-4 text-green-500' />
-                  )}
-                  {usernameStatus === 'taken' && (
-                    <AlertCircle className='h-4 w-4 text-destructive' />
-                  )}
+              <div className='flex'>
+                <span className='inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm'>
+                  ukit.app/
+                </span>
+                <div className='relative flex-1'>
+                  <Input
+                    id='username'
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                    placeholder='username'
+                    className='rounded-l-none pr-9'
+                    required
+                    minLength={3}
+                    maxLength={20}
+                    pattern='[a-z0-9-]+'
+                  />
+                  {/* Status indicator */}
+                  <div className='absolute right-3 top-2.5'>
+                    {usernameStatus === 'checking' && (
+                      <LuLoader className='h-4 w-4 animate-spin text-muted-foreground' />
+                    )}
+                    {usernameStatus === 'available' && (
+                      <LuCheck className='h-4 w-4 text-green-500' />
+                    )}
+                    {usernameStatus === 'taken' && (
+                      <LuInfo className='h-4 w-4 text-destructive' />
+                    )}
+                  </div>
                 </div>
               </div>
-              <p className='text-xs text-muted-foreground'>
-                Your public URL: yourdomain.com/u/{username}
-                {usernameStatus === 'taken' && (
-                  <span className='text-destructive ml-2'>
-                    • Username is taken
-                  </span>
-                )}
-              </p>
+              {usernameStatus === 'taken' ? (
+                <p className='text-xs text-destructive px-1'>
+                  Username already taken
+                </p>
+              ) : (
+                <p className='text-xs text-muted-foreground px-1'>
+                  This is your public page URL
+                </p>
+              )}
             </div>
 
             {/* Display Name */}
@@ -312,7 +319,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
                 Display Name<span className='text-destructive'>*</span>
               </Label>
               <div className='relative'>
-                <User className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground' />
+                <LuUser className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground' />
                 <Input
                   id='displayName'
                   value={displayName}
@@ -329,7 +336,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
             <div className='space-y-2'>
               <Label htmlFor='bio'>Bio</Label>
               <div className='relative'>
-                <FileText className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground' />
+                <LuFileText className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground' />
                 <Textarea
                   id='bio'
                   value={bio}
@@ -361,7 +368,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 className='p-3 rounded-md bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm text-center flex items-center justify-center gap-2'
               >
-                <Check className='w-4 h-4' />
+                <LuCheck className='w-4 h-4' />
                 Profile updated successfully
               </motion.div>
             )}
@@ -370,7 +377,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
             <Button type='submit' disabled={isLoading} className='w-full'>
               {isLoading ? (
                 <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <LuLoader className='mr-2 h-4 w-4 animate-spin' />
                   Saving...
                 </>
               ) : (
@@ -388,7 +395,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
 async function compressImage(
   file: File,
   maxSize: number,
-  quality: number
+  quality: number,
 ): Promise<File> {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -417,7 +424,7 @@ async function compressImage(
             }
           },
           'image/jpeg',
-          quality
+          quality,
         );
       };
       img.src = e.target?.result as string;

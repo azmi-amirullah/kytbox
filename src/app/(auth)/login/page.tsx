@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  Eye,
-  EyeOff,
-  Loader2,
-  Mail,
-  Lock,
-  Sparkles,
-  CheckCircle,
-} from 'lucide-react';
+  LuEye,
+  LuEyeOff,
+  LuLoader,
+  LuMail,
+  LuLock,
+  LuSparkles,
+  LuCheck,
+} from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -75,7 +75,7 @@ function LoginContent() {
             className='flex justify-center mb-4'
           >
             <div className='p-3 rounded-full bg-primary/10 ring-1 ring-primary/20'>
-              <Sparkles className='w-6 h-6 text-primary' />
+              <LuSparkles className='w-6 h-6 text-primary' />
             </div>
           </motion.div>
           <CardTitle className='text-2xl font-bold tracking-tight'>
@@ -117,7 +117,7 @@ function LoginContent() {
               animate={{ opacity: 1, scale: 1 }}
               className='p-4 rounded-md bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm text-center mb-4'
             >
-              <CheckCircle className='w-5 h-5 mx-auto mb-2' />
+              <LuCheck className='w-5 h-5 mx-auto mb-2' />
               {successMessage}
             </motion.div>
           )}
@@ -125,7 +125,7 @@ function LoginContent() {
           <form onSubmit={handleSubmit} className='space-y-4'>
             <div className='space-y-2'>
               <div className='relative group'>
-                <Mail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                <LuMail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                 <Input
                   id='email'
                   name='email'
@@ -138,7 +138,7 @@ function LoginContent() {
             </div>
             <div className='space-y-2'>
               <div className='relative group'>
-                <Lock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
+                <LuLock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                 <Input
                   id='password'
                   name='password'
@@ -153,9 +153,9 @@ function LoginContent() {
                   className='absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors focus:outline-none'
                 >
                   {showPassword ? (
-                    <EyeOff className='h-4 w-4' />
+                    <LuEyeOff className='h-4 w-4' />
                   ) : (
-                    <Eye className='h-4 w-4' />
+                    <LuEye className='h-4 w-4' />
                   )}
                 </button>
               </div>
@@ -186,7 +186,7 @@ function LoginContent() {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  <LuLoader className='mr-2 h-4 w-4 animate-spin' />
                   Signing in...
                 </>
               ) : (

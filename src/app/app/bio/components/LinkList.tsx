@@ -16,7 +16,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import SortableLink from '@/app/dashboard/components/SortableLink';
+import SortableLink from './SortableLink';
 import { reorderLinks, toggleLinkActive, deleteLink } from '../actions';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -43,7 +43,7 @@ export default function LinkList({ links, setLinks }: LinkListProps) {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -69,8 +69,8 @@ export default function LinkList({ links, setLinks }: LinkListProps) {
     }
     setLinks((items) =>
       items.map((item) =>
-        item.id === linkId ? { ...item, is_active: isActive } : item
-      )
+        item.id === linkId ? { ...item, is_active: isActive } : item,
+      ),
     );
   }
 
