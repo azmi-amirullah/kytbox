@@ -64,24 +64,26 @@ export default function DashboardClient({
           <h1 className='text-3xl font-bold tracking-tight text-foreground'>
             Bio
           </h1>
-          <p className='text-muted-foreground mt-1'>
-            Welcome back, {profile.display_name || profile.username}!
-          </p>
+          <p className='text-muted-foreground mt-1'>Manage your links here</p>
         </div>
 
         {/* Stats Bar */}
         <div className='grid grid-cols-3 gap-4'>
-          <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-primary/20 transition-all duration-200'>
-            <div>
-              <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1'>
-                Lifetime Clicks
-              </p>
-              <p className='text-2xl font-bold tracking-tight'>{totalClicks}</p>
+          <Link href='/app/bio/analytics' className='block group'>
+            <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
+              <div>
+                <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>
+                  Lifetime Clicks
+                </p>
+                <p className='text-2xl font-bold tracking-tight'>
+                  {totalClicks}
+                </p>
+              </div>
+              <div className='p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform'>
+                <LuMousePointerClick className='w-5 h-5' />
+              </div>
             </div>
-            <div className='p-3 bg-primary/10 rounded-full text-primary'>
-              <LuMousePointerClick className='w-5 h-5' />
-            </div>
-          </div>
+          </Link>
 
           <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-green-500/20 transition-all duration-200'>
             <div>
@@ -114,25 +116,21 @@ export default function DashboardClient({
 
         {/* Links Editor */}
         <div className='space-y-4'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h2 className='text-xl font-bold tracking-tight'>Links</h2>
-              <p className='text-sm text-muted-foreground'>
-                Manage your links here
-              </p>
+          <Card className='border-border bg-card shadow-sm p-0 gap-0'>
+            <div className='flex items-center justify-end px-6 py-4 border-b border-border/50'>
+              <LinkModal
+                mode='create'
+                trigger={
+                  <Button
+                    size='sm'
+                    className='font-medium shadow-md shadow-primary/20'
+                  >
+                    <LuPlus className='w-4 h-4 mr-2' />
+                    Add Link
+                  </Button>
+                }
+              />
             </div>
-            <LinkModal
-              mode='create'
-              trigger={
-                <Button className='h-10 font-medium shadow-md shadow-primary/20'>
-                  <LuPlus className='w-4 h-4 mr-2' />
-                  Add Link
-                </Button>
-              }
-            />
-          </div>
-
-          <Card className='border-border/50 bg-card/40 backdrop-blur-xl shadow-sm'>
             <CardContent className='p-0'>
               <div className='p-6 min-h-[400px]'>
                 <LinkList links={links} setLinks={setLinks} />

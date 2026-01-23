@@ -49,11 +49,23 @@ export async function addLink(formData: FormData) {
 
   const nextOrder = (lastLink?.sort_order ?? 0) + 1;
 
+  // Get next short_id for this user
+  const { data: nextShortId, error: rpcError } = await supabase.rpc(
+    'get_next_short_id',
+    { p_user_id: user.id },
+  );
+
+  if (rpcError) {
+    console.error('Failed to get next short_id:', rpcError);
+    return { error: 'Failed to create link' };
+  }
+
   const { error } = await supabase.from('links').insert({
     user_id: user.id,
     title,
     url,
     sort_order: nextOrder,
+    short_id: nextShortId,
   });
 
   if (error) {

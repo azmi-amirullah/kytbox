@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import DashboardClient from './components/DashboardClient';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
+import AnalyticsClient from './components/AnalyticsClient';
 
-export default async function BioDashboardPage() {
+export default async function AnalyticsPage() {
   const supabase = await createClient();
 
+  // Get user
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -27,15 +28,7 @@ export default async function BioDashboardPage() {
     redirect('/login');
   }
 
-  // Get user links
-  const { data: links } = await supabase
-    .from('links')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('sort_order', { ascending: true });
-
   const publicUrl = `/${profile.username}`;
-
   const userData = {
     username: profile.username,
     email: user.email,
@@ -46,17 +39,11 @@ export default async function BioDashboardPage() {
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>
       <BackgroundBlobs variant='subtle' />
-
       <Header variant='dashboard' user={userData} publicUrl={publicUrl} />
 
       {/* Main Content */}
       <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8 flex-1 w-full'>
-        <DashboardClient
-          key={links?.map((l) => l.id).join(',') ?? 'empty'}
-          initialLinks={links ?? []}
-          profile={profile}
-          publicUrl={publicUrl}
-        />
+        <AnalyticsClient />
       </main>
 
       <Footer />

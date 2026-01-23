@@ -51,6 +51,7 @@ export interface Database {
           clicks: number;
           last_clicked_at: string | null;
           created_at: string;
+          short_id: number | null;
         };
         Insert: {
           id?: string;
@@ -62,6 +63,7 @@ export interface Database {
           clicks?: number;
           last_clicked_at?: string | null;
           created_at?: string;
+          short_id?: number;
         };
         Update: {
           id?: string;
@@ -73,6 +75,7 @@ export interface Database {
           clicks?: number;
           last_clicked_at?: string | null;
           created_at?: string;
+          short_id?: number;
         };
         Relationships: [
           {
@@ -81,7 +84,45 @@ export interface Database {
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
-          }
+          },
+        ];
+      };
+      link_events: {
+        Row: {
+          id: string;
+          link_id: string;
+          created_at: string;
+          user_agent: string | null;
+          country: string | null;
+          city: string | null;
+          referer: string | null;
+        };
+        Insert: {
+          id?: string;
+          link_id: string;
+          created_at?: string;
+          user_agent?: string | null;
+          country?: string | null;
+          city?: string | null;
+          referer?: string | null;
+        };
+        Update: {
+          id?: string;
+          link_id?: string;
+          created_at?: string;
+          user_agent?: string | null;
+          country?: string | null;
+          city?: string | null;
+          referer?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'link_events_link_id_fkey';
+            columns: ['link_id'];
+            isOneToOne: false;
+            referencedRelation: 'links';
+            referencedColumns: ['id'];
+          },
         ];
       };
     };
@@ -92,6 +133,26 @@ export interface Database {
       increment_link_click: {
         Args: { link_id: string };
         Returns: undefined;
+      };
+      get_analytics_chart_data: {
+        Args: {
+          p_link_ids: string[];
+          p_start_date: string | null;
+          p_bucket_interval: string;
+        };
+        Returns: { bucket: string | null; click_count: number }[];
+      };
+      get_top_referers: {
+        Args: {
+          p_link_ids: string[];
+          p_start_date: string | null;
+          p_limit: number;
+        };
+        Returns: { referer_domain: string; click_count: number }[];
+      };
+      get_next_short_id: {
+        Args: { p_user_id: string };
+        Returns: number;
       };
     };
     Enums: {

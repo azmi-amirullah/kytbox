@@ -14,6 +14,7 @@ import { SiGithub, SiLinkedin } from 'react-icons/si';
 
 import { createClient } from '@/lib/supabase/server';
 import { Header } from '@/components/header';
+import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 
 // UKIT Apps for landing page
@@ -78,7 +79,7 @@ export default async function LandingPage() {
     : null;
 
   return (
-    <div className='bg-background relative'>
+    <div className='bg-background relative min-h-screen flex flex-col'>
       <BackgroundBlobs />
 
       <Header variant='landing' user={userData} />
@@ -236,12 +237,7 @@ export default async function LandingPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className='py-8 border-t border-border/40 text-center text-sm text-muted-foreground'>
-        <div className='max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4'>
-          <p>© {new Date().getFullYear()} UKIT. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer variant='landing' />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
+import { LinkButton } from './components/LinkButton';
 
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>;
@@ -71,11 +72,10 @@ export default async function PublicProfilePage({
         <div className='w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both'>
           {links && links.length > 0 ? (
             links.map((link) => (
-              <a
+              <LinkButton
                 key={link.id}
-                href={`/${username}/${link.id}`}
-                target='_blank'
-                rel='noopener noreferrer'
+                href={`/${username}/${link.short_id ?? link.id}`}
+                title={link.title}
                 className='
                   group block w-full p-4 md:p-5 rounded-xl
                   bg-card border border-border
@@ -85,9 +85,7 @@ export default async function PublicProfilePage({
                   transition-all duration-200 ease-in-out
                   hover:-translate-y-0.5
                 '
-              >
-                {link.title}
-              </a>
+              />
             ))
           ) : (
             <div className='text-center p-8 rounded-xl bg-secondary/30 border border-border/50 border-dashed'>

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Header } from '@/components/header';
+import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import Link from 'next/link';
 import {
@@ -86,12 +87,12 @@ export default async function AppHomePage() {
   };
 
   return (
-    <div className='min-h-screen relative overflow-hidden bg-background'>
+    <div className='min-h-screen relative bg-background flex flex-col'>
       <BackgroundBlobs variant='subtle' />
 
       <Header variant='dashboard' user={userData} publicUrl={publicUrl} />
 
-      <main className='relative z-10 max-w-4xl mx-auto px-4 py-8 md:py-12'>
+      <main className='relative z-10 max-w-4xl mx-auto px-4 py-8 md:py-12 flex-1 w-full'>
         <div className='mb-8'>
           <h1 className='text-3xl font-bold tracking-tight'>
             Welcome back, {profile.display_name || profile.username}!
@@ -148,21 +149,7 @@ export default async function AppHomePage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className='py-6 border-t border-border/40 text-center text-xs text-muted-foreground relative z-10 bg-background/50 backdrop-blur-sm'>
-        <p>
-          © {new Date().getFullYear()} UKIT. Built by{' '}
-          <a
-            href='https://azmi-dev.vercel.app'
-            target='_blank'
-            rel='noopener noreferrer'
-            className='hover:text-primary transition-colors underline underline-offset-2'
-          >
-            Azmi
-          </a>
-          .
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }

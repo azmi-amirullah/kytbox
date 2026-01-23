@@ -121,7 +121,7 @@ const LinkItemContent = memo(function LinkItemContent({
       </div>
 
       {/* Stats */}
-      <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/50 text-secondary-foreground text-xs font-medium'>
+      <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
         <LuActivity className='w-3.5 h-3.5' />
         {link.clicks}
         <span className='opacity-70'>clicks</span>
@@ -255,11 +255,11 @@ export default function SortableLink({
       style={style}
       className={`
         group flex items-center gap-3 p-3 rounded-xl border
-        bg-card border-border transition-colors duration-200
+        bg-secondary/50 border-border transition-colors duration-200
         ${
           isDragging
             ? 'opacity-50 shadow-xl ring-1 ring-primary/20'
-            : 'hover:border-primary/20 hover:shadow-sm'
+            : 'hover:border-primary/20 hover:shadow-sm hover:bg-secondary/80'
         }
       `}
     >

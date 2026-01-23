@@ -45,26 +45,42 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 
 ### `links`
 
-| Column            | Type        | Notes                        |
-| :---------------- | :---------- | :--------------------------- |
-| `id`              | uuid        | PK                           |
-| `user_id`         | uuid        | FK -> `profiles.id`          |
-| `title`           | text        | Display text                 |
-| `url`             | text        | Destination URL              |
-| `sort_order`      | int         | For ordering links           |
-| `is_active`       | bool        | Toggle visibility            |
-| `clicks`          | int         | Default 0                    |
-| `last_clicked_at` | timestamptz | Nullable. Tracks last usage. |
-| `created_at`      | timestamptz |                              |
+| Column            | Type        | Notes                                              |
+| :---------------- | :---------- | :------------------------------------------------- |
+| `id`              | uuid        | PK                                                 |
+| `user_id`         | uuid        | FK -> `profiles.id`                                |
+| `title`           | text        | Display text                                       |
+| `url`             | text        | Destination URL                                    |
+| `sort_order`      | int         | For ordering links                                 |
+| `is_active`       | bool        | Toggle visibility                                  |
+| `clicks`          | int         | Default 0                                          |
+| `last_clicked_at` | timestamptz | Nullable. Tracks last usage.                       |
+| `created_at`      | timestamptz |                                                    |
+| `short_id`        | int         | Per-user sequential ID (1, 2, 3). Unique per user. |
 
-### Supabase RPC Function
+### `link_events` (Analytics)
+
+| Column       | Type        | Notes                     |
+| :----------- | :---------- | :------------------------ |
+| `id`         | uuid        | PK                        |
+| `link_id`    | uuid        | FK -> `links.id`          |
+| `created_at` | timestamptz | Event timestamp           |
+| `user_agent` | text        | Nullable                  |
+| `referer`    | text        | Nullable. Traffic source. |
+| `country`    | text        | Nullable. Future use.     |
+| `city`       | text        | Nullable. Future use.     |
+
+### Supabase RPC Functions
 
 - **`increment_link_click(link_id uuid)`**: Increments `clicks` and updates `last_clicked_at`
+- **`get_analytics_chart_data(p_link_ids uuid[], p_start_date timestamptz, p_bucket_interval text)`**: Aggregates clicks by time bucket (hour/day/all)
+- **`get_top_referers(p_link_ids uuid[], p_start_date timestamptz, p_limit int)`**: Returns top traffic sources
 
 ### Security (RLS)
 
 - **Profiles**: Public READ. INSERT/UPDATE for Owner only.
 - **Links**: Public READ (where `is_active = true`). All CRUD for Owner only.
+- **link_events**: Anonymous INSERT (for click tracking). READ via RPC only (owner's links).
 
 ## 4. Architecture & Routing
 
@@ -103,7 +119,11 @@ src/
 │   │   ├── bio/
 │   │   │   ├── page.tsx           # Bio dashboard
 │   │   │   ├── actions.ts         # Link CRUD actions
-│   │   │   └── components/        # Dashboard components
+│   │   │   ├── components/        # Dashboard components
+│   │   │   └── analytics/
+│   │   │       ├── page.tsx       # Analytics dashboard
+│   │   │       ├── actions.ts     # Analytics data fetching (RPC)
+│   │   │       └── components/    # Chart, filters
 │   │   └── settings/
 │   │       ├── page.tsx           # Account settings
 │   │       ├── SettingsForm.tsx   # Profile form
@@ -223,6 +243,56 @@ See `src/lib/username.ts` for full list.
 ✅ Live phone preview  
 ✅ Real-time username availability check  
 ✅ Platform shell with app switcher  
-✅ Dark/Light theme support
+✅ Dark/Light theme support  
+✅ Analytics dashboard at `/app/bio/analytics` (link clicks, date filtering, chart)
 
-📋 **Later**: Analytics dashboard, Custom themes, Social link icons, Username change cooldown (§7 ukit.md)
+## 8. Analytics Features (Implemented)
+
+### Dashboard (`/app/bio/analytics`)
+
+- **Charts**:
+  - **Lifetime View**: Shows monthly buckets starting from the first recorded click (dynamic start date).
+  - **Time Ranges**: 24h (hourly), 7 days (daily), 30 days (daily), Lifetime (monthly).
+  - **Click Activity**: Visualize trends over time with solid grid lines and instant-hover tooltips.
+
+- **Filters**:
+  - **By Link**: Dropdown sorted by user's custom order.
+  - **By Date**: Dropdown for time ranges (24h, 7d, 30d, Lifetime).
+  - **UX**: Filters are disabled (grayed out) while data is loading.
+  - **Lifetime Labels**: Dynamically shows "Month Year - Month Year" or single month if range is small.
+
+- **Stats**:
+  - **Total Clicks**: Aggregated count for selected period.
+  - **Top Source**: Most frequent referer (e.g., "instagram.com" or "Direct").
+  - **Average**: Average clicks per bucket (hour/day/month).
+  - **Top Links**: Table showing best performing links.
+
+- **Technical Implementation**:
+  - **Server-Side Aggregation**: All chart data is aggregated in PostgreSQL via RPC `get_analytics_chart_data`.
+  - **Dynamic Start Date**: Lifetime charts automatically detect the first click date to avoid showing empty historical months.
+  - **Optimized**: No client-side processing of raw events.
+
+## 9. Planned Features
+
+### Bio Page View Tracking (Priority)
+
+**Problem**: Current analytics only tracks individual link clicks (`/{username}/{linkId}`), but users share their bio page URL (`/{username}`). Top Source referer is useless without bio page view tracking.
+
+**Solution**: Track visits to `/{username}` to capture:
+
+- Total bio page views
+- Traffic sources (Instagram, Twitter, etc.)
+- Conversion rate (page views → link clicks)
+
+**Implementation Options**:
+
+1. **Edge Middleware**: Track in `proxy.ts` before page render
+2. **Client-side**: Use `useEffect` on public page mount
+3. **Database**: New `profile_views` table or event type in `link_events`
+
+### Other Future Features
+
+- Custom themes
+- Social link icons with auto-detection
+- Username change cooldown (§7 ukit.md)
+- Export analytics data

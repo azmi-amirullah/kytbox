@@ -12,7 +12,6 @@ import {
   LuTrash2,
   LuLoader,
   LuCheck,
-  LuArrowLeft,
   LuInfo,
 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
@@ -167,15 +166,6 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
 
   return (
     <div className='space-y-6'>
-      {/* Back Button */}
-      <button
-        onClick={() => router.back()}
-        className='inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer'
-      >
-        <LuArrowLeft className='w-4 h-4' />
-        Back
-      </button>
-
       {/* Avatar Section */}
       <Card>
         <CardHeader>
