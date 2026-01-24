@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { validateUsername } from '@/lib/username';
 
@@ -50,7 +50,9 @@ export async function updateProfile(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/', 'layout');
+  revalidateTag(`profile-${username}`, 'max');
+  revalidatePath('/app/settings', 'page');
+  revalidatePath('/app/bio', 'page');
   return { success: true };
 }
 
@@ -83,12 +85,12 @@ export async function uploadAvatar(formData: FormData) {
 
   const fileExt = file.name.split('.').pop();
   const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-  const filePath = `avatars/${fileName}`;
+  const filePath = fileName;
 
   // Delete old avatar if exists
   const { data: profile } = await supabase
     .from('profiles')
-    .select('avatar_url')
+    .select('username, avatar_url')
     .eq('id', user.id)
     .single();
 
@@ -96,7 +98,7 @@ export async function uploadAvatar(formData: FormData) {
     // Extract filename securely, handling potential query params
     const oldFileName = profile.avatar_url.split('/').pop()?.split('?')[0];
     if (oldFileName) {
-      await supabase.storage.from('avatars').remove([`avatars/${oldFileName}`]);
+      await supabase.storage.from('avatars').remove([oldFileName]);
     }
   }
 
@@ -124,7 +126,9 @@ export async function uploadAvatar(formData: FormData) {
     return { error: updateError.message };
   }
 
-  revalidatePath('/', 'layout');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  revalidatePath('/app/settings', 'page');
+  revalidatePath('/app/bio', 'page');
   return { success: true, url: urlData.publicUrl };
 }
 
@@ -142,7 +146,7 @@ export async function removeAvatar() {
   // Get current avatar
   const { data: profile } = await supabase
     .from('profiles')
-    .select('avatar_url')
+    .select('username, avatar_url')
     .eq('id', user.id)
     .single();
 
@@ -150,7 +154,7 @@ export async function removeAvatar() {
     // Delete from storage
     const fileName = profile.avatar_url.split('/').pop()?.split('?')[0];
     if (fileName) {
-      await supabase.storage.from('avatars').remove([`avatars/${fileName}`]);
+      await supabase.storage.from('avatars').remove([fileName]);
     }
   }
 
@@ -164,7 +168,9 @@ export async function removeAvatar() {
     return { error: error.message };
   }
 
-  revalidatePath('/', 'layout');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  revalidatePath('/app/settings', 'page');
+  revalidatePath('/app/bio', 'page');
   return { success: true };
 }
 

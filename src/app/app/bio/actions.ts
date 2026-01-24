@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 
 export async function addLink(formData: FormData) {
@@ -16,6 +16,13 @@ export async function addLink(formData: FormData) {
 
   const title = formData.get('title') as string;
   let url = formData.get('url') as string;
+
+  // Get profile for revalidation
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
 
   if (!/^https?:\/\//i.test(url)) {
     url = `https://${url}`;
@@ -72,7 +79,8 @@ export async function addLink(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio');
+  revalidatePath('/app/bio', 'page');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
 
@@ -121,7 +129,15 @@ export async function updateLink(linkId: string, formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio');
+  // Get profile for revalidation
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  revalidatePath('/app/bio', 'page');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
 
@@ -146,7 +162,15 @@ export async function deleteLink(linkId: string) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio');
+  // Get profile for revalidation
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  revalidatePath('/app/bio', 'page');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
 
@@ -171,7 +195,15 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio');
+  // Get profile for revalidation
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  revalidatePath('/app/bio', 'page');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
 
@@ -202,5 +234,14 @@ export async function reorderLinks(linkIds: string[]) {
     return { error: 'Failed to reorder some links' };
   }
 
+  // Get profile for revalidation
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  revalidatePath('/app/bio', 'page');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
