@@ -51,7 +51,7 @@ export default async function BioDashboardPage() {
 
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>
-      <BackgroundBlobs variant='subtle' />
+      <BackgroundBlobs />
 
       <Header variant='dashboard' user={userData} publicUrl={publicUrl} />
 

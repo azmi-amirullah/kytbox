@@ -22,7 +22,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
   const isLanding = variant === 'landing';
 
   return (
-    <header className='sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-md transition-all duration-200'>
+    <header className='sticky top-0 z-50 w-full border-b border-border bg-background/60 backdrop-blur-md transition-all duration-200'>
       <div className='max-w-7xl mx-auto px-4 h-16 flex items-center justify-between'>
         {isLanding ? (
           <BrandLogo className='cursor-default select-none' />

@@ -79,7 +79,7 @@ export default async function LandingPage() {
     : null;
 
   return (
-    <div className='bg-background relative min-h-screen flex flex-col'>
+    <div className='relative min-h-screen flex flex-col'>
       <BackgroundBlobs />
 
       <Header variant='landing' user={userData} />

@@ -1,4 +1,4 @@
-# Link-Base Documentation
+# UKIT Bio Documentation
 
 Focus: **Speed to functional product.** Avoid "graveyard" features (custom themes, payments, custom domains) in version 1.
 
@@ -9,7 +9,7 @@ Focus: **Speed to functional product.** Avoid "graveyard" features (custom theme
 - **Public Page**: `/{username}` (SEO optimized profile with dynamic metadata)
 - **Tracking**: Server-side click counting via Supabase RPC
 - **Settings**: Profile management (username, display name, bio, avatar upload/removal)
-- **Dashboard**: Stats bar (lifetime clicks, active/total links), live phone preview
+- **Dashboard**: Stats bar (lifetime clicks, active/total links), live phone preview, minimalist grid background
 
 ## 2. Tech Stack
 
@@ -17,7 +17,6 @@ Focus: **Speed to functional product.** Avoid "graveyard" features (custom theme
 - **Database**: **Supabase** (Postgres + Auth + Storage + RLS)
 - **Styling**: **Tailwind CSS v4** + **Shadcn/UI**
 - **Drag & Drop**: **@dnd-kit** (core, sortable, utilities)
-- **Animations**: **Framer Motion**
 - **Notifications**: **react-toastify**
 - **Deployment**: **Vercel**
 

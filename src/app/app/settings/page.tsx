@@ -40,7 +40,7 @@ export default async function SettingsPage() {
 
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>
-      <BackgroundBlobs variant='subtle' />
+      <BackgroundBlobs />
 
       <Header variant='dashboard' user={userData} publicUrl={publicUrl} />
 

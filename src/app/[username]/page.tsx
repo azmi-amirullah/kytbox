@@ -39,7 +39,7 @@ export default async function PublicProfilePage({
     .order('sort_order', { ascending: true });
 
   return (
-    <div className='min-h-screen bg-background w-full selection:bg-primary/10 selection:text-primary'>
+    <div className='min-h-screen w-full selection:bg-primary/10 selection:text-primary'>
       <div className='w-full max-w-[680px] mx-auto px-6 py-16 md:py-24 flex flex-col items-center'>
         {/* Profile Header */}
         <div className='text-center mb-12 w-full animate-in fade-in slide-in-from-bottom-3 duration-700'>
@@ -106,7 +106,7 @@ export default async function PublicProfilePage({
             className='inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors'
           >
             <span>Powered by</span>
-            <span className='font-bold text-foreground'>Link-Base</span>
+            <span className='font-bold text-foreground'>UKIT</span>
           </Link>
         </div>
       </div>

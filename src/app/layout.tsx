@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Link-Base',
-  description: 'Your personal Link-Base page',
+  title: 'UKIT',
+  description: 'Your personal UKIT page',
 };
 
 export default function RootLayout({

@@ -6,7 +6,7 @@ export function Footer({ variant = 'dashboard' }: FooterProps) {
   const isLanding = variant === 'landing';
 
   return (
-    <footer className='py-6 border-t border-border/40 text-center text-xs text-muted-foreground relative z-10 bg-background/50 backdrop-blur-sm'>
+    <footer className='py-6 border-t border-border text-center text-xs text-muted-foreground relative z-10 bg-background/50 backdrop-blur-sm'>
       <p>
         © {new Date().getFullYear()} UKIT.{' '}
         {isLanding ? (
