@@ -58,7 +58,6 @@ export default async function BioDashboardPage() {
       {/* Main Content */}
       <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8 flex-1 w-full'>
         <DashboardClient
-          key={links?.map((l) => l.id).join(',') ?? 'empty'}
           initialLinks={links ?? []}
           profile={profile}
           publicUrl={publicUrl}

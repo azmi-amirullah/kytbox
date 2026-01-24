@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { LinkButton } from './components/LinkButton';
 import { trackProfileView } from '@/lib/tracking';
 
+import { getProfileByUsername } from '@/lib/data-cache';
+
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>;
 }
@@ -15,20 +17,18 @@ export default async function PublicProfilePage({
   const { username } = await params;
   const supabase = await createClient();
 
-  // Get profile
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('username', username)
-    .single();
+  // Get profile (cached)
+  const profile = await getProfileByUsername(username);
 
-  if (profileError || !profile) {
+  if (!profile) {
     notFound();
   }
 
   // Fire and forget tracking
   // We pass profile.id. Since trackProfileView uses after(), it won't block rendering.
-  trackProfileView(profile.id);
+  // Fire and forget tracking
+  // We pass profile.id. Since trackProfileView uses after(), it won't block rendering.
+  await trackProfileView(profile.id);
 
   // Get active links
   const { data: links } = await supabase
@@ -116,13 +116,8 @@ export default async function PublicProfilePage({
 
 export async function generateMetadata({ params }: PublicProfilePageProps) {
   const { username } = await params;
-  const supabase = await createClient();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('display_name, bio')
-    .eq('username', username)
-    .single();
+  const profile = await getProfileByUsername(username);
 
   return {
     title: profile?.display_name || `@${username}`,

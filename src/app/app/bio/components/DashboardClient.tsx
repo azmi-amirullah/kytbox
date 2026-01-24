@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -42,6 +42,11 @@ export default function DashboardClient({
   // Initialize state from props. Server-side revalidation will provide fresh initialLinks
   // on navigation, and React's default behavior handles this correctly.
   const [links, setLinks] = useState<LinkType[]>(initialLinks);
+
+  // Sync state with props when server-side data changes (e.g. navigation)
+  useEffect(() => {
+    setLinks(initialLinks);
+  }, [initialLinks]);
 
   // Derived state
   const totalClicks = links.reduce((sum, link) => sum + link.clicks, 0);
