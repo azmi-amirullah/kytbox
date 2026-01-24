@@ -5,31 +5,64 @@
 
 // Reserved routes that cannot be used as usernames
 export const RESERVED_USERNAMES = [
+  // --- Platform Routes ---
+  'app',
+  'bio',
+  'settings',
+  'dashboard',
+  'analytics',
+  'list',
+  'track',
+  'id',
+
+  // --- Auth & Legal ---
   'login',
   'signup',
-  'pricing',
-  'about',
-  'help',
-  'support',
-  'app',
-  'id',
-  'admin',
-  'api',
-  'blog',
-  'terms',
-  'privacy',
-  'www',
-  // Auth routes
+  'signin',
+  'register',
   'auth',
   'callback',
   'update-password',
   'forgot-password',
-  // Future routes
-  'dashboard', // legacy, will redirect to /app
-  'settings',
-  'bio',
-  'list',
-  'track',
+  'terms',
+  'privacy',
+  'cookies',
+  'legal',
+  'compliance',
+
+  // --- Support & Official ---
+  'about',
+  'help',
+  'support',
+  'contact',
+  'faq',
+  'pricing',
+  'admin',
+  'ukit',
+  'official',
+  'verified',
+  'system',
+
+  // --- Technical & Assets ---
+  'api',
+  'www',
+  'blog',
+  'docs',
+  'status',
+  'health',
+  'robots.txt',
+  'sitemap',
+  'favicon.ico',
+  'assets',
+  'static',
+  '.well-known',
+  'security.txt',
+
+  // --- Future-Proofing ---
+  'explore',
+  'search',
+  'discover',
+  'notifications',
 ] as const;
 
 /**

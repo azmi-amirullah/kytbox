@@ -81,7 +81,7 @@ export default function AnalyticsClient() {
             </Link>
             <LuChevronRight className='w-3 h-3' />
             <Link
-              href='/app/bio'
+              href='/bio'
               className='hover:text-foreground transition-colors'
             >
               Bio
@@ -92,7 +92,7 @@ export default function AnalyticsClient() {
 
           <div className='flex items-center gap-4 mb-2'>
             <Button variant='ghost' size='icon' asChild className='-ml-2'>
-              <Link href='/app/bio'>
+              <Link href='/bio'>
                 <LuArrowLeft className='w-5 h-5' />
               </Link>
             </Button>

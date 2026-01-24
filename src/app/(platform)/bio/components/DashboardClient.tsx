@@ -76,7 +76,7 @@ export default function DashboardClient({
 
         {/* Stats Bar */}
         <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          <Link href='/app/bio/analytics' className='block group'>
+          <Link href='/bio/analytics' className='block group'>
             <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
               <div>
                 <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>
@@ -92,7 +92,7 @@ export default function DashboardClient({
             </div>
           </Link>
 
-          <Link href='/app/bio/analytics' className='block group'>
+          <Link href='/bio/analytics' className='block group'>
             <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
               <div>
                 <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>

@@ -59,7 +59,7 @@ export function UserNav({ user }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href='/app/settings'>
+          <Link href='/settings'>
             <DropdownMenuItem className='cursor-pointer'>
               <LuSettings className='mr-2 h-4 w-4' />
               Settings

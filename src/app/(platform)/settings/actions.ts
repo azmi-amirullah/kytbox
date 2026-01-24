@@ -51,8 +51,8 @@ export async function updateProfile(formData: FormData) {
   }
 
   revalidateTag(`profile-${username}`, 'max');
-  revalidatePath('/app/settings', 'page');
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/settings', 'page');
+  revalidatePath('/bio', 'page');
   return { success: true };
 }
 
@@ -127,8 +127,8 @@ export async function uploadAvatar(formData: FormData) {
   }
 
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
-  revalidatePath('/app/settings', 'page');
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/settings', 'page');
+  revalidatePath('/bio', 'page');
   return { success: true, url: urlData.publicUrl };
 }
 
@@ -169,8 +169,8 @@ export async function removeAvatar() {
   }
 
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
-  revalidatePath('/app/settings', 'page');
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/settings', 'page');
+  revalidatePath('/bio', 'page');
   return { success: true };
 }
 

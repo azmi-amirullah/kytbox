@@ -79,7 +79,7 @@ export async function addLink(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -136,7 +136,7 @@ export async function updateLink(linkId: string, formData: FormData) {
     .eq('id', user.id)
     .single();
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -169,7 +169,7 @@ export async function deleteLink(linkId: string) {
     .eq('id', user.id)
     .single();
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -202,7 +202,7 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
     .eq('id', user.id)
     .single();
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -241,7 +241,7 @@ export async function reorderLinks(linkIds: string[]) {
     .eq('id', user.id)
     .single();
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
