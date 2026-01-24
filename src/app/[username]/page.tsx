@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
 import { LinkButton } from './components/LinkButton';
+import { trackProfileView } from '@/lib/tracking';
 
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>;
@@ -24,6 +25,10 @@ export default async function PublicProfilePage({
   if (profileError || !profile) {
     notFound();
   }
+
+  // Fire and forget tracking
+  // We pass profile.id. Since trackProfileView uses after(), it won't block rendering.
+  trackProfileView(profile.id);
 
   // Get active links
   const { data: links } = await supabase

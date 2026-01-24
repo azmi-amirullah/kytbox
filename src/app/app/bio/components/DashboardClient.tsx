@@ -25,6 +25,7 @@ interface DashboardClientProps {
   initialLinks: LinkType[];
   profile: Profile;
   publicUrl: string;
+  totalViews: number;
 }
 
 /**
@@ -36,6 +37,7 @@ export default function DashboardClient({
   initialLinks,
   profile,
   publicUrl,
+  totalViews,
 }: DashboardClientProps) {
   // Initialize state from props. Server-side revalidation will provide fresh initialLinks
   // on navigation, and React's default behavior handles this correctly.
@@ -68,12 +70,28 @@ export default function DashboardClient({
         </div>
 
         {/* Stats Bar */}
-        <div className='grid grid-cols-3 gap-4'>
+        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
           <Link href='/app/bio/analytics' className='block group'>
             <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
               <div>
                 <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>
-                  Lifetime Clicks
+                  Lifetime Profile Views
+                </p>
+                <p className='text-2xl font-bold tracking-tight'>
+                  {totalViews}
+                </p>
+              </div>
+              <div className='p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform'>
+                <LuEye className='w-5 h-5' />
+              </div>
+            </div>
+          </Link>
+
+          <Link href='/app/bio/analytics' className='block group'>
+            <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
+              <div>
+                <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>
+                  Lifetime Link Clicks
                 </p>
                 <p className='text-2xl font-bold tracking-tight'>
                   {totalClicks}

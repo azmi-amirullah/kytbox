@@ -125,6 +125,47 @@ export interface Database {
           },
         ];
       };
+      profile_events: {
+        Row: {
+          id: string;
+          profile_id: string;
+          created_at: string;
+          user_agent: string | null;
+          country: string | null;
+          city: string | null;
+          referer: string | null;
+          device_type: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          created_at?: string;
+          user_agent?: string | null;
+          country?: string | null;
+          city?: string | null;
+          referer?: string | null;
+          device_type?: string | null;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string;
+          created_at?: string;
+          user_agent?: string | null;
+          country?: string | null;
+          city?: string | null;
+          referer?: string | null;
+          device_type?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'profile_events_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

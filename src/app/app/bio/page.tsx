@@ -43,6 +43,12 @@ export default async function BioDashboardPage() {
     display_name: profile.display_name,
   };
 
+  // Get total profile views
+  const { count: totalViews } = await supabase
+    .from('profile_events')
+    .select('*', { count: 'exact', head: true })
+    .eq('profile_id', profile.id);
+
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>
       <BackgroundBlobs variant='subtle' />
@@ -56,6 +62,7 @@ export default async function BioDashboardPage() {
           initialLinks={links ?? []}
           profile={profile}
           publicUrl={publicUrl}
+          totalViews={totalViews || 0}
         />
       </main>
 

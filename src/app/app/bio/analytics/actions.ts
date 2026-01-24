@@ -19,6 +19,8 @@ export interface TopLink {
 export interface AnalyticsData {
   chartData: ChartDataPoint[];
   totalClicks: number;
+  totalViews: number;
+  ctr: number;
   topLinks: TopLink[];
   topReferer: string | null;
   userLinks: { id: string; title: string }[];
@@ -39,6 +41,8 @@ export async function getAnalyticsData(
     return {
       chartData: [],
       totalClicks: 0,
+      totalViews: 0,
+      ctr: 0,
       topLinks: [],
       topReferer: null,
       userLinks: [],
@@ -56,6 +60,8 @@ export async function getAnalyticsData(
     return {
       chartData: [],
       totalClicks: 0,
+      totalViews: 0,
+      ctr: 0,
       topLinks: [],
       topReferer: null,
       userLinks: [],
@@ -72,6 +78,8 @@ export async function getAnalyticsData(
       return {
         chartData: [],
         totalClicks: 0,
+        totalViews: 0,
+        ctr: 0,
         topLinks: [],
         topReferer: null,
         userLinks,
@@ -153,7 +161,46 @@ export async function getAnalyticsData(
     startDate,
   );
 
-  return { chartData, totalClicks, topLinks, topReferer, userLinks };
+  // Get total profile views
+  const totalViews = await getTotalProfileViews(supabase, user.id, startDate);
+
+  // Calculate CTR
+  const ctr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
+
+  return {
+    chartData,
+    totalClicks,
+    totalViews,
+    ctr,
+    topLinks,
+    topReferer,
+    userLinks,
+  };
+}
+
+// Get total profile views in range
+async function getTotalProfileViews(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  profileId: string,
+  startDate: Date | null,
+): Promise<number> {
+  let query = supabase
+    .from('profile_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('profile_id', profileId);
+
+  if (startDate) {
+    query = query.gte('created_at', startDate.toISOString());
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.error('Error fetching profile views:', error);
+    return 0;
+  }
+
+  return count || 0;
 }
 
 // Optimized: Use PostgreSQL RPC for server-side aggregation

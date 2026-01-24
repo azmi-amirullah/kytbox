@@ -15,6 +15,8 @@ import {
   LuLink,
   LuChevronDown,
   LuGlobe,
+  LuEye,
+  LuPercent,
 } from 'react-icons/lu';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -58,6 +60,8 @@ export default function AnalyticsClient() {
   const isLoading = isPending || data === null;
 
   const totalClicks = data?.totalClicks || 0;
+  const totalViews = data?.totalViews || 0;
+  const ctr = data?.ctr || 0;
   const chartData = data?.chartData || [];
   const topLinks = data?.topLinks || [];
   const topReferer = data?.topReferer || 'Direct';
@@ -155,7 +159,18 @@ export default function AnalyticsClient() {
       {isLoading && (
         <div className='space-y-6'>
           {/* Stats Grid Skeleton */}
-          <div className='grid gap-4 md:grid-cols-3'>
+          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
+            <div className='p-6 bg-card rounded-xl border shadow-sm'>
+              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
+                <LuEye className='w-4 h-4' />
+                <span className='text-sm font-medium'>Total Profile Views</span>
+              </div>
+              <Skeleton className='h-8 w-16 mb-1' />
+              <p className='text-xs text-muted-foreground mt-1'>
+                In selected period
+              </p>
+            </div>
+
             <div className='p-6 bg-card rounded-xl border shadow-sm'>
               <div className='flex items-center gap-2 text-muted-foreground mb-2'>
                 <LuMousePointer2 className='w-4 h-4' />
@@ -164,6 +179,17 @@ export default function AnalyticsClient() {
               <Skeleton className='h-8 w-16 mb-1' />
               <p className='text-xs text-muted-foreground mt-1'>
                 In selected period
+              </p>
+            </div>
+
+            <div className='p-6 bg-card rounded-xl border shadow-sm'>
+              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
+                <LuPercent className='w-4 h-4' />
+                <span className='text-sm font-medium'>CTR</span>
+              </div>
+              <Skeleton className='h-8 w-16 mb-1' />
+              <p className='text-xs text-muted-foreground mt-1'>
+                Click-through rate
               </p>
             </div>
 
@@ -252,7 +278,18 @@ export default function AnalyticsClient() {
       {/* Stats Grid */}
       {!isLoading && (
         <>
-          <div className='grid gap-4 md:grid-cols-3'>
+          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
+            <div className='p-6 bg-card rounded-xl border shadow-sm'>
+              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
+                <LuEye className='w-4 h-4' />
+                <span className='text-sm font-medium'>Total Profile Views</span>
+              </div>
+              <div className='text-2xl font-bold'>{totalViews}</div>
+              <p className='text-xs text-muted-foreground mt-1'>
+                {range === 'lifetime' ? 'All time' : `In selected period`}
+              </p>
+            </div>
+
             <div className='p-6 bg-card rounded-xl border shadow-sm'>
               <div className='flex items-center gap-2 text-muted-foreground mb-2'>
                 <LuMousePointer2 className='w-4 h-4' />
@@ -261,6 +298,17 @@ export default function AnalyticsClient() {
               <div className='text-2xl font-bold'>{totalClicks}</div>
               <p className='text-xs text-muted-foreground mt-1'>
                 {range === 'lifetime' ? 'All time' : `In selected period`}
+              </p>
+            </div>
+
+            <div className='p-6 bg-card rounded-xl border shadow-sm'>
+              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
+                <LuPercent className='w-4 h-4' />
+                <span className='text-sm font-medium'>CTR</span>
+              </div>
+              <div className='text-2xl font-bold'>{ctr.toFixed(1)}%</div>
+              <p className='text-xs text-muted-foreground mt-1'>
+                Click-through rate
               </p>
             </div>
 

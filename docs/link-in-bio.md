@@ -70,6 +70,18 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 | `country`    | text        | Nullable. Future use.     |
 | `city`       | text        | Nullable. Future use.     |
 
+### `profile_events` (Page Views)
+
+| Column       | Type        | Notes                     |
+| :----------- | :---------- | :------------------------ |
+| `id`         | uuid        | PK                        |
+| `profile_id` | uuid        | FK -> `profiles.id`       |
+| `created_at` | timestamptz | Event timestamp           |
+| `user_agent` | text        | Nullable                  |
+| `referer`    | text        | Nullable. Traffic source. |
+| `country`    | text        | Nullable.                 |
+| `city`       | text        | Nullable.                 |
+
 ### Supabase RPC Functions
 
 - **`increment_link_click(link_id uuid)`**: Increments `clicks` and updates `last_clicked_at`
@@ -245,6 +257,7 @@ See `src/lib/username.ts` for full list.
 ✅ Platform shell with app switcher  
 ✅ Dark/Light theme support  
 ✅ Analytics dashboard at `/app/bio/analytics` (link clicks, date filtering, chart)
+✅ Bio Page View Tracking (Server-side via Supabase)
 
 ## 8. Analytics Features (Implemented)
 
@@ -274,21 +287,24 @@ See `src/lib/username.ts` for full list.
 
 ## 9. Planned Features
 
-### Bio Page View Tracking (Priority)
+### Social Link Icons (Priority)
 
-**Problem**: Current analytics only tracks individual link clicks (`/{username}/{linkId}`), but users share their bio page URL (`/{username}`). Top Source referer is useless without bio page view tracking.
+**Goal**: Automatically detect and display social icons (Instagram, Twitter, etc.) based on link URLs to improve visual appeal.
 
-**Solution**: Track visits to `/{username}` to capture:
+**Implementation**:
 
-- Total bio page views
-- Traffic sources (Instagram, Twitter, etc.)
-- Conversion rate (page views → link clicks)
+- Auto-detection logic in `LinkButton` or server-side.
+- Use `react-icons` for branding.
+- Fallback to specific generic icons (e.g. Email, Website).
 
-**Implementation Options**:
+### Custom Themes
 
-1. **Edge Middleware**: Track in `proxy.ts` before page render
-2. **Client-side**: Use `useEffect` on public page mount
-3. **Database**: New `profile_views` table or event type in `link_events`
+**Goal**: Allow users to customize the look of their Bio page.
+
+**Implementation**:
+
+- Pre-defined themes (Dark, Light, Gradient).
+- Button styles (Rounded, Square, Outline).
 
 ### Other Future Features
 
