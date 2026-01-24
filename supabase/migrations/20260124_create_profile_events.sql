@@ -17,14 +17,14 @@ create index if not exists idx_profile_events_created_at on profile_events(creat
 -- RLS Policies
 alter table profile_events enable row level security;
 
--- Allow anonymous inserts (anyone can view a profile and trigger an event)
-create policy "Allow anonymous inserts"
-  on profile_events
-  for insert
-  to anon, authenticated
-  with check (true);
+-- SECURITY UPDATE:
+-- We explicitly DROP the anonymous insert policy if it exists, as we have switched
+-- to using the Server-Side Secret Key for tracking events. This closes the spam vulnerability.
+drop policy if exists "Allow anonymous inserts" on profile_events;
 
 -- Allow users to read ONLY their own profile events (for analytics dashboard)
+drop policy if exists "Users can read own profile events" on profile_events;
+
 create policy "Users can read own profile events"
   on profile_events
   for select

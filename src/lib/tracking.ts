@@ -13,11 +13,19 @@ export async function trackProfileView(profileId: string) {
 
   // Offload DB write to after() so response isn't blocked
   after(async () => {
-    // We create a lightweight client without cookie handling for the background task
-    // This is safe because "profile_events" allows anonymous inserts via RLS
+    // We use the Secret Key (formerly Service Role Key) to bypass RLS.
+    // This allows us to remove the "Allow anonymous inserts" policy from the database,
+    // preventing public spam/fake analytics data.
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+      process.env.SUPABASE_SECRET_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      },
     );
 
     try {
