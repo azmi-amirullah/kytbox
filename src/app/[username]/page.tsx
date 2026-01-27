@@ -100,10 +100,10 @@ export default async function PublicProfilePage({
         </div>
 
         {/* Footer */}
-        <div className='mt-20 text-center opacity-40 hover:opacity-100 transition-opacity duration-300'>
+        <div className='mt-20 text-center'>
           <Link
             href='/'
-            className='inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors'
+            className='inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary/80 border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all shadow-xs'
           >
             <span>Powered by</span>
             <span className='font-bold text-foreground'>UKIT</span>

@@ -86,8 +86,11 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
           </div>
 
           {/* Footer */}
-          <div className='mt-8 text-center text-muted-foreground text-[10px]'>
-            <p>Powered by UKIT</p>
+          <div className='mt-20 text-center'>
+            <div className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/80 border border-border text-[11px] font-medium text-muted-foreground'>
+              <span>Powered by</span>
+              <span className='font-bold text-foreground'>UKIT</span>
+            </div>
           </div>
         </div>
       </div>
