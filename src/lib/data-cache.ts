@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createStaticClient } from '@/lib/supabase/server';
 
 /**
  * Get user profile by username.
@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 export const getProfileByUsername = (username: string) =>
   unstable_cache(
     async (username: string) => {
-      const supabase = await createClient();
+      const supabase = createStaticClient();
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -30,7 +30,7 @@ export const getProfileByUsername = (username: string) =>
 export const getProfileById = (userId: string) =>
   unstable_cache(
     async (userId: string) => {
-      const supabase = await createClient();
+      const supabase = createStaticClient();
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')

@@ -1,19 +1,11 @@
 'use server';
 
 import { revalidatePath, revalidateTag } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { validateUsername } from '@/lib/username';
 
 export async function updateProfile(formData: FormData) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Not authenticated' };
-  }
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
 
   const username = (formData.get('username') as string).toLowerCase().trim();
   const displayName = formData.get('displayName') as string;
@@ -51,21 +43,13 @@ export async function updateProfile(formData: FormData) {
   }
 
   revalidateTag(`profile-${username}`, 'max');
-  revalidatePath('/settings', 'page');
-  revalidatePath('/bio', 'page');
+  revalidatePath('/app/settings', 'page');
+  revalidatePath('/app/bio', 'page');
   return { success: true };
 }
 
 export async function uploadAvatar(formData: FormData) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Not authenticated' };
-  }
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   const file = formData.get('avatar') as File;
 
@@ -88,12 +72,6 @@ export async function uploadAvatar(formData: FormData) {
   const filePath = fileName;
 
   // Delete old avatar if exists
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username, avatar_url')
-    .eq('id', user.id)
-    .single();
-
   if (profile?.avatar_url) {
     // Extract filename securely, handling potential query params
     const oldFileName = profile.avatar_url.split('/').pop()?.split('?')[0];
@@ -127,28 +105,13 @@ export async function uploadAvatar(formData: FormData) {
   }
 
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
-  revalidatePath('/settings', 'page');
-  revalidatePath('/bio', 'page');
+  revalidatePath('/app/settings', 'page');
+  revalidatePath('/app/bio', 'page');
   return { success: true, url: urlData.publicUrl };
 }
 
 export async function removeAvatar() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Not authenticated' };
-  }
-
-  // Get current avatar
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username, avatar_url')
-    .eq('id', user.id)
-    .single();
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   if (profile?.avatar_url) {
     // Delete from storage
@@ -169,21 +132,13 @@ export async function removeAvatar() {
   }
 
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
-  revalidatePath('/settings', 'page');
-  revalidatePath('/bio', 'page');
+  revalidatePath('/app/settings', 'page');
+  revalidatePath('/app/bio', 'page');
   return { success: true };
 }
 
 export async function checkUsername(username: string) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { available: false, error: 'Not authenticated' };
-  }
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
 
   const safeUsername = username.toLowerCase().trim();
 

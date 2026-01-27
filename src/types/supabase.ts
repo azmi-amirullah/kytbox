@@ -195,6 +195,10 @@ export interface Database {
         Args: { p_user_id: string };
         Returns: number;
       };
+      reorder_links: {
+        Args: { p_link_ids: string[] };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

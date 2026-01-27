@@ -1,28 +1,13 @@
 'use server';
 
 import { revalidatePath, revalidateTag } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 
 export async function addLink(formData: FormData) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Not authenticated' };
-  }
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   const title = formData.get('title') as string;
   let url = formData.get('url') as string;
-
-  // Get profile for revalidation
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single();
 
   if (!/^https?:\/\//i.test(url)) {
     url = `https://${url}`;
@@ -79,21 +64,13 @@ export async function addLink(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/bio', 'page');
+  revalidatePath('/app/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
 
 export async function updateLink(linkId: string, formData: FormData) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Not authenticated' };
-  }
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   const title = formData.get('title') as string;
   let url = formData.get('url') as string;
@@ -129,28 +106,13 @@ export async function updateLink(linkId: string, formData: FormData) {
     return { error: error.message };
   }
 
-  // Get profile for revalidation
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single();
-
-  revalidatePath('/bio', 'page');
+  revalidatePath('/app/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
 
 export async function deleteLink(linkId: string) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Not authenticated' };
-  }
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   const { error } = await supabase
     .from('links')
@@ -162,28 +124,13 @@ export async function deleteLink(linkId: string) {
     return { error: error.message };
   }
 
-  // Get profile for revalidation
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single();
-
-  revalidatePath('/bio', 'page');
+  revalidatePath('/app/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
 
 export async function toggleLinkActive(linkId: string, isActive: boolean) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Not authenticated' };
-  }
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   const { error } = await supabase
     .from('links')
@@ -195,53 +142,25 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
     return { error: error.message };
   }
 
-  // Get profile for revalidation
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single();
-
-  revalidatePath('/bio', 'page');
+  revalidatePath('/app/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
 
 export async function reorderLinks(linkIds: string[]) {
-  const supabase = await createClient();
+  const { profile, supabase } = await getAuthenticatedUserAndProfile();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Update each link's sort_order atomically via RPC
+  const { error } = await supabase.rpc('reorder_links', {
+    p_link_ids: linkIds,
+  });
 
-  if (!user) {
-    return { error: 'Not authenticated' };
+  if (error) {
+    console.error('Failed to reorder links:', error);
+    return { error: 'Failed to reorder links' };
   }
 
-  // Update each link's sort_order based on its position in the array
-  const updates = linkIds.map((id, index) =>
-    supabase
-      .from('links')
-      .update({ sort_order: index })
-      .eq('id', id)
-      .eq('user_id', user.id),
-  );
-
-  const results = await Promise.all(updates);
-  const errors = results.filter((r) => r.error);
-
-  if (errors.length > 0) {
-    return { error: 'Failed to reorder some links' };
-  }
-
-  // Get profile for revalidation
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single();
-
-  revalidatePath('/bio', 'page');
+  revalidatePath('/app/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
