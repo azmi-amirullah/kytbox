@@ -257,8 +257,22 @@ See `src/lib/username.ts` for full list.
 ✅ Dark/Light theme support  
 ✅ Analytics dashboard at `/app/bio/analytics` (link clicks, date filtering, chart)
 ✅ Bio Page View Tracking (Server-side via Supabase)
+✅ Social Link Icons (Auto-detection with 20+ platforms)
 
-## 8. Analytics Features (Implemented)
+## 8. Social Link Icons (Implemented)
+
+**Goal**: Automatically detect and display social icons based on link URLs to improve visual appeal.
+
+**Implementation**:
+
+- **Auto-detection**: `social-icons.tsx` utility detects platform from URL hostname
+- **Supported Platforms**: Instagram, Twitter/X, Facebook, LinkedIn, GitHub, YouTube, TikTok, Spotify, Twitch, Discord, Telegram, WhatsApp, Snapchat, Pinterest, Medium, Reddit, Behance, Dribbble
+- **Special Protocols**: Email (`mailto:`), Phone (`tel:`), SMS (`sms:`)
+- **Fallback**: Generic globe icon for unrecognized links
+- **Icon Library**: Uses `react-icons` (Lucide + Font Awesome 6)
+- **Integration**: Icons appear in both public profile and live phone preview
+
+## 9. Analytics Features (Implemented)
 
 ### Dashboard (`/app/bio/analytics`)
 
@@ -284,17 +298,7 @@ See `src/lib/username.ts` for full list.
   - **Dynamic Start Date**: Lifetime charts automatically detect the first click date to avoid showing empty historical months.
   - **Optimized**: No client-side processing of raw events.
 
-## 9. Planned Features
-
-### Social Link Icons (Priority)
-
-**Goal**: Automatically detect and display social icons (Instagram, Twitter, etc.) based on link URLs to improve visual appeal.
-
-**Implementation**:
-
-- Auto-detection logic in `LinkButton` or server-side.
-- Use `react-icons` for branding.
-- Fallback to specific generic icons (e.g. Email, Website).
+## 10. Planned Features
 
 ### Custom Themes
 
@@ -307,7 +311,5 @@ See `src/lib/username.ts` for full list.
 
 ### Other Future Features
 
-- Custom themes
-- Social link icons with auto-detection
 - Username change cooldown (§7 ukit.md)
 - Export analytics data

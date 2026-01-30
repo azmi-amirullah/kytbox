@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import { getSocialIcon } from '@/lib/social-icons';
 
 interface LinkButtonProps {
   href: string;
   title: string;
+  url: string;
   className?: string;
 }
 
@@ -12,7 +14,7 @@ interface LinkButtonProps {
  * Client component that captures the original page referrer
  * and appends it to link clicks as ?ref= param for analytics.
  */
-export function LinkButton({ href, title, className }: LinkButtonProps) {
+export function LinkButton({ href, title, url, className }: LinkButtonProps) {
   // useMemo ensures we capture referrer once on mount, not on every render
   const finalHref = useMemo(() => {
     if (typeof document === 'undefined' || !document.referrer) {
@@ -42,7 +44,10 @@ export function LinkButton({ href, title, className }: LinkButtonProps) {
       rel='noopener noreferrer'
       className={className}
     >
-      {title}
+      <div className='flex items-center justify-center gap-3'>
+        {getSocialIcon(url, 'w-5 h-5 shrink-0')}
+        <span className='truncate'>{title}</span>
+      </div>
     </a>
   );
 }

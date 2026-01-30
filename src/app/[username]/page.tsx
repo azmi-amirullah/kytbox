@@ -81,6 +81,7 @@ export default async function PublicProfilePage({
                 key={link.id}
                 href={`/${username}/${link.short_id ?? link.id}`}
                 title={link.title}
+                url={link.url}
                 className='
                   group block w-full p-4 md:p-5 rounded-xl
                   bg-card border border-border

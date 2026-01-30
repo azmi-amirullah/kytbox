@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { getSocialIcon } from '@/lib/social-icons';
 
 interface PhonePreviewProps {
   profile: {
@@ -75,7 +76,10 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                     shadow-sm
                   '
                 >
-                  {link.title}
+                  <div className='flex items-center justify-center gap-2'>
+                    {getSocialIcon(link.url, 'w-4 h-4 shrink-0')}
+                    <span className='truncate'>{link.title}</span>
+                  </div>
                 </div>
               ))
             ) : (
