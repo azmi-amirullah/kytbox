@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { LuUser } from 'react-icons/lu';
+import { cn } from '@/lib/utils';
+
 import { getSocialIcon } from '@/lib/social-icons';
 
 interface PhonePreviewProps {
@@ -75,75 +76,152 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
           className={`relative w-full h-full rounded-[2.5rem] overflow-hidden overflow-y-auto scrollbar-hide transition-colors duration-500 ${selectedThemeClass}`}
         >
           <div className='px-4 pt-14 pb-8 flex flex-col items-center min-h-full'>
-            {/* Header Preview */}
-            <div className='relative w-16 h-16 rounded-full mb-3 flex items-center justify-center ring-2 ring-border/50 overflow-hidden bg-secondary/30 shadow-inner'>
-              {profile.avatar_url ? (
-                <Image
-                  src={profile.avatar_url}
-                  alt='Avatar'
-                  fill
-                  className='object-cover'
-                />
-              ) : (
-                <LuUser className='w-8 h-8 opacity-40' />
-              )}
-            </div>
-
-            <h2 className='text-sm font-bold truncate max-w-full px-2'>
-              {profile.display_name || profile.username || 'Your Name'}
-            </h2>
-
-            {profile.bio && (
-              <p className='text-[10px] opacity-70 mt-1 line-clamp-2 px-4 text-center leading-relaxed'>
-                {profile.bio}
-              </p>
-            )}
-
-            {/* Links Preview */}
-            <div className='w-full space-y-3 flex-1 mt-10'>
-              {activeLinks.length > 0 ? (
-                activeLinks.map((link) => (
-                  <div
-                    key={link.id}
-                    className={`
-                      block w-full p-3 text-center transition-all duration-300 text-[11px] font-medium border
-                      ${theme === 'default' ? `text-card-foreground ${selectedButtonClass}` : ''}
-                      ${theme !== 'default' && buttonStyle === 'default' ? (isDarkTheme ? `${shapeClasses[buttonShape]} bg-white/15 border-white/25 text-white shadow-lg shadow-black/20` : `${shapeClasses[buttonShape]} bg-black/5 border-black/10 text-neutral-900 shadow-sm`) : ''}
-                      ${theme !== 'default' && buttonStyle === 'outline' ? (isDarkTheme ? `${shapeClasses[buttonShape]} bg-transparent border-2 border-white/40 text-white shadow-none` : `${shapeClasses[buttonShape]} bg-transparent border-2 border-black/20 text-neutral-900 shadow-none`) : ''}
-                    `}
+            {/* Content Section */}
+            <div className='flex-1 w-full flex flex-col items-center'>
+              {/* Header Preview */}
+              <div
+                className={cn(
+                  'relative w-16 h-16 rounded-full mb-3 flex items-center justify-center ring-2 overflow-hidden shadow-sm backdrop-blur-sm',
+                  theme === 'default' ||
+                    theme === 'lavender' ||
+                    theme === 'latte'
+                    ? 'bg-black/5 ring-black/5'
+                    : 'bg-white/10 ring-white/20',
+                )}
+              >
+                {profile.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt='Avatar'
+                    fill
+                    className='object-cover'
+                  />
+                ) : (
+                  <span
+                    className={cn(
+                      'text-xl font-bold',
+                      theme === 'default' ||
+                        theme === 'lavender' ||
+                        theme === 'latte'
+                        ? 'text-neutral-900'
+                        : 'text-white',
+                    )}
                   >
-                    <div className='flex items-center justify-center gap-2'>
-                      {getSocialIcon(link.url, 'w-3.5 h-3.5 shrink-0')}
-                      <span className='truncate'>{link.title}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className='text-center text-[10px] text-muted-foreground opacity-50 italic'>
-                  Add links in the dashboard...
+                    {(profile.display_name || profile.username || '?')
+                      .charAt(0)
+                      .toUpperCase()}
+                  </span>
+                )}
+              </div>
+
+              <h2
+                className={cn(
+                  'text-base font-bold tracking-tight mb-1 truncate max-w-full px-2 text-center',
+                  theme === 'default' ||
+                    theme === 'lavender' ||
+                    theme === 'latte'
+                    ? 'text-neutral-900'
+                    : 'text-white',
+                )}
+              >
+                {profile.display_name || profile.username || 'Your Name'}
+              </h2>
+
+              {profile.bio && (
+                <p
+                  className={cn(
+                    'text-[10px] line-clamp-2 px-4 text-center leading-relaxed opacity-80',
+                    theme === 'default' ||
+                      theme === 'lavender' ||
+                      theme === 'latte'
+                      ? 'text-neutral-600'
+                      : 'text-white/80',
+                  )}
+                >
+                  {profile.bio}
                 </p>
               )}
+
+              {/* Links Preview */}
+              <div className='w-full space-y-3 mt-10 px-4'>
+                {activeLinks.length > 0 ? (
+                  activeLinks.map((link) => (
+                    <div
+                      key={link.id}
+                      className={cn(
+                        'block w-full p-2.5 text-center transition-all duration-300 text-[11px] font-medium border',
+                        theme === 'default' &&
+                          `bg-card border-border text-card-foreground shadow-xs ${selectedButtonClass}`,
+                        theme !== 'default' &&
+                          buttonStyle === 'default' &&
+                          (isDarkTheme
+                            ? `${shapeClasses[buttonShape]} bg-white/10 border-white/20 text-white`
+                            : `${shapeClasses[buttonShape]} bg-black/5 border-black/10 text-neutral-900`),
+                        theme !== 'default' &&
+                          buttonStyle === 'outline' &&
+                          (isDarkTheme
+                            ? `${shapeClasses[buttonShape]} bg-transparent border-white/30 text-white`
+                            : `${shapeClasses[buttonShape]} bg-transparent border-black/20 text-neutral-900`),
+                      )}
+                    >
+                      <div className='flex items-center justify-center gap-2'>
+                        {getSocialIcon(link.url, 'w-3 h-3 shrink-0')}
+                        <span className='truncate'>{link.title}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div
+                    className={cn(
+                      'text-center p-6 rounded-xl border border-dashed backdrop-blur-sm',
+                      theme === 'default' ||
+                        theme === 'lavender' ||
+                        theme === 'latte'
+                        ? 'bg-black/5 border-black/10'
+                        : 'bg-white/10 border-white/20',
+                    )}
+                  >
+                    <p
+                      className={cn(
+                        'text-[10px]',
+                        theme === 'default' ||
+                          theme === 'lavender' ||
+                          theme === 'latte'
+                          ? 'text-neutral-500'
+                          : 'text-white/60',
+                      )}
+                    >
+                      No links added yet
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Preview Footer */}
             <div className='mt-auto pt-8 pb-4 flex flex-col items-center'>
               <div
-                className={`
-                inline-flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all shadow-sm
-                ${
-                  theme === 'default'
+                className={cn(
+                  'inline-flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all shadow-sm',
+                  theme === 'default' ||
+                    theme === 'lavender' ||
+                    theme === 'latte'
                     ? 'bg-neutral-100 border-neutral-200 text-neutral-500'
-                    : isDarkTheme
-                      ? 'bg-white/10 border-white/20 text-white/70 backdrop-blur-md'
-                      : 'bg-black/5 border-black/10 text-neutral-900/40 backdrop-blur-md'
-                }
-              `}
+                    : 'bg-white/10 border-white/20 text-white/70 backdrop-blur-md',
+                )}
               >
                 <span className='text-[10px] font-bold tracking-wider'>
                   Powered by
                 </span>
                 <span
-                  className={`text-[10px] font-black tracking-wider ${theme === 'default' ? 'text-neutral-900' : isDarkTheme ? 'text-white' : 'text-neutral-900'}`}
+                  className={cn(
+                    'text-[10px] font-black tracking-wider',
+                    theme === 'default' ||
+                      theme === 'lavender' ||
+                      theme === 'latte'
+                      ? 'text-neutral-900'
+                      : 'text-white',
+                  )}
                 >
                   UKIT
                 </span>

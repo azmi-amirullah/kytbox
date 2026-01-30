@@ -76,91 +76,143 @@ export default async function PublicProfilePage({
         selectedThemeClass,
       )}
     >
-      <div className='w-full max-w-[680px] mx-auto px-6 py-16 md:py-24 flex flex-col items-center'>
-        {/* Profile Header */}
-        <div className='text-center mb-12 w-full animate-in fade-in slide-in-from-bottom-3 duration-700'>
-          <div className='relative inline-block mb-6'>
-            {profile.avatar_url ? (
-              <div className='relative w-28 h-28 md:w-32 md:h-32'>
-                <Image
-                  src={profile.avatar_url}
-                  alt={profile.display_name || profile.username}
-                  fill
-                  className='rounded-full object-cover ring-2 ring-border/50 shadow-sm'
-                  priority
-                />
-              </div>
-            ) : (
-              <div className='w-28 h-28 md:w-32 md:h-32 rounded-full bg-secondary/20 flex items-center justify-center text-foreground text-4xl font-semibold ring-2 ring-border/50 shadow-sm backdrop-blur-sm'>
-                {(profile.display_name || profile.username)
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
+      <div className='w-full max-w-[680px] mx-auto px-6 flex flex-col min-h-screen'>
+        {/* Content Section */}
+        <div className='flex-1 w-full pt-16 md:pt-24 pb-12 flex flex-col items-center'>
+          {/* Profile Header */}
+          <div className='text-center mb-12 w-full animate-in fade-in slide-in-from-bottom-3 duration-700'>
+            <div className='relative inline-block mb-6'>
+              {profile.avatar_url ? (
+                <div className='relative w-28 h-28 md:w-32 md:h-32'>
+                  <Image
+                    src={profile.avatar_url}
+                    alt={profile.display_name || profile.username}
+                    fill
+                    className={cn(
+                      'rounded-full object-cover shadow-sm ring-2',
+                      theme === 'default' ||
+                        theme === 'lavender' ||
+                        theme === 'latte'
+                        ? 'ring-black/5'
+                        : 'ring-white/20',
+                    )}
+                    priority
+                  />
+                </div>
+              ) : (
+                <div
+                  className={cn(
+                    'w-28 h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center text-4xl font-semibold shadow-sm backdrop-blur-sm ring-2',
+                    theme === 'default' ||
+                      theme === 'lavender' ||
+                      theme === 'latte'
+                      ? 'bg-black/5 text-neutral-900 ring-black/5'
+                      : 'bg-white/10 text-white ring-white/20',
+                  )}
+                >
+                  {(profile.display_name || profile.username)
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <h1
+              className={cn(
+                'text-3xl font-bold tracking-tight mb-3',
+                theme === 'default' || theme === 'lavender' || theme === 'latte'
+                  ? 'text-neutral-900'
+                  : 'text-white',
+              )}
+            >
+              {profile.display_name || profile.username}
+            </h1>
+            {profile.bio && (
+              <p
+                className={cn(
+                  'text-lg max-w-lg mx-auto leading-relaxed text-balance',
+                  theme === 'default' ||
+                    theme === 'lavender' ||
+                    theme === 'latte'
+                    ? 'text-neutral-600'
+                    : 'text-white/80',
+                )}
+              >
+                {profile.bio}
+              </p>
             )}
           </div>
 
-          <h1 className='text-3xl font-bold text-foreground tracking-tight mb-3'>
-            {profile.display_name || profile.username}
-          </h1>
-          {profile.bio && (
-            <p className='text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed text-balance'>
-              {profile.bio}
-            </p>
-          )}
-        </div>
+          {/* Links */}
+          <div className='w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both'>
+            {links && links.length > 0 ? (
+              links.map((link) => {
+                const buttonClasses =
+                  theme === 'default'
+                    ? cn(
+                        'group block w-full p-4 md:p-5 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5',
+                        'bg-card border border-border text-card-foreground shadow-xs hover:shadow-md hover:border-primary/20 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/50',
+                        shapeClass,
+                      )
+                    : cn(
+                        'group block w-full p-4 md:p-5 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5',
+                        'border backdrop-blur-sm shadow-none',
+                        shapeClass,
+                        buttonStyle === 'outline'
+                          ? isDarkTheme
+                            ? 'border-white/30 text-white hover:bg-white/10'
+                            : 'border-black/20 text-neutral-900 hover:bg-black/5'
+                          : isDarkTheme
+                            ? 'bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30'
+                            : 'bg-black/5 border-black/10 text-neutral-900 hover:bg-black/10 hover:border-black/20',
+                      );
 
-        {/* Links */}
-        <div className='w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both'>
-          {links && links.length > 0 ? (
-            links.map((link) => {
-              const buttonClasses =
-                theme === 'default'
-                  ? cn(
-                      'group block w-full p-4 md:p-5 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5',
-                      'bg-card border border-border text-card-foreground shadow-xs hover:shadow-md hover:border-primary/20 hover:bg-neutral-50/50 dark:hover:bg-neutral-900/50',
-                      shapeClass,
-                    )
-                  : cn(
-                      'group block w-full p-4 md:p-5 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5',
-                      'border backdrop-blur-sm shadow-none',
-                      shapeClass,
-                      buttonStyle === 'outline'
-                        ? isDarkTheme
-                          ? 'border-white/30 text-white hover:bg-white/10'
-                          : 'border-black/20 text-neutral-900 hover:bg-black/5'
-                        : isDarkTheme
-                          ? 'bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30'
-                          : 'bg-black/5 border-black/10 text-neutral-900 hover:bg-black/10 hover:border-black/20',
-                    );
-
-              return (
-                <LinkButton
-                  key={link.id}
-                  href={`/${username}/${link.short_id ?? link.id}`}
-                  title={link.title}
-                  url={link.url}
-                  className={buttonClasses}
-                />
-              );
-            })
-          ) : (
-            <div className='text-center p-8 rounded-xl bg-secondary/10 border border-border/20 border-dashed backdrop-blur-sm'>
-              <p className='text-muted-foreground'>No links added yet</p>
-            </div>
-          )}
+                return (
+                  <LinkButton
+                    key={link.id}
+                    href={`/${username}/${link.short_id ?? link.id}`}
+                    title={link.title}
+                    url={link.url}
+                    className={buttonClasses}
+                  />
+                );
+              })
+            ) : (
+              <div
+                className={cn(
+                  'text-center p-8 rounded-xl border border-dashed backdrop-blur-sm',
+                  theme === 'default' ||
+                    theme === 'lavender' ||
+                    theme === 'latte'
+                    ? 'bg-black/5 border-black/10'
+                    : 'bg-white/10 border-white/20',
+                )}
+              >
+                <p
+                  className={cn(
+                    theme === 'default' ||
+                      theme === 'lavender' ||
+                      theme === 'latte'
+                      ? 'text-neutral-500'
+                      : 'text-white/60',
+                  )}
+                >
+                  No links added yet
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
-        <div className='mt-20 text-center animate-in fade-in slide-in-from-bottom-5 duration-1000'>
+        <div className='mt-auto py-10 text-center animate-in fade-in slide-in-from-bottom-5 duration-1000'>
           <Link
             href='/'
             className={cn(
               'inline-flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all shadow-sm hover:scale-105 active:scale-95',
-              theme === 'default'
+              theme === 'default' || theme === 'lavender' || theme === 'latte'
                 ? 'bg-neutral-100 border-neutral-200 text-neutral-500 hover:bg-neutral-200'
-                : isDarkTheme
-                  ? 'bg-white/10 border-white/20 text-white/70 backdrop-blur-md hover:bg-white/20'
-                  : 'bg-black/5 border-black/10 text-neutral-900/40 backdrop-blur-md hover:bg-black/10',
+                : 'bg-white/10 border-white/20 text-white/70 backdrop-blur-md hover:bg-white/20',
             )}
           >
             <span className='text-xs font-bold tracking-wider'>Powered by</span>
