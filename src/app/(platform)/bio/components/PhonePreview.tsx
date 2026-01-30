@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { LuUser } from 'react-icons/lu';
 import { getSocialIcon } from '@/lib/social-icons';
 
 interface PhonePreviewProps {
@@ -9,6 +10,9 @@ interface PhonePreviewProps {
     display_name: string | null;
     avatar_url: string | null;
     bio: string | null;
+    theme_name?: string | null;
+    button_style?: string | null;
+    button_shape?: string | null;
   };
   links: {
     id: string;
@@ -22,81 +26,134 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
   // Filter only active links for the preview, just like real page
   const activeLinks = links.filter((l) => l.is_active);
 
+  const theme = profile?.theme_name || 'default';
+  const buttonShape = profile?.button_shape || 'rounded';
+  const buttonStyle = profile?.button_style || 'default';
+
+  const themeClasses: Record<string, string> = {
+    default: 'light forced-light bg-white text-neutral-900',
+    dark: 'dark forced-dark bg-neutral-950 text-white',
+    gradient:
+      'dark forced-dark bg-gradient-to-br from-indigo-600 via-purple-700 to-slate-950 text-white',
+    peach:
+      'dark forced-dark bg-gradient-to-br from-orange-400 via-rose-500 to-pink-600 text-white',
+    deepsea:
+      'dark forced-dark bg-gradient-to-br from-teal-500 via-blue-700 to-slate-900 text-white',
+    emerald:
+      'dark forced-dark bg-gradient-to-br from-emerald-500 via-green-700 to-teal-900 text-white',
+    lavender:
+      'light forced-light bg-gradient-to-br from-violet-200 via-purple-300 to-fuchsia-400 text-neutral-900',
+    latte:
+      'light forced-light bg-gradient-to-br from-orange-50 via-amber-50 to-stone-200 text-neutral-900',
+    cyber:
+      'dark forced-dark bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-950 text-white',
+  };
+
+  const isDarkTheme =
+    theme !== 'default' && theme !== 'lavender' && theme !== 'latte';
+
+  const selectedThemeClass = themeClasses[theme] || themeClasses.default;
+
+  const shapeClasses: Record<string, string> = {
+    rounded: 'rounded-xl',
+    square: 'rounded-none',
+  };
+
+  const styleClasses: Record<string, string> = {
+    default: 'bg-card border-border shadow-sm',
+    outline: 'bg-transparent border-2 border-current/20 shadow-none',
+  };
+
+  const selectedButtonClass = `${shapeClasses[buttonShape] || shapeClasses.rounded} ${styleClasses[buttonStyle] || styleClasses.default}`;
+
   return (
-    <div className='relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-900 border-14 rounded-[2.5rem] h-[600px] w-[300px] shadow-xl'>
-      {/* Phone Notch/Camera */}
-      <div className='w-[148px] h-[18px] bg-gray-800 top-0 rounded-b-2xl left-1/2 -translate-x-1/2 absolute z-20'></div>
-
-      {/* Side Buttons */}
-      <div className='h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[124px] rounded-l-lg'></div>
-      <div className='h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[178px] rounded-l-lg'></div>
-      <div className='h-[64px] w-[3px] bg-gray-800 absolute -right-[17px] top-[142px] rounded-r-lg'></div>
-
-      {/* Screen Content - Mimicking the public page structure */}
-      <div className='overflow-hidden rounded-4xl h-full w-full bg-background scrollbar-hide'>
-        <div className='h-full overflow-y-auto px-4 py-12 scrollbar-hide'>
-          {/* Profile Header */}
-          <div className='text-center mb-12'>
-            {profile.avatar_url ? (
-              <div className='relative w-20 h-20 mx-auto mb-3'>
+    <div className='relative w-full max-w-[320px] mx-auto group'>
+      {/* Phone Frame */}
+      <div className='relative aspect-9/19 w-full bg-neutral-900 rounded-[3rem] p-3 shadow-2xl ring-1 ring-white/10'>
+        {/* Inner Screen */}
+        <div
+          className={`relative w-full h-full rounded-[2.5rem] overflow-hidden overflow-y-auto scrollbar-hide transition-colors duration-500 ${selectedThemeClass}`}
+        >
+          <div className='px-4 pt-14 pb-8 flex flex-col items-center min-h-full'>
+            {/* Header Preview */}
+            <div className='relative w-16 h-16 rounded-full mb-3 flex items-center justify-center ring-2 ring-border/50 overflow-hidden bg-secondary/30 shadow-inner'>
+              {profile.avatar_url ? (
                 <Image
                   src={profile.avatar_url}
-                  alt={profile.display_name || profile.username}
+                  alt='Avatar'
                   fill
-                  className='rounded-full object-cover border-2 border-border'
+                  className='object-cover'
                 />
-              </div>
-            ) : (
-              <div className='w-20 h-20 rounded-full mx-auto mb-3 bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-2 border-border'>
-                {(profile.display_name || profile.username)
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
-            )}
-            <h1 className='text-xl font-bold text-foreground'>
-              {profile.display_name || profile.username}
-            </h1>
+              ) : (
+                <LuUser className='w-8 h-8 opacity-40' />
+              )}
+            </div>
+
+            <h2 className='text-sm font-bold truncate max-w-full px-2'>
+              {profile.display_name || profile.username || 'Your Name'}
+            </h2>
+
             {profile.bio && (
-              <p className='text-xs text-muted-foreground mt-2 max-w-[200px] mx-auto'>
+              <p className='text-[10px] opacity-70 mt-1 line-clamp-2 px-4 text-center leading-relaxed'>
                 {profile.bio}
               </p>
             )}
-          </div>
 
-          {/* Links */}
-          <div className='space-y-3'>
-            {activeLinks.length > 0 ? (
-              activeLinks.map((link) => (
-                <div
-                  key={link.id}
-                  className='
-                    block w-full p-3 rounded-lg text-center
-                    bg-card border border-border
-                    text-card-foreground text-sm font-medium
-                    shadow-sm
-                  '
-                >
-                  <div className='flex items-center justify-center gap-2'>
-                    {getSocialIcon(link.url, 'w-4 h-4 shrink-0')}
-                    <span className='truncate'>{link.title}</span>
+            {/* Links Preview */}
+            <div className='w-full space-y-3 flex-1 mt-10'>
+              {activeLinks.length > 0 ? (
+                activeLinks.map((link) => (
+                  <div
+                    key={link.id}
+                    className={`
+                      block w-full p-3 text-center transition-all duration-300 text-[11px] font-medium border
+                      ${theme === 'default' ? `text-card-foreground ${selectedButtonClass}` : ''}
+                      ${theme !== 'default' && buttonStyle === 'default' ? (isDarkTheme ? `${shapeClasses[buttonShape]} bg-white/15 border-white/25 text-white shadow-lg shadow-black/20` : `${shapeClasses[buttonShape]} bg-black/5 border-black/10 text-neutral-900 shadow-sm`) : ''}
+                      ${theme !== 'default' && buttonStyle === 'outline' ? (isDarkTheme ? `${shapeClasses[buttonShape]} bg-transparent border-2 border-white/40 text-white shadow-none` : `${shapeClasses[buttonShape]} bg-transparent border-2 border-black/20 text-neutral-900 shadow-none`) : ''}
+                    `}
+                  >
+                    <div className='flex items-center justify-center gap-2'>
+                      {getSocialIcon(link.url, 'w-3.5 h-3.5 shrink-0')}
+                      <span className='truncate'>{link.title}</span>
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className='text-center text-xs text-muted-foreground'>
-                No visible links
-              </p>
-            )}
-          </div>
+                ))
+              ) : (
+                <p className='text-center text-[10px] text-muted-foreground opacity-50 italic'>
+                  Add links in the dashboard...
+                </p>
+              )}
+            </div>
 
-          {/* Footer */}
-          <div className='mt-20 text-center'>
-            <div className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/80 border border-border text-[11px] font-medium text-muted-foreground'>
-              <span>Powered by</span>
-              <span className='font-bold text-foreground'>UKIT</span>
+            {/* Preview Footer */}
+            <div className='mt-auto pt-8 pb-4 flex flex-col items-center'>
+              <div
+                className={`
+                inline-flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all shadow-sm
+                ${
+                  theme === 'default'
+                    ? 'bg-neutral-100 border-neutral-200 text-neutral-500'
+                    : isDarkTheme
+                      ? 'bg-white/10 border-white/20 text-white/70 backdrop-blur-md'
+                      : 'bg-black/5 border-black/10 text-neutral-900/40 backdrop-blur-md'
+                }
+              `}
+              >
+                <span className='text-[10px] font-bold tracking-wider'>
+                  Powered by
+                </span>
+                <span
+                  className={`text-[10px] font-black tracking-wider ${theme === 'default' ? 'text-neutral-900' : isDarkTheme ? 'text-white' : 'text-neutral-900'}`}
+                >
+                  UKIT
+                </span>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Notch */}
+        <div className='absolute top-6 left-1/2 -translate-x-1/2 w-20 h-5 bg-neutral-900 rounded-full z-10' />
       </div>
     </div>
   );

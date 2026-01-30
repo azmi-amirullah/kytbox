@@ -20,6 +20,9 @@ export interface Database {
           display_name: string | null;
           bio: string | null;
           avatar_url: string | null;
+          theme_name: string | null;
+          button_style: string | null;
+          button_shape: string | null;
           created_at: string;
         };
         Insert: {
@@ -28,6 +31,9 @@ export interface Database {
           display_name?: string | null;
           bio?: string | null;
           avatar_url?: string | null;
+          theme_name?: string | null;
+          button_style?: string | null;
+          button_shape?: string | null;
           created_at?: string;
         };
         Update: {
@@ -36,6 +42,9 @@ export interface Database {
           display_name?: string | null;
           bio?: string | null;
           avatar_url?: string | null;
+          theme_name?: string | null;
+          button_style?: string | null;
+          button_shape?: string | null;
           created_at?: string;
         };
         Relationships: [];

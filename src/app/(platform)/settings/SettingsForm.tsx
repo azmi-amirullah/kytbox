@@ -39,6 +39,9 @@ interface Profile {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  theme_name: string | null;
+  button_style: string | null;
+  button_shape: string | null;
 }
 
 interface SettingsFormProps {

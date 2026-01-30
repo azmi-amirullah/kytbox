@@ -15,6 +15,7 @@ import {
 import LinkList from './LinkList';
 import LinkModal from './LinkModal';
 import PhonePreview from './PhonePreview';
+import AppearanceEditor from './AppearanceEditor';
 import { Button } from '@/components/ui/button';
 import type { Database } from '@/types/supabase';
 
@@ -42,6 +43,13 @@ export default function DashboardClient({
   // Initialize state from props. Server-side revalidation will provide fresh initialLinks
   // on navigation, and React's default behavior handles this correctly.
   const [links, setLinks] = useState<LinkType[]>(initialLinks);
+  const [themeName, setThemeName] = useState(profile.theme_name || 'default');
+  const [buttonStyle, setButtonStyle] = useState(
+    profile.button_style || 'default',
+  );
+  const [buttonShape, setButtonShape] = useState(
+    profile.button_shape || 'rounded',
+  );
 
   // Sync state with props when server-side data changes (e.g. navigation)
   useEffect(() => {
@@ -160,6 +168,18 @@ export default function DashboardClient({
               </div>
             </CardContent>
           </Card>
+
+          {/* Appearance Editor */}
+          <AppearanceEditor
+            initialTheme={profile.theme_name || 'default'}
+            initialButtonStyle={profile.button_style || 'default'}
+            initialButtonShape={profile.button_shape || 'rounded'}
+            onPreviewUpdate={(theme: string, style: string, shape: string) => {
+              setThemeName(theme);
+              setButtonStyle(style);
+              setButtonShape(shape);
+            }}
+          />
         </div>
       </div>
 
@@ -177,6 +197,9 @@ export default function DashboardClient({
               display_name: profile.display_name,
               avatar_url: profile.avatar_url,
               bio: profile.bio,
+              theme_name: themeName,
+              button_style: buttonStyle,
+              button_shape: buttonShape,
             }}
             links={links}
           />
@@ -191,6 +214,17 @@ export default function DashboardClient({
             </a>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Preview Button/Overlay (Optional, but let's keep it tidy) */}
+      <div className='lg:hidden fixed bottom-6 right-6 z-50'>
+        <Link
+          href={publicUrl}
+          target='_blank'
+          className='flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg font-bold text-sm'
+        >
+          <LuEye className='w-4 h-4' /> Preview
+        </Link>
       </div>
     </div>
   );

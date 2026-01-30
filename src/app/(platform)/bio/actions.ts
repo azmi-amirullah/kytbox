@@ -164,3 +164,30 @@ export async function reorderLinks(linkIds: string[]) {
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
+export async function updateAppearance(formData: FormData) {
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+
+  const themeName = formData.get('themeName') as string;
+  const buttonStyle = formData.get('buttonStyle') as string;
+  const buttonShape = formData.get('buttonShape') as string;
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      theme_name: themeName,
+      button_style: buttonStyle,
+      button_shape: buttonShape,
+    })
+    .eq('id', user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/app/bio', 'page');
+  if (profile) {
+    revalidateTag(`profile-${profile.username}`, 'max');
+    revalidatePath(`/${profile.username}`, 'page');
+  }
+  return { success: true };
+}
