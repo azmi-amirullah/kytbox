@@ -2,8 +2,14 @@
 
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-
 import { getSocialIcon } from '@/lib/social-icons';
+import {
+  getTheme,
+  getContainerClasses,
+  getShapeClass,
+  type ButtonStyle,
+  type ButtonShape,
+} from '@/lib/theme';
 
 interface PhonePreviewProps {
   profile: {
@@ -24,48 +30,34 @@ interface PhonePreviewProps {
 }
 
 export default function PhonePreview({ profile, links }: PhonePreviewProps) {
-  // Filter only active links for the preview, just like real page
   const activeLinks = links.filter((l) => l.is_active);
 
-  const theme = profile?.theme_name || 'default';
-  const buttonShape = profile?.button_shape || 'rounded';
-  const buttonStyle = profile?.button_style || 'default';
+  const theme = getTheme(profile?.theme_name);
+  const buttonShape = (profile?.button_shape || 'rounded') as ButtonShape;
+  const buttonStyle = (profile?.button_style || 'default') as ButtonStyle;
 
-  const themeClasses: Record<string, string> = {
-    default: 'light forced-light bg-white text-neutral-900',
-    dark: 'dark forced-dark bg-neutral-950 text-white',
-    gradient:
-      'dark forced-dark bg-gradient-to-br from-indigo-600 via-purple-700 to-slate-950 text-white',
-    peach:
-      'dark forced-dark bg-gradient-to-br from-orange-400 via-rose-500 to-pink-600 text-white',
-    deepsea:
-      'dark forced-dark bg-gradient-to-br from-teal-500 via-blue-700 to-slate-900 text-white',
-    emerald:
-      'dark forced-dark bg-gradient-to-br from-emerald-500 via-green-700 to-teal-900 text-white',
-    lavender:
-      'light forced-light bg-gradient-to-br from-violet-200 via-purple-300 to-fuchsia-400 text-neutral-900',
-    latte:
-      'light forced-light bg-gradient-to-br from-orange-50 via-amber-50 to-stone-200 text-neutral-900',
-    cyber:
-      'dark forced-dark bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-950 text-white',
+  const { colors } = theme;
+  const shapeClass = getShapeClass(buttonShape);
+
+  // Build button classes based on style
+  const getButtonClasses = () => {
+    if (buttonStyle === 'outline') {
+      return cn(
+        shapeClass,
+        'bg-transparent border-2',
+        colors.outlineBorder,
+        colors.outlineText,
+      );
+    }
+    return cn(
+      shapeClass,
+      colors.buttonBg,
+      'border',
+      colors.buttonBorder,
+      colors.buttonText,
+      'shadow-sm',
+    );
   };
-
-  const isDarkTheme =
-    theme !== 'default' && theme !== 'lavender' && theme !== 'latte';
-
-  const selectedThemeClass = themeClasses[theme] || themeClasses.default;
-
-  const shapeClasses: Record<string, string> = {
-    rounded: 'rounded-xl',
-    square: 'rounded-none',
-  };
-
-  const styleClasses: Record<string, string> = {
-    default: 'bg-card border-border shadow-sm',
-    outline: 'bg-transparent border-2 border-current/20 shadow-none',
-  };
-
-  const selectedButtonClass = `${shapeClasses[buttonShape] || shapeClasses.rounded} ${styleClasses[buttonStyle] || styleClasses.default}`;
 
   return (
     <div className='relative w-full max-w-[320px] mx-auto group'>
@@ -73,7 +65,10 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
       <div className='relative aspect-9/19 w-full bg-neutral-900 rounded-[3rem] p-3 shadow-2xl ring-1 ring-white/10'>
         {/* Inner Screen */}
         <div
-          className={`relative w-full h-full rounded-[2.5rem] overflow-hidden overflow-y-auto scrollbar-hide transition-colors duration-500 ${selectedThemeClass}`}
+          className={cn(
+            'relative w-full h-full rounded-[2.5rem] overflow-hidden overflow-y-auto scrollbar-hide transition-colors duration-500',
+            getContainerClasses(theme),
+          )}
         >
           <div className='px-4 pt-14 pb-8 flex flex-col items-center min-h-full'>
             {/* Content Section */}
@@ -82,11 +77,8 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
               <div
                 className={cn(
                   'relative w-16 h-16 rounded-full mb-3 flex items-center justify-center ring-2 overflow-hidden shadow-sm backdrop-blur-sm',
-                  theme === 'default' ||
-                    theme === 'lavender' ||
-                    theme === 'latte'
-                    ? 'bg-black/5 ring-black/5'
-                    : 'bg-white/10 ring-white/20',
+                  colors.elementBg,
+                  colors.elementRing,
                 )}
               >
                 {profile.avatar_url ? (
@@ -97,16 +89,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                     className='object-cover'
                   />
                 ) : (
-                  <span
-                    className={cn(
-                      'text-xl font-bold',
-                      theme === 'default' ||
-                        theme === 'lavender' ||
-                        theme === 'latte'
-                        ? 'text-neutral-900'
-                        : 'text-white',
-                    )}
-                  >
+                  <span className={cn('text-xl font-bold', colors.textPrimary)}>
                     {(profile.display_name || profile.username || '?')
                       .charAt(0)
                       .toUpperCase()}
@@ -117,11 +100,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
               <h2
                 className={cn(
                   'text-base font-bold tracking-tight mb-1 truncate max-w-full px-2 text-center',
-                  theme === 'default' ||
-                    theme === 'lavender' ||
-                    theme === 'latte'
-                    ? 'text-neutral-900'
-                    : 'text-white',
+                  colors.textPrimary,
                 )}
               >
                 {profile.display_name || profile.username || 'Your Name'}
@@ -131,11 +110,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                 <p
                   className={cn(
                     'text-[10px] line-clamp-2 px-4 text-center leading-relaxed opacity-80',
-                    theme === 'default' ||
-                      theme === 'lavender' ||
-                      theme === 'latte'
-                      ? 'text-neutral-600'
-                      : 'text-white/80',
+                    colors.textSecondary,
                   )}
                 >
                   {profile.bio}
@@ -150,18 +125,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                       key={link.id}
                       className={cn(
                         'block w-full p-2.5 text-center transition-all duration-300 text-[11px] font-medium border',
-                        theme === 'default' &&
-                          `bg-card border-border text-card-foreground shadow-xs ${selectedButtonClass}`,
-                        theme !== 'default' &&
-                          buttonStyle === 'default' &&
-                          (isDarkTheme
-                            ? `${shapeClasses[buttonShape]} bg-white/10 border-white/20 text-white`
-                            : `${shapeClasses[buttonShape]} bg-black/5 border-black/10 text-neutral-900`),
-                        theme !== 'default' &&
-                          buttonStyle === 'outline' &&
-                          (isDarkTheme
-                            ? `${shapeClasses[buttonShape]} bg-transparent border-white/30 text-white`
-                            : `${shapeClasses[buttonShape]} bg-transparent border-black/20 text-neutral-900`),
+                        getButtonClasses(),
                       )}
                     >
                       <div className='flex items-center justify-center gap-2'>
@@ -174,23 +138,11 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                   <div
                     className={cn(
                       'text-center p-6 rounded-xl border border-dashed backdrop-blur-sm',
-                      theme === 'default' ||
-                        theme === 'lavender' ||
-                        theme === 'latte'
-                        ? 'bg-black/5 border-black/10'
-                        : 'bg-white/10 border-white/20',
+                      colors.elementBg,
+                      colors.elementBorder,
                     )}
                   >
-                    <p
-                      className={cn(
-                        'text-[10px]',
-                        theme === 'default' ||
-                          theme === 'lavender' ||
-                          theme === 'latte'
-                          ? 'text-neutral-500'
-                          : 'text-white/60',
-                      )}
-                    >
+                    <p className={cn('text-[10px]', colors.textSecondary)}>
                       No links added yet
                     </p>
                   </div>
@@ -203,11 +155,9 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
               <div
                 className={cn(
                   'inline-flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all shadow-sm',
-                  theme === 'default' ||
-                    theme === 'lavender' ||
-                    theme === 'latte'
-                    ? 'bg-neutral-100 border-neutral-200 text-neutral-500'
-                    : 'bg-white/10 border-white/20 text-white/70 backdrop-blur-md',
+                  colors.footerBg,
+                  colors.footerBorder,
+                  colors.footerText,
                 )}
               >
                 <span className='text-[10px] font-bold tracking-wider'>
@@ -216,11 +166,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                 <span
                   className={cn(
                     'text-[10px] font-black tracking-wider',
-                    theme === 'default' ||
-                      theme === 'lavender' ||
-                      theme === 'latte'
-                      ? 'text-neutral-900'
-                      : 'text-white',
+                    colors.footerBrandText,
                   )}
                 >
                   UKIT

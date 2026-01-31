@@ -14,6 +14,8 @@ import {
 import { motion } from 'framer-motion';
 import { updateAppearance } from '../actions';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { THEME_LIST, type ButtonStyle, type ButtonShape } from '@/lib/theme';
 
 interface AppearanceEditorProps {
   initialTheme: string;
@@ -30,8 +32,12 @@ export default function AppearanceEditor({
 }: AppearanceEditorProps) {
   const router = useRouter();
   const [themeName, setThemeName] = useState(initialTheme);
-  const [buttonStyle, setButtonStyle] = useState(initialButtonStyle);
-  const [buttonShape, setButtonShape] = useState(initialButtonShape);
+  const [buttonStyle, setButtonStyle] = useState<ButtonStyle>(
+    (initialButtonStyle as ButtonStyle) || 'default',
+  );
+  const [buttonShape, setButtonShape] = useState<ButtonShape>(
+    (initialButtonShape as ButtonShape) || 'rounded',
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +47,10 @@ export default function AppearanceEditor({
       setThemeName(value);
       onPreviewUpdate(value, buttonStyle, buttonShape);
     } else if (type === 'style') {
-      setButtonStyle(value);
+      setButtonStyle(value as ButtonStyle);
       onPreviewUpdate(themeName, value, buttonShape);
     } else {
-      setButtonShape(value);
+      setButtonShape(value as ButtonShape);
       onPreviewUpdate(themeName, buttonStyle, value);
     }
   };
@@ -71,6 +77,14 @@ export default function AppearanceEditor({
     setIsLoading(false);
   }
 
+  // Get preview button class based on theme - uses centralized config
+  const getPreviewButtonClass = (themeId: string) => {
+    const theme = THEME_LIST.find((t) => t.id === themeId);
+    if (!theme) return 'bg-white/15 border-white/25 text-white';
+    const { colors } = theme;
+    return `${colors.buttonBg} ${colors.buttonBorder} ${colors.buttonText}`;
+  };
+
   return (
     <Card className='border-border bg-card shadow-sm'>
       <CardHeader>
@@ -89,81 +103,27 @@ export default function AppearanceEditor({
             Background Theme
           </Label>
           <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
-            {[
-              {
-                id: 'default',
-                name: 'Clean Light',
-                class: 'bg-background border-border text-foreground',
-              },
-              {
-                id: 'dark',
-                name: 'Deep Dark',
-                class: 'bg-neutral-950 border-neutral-800 text-white',
-              },
-              {
-                id: 'gradient',
-                name: 'Premium Glow',
-                class:
-                  'bg-gradient-to-br from-indigo-600 via-purple-700 to-slate-900 border-transparent text-white',
-              },
-              {
-                id: 'peach',
-                name: 'Peach Sunset',
-                class:
-                  'bg-gradient-to-br from-orange-400 via-rose-500 to-pink-600 border-transparent text-white',
-              },
-              {
-                id: 'deepsea',
-                name: 'Deep Sea',
-                class:
-                  'bg-gradient-to-br from-teal-500 via-blue-700 to-slate-900 border-transparent text-white',
-              },
-              {
-                id: 'emerald',
-                name: 'Emerald Lake',
-                class:
-                  'bg-gradient-to-br from-emerald-500 via-green-700 to-teal-900 border-transparent text-white',
-              },
-              {
-                id: 'lavender',
-                name: 'Soft Lavender',
-                class:
-                  'bg-gradient-to-br from-violet-200 via-purple-300 to-fuchsia-400 border-transparent text-neutral-800',
-              },
-              {
-                id: 'latte',
-                name: 'Creamy Latte',
-                class:
-                  'bg-gradient-to-br from-orange-50 via-amber-50 to-stone-200 border-transparent text-neutral-800',
-              },
-              {
-                id: 'cyber',
-                name: 'Cyber Violet',
-                class:
-                  'bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-950 border-transparent text-white',
-              },
-            ].map((theme) => (
+            {THEME_LIST.map((theme) => (
               <button
                 key={theme.id}
                 type='button'
                 onClick={() => handleUpdate('theme', theme.id)}
-                className={`
-                  relative flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all
-                  ${themeName === theme.id ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-border/50'}
-                  ${theme.class} shadow-sm group min-h-[100px]
-                `}
+                className={cn(
+                  'relative flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all shadow-sm group min-h-[100px]',
+                  theme.previewClass,
+                  themeName === theme.id
+                    ? 'border-border ring-2 ring-primary/20'
+                    : 'border-border hover:border-foreground/30',
+                )}
               >
                 <span className='text-[10px] font-bold uppercase tracking-tight mb-2 opacity-80'>
                   {theme.name}
                 </span>
                 <div
-                  className={`w-full h-8 rounded-lg flex items-center justify-center text-[9px] font-medium border ${
-                    theme.id === 'default'
-                      ? 'bg-card border-border text-card-foreground shadow-sm'
-                      : theme.id === 'lavender' || theme.id === 'latte'
-                        ? 'bg-black/5 border-black/10 text-neutral-900 shadow-sm'
-                        : 'bg-white/15 border-white/25 text-white shadow-lg shadow-black/20'
-                  }`}
+                  className={cn(
+                    'w-full h-8 rounded-lg flex items-center justify-center text-[9px] font-medium border',
+                    getPreviewButtonClass(theme.id),
+                  )}
                 >
                   Text
                 </div>
@@ -184,20 +144,33 @@ export default function AppearanceEditor({
           </Label>
           <div className='grid grid-cols-2 gap-3'>
             {[
-              { id: 'rounded', name: 'Rounded', radius: 'rounded-xl' },
-              { id: 'square', name: 'Square', radius: 'rounded-none' },
+              {
+                id: 'rounded' as ButtonShape,
+                name: 'Rounded',
+                radius: 'rounded-xl',
+              },
+              {
+                id: 'square' as ButtonShape,
+                name: 'Square',
+                radius: 'rounded-none',
+              },
             ].map((shape) => (
               <button
                 key={shape.id}
                 type='button'
                 onClick={() => handleUpdate('shape', shape.id)}
-                className={`
-                  relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all bg-secondary/10
-                  ${buttonShape === shape.id ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-border/50'}
-                `}
+                className={cn(
+                  'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all bg-secondary/10',
+                  buttonShape === shape.id
+                    ? 'border-border ring-2 ring-primary/20'
+                    : 'border-border hover:border-foreground/30',
+                )}
               >
                 <div
-                  className={`w-full py-2 px-3 text-[10px] font-bold text-center border bg-card text-card-foreground border-border ${shape.radius}`}
+                  className={cn(
+                    'w-full py-2 px-3 text-[10px] font-bold text-center border bg-card text-card-foreground border-border',
+                    shape.radius,
+                  )}
                 >
                   Shape
                 </div>
@@ -222,12 +195,12 @@ export default function AppearanceEditor({
           <div className='grid grid-cols-2 gap-4'>
             {[
               {
-                id: 'default',
+                id: 'default' as ButtonStyle,
                 name: 'Solid Fill',
                 class: 'bg-card border-border shadow-sm',
               },
               {
-                id: 'outline',
+                id: 'outline' as ButtonStyle,
                 name: 'Outline',
                 class: 'bg-transparent border-2 border-foreground/20',
               },
@@ -236,13 +209,18 @@ export default function AppearanceEditor({
                 key={style.id}
                 type='button'
                 onClick={() => handleUpdate('style', style.id)}
-                className={`
-                  relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all
-                  ${buttonStyle === style.id ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-transparent bg-secondary/10 hover:border-border/50'}
-                `}
+                className={cn(
+                  'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all',
+                  buttonStyle === style.id
+                    ? 'border-border ring-2 ring-primary/20 bg-primary/5'
+                    : 'border-border bg-secondary/10 hover:border-foreground/30',
+                )}
               >
                 <div
-                  className={`w-full py-2.5 px-3 text-[10px] font-bold text-center rounded-lg border flex items-center justify-center h-10 ${style.class}`}
+                  className={cn(
+                    'w-full py-2.5 px-3 text-[10px] font-bold text-center rounded-lg border flex items-center justify-center h-10',
+                    style.class,
+                  )}
                 >
                   Button
                 </div>

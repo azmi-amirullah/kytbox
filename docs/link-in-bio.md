@@ -298,18 +298,47 @@ See `src/lib/username.ts` for full list.
   - **Dynamic Start Date**: Lifetime charts automatically detect the first click date to avoid showing empty historical months.
   - **Optimized**: No client-side processing of raw events.
 
-## 10. Planned Features
+## 10. Theme System (Implemented)
 
-### Custom Themes
+**Goal**: Allow users to customize the look of their Bio page with pre-defined themes.
 
-**Goal**: Allow users to customize the look of their Bio page.
+### Available Themes
 
-**Implementation**:
+| Theme ID   | Name          | Type     |
+| :--------- | :------------ | :------- |
+| `default`  | Clean Light   | Solid    |
+| `dark`     | Deep Dark     | Solid    |
+| `gradient` | Cosmic Purple | Gradient |
+| `peach`    | Peach Sunset  | Gradient |
+| `deepsea`  | Deep Sea      | Gradient |
+| `emerald`  | Emerald Lake  | Gradient |
+| `lavender` | Soft Lavender | Gradient |
+| `latte`    | Creamy Latte  | Gradient |
+| `midnight` | Midnight Blue | Gradient |
+| `sunset`   | Sunset Gold   | Gradient |
+| `rosegold` | Rose Gold     | Gradient |
+| `ocean`    | Ocean Breeze  | Gradient |
+| `charcoal` | Charcoal      | Gradient |
 
-- Pre-defined themes (Dark, Light, Gradient).
-- Button styles (Rounded, Square, Outline).
+### Button Options
 
-### Other Future Features
+- **Shapes**: Rounded, Square
+- **Styles**: Solid Fill, Outline
+
+### Technical Implementation
+
+- **Centralized Config**: All themes defined in `src/lib/theme/theme.config.ts`
+- **Type-Safe**: TypeScript interfaces in `src/lib/theme/theme.types.ts`
+- **Utility Functions**: `getTheme()`, `getContainerClasses()`, `getButtonClasses()` in `src/lib/theme/theme.utils.ts`
+- **Theme Isolation**: Uses explicit Tailwind classes (not CSS variables) so public profiles render consistently regardless of visitor's system dark/light mode
+
+### Adding New Themes
+
+1. Add theme config to `THEMES` object in `theme.config.ts`
+2. Add theme ID to `ThemeId` union type in `theme.types.ts`
+
+## 11. Planned Features
 
 - Username change cooldown (§7 ukit.md)
 - Export analytics data
+- Custom user-defined themes (color picker UI)
