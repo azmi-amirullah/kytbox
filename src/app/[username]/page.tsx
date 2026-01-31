@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
 import {
   getTheme,
   getContainerClasses,
-  getShapeClass,
-  type ButtonStyle,
-  type ButtonShape,
+  getButtonClasses,
+  validateButtonStyle,
+  validateButtonShape,
 } from '@/lib/theme';
 
 interface PublicProfilePageProps {
@@ -46,36 +46,13 @@ export default async function PublicProfilePage({
     .order('sort_order', { ascending: true });
 
   const theme = getTheme(profile.theme_name);
-  const buttonStyle = (profile.button_style || 'default') as ButtonStyle;
-  const buttonShape = (profile.button_shape || 'rounded') as ButtonShape;
+  const buttonStyle = validateButtonStyle(profile.button_style);
+  const buttonShape = validateButtonShape(profile.button_shape);
 
   const { colors } = theme;
-  const shapeClass = getShapeClass(buttonShape);
-
-  // Build button classes based on style
-  const getButtonClasses = () => {
-    if (buttonStyle === 'outline') {
-      return cn(
-        'group block w-full p-4 md:p-5 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5',
-        'border-2 backdrop-blur-sm shadow-none',
-        shapeClass,
-        colors.outlineBorder,
-        colors.outlineText,
-        colors.outlineHoverBg,
-      );
-    }
-
-    return cn(
-      'group block w-full p-4 md:p-5 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5',
-      'border backdrop-blur-sm',
-      shapeClass,
-      colors.buttonBg,
-      colors.buttonBorder,
-      colors.buttonText,
-      colors.buttonHoverBg,
-      colors.buttonHoverBorder,
-    );
-  };
+  const buttonClasses = getButtonClasses(theme, buttonStyle, buttonShape, {
+    variant: 'full',
+  });
 
   return (
     <div
@@ -148,7 +125,7 @@ export default async function PublicProfilePage({
                   href={`/${username}/${link.short_id ?? link.id}`}
                   title={link.title}
                   url={link.url}
-                  className={getButtonClasses()}
+                  className={buttonClasses}
                 />
               ))
             ) : (

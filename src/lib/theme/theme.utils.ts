@@ -22,21 +22,56 @@ export function getContainerClasses(theme: ThemeConfig): string {
 }
 
 /**
- * Get button classes based on theme, style, and shape
+ * Validate and normalize button style from database value
+ */
+export function validateButtonStyle(
+  value: string | null | undefined,
+): ButtonStyle {
+  return value === 'outline' ? 'outline' : 'default';
+}
+
+/**
+ * Validate and normalize button shape from database value
+ */
+export function validateButtonShape(
+  value: string | null | undefined,
+): ButtonShape {
+  return value === 'square' ? 'square' : 'rounded';
+}
+
+export interface ButtonClassOptions {
+  /** 'preview' for dashboard preview, 'full' for public profile with animations */
+  variant?: 'preview' | 'full';
+}
+
+/**
+ * Get button classes based on theme, style, shape, and variant
  */
 export function getButtonClasses(
   theme: ThemeConfig,
   buttonStyle: ButtonStyle = 'default',
   buttonShape: ButtonShape = 'rounded',
+  options: ButtonClassOptions = {},
 ): string {
   const { colors } = theme;
+  const { variant = 'preview' } = options;
   const shapeClass = buttonShape === 'square' ? 'rounded-none' : 'rounded-xl';
 
+  // Base classes for full variant (public profile pages)
+  const fullBaseClasses =
+    variant === 'full'
+      ? 'block w-full p-4 md:p-5 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5 backdrop-blur-sm'
+      : '';
+
+  // Preview variant classes (dashboard phone preview)
+  const previewBaseClasses =
+    variant === 'preview' ? 'shadow-sm backdrop-blur-sm' : '';
+
   if (buttonStyle === 'outline') {
-    return `${shapeClass} bg-transparent border-2 ${colors.outlineBorder} ${colors.outlineText} ${colors.outlineHoverBg}`;
+    return `${fullBaseClasses} ${shapeClass} bg-transparent border-2 ${colors.outlineBorder} ${colors.outlineText} ${colors.outlineHoverBg}`.trim();
   }
 
-  return `${shapeClass} ${colors.buttonBg} border ${colors.buttonBorder} ${colors.buttonText} ${colors.buttonHoverBg} ${colors.buttonHoverBorder}`;
+  return `${fullBaseClasses} ${previewBaseClasses} ${shapeClass} ${colors.buttonBg} border ${colors.buttonBorder} ${colors.buttonText} ${colors.buttonHoverBg} ${colors.buttonHoverBorder}`.trim();
 }
 
 /**

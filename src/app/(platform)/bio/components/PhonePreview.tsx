@@ -6,9 +6,9 @@ import { getSocialIcon } from '@/lib/social-icons';
 import {
   getTheme,
   getContainerClasses,
-  getShapeClass,
-  type ButtonStyle,
-  type ButtonShape,
+  getButtonClasses,
+  validateButtonStyle,
+  validateButtonShape,
 } from '@/lib/theme';
 
 interface PhonePreviewProps {
@@ -33,31 +33,11 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
   const activeLinks = links.filter((l) => l.is_active);
 
   const theme = getTheme(profile?.theme_name);
-  const buttonShape = (profile?.button_shape || 'rounded') as ButtonShape;
-  const buttonStyle = (profile?.button_style || 'default') as ButtonStyle;
+  const buttonShape = validateButtonShape(profile?.button_shape);
+  const buttonStyle = validateButtonStyle(profile?.button_style);
 
   const { colors } = theme;
-  const shapeClass = getShapeClass(buttonShape);
-
-  // Build button classes based on style
-  const getButtonClasses = () => {
-    if (buttonStyle === 'outline') {
-      return cn(
-        shapeClass,
-        'bg-transparent border-2',
-        colors.outlineBorder,
-        colors.outlineText,
-      );
-    }
-    return cn(
-      shapeClass,
-      colors.buttonBg,
-      'border',
-      colors.buttonBorder,
-      colors.buttonText,
-      'shadow-sm',
-    );
-  };
+  const buttonClasses = getButtonClasses(theme, buttonStyle, buttonShape);
 
   return (
     <div className='relative w-full max-w-[320px] mx-auto group'>
@@ -125,7 +105,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                       key={link.id}
                       className={cn(
                         'block w-full p-2.5 text-center transition-all duration-300 text-[11px] font-medium border',
-                        getButtonClasses(),
+                        buttonClasses,
                       )}
                     >
                       <div className='flex items-center justify-center gap-2'>
