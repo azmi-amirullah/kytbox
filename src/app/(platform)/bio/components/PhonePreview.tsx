@@ -67,6 +67,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                     alt='Avatar'
                     fill
                     className='object-cover'
+                    priority
                   />
                 ) : (
                   <span className={cn('text-xl font-bold', colors.textPrimary)}>

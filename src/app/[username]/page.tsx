@@ -65,7 +65,7 @@ export default async function PublicProfilePage({
         {/* Content Section */}
         <div className='flex-1 w-full pt-16 md:pt-24 pb-12 flex flex-col items-center'>
           {/* Profile Header */}
-          <div className='text-center mb-12 w-full animate-in fade-in slide-in-from-bottom-3 duration-700'>
+          <div className='text-center mb-12 w-full'>
             <div className='relative inline-block mb-6'>
               {profile.avatar_url ? (
                 <div className='relative w-28 h-28 md:w-32 md:h-32'>
@@ -143,7 +143,7 @@ export default async function PublicProfilePage({
         </div>
 
         {/* Footer */}
-        <div className='mt-auto py-10 text-center animate-in fade-in slide-in-from-bottom-5 duration-1000'>
+        <div className='mt-auto py-10 text-center'>
           <Link
             href='/'
             className={cn(
