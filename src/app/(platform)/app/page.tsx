@@ -10,6 +10,7 @@ import {
   LuCar,
   LuSearch,
   LuArrowRight,
+  LuWallet,
 } from 'react-icons/lu';
 
 // UKIT Apps configuration
@@ -22,6 +23,15 @@ const UKIT_APPS = [
     icon: LuLink2,
     status: 'active' as const,
     color: 'bg-primary/10 text-primary',
+  },
+  {
+    id: 'cashflow',
+    name: 'Cashflow',
+    description: 'Track income & expenses',
+    href: '/cashflow',
+    icon: LuWallet,
+    status: 'active' as const,
+    color: 'bg-emerald-500/10 text-emerald-600',
   },
   {
     id: 'list',

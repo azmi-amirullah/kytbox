@@ -23,6 +23,7 @@ export interface Database {
           theme_name: string | null;
           button_style: string | null;
           button_shape: string | null;
+          default_currency: string | null;
           created_at: string;
         };
         Insert: {
@@ -34,6 +35,7 @@ export interface Database {
           theme_name?: string | null;
           button_style?: string | null;
           button_shape?: string | null;
+          default_currency?: string | null;
           created_at?: string;
         };
         Update: {
@@ -45,6 +47,7 @@ export interface Database {
           theme_name?: string | null;
           button_style?: string | null;
           button_shape?: string | null;
+          default_currency?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -175,6 +178,73 @@ export interface Database {
           },
         ];
       };
+      cashflows: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cashflows_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      cashflow_entries: {
+        Row: {
+          id: string;
+          cashflow_id: string;
+          description: string;
+          amount: number;
+          type: 'income' | 'expense';
+          date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cashflow_id: string;
+          description: string;
+          amount: number;
+          type: 'income' | 'expense';
+          date?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          cashflow_id?: string;
+          description?: string;
+          amount?: number;
+          type?: 'income' | 'expense';
+          date?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cashflow_entries_cashflow_id_fkey';
+            columns: ['cashflow_id'];
+            isOneToOne: false;
+            referencedRelation: 'cashflows';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -221,7 +291,18 @@ export interface Database {
 // Helper types for easier access
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Link = Database['public']['Tables']['links']['Row'];
+export type Cashflow = Database['public']['Tables']['cashflows']['Row'];
+export type CashflowEntry =
+  Database['public']['Tables']['cashflow_entries']['Row'];
 export type InsertProfile = Database['public']['Tables']['profiles']['Insert'];
 export type InsertLink = Database['public']['Tables']['links']['Insert'];
+export type InsertCashflow =
+  Database['public']['Tables']['cashflows']['Insert'];
+export type InsertCashflowEntry =
+  Database['public']['Tables']['cashflow_entries']['Insert'];
 export type UpdateProfile = Database['public']['Tables']['profiles']['Update'];
 export type UpdateLink = Database['public']['Tables']['links']['Update'];
+export type UpdateCashflow =
+  Database['public']['Tables']['cashflows']['Update'];
+export type UpdateCashflowEntry =
+  Database['public']['Tables']['cashflow_entries']['Update'];

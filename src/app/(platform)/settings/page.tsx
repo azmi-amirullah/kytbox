@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import SettingsForm from './SettingsForm';
+import { BackButton } from './BackButton';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { LuChevronRight, LuArrowLeft } from 'react-icons/lu';
+import { LuChevronRight } from 'react-icons/lu';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -58,11 +58,7 @@ export default async function SettingsPage() {
           </nav>
 
           <div className='flex items-center gap-4 mb-2'>
-            <Button variant='ghost' size='icon' asChild className='-ml-2'>
-              <Link href='/app'>
-                <LuArrowLeft className='w-5 h-5' />
-              </Link>
-            </Button>
+            <BackButton />
             <h1 className='text-3xl font-bold tracking-tight'>
               Account Settings
             </h1>

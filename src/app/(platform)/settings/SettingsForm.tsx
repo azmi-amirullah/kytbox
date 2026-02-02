@@ -13,6 +13,7 @@ import {
   LuLoader,
   LuCheck,
   LuInfo,
+  LuChevronsUpDown,
 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,21 @@ import {
   checkUsername,
 } from './actions';
 import { getAvatarUrl } from '@/lib/avatar';
+import { CURRENCIES, DEFAULT_CURRENCY, getCurrency } from '@/lib/currency';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 interface Profile {
   id: string;
@@ -42,6 +58,7 @@ interface Profile {
   theme_name: string | null;
   button_style: string | null;
   button_shape: string | null;
+  default_currency: string | null;
 }
 
 interface SettingsFormProps {
@@ -57,11 +74,15 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
   const [displayName, setDisplayName] = useState(profile.display_name || '');
   const [bio, setBio] = useState(profile.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
+  const [currency, setCurrency] = useState(
+    profile.default_currency || DEFAULT_CURRENCY,
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
 
   // Username availability
   const [usernameStatus, setUsernameStatus] = useState<
@@ -115,6 +136,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
     formData.append('username', username);
     formData.append('displayName', displayName);
     formData.append('bio', bio);
+    formData.append('currency', currency);
 
     const result = await updateProfile(formData);
 
@@ -344,6 +366,62 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
               </p>
             </div>
 
+            {/* Preferences */}
+            <div className='space-y-2 pt-4 border-t'>
+              <Label htmlFor='currency'>Default Currency</Label>
+              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant='outline'
+                    role='combobox'
+                    aria-expanded={currencyOpen}
+                    className='w-full justify-between font-normal'
+                  >
+                    {currency
+                      ? `${getCurrency(currency).symbol} • ${currency} - ${getCurrency(currency).name}`
+                      : 'Select currency...'}
+                    <LuChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className='w-full p-0' align='start'>
+                  <Command>
+                    <CommandInput placeholder='Search currency...' />
+                    <CommandList>
+                      <CommandEmpty>No currency found.</CommandEmpty>
+                      <CommandGroup>
+                        {CURRENCIES.map((cur) => (
+                          <CommandItem
+                            key={cur.code}
+                            value={`${cur.code} ${cur.name}`}
+                            onSelect={() => {
+                              setCurrency(cur.code);
+                              setCurrencyOpen(false);
+                            }}
+                          >
+                            <LuCheck
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                currency === cur.code
+                                  ? 'opacity-100'
+                                  : 'opacity-0',
+                              )}
+                            />
+                            <span className='font-mono text-muted-foreground mr-2'>
+                              {cur.symbol} •
+                            </span>
+                            {cur.code} - {cur.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <p className='text-xs text-muted-foreground'>
+                Used for displaying amounts in Cashflow app
+              </p>
+            </div>
+
             {/* Error/Success Messages */}
             {error && (
               <motion.div
@@ -362,7 +440,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
                 className='p-3 rounded-md bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm text-center flex items-center justify-center gap-2'
               >
                 <LuCheck className='w-4 h-4' />
-                Profile updated successfully
+                Settings saved successfully
               </motion.div>
             )}
 

@@ -10,6 +10,7 @@ export async function updateProfile(formData: FormData) {
   const username = (formData.get('username') as string).toLowerCase().trim();
   const displayName = formData.get('displayName') as string;
   const bio = formData.get('bio') as string;
+  const currency = formData.get('currency') as string | null;
 
   // Validate username format using UKIT spec
   const validation = validateUsername(username);
@@ -35,6 +36,7 @@ export async function updateProfile(formData: FormData) {
       username,
       display_name: displayName,
       bio,
+      ...(currency && { default_currency: currency }),
     })
     .eq('id', user.id);
 
@@ -45,6 +47,7 @@ export async function updateProfile(formData: FormData) {
   revalidateTag(`profile-${username}`, 'max');
   revalidatePath('/app/settings', 'page');
   revalidatePath('/app/bio', 'page');
+  revalidatePath('/app/cashflow', 'page');
   return { success: true };
 }
 
