@@ -88,42 +88,62 @@ export default function CashflowList({
           </Button>
         </div>
       ) : (
-        <div className='grid gap-3'>
+        <div className='grid gap-4'>
           {cashflows.map((cashflow) => (
             <Link
               key={cashflow.id}
               href={`/cashflow/${cashflow.id}`}
-              className='group bg-card border rounded-xl p-4 hover:border-primary/40 hover:shadow-md transition-all'
+              className='group relative bg-card border rounded-2xl p-4 sm:p-5 hover:border-primary/40 hover:shadow-lg transition-all active:scale-[0.99]'
             >
-              <div className='flex items-center justify-between'>
+              <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
                 <div className='flex items-center gap-4'>
-                  <div className='p-2.5 rounded-lg bg-emerald-500/10'>
-                    <LuWallet className='w-5 h-5 text-emerald-600' />
+                  <div className='p-3 rounded-xl bg-emerald-500/10 text-emerald-600'>
+                    <LuWallet className='w-6 h-6' />
                   </div>
-                  <div>
-                    <h2 className='font-semibold text-lg group-hover:text-primary transition-colors'>
+                  <div className='min-w-0'>
+                    <h2 className='font-bold text-lg sm:text-xl group-hover:text-primary transition-colors truncate'>
                       {cashflow.title}
                     </h2>
-                    <div className='flex gap-3 mt-0.5 text-sm text-muted-foreground'>
-                      <span>{cashflow.entryCount} entries</span>
-                      <span>•</span>
-                      <span className='text-green-600'>
+                    <p className='text-xs sm:text-sm text-muted-foreground font-medium'>
+                      {cashflow.entryCount} transactions
+                    </p>
+                  </div>
+                </div>
+
+                <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8'>
+                  <div className='grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 pt-3 sm:pt-0 border-t sm:border-0'>
+                    <div className='flex flex-col sm:items-end'>
+                      <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider'>
+                        Income
+                      </span>
+                      <span className='text-sm sm:text-base font-semibold text-green-600'>
                         +{formatCurrencyCompact(cashflow.income, currency)}
                       </span>
-                      <span className='text-red-600'>
+                    </div>
+                    <div className='flex flex-col sm:items-end'>
+                      <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider'>
+                        Expense
+                      </span>
+                      <span className='text-sm sm:text-base font-semibold text-red-600'>
                         -{formatCurrencyCompact(cashflow.expense, currency)}
                       </span>
                     </div>
                   </div>
-                </div>
-                <div className='flex items-center gap-3'>
-                  <span
-                    className={`font-semibold ${cashflow.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                  >
-                    {cashflow.balance >= 0 ? '+' : ''}
-                    {formatCurrencyCompact(cashflow.balance, currency)}
-                  </span>
-                  <LuChevronRight className='w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all' />
+
+                  <div className='flex items-center justify-between sm:justify-end gap-4 p-3 sm:p-0 rounded-xl bg-muted/30 sm:bg-transparent'>
+                    <div className='flex flex-col sm:items-end'>
+                      <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider sm:hidden'>
+                        Balance
+                      </span>
+                      <span
+                        className={`text-lg sm:text-xl font-black tracking-tight ${cashflow.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {cashflow.balance >= 0 ? '+' : ''}
+                        {formatCurrencyCompact(cashflow.balance, currency)}
+                      </span>
+                    </div>
+                    <LuChevronRight className='w-5 h-5 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-1 transition-all' />
+                  </div>
                 </div>
               </div>
             </Link>
