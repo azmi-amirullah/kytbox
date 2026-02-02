@@ -65,7 +65,7 @@ export default async function PublicProfilePage({
         {/* Content Section */}
         <div className='flex-1 w-full pt-16 md:pt-24 pb-12 flex flex-col items-center'>
           {/* Profile Header */}
-          <div className='text-center mb-12 w-full'>
+          <div className='text-center mb-12 w-full animate-in fade-in zoom-in-95 duration-700 fill-mode-both'>
             <div className='relative inline-block mb-6'>
               {profile.avatar_url ? (
                 <div className='relative w-28 h-28 md:w-32 md:h-32'>
@@ -117,15 +117,19 @@ export default async function PublicProfilePage({
           </div>
 
           {/* Links */}
-          <div className='w-full space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both'>
+          <div className='w-full space-y-4'>
             {links && links.length > 0 ? (
-              links.map((link) => (
+              links.map((link, index) => (
                 <LinkButton
                   key={link.id}
                   href={`/${username}/${link.short_id ?? link.id}`}
                   title={link.title}
                   url={link.url}
-                  className={buttonClasses}
+                  className={cn(
+                    buttonClasses,
+                    'animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both',
+                  )}
+                  style={{ animationDelay: `${index * 100}ms` }}
                 />
               ))
             ) : (
