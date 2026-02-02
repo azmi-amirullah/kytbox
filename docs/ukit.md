@@ -439,3 +439,17 @@ Rule: This document defines how UKIT works
 | §7      | Old username redirect to new                     | Not needed until scale |
 | §4.1    | `/{username}/bio`, `/{username}/list` sub-routes | Bio only for now       |
 | §4.3    | `/id/*` search routes                            | Future app             |
+
+---
+
+## 12. Technical Architecture
+
+### 12.1 Performance & Loading States
+
+UKIT prioritizes perceived performance using Next.js Streaming SSR.
+For implementation details and coverage status, see: [Loading States Documentation](./LOADING_STATES.md)
+
+### 12.2 App Documentation
+
+- [Bio Documentation](./link-in-bio.md)
+- [Cashflow Documentation](./cashflow.md)

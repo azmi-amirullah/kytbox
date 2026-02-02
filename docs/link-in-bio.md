@@ -125,26 +125,31 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 ```text
 src/
 ├── app/
-│   ├── app/                       # UKIT platform routes (protected)
-│   │   ├── page.tsx               # Platform shell with app switcher
-│   │   ├── bio/
-│   │   │   ├── page.tsx           # Bio dashboard
-│   │   │   ├── actions.ts         # Link CRUD actions
-│   │   │   ├── components/        # Dashboard components
+│   ├── (platform)/                # Platform routes group
+│   │   ├── app/                   # Platform shell with app switcher
+│   │   │   └── page.tsx
+│   │   ├── bio/                   # Bio dashboard
+│   │   │   ├── page.tsx
+│   │   │   ├── actions.ts
+│   │   │   ├── components/
 │   │   │   └── analytics/
-│   │   │       ├── page.tsx       # Analytics dashboard
-│   │   │       ├── actions.ts     # Analytics data fetching (RPC)
-│   │   │       └── components/    # Chart, filters
-│   │   └── settings/
-│   │       ├── page.tsx           # Account settings
-│   │       ├── SettingsForm.tsx   # Profile form
-│   │       └── actions.ts         # Profile actions
+│   │   │       ├── page.tsx
+│   │   │       ├── actions.ts
+│   │   │       └── components/
+│   │   ├── settings/              # Account settings
+│   │   │   ├── page.tsx
+│   │   │   ├── SettingsForm.tsx
+│   │   │   └── actions.ts
+│   │   └── cashflow/              # Cashflow app
+│   │       ├── page.tsx
+│   │       └── actions.ts
 │   ├── (auth)/
 │   │   ├── login/page.tsx
 │   │   ├── signup/page.tsx
 │   │   ├── forgot-password/page.tsx
 │   │   ├── layout.tsx
 │   │   └── actions.ts             # Auth + username check actions
+
 │   ├── auth/callback/route.ts     # Magic link handler
 │   ├── update-password/page.tsx
 │   ├── dashboard/page.tsx         # Legacy redirect → /app/bio
@@ -177,7 +182,7 @@ src/
 | `updatePassword`         | Update user password              |
 | `checkUsernameAvailable` | Check username for signup form    |
 
-#### Bio Actions (`src/app/app/bio/actions.ts`)
+#### Bio Actions (`src/app/(platform)/bio/actions.ts`)
 
 | Action             | Description                            |
 | :----------------- | :------------------------------------- |
@@ -187,7 +192,7 @@ src/
 | `toggleLinkActive` | Toggle link visibility                 |
 | `reorderLinks`     | Update sort_order for all links        |
 
-#### Settings Actions (`src/app/app/settings/actions.ts`)
+#### Settings Actions (`src/app/(platform)/settings/actions.ts`)
 
 | Action          | Description                           |
 | :-------------- | :------------------------------------ |
