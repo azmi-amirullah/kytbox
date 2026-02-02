@@ -1,6 +1,9 @@
 import { notFound, redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { ratelimit } from '@/lib/upstash/redis';
+import { headers } from 'next/headers';
 
 interface RedirectRouteProps {
   params: Promise<{
@@ -9,8 +12,37 @@ interface RedirectRouteProps {
   }>;
 }
 
+// Helper to get IP for rate limiting
+async function getIp() {
+  const headersList = await headers();
+  const forwardedFor = headersList.get('x-forwarded-for');
+  const realIp = headersList.get('x-real-ip');
+
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  if (realIp) {
+    return realIp.trim();
+  }
+
+  return '127.0.0.1';
+}
+
 export async function GET(request: Request, { params }: RedirectRouteProps) {
   const { username, linkId } = await params;
+
+  // 1. Rate Limiting Check
+  // We check this FIRST to protect the DB from spam
+  const ip = await getIp();
+  const { success } = await ratelimit.limit(ip);
+
+  if (!success) {
+    // If rate limited, just redirect to the profile page without tracking
+    // This absorbs the attack without hitting the DB
+    redirect(`/${username}`);
+  }
+
   const supabase = await createClient();
 
   // First get the user profile to get user_id
@@ -67,12 +99,9 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
   // Track the click event (non-blocking for speed)
   // We use `after` to run this in the background without delaying the response
   after(async () => {
-    // Create a new client for the background task
-    // Note: We might need a service role or just reuse the logic,
-    // but typically `createClient` works if we are just inserting public data or using RLS that allows it.
-    // However, since this is a public route, `createClient` will be anonymous.
-    // Ensure RLS allows anonymous inserts for `link_events` and RLS allows `increment_link_click`.
-    const trackingSupabase = await createClient();
+    // Use the ADMIN client for secure tracking
+    // This allows us to disable public INSERT on the link_events table
+    const trackingSupabase = createAdminClient();
 
     await Promise.all([
       // Legacy counter for fast lifetime display

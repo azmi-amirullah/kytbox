@@ -2,6 +2,7 @@ import 'server-only';
 import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { after } from 'next/server';
+import { ratelimit } from '@/lib/upstash/redis';
 
 export async function trackProfileView(profileId: string) {
   // Capture headers immediately (synchronously available in Server Components)
@@ -11,8 +12,22 @@ export async function trackProfileView(profileId: string) {
   const country = headerStore.get('x-vercel-ip-country');
   const city = headerStore.get('x-vercel-ip-city');
 
+  // Extract IP for rate limiting
+  const ip =
+    headerStore.get('x-forwarded-for')?.split(',')[0].trim() ||
+    headerStore.get('x-real-ip')?.trim() ||
+    '127.0.0.1';
+
   // Offload DB write to after() so response isn't blocked
   after(async () => {
+    // 1. Check Rate Limit
+    // We check this before creating the client to save resources
+    const { success } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return;
+    }
+
     // We use the Secret Key (formerly Service Role Key) to bypass RLS.
     // This allows us to remove the "Allow anonymous inserts" policy from the database,
     // preventing public spam/fake analytics data.
