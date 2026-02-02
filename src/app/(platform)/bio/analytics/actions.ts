@@ -322,8 +322,12 @@ async function getClientSideAggregation(
 
   const { data: events, error } = await query;
 
-  if (error || !events || events.length === 0) {
-    if (error) console.error('Fallback query error:', error);
+  if (error) {
+    console.error('getClientSideAggregation error:', error);
+    return { chartData: generateEmptyChartData(range, now), totalClicks: 0 };
+  }
+
+  if (!events || events.length === 0) {
     return { chartData: generateEmptyChartData(range, now), totalClicks: 0 };
   }
 
@@ -345,10 +349,16 @@ async function getTopRefererData(
       p_limit: 1,
     });
 
-    if (!error && data && data.length > 0) {
+    if (error) {
+      console.warn(
+        'RPC get_top_referers failed, falling back to client-side:',
+        error,
+      );
+    } else if (data && data.length > 0) {
       return data[0].referer_domain || null;
     }
-  } catch {
+  } catch (err) {
+    console.warn('RPC get_top_referers exception:', err);
     // RPC not available, fall through to client-side
   }
 
@@ -362,7 +372,12 @@ async function getTopRefererData(
     query = query.gte('created_at', startDate.toISOString());
   }
 
-  const { data: events } = await query;
+  const { data: events, error } = await query;
+
+  if (error) {
+    console.error('getTopRefererData fallback error:', error);
+    return null;
+  }
 
   if (!events || events.length === 0) return null;
 
@@ -400,7 +415,12 @@ async function getTopLinksData(
     query = query.gte('created_at', startDate.toISOString());
   }
 
-  const { data: events } = await query;
+  const { data: events, error } = await query;
+
+  if (error) {
+    console.error('getTopLinksData error:', error);
+    return [];
+  }
 
   const clicksPerLink: Record<string, number> = {};
   if (events) {
