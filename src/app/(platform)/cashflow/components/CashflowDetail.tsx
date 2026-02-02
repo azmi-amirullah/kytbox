@@ -207,10 +207,17 @@ export default function CashflowDetail({
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className='text-muted-foreground text-sm'>
-                      {new Date(entry.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {(() => {
+                        // Parse YYYY-MM-DD directly to avoid UTC timezone shifts
+                        const [year, month, day] = entry.date
+                          .split('-')
+                          .map(Number);
+                        const date = new Date(year, month - 1, day);
+                        return date.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        });
+                      })()}
                     </TableCell>
                     <TableCell className='font-medium'>
                       {entry.description}

@@ -26,39 +26,34 @@ export default async function CashflowPage() {
     redirect('/login');
   }
 
-  // Get user's cashflows only (no entries needed for list view)
-  const { data: cashflows } = await supabase
-    .from('cashflows')
+  // Get user's cashflow summaries from the view
+  const { data: cashflowSummariesData } = await supabase
+    .from('cashflow_summaries')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  // Get entry counts for each cashflow
-  const cashflowIds = cashflows?.map((c) => c.id) ?? [];
-  const { data: entries } = await supabase
-    .from('cashflow_entries')
-    .select('cashflow_id, amount, type')
-    .in('cashflow_id', cashflowIds.length > 0 ? cashflowIds : ['']);
+  interface CashflowSummaryRow {
+    id: string;
+    user_id: string;
+    title: string;
+    created_at: string;
+    entry_count: number | string;
+    income: number | string;
+    expense: number | string;
+    balance: number | string;
+  }
 
-  // Calculate summary for each cashflow
-  const cashflowSummaries =
-    cashflows?.map((cashflow) => {
-      const cashflowEntries =
-        entries?.filter((e) => e.cashflow_id === cashflow.id) ?? [];
-      const income = cashflowEntries
-        .filter((e) => e.type === 'income')
-        .reduce((sum, e) => sum + Number(e.amount), 0);
-      const expense = cashflowEntries
-        .filter((e) => e.type === 'expense')
-        .reduce((sum, e) => sum + Number(e.amount), 0);
-      return {
-        ...cashflow,
-        entryCount: cashflowEntries.length,
-        income,
-        expense,
-        balance: income - expense,
-      };
-    }) ?? [];
+  const cashflowSummaries = (
+    (cashflowSummariesData as unknown as CashflowSummaryRow[]) || []
+  ).map((c) => ({
+    ...c,
+    // Ensure numbers are actually numbers (Supabase returns numerics as numbers or strings depending on config)
+    entryCount: Number(c.entry_count),
+    income: Number(c.income),
+    expense: Number(c.expense),
+    balance: Number(c.balance),
+  }));
 
   const publicUrl = `/${profile.username}`;
 

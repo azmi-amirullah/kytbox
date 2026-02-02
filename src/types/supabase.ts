@@ -247,7 +247,19 @@ export interface Database {
       };
     };
     Views: {
-      [_ in never]: never;
+      cashflow_summaries: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          created_at: string;
+          entry_count: number;
+          income: number;
+          expense: number;
+          balance: number;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       increment_link_click: {
