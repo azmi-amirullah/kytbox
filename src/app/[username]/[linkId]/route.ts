@@ -33,15 +33,10 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
   const { username, linkId } = await params;
 
   // 1. Rate Limiting Check
-  // We check this FIRST to protect the DB from spam
+  // We check this FIRST to protect from analytics spam
+  // But we continue execution ensuring the user still gets redirected
   const ip = await getIp();
-  const { success } = await ratelimit.limit(ip);
-
-  if (!success) {
-    // If rate limited, just redirect to the profile page without tracking
-    // This absorbs the attack without hitting the DB
-    redirect(`/${username}`);
-  }
+  const { success: isNotRateLimited } = await ratelimit.limit(ip);
 
   const supabase = await createClient();
 
@@ -99,20 +94,23 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
   // Track the click event (non-blocking for speed)
   // We use `after` to run this in the background without delaying the response
   after(async () => {
-    // Use the ADMIN client for secure tracking
-    // This allows us to disable public INSERT on the link_events table
-    const trackingSupabase = createAdminClient();
+    // ONLY track if within rate limits
+    if (isNotRateLimited) {
+      // Use the ADMIN client for secure tracking
+      // This allows us to disable public INSERT on the link_events table
+      const trackingSupabase = createAdminClient();
 
-    await Promise.all([
-      // Legacy counter for fast lifetime display
-      trackingSupabase.rpc('increment_link_click', { link_id: link.id }),
-      // New event row for time-based analytics
-      trackingSupabase.from('link_events').insert({
-        link_id: link.id,
-        user_agent: userAgent,
-        referer: referer,
-      }),
-    ]);
+      await Promise.all([
+        // Legacy counter for fast lifetime display
+        trackingSupabase.rpc('increment_link_click', { link_id: link.id }),
+        // New event row for time-based analytics
+        trackingSupabase.from('link_events').insert({
+          link_id: link.id,
+          user_agent: userAgent,
+          referer: referer,
+        }),
+      ]);
+    }
   });
 
   // Redirect to the actual URL
