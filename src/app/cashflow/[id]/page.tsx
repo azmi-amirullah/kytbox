@@ -83,6 +83,34 @@ export default async function CashflowDetailPage({
         }
       : undefined;
 
+  // 5. Get Share Status (Server-Side)
+  let initialUserRole: 'owner' | 'edit' | 'read' | 'public' = 'public';
+  let initialShareId: string | null = null;
+  let hasShare = false;
+
+  if (user) {
+    if (cashflow.user_id === user.id) {
+      initialUserRole = 'owner';
+    } else {
+      const { data: share } = await supabase
+        .from('cashflow_shares')
+        .select('id, role')
+        .eq('cashflow_id', id)
+        .eq('email', user.email!)
+        .maybeSingle();
+
+      if (share) {
+        initialUserRole = share.role || 'read';
+        initialShareId = share.id;
+        hasShare = true;
+      } else if (isPublic) {
+        initialUserRole = 'read';
+      }
+    }
+  } else if (isPublic) {
+    initialUserRole = 'read';
+  }
+
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>
       <BackgroundBlobs />
@@ -91,10 +119,14 @@ export default async function CashflowDetailPage({
 
       <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8 flex-1 w-full'>
         <CashflowDetail
+          key={cashflow.id}
           cashflow={cashflow}
           entries={entries ?? []}
           currency={profile?.default_currency ?? null}
           currentUserId={user?.id}
+          initialUserRole={initialUserRole}
+          initialShareId={initialShareId}
+          initialHasShare={hasShare}
         />
       </main>
 

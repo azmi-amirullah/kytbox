@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -46,17 +46,16 @@ import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
 import ShareModal from './ShareModal';
-import {
-  getShares,
-  subscribeToPublicCashflow,
-  removeShare,
-} from '../share-actions';
+import { subscribeToPublicCashflow, removeShare } from '../share-actions';
 
 interface CashflowDetailProps {
   cashflow: Cashflow;
   entries: CashflowEntry[];
   currency: string | null;
   currentUserId?: string;
+  initialUserRole?: 'owner' | 'edit' | 'read' | 'public';
+  initialShareId?: string | null;
+  initialHasShare?: boolean;
 }
 
 export default function CashflowDetail({
@@ -64,6 +63,9 @@ export default function CashflowDetail({
   entries,
   currency,
   currentUserId,
+  initialUserRole = 'public',
+  initialShareId = null,
+  initialHasShare = false,
 }: CashflowDetailProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -76,32 +78,15 @@ export default function CashflowDetail({
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
 
   const isOwner = currentUserId === cashflow.user_id;
-  const [hasShare, setHasShare] = useState(false);
-  const [shareId, setShareId] = useState<string | null>(null);
 
-  const [userRole, setUserRole] = useState<
-    'owner' | 'edit' | 'read' | 'public'
-  >(isOwner ? 'owner' : 'public');
+  // Initialize state from server props
+  const [hasShare, setHasShare] = useState(initialHasShare);
+  const [shareId, setShareId] = useState<string | null>(initialShareId);
+  const [userRole] = useState<'owner' | 'edit' | 'read' | 'public'>(
+    isOwner ? 'owner' : initialUserRole,
+  );
 
-  useEffect(() => {
-    if (!isOwner && currentUserId) {
-      // Check for share role
-      getShares(cashflow.id).then((result) => {
-        if (result.data && result.data.length > 0) {
-          // If we are not owner, getShares will only return our share due to RLS
-          // We take the role from the first result (which should be ours)
-          setUserRole(result.data[0].role || 'read');
-          setHasShare(true);
-          setShareId(result.data[0].id);
-        } else if (cashflow.is_public) {
-          // Fallback if no specific share found but is public
-          setUserRole('read');
-          setHasShare(false);
-          setShareId(null);
-        }
-      });
-    }
-  }, [isOwner, cashflow.id, cashflow.is_public, currentUserId]);
+  // State initialized via props, no effect needed
 
   const canEdit = isOwner || userRole === 'edit';
 
