@@ -219,6 +219,7 @@ export interface Database {
           created_at: string;
           is_included_in_totals: boolean;
           created_via_public_access: boolean;
+          is_pinned: boolean;
         };
         Insert: {
           id?: string;
@@ -228,6 +229,7 @@ export interface Database {
           created_at?: string;
           is_included_in_totals?: boolean;
           created_via_public_access?: boolean;
+          is_pinned?: boolean;
         };
         Update: {
           id?: string;
@@ -237,6 +239,7 @@ export interface Database {
           created_at?: string;
           is_included_in_totals?: boolean;
           created_via_public_access?: boolean;
+          is_pinned?: boolean;
         };
         Relationships: [
           {

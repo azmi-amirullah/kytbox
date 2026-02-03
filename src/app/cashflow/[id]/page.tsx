@@ -94,15 +94,16 @@ export default async function CashflowDetailPage({
     } else {
       const { data: share } = await supabase
         .from('cashflow_shares')
-        .select('id, role')
+        .select('id, role, is_pinned')
         .eq('cashflow_id', id)
-        .eq('email', user.email!)
+        .eq('email', user.email!.toLowerCase())
         .maybeSingle();
 
       if (share) {
         initialUserRole = share.role || 'read';
         initialShareId = share.id;
-        hasShare = true;
+        // The bookmark button should show "Saved" ONLY if it is pinned to the dashboard
+        hasShare = !!share.is_pinned;
       } else if (isPublic) {
         initialUserRole = 'read';
       }

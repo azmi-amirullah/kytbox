@@ -227,7 +227,7 @@ export default function CashflowDetail({
         </div>
 
         <div className='flex items-center gap-2'>
-          {!isOwner && cashflow.is_public && currentUserId && (
+          {!isOwner && currentUserId && (cashflow.is_public || !!shareId) && (
             <Button
               onClick={handleBookmark}
               variant={hasShare ? 'secondary' : 'outline'}

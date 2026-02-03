@@ -27,10 +27,12 @@ export default async function CashflowPage() {
   }
 
   // Get user's shares to check inclusion status
+  // Only get shares that are pinned to the dashboard
   const { data: shares } = await supabase
     .from('cashflow_shares')
     .select('cashflow_id, is_included_in_totals')
-    .eq('email', user.email!);
+    .eq('email', user.email!.toLowerCase())
+    .eq('is_pinned', true);
 
   interface ShareWithInclusion {
     cashflow_id: string;

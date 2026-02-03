@@ -220,7 +220,7 @@ export async function toggleCashflowInclusion(
     .from('cashflow_shares')
     .select('id')
     .eq('cashflow_id', cashflowId)
-    .eq('email', user.email)
+    .eq('email', user.email.toLowerCase())
     .single();
 
   let error;
@@ -237,9 +237,10 @@ export async function toggleCashflowInclusion(
     // This will error if cashflow is not public due to RLS, which is desired
     const result = await supabase.from('cashflow_shares').insert({
       cashflow_id: cashflowId,
-      email: user.email,
+      email: user.email.toLowerCase(),
       is_included_in_totals: isIncluded,
       role: 'read',
+      is_pinned: true, // Auto-pin when toggling inclusion from public view
       created_via_public_access: true,
     });
     error = result.error;

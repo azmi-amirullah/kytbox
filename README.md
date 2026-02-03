@@ -20,3 +20,4 @@ A personal utility platform designed for speed and simplicity.
 
 - [UKIT Platform Specs](docs/ukit.md)
 - [UKIT Bio Details](docs/link-in-bio.md)
+- [UKIT Cashflow Details](docs/cashflow.md)

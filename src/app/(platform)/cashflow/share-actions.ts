@@ -46,6 +46,9 @@ export async function inviteUser(
       cashflow_id: cashflowId,
       email: email.toLowerCase().trim(),
       role,
+      is_pinned: true, // Auto-pin when invited
+      is_included_in_totals: true, // Show in totals by default
+      created_via_public_access: false, // Ensure they show up in management list
     },
     {
       onConflict: 'cashflow_id,email',
@@ -63,17 +66,43 @@ export async function inviteUser(
 }
 
 export async function removeShare(shareId: string) {
-  const { supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  // RLS ensures only the owner (via cashflow ownership) or the shared user can delete the share
-  const { error } = await supabase
+  // Fetch share to check ownership/target
+  const { data: share } = await supabase
     .from('cashflow_shares')
-    .delete()
-    .eq('id', shareId);
+    .select('email, cashflow_id')
+    .eq('id', shareId)
+    .single();
 
-  if (error) {
-    console.error('Failed to remove share:', error);
-    return { error: error.message };
+  if (!share) return { error: 'Share not found' };
+
+  // If the user removing the share is the one it belongs to (removing from their own dashboard)
+  // we just unpin it to preserve permissions
+  if (share.email.toLowerCase() === user.email?.toLowerCase()) {
+    const { error } = await supabase
+      .from('cashflow_shares')
+      .update({
+        is_pinned: false,
+        is_included_in_totals: false,
+      })
+      .eq('id', shareId);
+
+    if (error) {
+      console.error('Failed to unpin share:', error);
+      return { error: error.message };
+    }
+  } else {
+    // If it's the owner removing someone else, we delete as before
+    const { error } = await supabase
+      .from('cashflow_shares')
+      .delete()
+      .eq('id', shareId);
+
+    if (error) {
+      console.error('Failed to remove share:', error);
+      return { error: error.message };
+    }
   }
 
   revalidatePath('/cashflow');
@@ -103,7 +132,8 @@ export async function getShares(cashflowId: string) {
   const { data, error } = await supabase
     .from('cashflow_shares')
     .select('*')
-    .eq('cashflow_id', cashflowId);
+    .eq('cashflow_id', cashflowId)
+    .or('created_via_public_access.eq.false,role.eq.edit'); // Show invited users OR anyone with edit access
 
   if (error) {
     console.error('Failed to get shares:', error);
@@ -120,34 +150,66 @@ export async function subscribeToPublicCashflow(cashflowId: string) {
     return { error: 'You must be logged in to bookmark a cashflow' };
   }
 
-  // Double check cashflow is public
+  // Double check cashflow is public and ownership
   const { data: cashflow } = await supabase
     .from('cashflows')
-    .select('is_public')
+    .select('is_public, user_id')
     .eq('id', cashflowId)
     .single();
 
-  if (!cashflow?.is_public) {
+  if (!cashflow) {
+    return { error: 'Cashflow not found' };
+  }
+
+  if (cashflow.user_id === user.id) {
+    return { error: 'You cannot bookmark your own cashflow' };
+  }
+
+  // Check if they already have a share record (invitation or previous guest bookmark)
+  const { data: existingShare } = await supabase
+    .from('cashflow_shares')
+    .select('id, created_via_public_access')
+    .eq('cashflow_id', cashflowId)
+    .eq('email', user.email.toLowerCase())
+    .maybeSingle();
+
+  // If they don't have a share record, they can only bookmark if it's public
+  if (!existingShare && !cashflow.is_public) {
     return { error: 'This cashflow is not public' };
   }
 
-  const { data, error } = await supabase
-    .from('cashflow_shares')
-    .upsert(
-      {
+  let result;
+  if (existingShare) {
+    // If it exists, we just update is_pinned.
+    // This is covered by the "Users can update their own shares" policy
+    // which DOES NOT check if the cashflow is public.
+    result = await supabase
+      .from('cashflow_shares')
+      .update({
+        is_pinned: true,
+        is_included_in_totals: true, // Also re-enable in totals when re-added
+      })
+      .eq('id', existingShare.id)
+      .select()
+      .single();
+  } else {
+    // If it doesn't exist, we insert.
+    // This is covered by the "Users can subscribe to public cashflows" policy
+    // which correctly enforces is_public = true.
+    result = await supabase
+      .from('cashflow_shares')
+      .insert({
         cashflow_id: cashflowId,
-        email: user.email, // Matches default RLS
-        role: 'read',
+        email: user.email.toLowerCase(),
+        is_pinned: true,
+        is_included_in_totals: true, // Also enable in totals by default
         created_via_public_access: true,
-        is_included_in_totals: false, // Default to not included
-      },
-      {
-        onConflict: 'cashflow_id,email',
-        ignoreDuplicates: true, // If already shared, do nothing (don't overwrite explicit invites)
-      },
-    )
-    .select()
-    .single();
+      })
+      .select()
+      .single();
+  }
+
+  const { data, error } = result;
 
   if (error) {
     console.error('Failed to bookmark cashflow:', error);
