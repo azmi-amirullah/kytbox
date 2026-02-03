@@ -159,3 +159,47 @@ export async function checkUsernameAvailable(username: string) {
 
   return { available: !existingProfile };
 }
+
+export async function updateUsername(formData: FormData) {
+  const supabase = await createClient();
+  const username = (formData.get('username') as string).toLowerCase().trim();
+
+  // Validate
+  const validation = validateUsername(username);
+  if (!validation.valid) {
+    return { error: validation.error };
+  }
+
+  // Check availability
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  if (existingProfile) {
+    return { error: 'Username is already taken' };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'Not authenticated' };
+  }
+
+  // Create or Update profile
+  const { error } = await supabase.from('profiles').upsert({
+    id: user.id,
+    username,
+    display_name: username,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/', 'layout');
+  redirect('/app');
+}

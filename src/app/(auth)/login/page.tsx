@@ -23,6 +23,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { login } from '../actions';
+import { FcGoogle } from 'react-icons/fc';
+import { createClient } from '@/lib/supabase/client';
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -41,6 +43,22 @@ function LoginContent() {
       window.history.replaceState({}, '', '/login');
     }
   }, [searchParams]);
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setIsLoading(false);
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -64,9 +82,6 @@ function LoginContent() {
       transition={{ duration: 0.5 }}
     >
       <Card className='shadow-lg overflow-hidden'>
-        {/* Decorative gradient blob inside card */}
-        <div className='absolute top-0 right-0 -mt-16 -mr-16 w-32 h-32 bg-primary/20 blur-3xl rounded-full pointer-events-none' />
-
         <CardHeader className='space-y-1 text-center relative z-10'>
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
@@ -86,30 +101,24 @@ function LoginContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          {/* Social Auth - Commented out for future implementation
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline">
-              <Github className="mr-2 h-4 w-4" />
-              Github
-            </Button>
-            <Button variant="outline">
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                <path d="M22.56..." fill="#4285F4" />
-              </svg>
-              Google
-            </Button>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+          <Button
+            variant='outline'
+            className='w-full'
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+          >
+            <FcGoogle className='mr-2 h-4 w-4' />
+            Sign in with Google
+          </Button>
+
+          <div className='relative'>
+            <div className='absolute inset-0 flex items-center'>
+              <span className='w-full border-t' />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Or continue with
-              </span>
+            <div className='relative flex justify-center text-xs uppercase'>
+              <span className='bg-card px-2 text-muted-foreground'>Or</span>
             </div>
           </div>
-          */}
 
           {successMessage && (
             <motion.div

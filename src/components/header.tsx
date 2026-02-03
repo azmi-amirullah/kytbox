@@ -13,13 +13,14 @@ interface UserData {
 }
 
 interface HeaderProps {
-  variant: 'landing' | 'dashboard';
+  variant: 'landing' | 'dashboard' | 'auth';
   user?: UserData | null;
   publicUrl?: string;
 }
 
 export function Header({ variant, user, publicUrl }: HeaderProps) {
   const isLanding = variant === 'landing';
+  const isAuth = variant === 'auth';
 
   return (
     <header className='sticky top-0 z-50 w-full border-b border-border bg-background/60 backdrop-blur-md transition-all duration-200'>
@@ -27,14 +28,17 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
         {isLanding ? (
           <BrandLogo className='cursor-default select-none' />
         ) : (
-          <Link href='/app' className='hover:opacity-80 transition-opacity'>
+          <Link
+            href={isAuth ? '/' : '/app'}
+            className='hover:opacity-80 transition-opacity'
+          >
             <BrandLogo />
           </Link>
         )}
 
         <div className='flex items-center gap-3 md:gap-4'>
           {/* Dashboard-specific: Public URL link */}
-          {!isLanding && user && publicUrl && (
+          {!isLanding && !isAuth && user && publicUrl && (
             <>
               <a
                 href={publicUrl}
@@ -51,21 +55,22 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
 
           <ThemeToggle />
 
-          {/* Auth state handling */}
-          {user ? (
-            <div className='flex items-center gap-4'>
-              {isLanding && (
-                <Link href='/app'>
-                  <Button>Dashboard</Button>
-                </Link>
-              )}
-              <UserNav user={user} />
-            </div>
-          ) : (
-            <Link href='/login'>
-              <Button>Log in</Button>
-            </Link>
-          )}
+          {/* Auth state handling - Hide on Auth pages */}
+          {!isAuth &&
+            (user ? (
+              <div className='flex items-center gap-4'>
+                {isLanding && (
+                  <Link href='/app'>
+                    <Button>Dashboard</Button>
+                  </Link>
+                )}
+                <UserNav user={user} />
+              </div>
+            ) : (
+              <Link href='/login'>
+                <Button>Log in</Button>
+              </Link>
+            ))}
         </div>
       </div>
     </header>

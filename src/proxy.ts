@@ -53,9 +53,19 @@ export async function proxy(request: NextRequest) {
   );
 
   if (isAuthRoute && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/app';
-    return NextResponse.redirect(url);
+    // Check if user has a profile (completed onboarding)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    // Only redirect if they have a profile
+    if (profile) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/app';
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

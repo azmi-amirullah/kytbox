@@ -16,12 +16,30 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // Check if user has a profile
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+
+        // If no profile exists, redirect to onboarding
+        if (!profile) {
+          return NextResponse.redirect(`${origin}/onboarding`);
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
   // Return to login with error message
   return NextResponse.redirect(
-    `${origin}/login?message=Could not authenticate`
+    `${origin}/login?message=Could not authenticate`,
   );
 }

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { BackgroundBlobs } from '@/components/background-blobs';
 
 export const metadata: Metadata = {
@@ -7,26 +6,28 @@ export const metadata: Metadata = {
   description: 'Login or create an account',
 };
 
+import { Header } from '@/components/header';
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className='relative min-h-screen w-full flex items-center justify-center'>
-      {/* Theme Toggle */}
-      <div className='absolute top-4 right-4 z-20'>
-        <ThemeToggle />
-      </div>
+    <div className='relative min-h-screen w-full flex flex-col'>
+      {/* Unified Header - Auth Variant */}
+      <Header variant='auth' />
 
-      {/* Shared Background */}
-      <BackgroundBlobs />
+      <div className='relative flex-1 flex items-center justify-center p-4'>
+        {/* Shared Background */}
+        <BackgroundBlobs />
 
-      {/* Content */}
-      <div className='relative z-10 w-full max-w-md p-4'>
-        {children}
-        <div className='mt-8 text-center text-xs text-muted-foreground'>
-          <p>© {new Date().getFullYear()} UKIT. All rights reserved.</p>
+        {/* Content */}
+        <div className='relative z-10 w-full max-w-md'>
+          {children}
+          <div className='mt-8 text-center text-xs text-muted-foreground'>
+            <p>© {new Date().getFullYear()} UKIT. All rights reserved.</p>
+          </div>
         </div>
       </div>
     </div>

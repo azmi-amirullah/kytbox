@@ -107,7 +107,7 @@ export default async function LandingPage() {
             </p>
 
             <div className='flex flex-col sm:flex-row items-center justify-center gap-4 pt-8'>
-              <Link href={user ? '/app' : '/signup'}>
+              <Link href={userData ? '/app' : '/signup'}>
                 <Button size='lg' className='h-12 px-8 text-lg group'>
                   Get Started Free
                   <LuArrowRight className='ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform' />
