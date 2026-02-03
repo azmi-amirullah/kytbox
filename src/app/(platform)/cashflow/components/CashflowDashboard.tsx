@@ -10,11 +10,13 @@ import CashflowCard from './CashflowCard';
 interface CashflowDashboardProps {
   initialCashflows: Cashflow[];
   initialEntries: CashflowEntry[];
+  currentUserId?: string;
 }
 
 export default function CashflowDashboard({
   initialCashflows,
   initialEntries,
+  currentUserId,
 }: CashflowDashboardProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -89,6 +91,7 @@ export default function CashflowDashboard({
             <CashflowCard
               key={cashflow.id}
               cashflow={cashflow}
+              currentUserId={currentUserId}
               entries={initialEntries.filter(
                 (e) => e.cashflow_id === cashflow.id,
               )}

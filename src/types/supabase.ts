@@ -183,18 +183,21 @@ export interface Database {
           id: string;
           user_id: string;
           title: string;
+          is_public: boolean;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
           title: string;
+          is_public?: boolean;
           created_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string;
           title?: string;
+          is_public?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -203,6 +206,44 @@ export interface Database {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      cashflow_shares: {
+        Row: {
+          id: string;
+          cashflow_id: string;
+          email: string;
+          role: 'read' | 'edit';
+          created_at: string;
+          is_included_in_totals: boolean;
+          created_via_public_access: boolean;
+        };
+        Insert: {
+          id?: string;
+          cashflow_id: string;
+          email: string;
+          role?: 'read' | 'edit';
+          created_at?: string;
+          is_included_in_totals?: boolean;
+          created_via_public_access?: boolean;
+        };
+        Update: {
+          id?: string;
+          cashflow_id?: string;
+          email?: string;
+          role?: 'read' | 'edit';
+          created_at?: string;
+          is_included_in_totals?: boolean;
+          created_via_public_access?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cashflow_shares_cashflow_id_fkey';
+            columns: ['cashflow_id'];
+            isOneToOne: false;
+            referencedRelation: 'cashflows';
             referencedColumns: ['id'];
           },
         ];

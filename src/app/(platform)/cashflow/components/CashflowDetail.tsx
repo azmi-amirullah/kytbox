@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,9 @@ import {
   LuEllipsisVertical,
   LuLoader,
   LuArrowLeft,
+  LuShare2,
+  LuBookmark,
+  LuCheck,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import type { Cashflow, CashflowEntry } from '@/types/supabase';
@@ -42,26 +45,65 @@ import { formatCurrencyCompact } from '@/lib/currency';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
+import ShareModal from './ShareModal';
+import {
+  getShares,
+  subscribeToPublicCashflow,
+  removeShare,
+} from '../share-actions';
 
 interface CashflowDetailProps {
   cashflow: Cashflow;
   entries: CashflowEntry[];
   currency: string | null;
+  currentUserId?: string;
 }
 
 export default function CashflowDetail({
   cashflow,
   entries,
   currency,
+  currentUserId,
 }: CashflowDetailProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<CashflowEntry | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+
+  const isOwner = currentUserId === cashflow.user_id;
+  const [hasShare, setHasShare] = useState(false);
+  const [shareId, setShareId] = useState<string | null>(null);
+
+  const [userRole, setUserRole] = useState<
+    'owner' | 'edit' | 'read' | 'public'
+  >(isOwner ? 'owner' : 'public');
+
+  useEffect(() => {
+    if (!isOwner && currentUserId) {
+      // Check for share role
+      getShares(cashflow.id).then((result) => {
+        if (result.data && result.data.length > 0) {
+          // If we are not owner, getShares will only return our share due to RLS
+          // We take the role from the first result (which should be ours)
+          setUserRole(result.data[0].role || 'read');
+          setHasShare(true);
+          setShareId(result.data[0].id);
+        } else if (cashflow.is_public) {
+          // Fallback if no specific share found but is public
+          setUserRole('read');
+          setHasShare(false);
+          setShareId(null);
+        }
+      });
+    }
+  }, [isOwner, cashflow.id, cashflow.is_public, currentUserId]);
+
+  const canEdit = isOwner || userRole === 'edit';
 
   // Calculate stats
   const income = entries
@@ -96,6 +138,36 @@ export default function CashflowDetail({
     setDeletingEntryId(null);
   }
 
+  async function handleBookmark() {
+    startTransition(async () => {
+      if (hasShare && shareId) {
+        // Remove bookmark
+        const result = await removeShare(shareId);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success('Removed from dashboard');
+          setHasShare(false);
+          setShareId(null);
+          router.refresh();
+        }
+      } else {
+        // Add bookmark
+        const result = await subscribeToPublicCashflow(cashflow.id);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success('Added to your dashboard');
+          setHasShare(true);
+          if (result.data) {
+            setShareId(result.data.id);
+          }
+          router.refresh();
+        }
+      }
+    });
+  }
+
   function openEditEntry(entry: CashflowEntry) {
     setEditingEntry(entry);
     setIsEntryModalOpen(true);
@@ -109,13 +181,15 @@ export default function CashflowDetail({
   return (
     <div className='space-y-6'>
       {/* Back Link */}
-      <Link
-        href='/cashflow'
-        className='inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors'
-      >
-        <LuArrowLeft className='w-4 h-4' />
-        Back to Cashflows
-      </Link>
+      {currentUserId && (
+        <Link
+          href='/cashflow'
+          className='inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors'
+        >
+          <LuArrowLeft className='w-4 h-4' />
+          Back to Cashflows
+        </Link>
+      )}
 
       {/* Header */}
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
@@ -124,35 +198,75 @@ export default function CashflowDetail({
             <h1 className='text-2xl font-bold tracking-tight'>
               {cashflow.title}
             </h1>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant='ghost' size='icon' className='h-8 w-8'>
-                  <LuEllipsisVertical className='w-4 h-4' />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align='start'>
-                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
-                  <LuPencil className='w-4 h-4 mr-2' />
-                  Rename
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setDeleteDialogOpen(true)}
-                  className='text-destructive focus:text-destructive'
-                >
-                  <LuTrash2 className='w-4 h-4 mr-2' />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant='ghost' size='icon' className='h-8 w-8'>
+                    <LuEllipsisVertical className='w-4 h-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='start'>
+                  <DropdownMenuItem
+                    className='cursor-pointer'
+                    onClick={() => setIsShareModalOpen(true)}
+                  >
+                    <LuShare2 className='w-4 h-4 mr-2' />
+                    Share
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className='cursor-pointer'
+                    onClick={() => setIsEditModalOpen(true)}
+                  >
+                    <LuPencil className='w-4 h-4 mr-2' />
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setDeleteDialogOpen(true)}
+                    className='text-destructive focus:text-destructive cursor-pointer'
+                  >
+                    <LuTrash2 className='w-4 h-4 mr-2' />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {!isOwner && (
+              <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full'>
+                {userRole === 'edit' ? 'Editor Access' : 'View Only'}
+              </span>
+            )}
           </div>
           <p className='text-muted-foreground text-sm'>
             {entries.length} entries
           </p>
         </div>
-        <Button onClick={openAddEntry} className='gap-2'>
-          <LuPlus className='w-4 h-4' />
-          Add Entry
-        </Button>
+
+        <div className='flex items-center gap-2'>
+          {!isOwner && cashflow.is_public && currentUserId && (
+            <Button
+              onClick={handleBookmark}
+              variant={hasShare ? 'secondary' : 'outline'}
+              className={`gap-2 ${hasShare ? 'text-green-600' : ''}`}
+              disabled={isPending}
+            >
+              {isPending ? (
+                <LuLoader className='w-4 h-4 animate-spin' />
+              ) : hasShare ? (
+                <LuCheck className='w-4 h-4' />
+              ) : (
+                <LuBookmark className='w-4 h-4' />
+              )}
+              {hasShare ? 'Saved' : 'Add to Dashboard'}
+            </Button>
+          )}
+
+          {canEdit && (
+            <Button onClick={openAddEntry} className='gap-2'>
+              <LuPlus className='w-4 h-4' />
+              Add Entry
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Summary Stats */}
@@ -229,28 +343,30 @@ export default function CashflowDetail({
                       {formatCurrencyCompact(Number(entry.amount), currency)}
                     </TableCell>
                     <TableCell>
-                      <div className='flex justify-end gap-1'>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-7 w-7'
-                          onClick={() => openEditEntry(entry)}
-                        >
-                          <LuPencil className='w-3.5 h-3.5' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-7 w-7 text-destructive hover:text-destructive'
-                          onClick={() => setDeletingEntryId(entry.id)}
-                        >
-                          {isPending ? (
-                            <LuLoader className='w-3.5 h-3.5 animate-spin' />
-                          ) : (
-                            <LuTrash2 className='w-3.5 h-3.5' />
-                          )}
-                        </Button>
-                      </div>
+                      {canEdit && (
+                        <div className='flex justify-end gap-1'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-7 w-7'
+                            onClick={() => openEditEntry(entry)}
+                          >
+                            <LuPencil className='w-3.5 h-3.5' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-7 w-7 text-destructive hover:text-destructive'
+                            onClick={() => setDeletingEntryId(entry.id)}
+                          >
+                            {isPending ? (
+                              <LuLoader className='w-3.5 h-3.5 animate-spin' />
+                            ) : (
+                              <LuTrash2 className='w-3.5 h-3.5' />
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -266,6 +382,13 @@ export default function CashflowDetail({
         cashflow={cashflow}
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        cashflow={cashflow}
+        open={isShareModalOpen}
+        onOpenChange={setIsShareModalOpen}
       />
 
       {/* Entry Modal */}

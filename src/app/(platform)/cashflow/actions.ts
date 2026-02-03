@@ -91,16 +91,36 @@ export async function addEntry(formData: FormData) {
     return { error: 'Invalid type' };
   }
 
-  // Verify ownership of the cashflow first
+  // Verify access (owner or editor)
   const { data: cashflow, error: checkError } = await supabase
     .from('cashflows')
-    .select('id')
+    .select('id, user_id')
     .eq('id', cashflowId)
-    .eq('user_id', user.id)
     .single();
 
   if (checkError || !cashflow) {
     return { error: 'Cashflow not found or access denied' };
+  }
+
+  // Check if owner or has edit role in shares
+  let canEdit = cashflow.user_id === user.id;
+
+  if (!canEdit) {
+    const { data: share } = await supabase
+      .from('cashflow_shares')
+      .select('role')
+      .eq('cashflow_id', cashflowId)
+      .eq('email', user.email?.toLowerCase() || '')
+      .eq('role', 'edit')
+      .single();
+
+    if (share) canEdit = true;
+  }
+
+  if (!canEdit) {
+    return {
+      error: 'You do not have permission to add entries to this cashflow',
+    };
   }
 
   const { error } = await supabase.from('cashflow_entries').insert({
@@ -178,6 +198,55 @@ export async function deleteEntry(entryId: string) {
 
   if (error) {
     console.error('Failed to delete entry:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/cashflow');
+  return { success: true };
+}
+
+export async function toggleCashflowInclusion(
+  cashflowId: string,
+  isIncluded: boolean,
+) {
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
+
+  if (!user.email) {
+    return { error: 'User email required' };
+  }
+
+  // Check if share already exists to avoid overwriting creation source
+  const { data: existingShare } = await supabase
+    .from('cashflow_shares')
+    .select('id')
+    .eq('cashflow_id', cashflowId)
+    .eq('email', user.email)
+    .single();
+
+  let error;
+
+  if (existingShare) {
+    // Just update the preference
+    const result = await supabase
+      .from('cashflow_shares')
+      .update({ is_included_in_totals: isIncluded })
+      .eq('id', existingShare.id);
+    error = result.error;
+  } else {
+    // Creating new share via public access
+    // This will error if cashflow is not public due to RLS, which is desired
+    const result = await supabase.from('cashflow_shares').insert({
+      cashflow_id: cashflowId,
+      email: user.email,
+      is_included_in_totals: isIncluded,
+      role: 'read',
+      created_via_public_access: true,
+    });
+    error = result.error;
+  }
+
+  if (error) {
+    console.error('Failed to update inclusion status:', error);
     return { error: error.message };
   }
 

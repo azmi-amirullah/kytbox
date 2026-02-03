@@ -27,11 +27,13 @@ import {
   LuTrash2,
   LuEllipsisVertical,
   LuLoader,
+  LuShare2,
 } from 'react-icons/lu';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'react-toastify';
@@ -39,21 +41,30 @@ import type { Cashflow, CashflowEntry } from '@/types/supabase';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
+import ShareModal from './ShareModal';
 
 interface CashflowCardProps {
   cashflow: Cashflow;
   entries: CashflowEntry[];
+  currentUserId?: string;
 }
 
-export default function CashflowCard({ cashflow, entries }: CashflowCardProps) {
+export default function CashflowCard({
+  cashflow,
+  entries,
+  currentUserId,
+}: CashflowCardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<CashflowEntry | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+
+  const isOwner = currentUserId === cashflow.user_id;
 
   // Calculate card stats
   const income = entries
@@ -134,17 +145,34 @@ export default function CashflowCard({ cashflow, entries }: CashflowCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
-              <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
-                <LuPencil className='w-4 h-4 mr-2' />
-                Rename
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setDeleteDialogOpen(true)}
-                className='text-destructive focus:text-destructive'
-              >
-                <LuTrash2 className='w-4 h-4 mr-2' />
-                Delete
-              </DropdownMenuItem>
+              {isOwner && (
+                <>
+                  <DropdownMenuItem onClick={() => setIsShareModalOpen(true)}>
+                    <LuShare2 className='w-3.5 h-3.5 mr-2' />
+                    Share
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                    <LuPencil className='w-3.5 h-3.5 mr-2' />
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setDeleteDialogOpen(true)}
+                    className='text-destructive focus:text-destructive'
+                  >
+                    <LuTrash2 className='w-3.5 h-3.5 mr-2' />
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
+              {!isOwner && (
+                <DropdownMenuItem
+                  disabled
+                  className='text-[10px] text-muted-foreground'
+                >
+                  Shared with you
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -229,6 +257,13 @@ export default function CashflowCard({ cashflow, entries }: CashflowCardProps) {
         entry={editingEntry}
         open={isEntryModalOpen}
         onOpenChange={setIsEntryModalOpen}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        cashflow={cashflow}
+        open={isShareModalOpen}
+        onOpenChange={setIsShareModalOpen}
       />
 
       {/* Delete Cashflow Dialog */}

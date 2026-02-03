@@ -26,17 +26,22 @@ export default async function CashflowPage() {
     redirect('/login');
   }
 
-  // Get user's cashflow summaries from the view
-  const { data: cashflowSummariesData } = await supabase
-    .from('cashflow_summaries')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+  // Get user's shares to check inclusion status
+  const { data: shares } = await supabase
+    .from('cashflow_shares')
+    .select('cashflow_id, is_included_in_totals')
+    .eq('email', user.email!);
+
+  interface ShareWithInclusion {
+    cashflow_id: string;
+    is_included_in_totals: boolean;
+  }
 
   interface CashflowSummaryRow {
     id: string;
     user_id: string;
     title: string;
+    is_public: boolean;
     created_at: string;
     entry_count: number | string;
     income: number | string;
@@ -44,15 +49,42 @@ export default async function CashflowPage() {
     balance: number | string;
   }
 
+  const includedShareIds = new Set(
+    (shares as unknown as ShareWithInclusion[])
+      ?.filter((s) => s.is_included_in_totals)
+      .map((s) => s.cashflow_id),
+  );
+
+  const allShareIds =
+    (shares as unknown as ShareWithInclusion[])?.map((s) => s.cashflow_id) ||
+    [];
+
+  // Get user's cashflow summaries from the view
+  // Filter by owned OR shared (bookmarked)
+  let query = supabase
+    .from('cashflow_summaries')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (allShareIds.length > 0) {
+    query = query.or(`user_id.eq.${user.id},id.in.(${allShareIds.join(',')})`);
+  } else {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { data: cashflowSummariesData } = await query;
+
   const cashflowSummaries = (
     (cashflowSummariesData as unknown as CashflowSummaryRow[]) || []
   ).map((c) => ({
     ...c,
     // Ensure numbers are actually numbers (Supabase returns numerics as numbers or strings depending on config)
+    is_public: !!c.is_public,
     entryCount: Number(c.entry_count),
     income: Number(c.income),
     expense: Number(c.expense),
     balance: Number(c.balance),
+    isIncluded: c.user_id === user.id || includedShareIds.has(c.id), // Owned always included by default logic, shared depends on DB
   }));
 
   const publicUrl = `/${profile.username}`;
@@ -74,6 +106,7 @@ export default async function CashflowPage() {
         <CashflowList
           cashflows={cashflowSummaries}
           currency={profile.default_currency}
+          currentUserId={user.id}
         />
       </main>
 
