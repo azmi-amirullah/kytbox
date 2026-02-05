@@ -1,7 +1,8 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { subDays, subHours, startOfHour, startOfDay, format } from 'date-fns';
+import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
 import type { DateRange } from '@/types/analytics';
 
 export interface ChartDataPoint {
@@ -30,24 +31,7 @@ export async function getAnalyticsData(
   range: DateRange,
   linkId?: string | 'all',
 ): Promise<AnalyticsData> {
-  const supabase = await createClient();
-
-  // Get user's links first
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      chartData: [],
-      totalClicks: 0,
-      totalViews: 0,
-      ctr: 0,
-      topLinks: [],
-      topReferer: null,
-      userLinks: [],
-    };
-  }
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
 
   // Get all user's links (ordered by user's sort_order for dropdown filter)
   const { data: links } = await supabase

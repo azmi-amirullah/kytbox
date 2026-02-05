@@ -4,7 +4,7 @@ Focus: **Speed to functional product.** Avoid "graveyard" features (custom theme
 
 ## 1. Core Features
 
-- **Auth**: Login, Signup (user picks username), Forgot Password, Update Password
+- **Auth**: Login (Email/Password + Google OAuth), Signup (user picks username), Forgot Password, Update Password, Onboarding (username completion for OAuth users)
 - **CRUD Links**: Add, Edit, Delete, Reorder (Drag & Drop), Toggle visibility
 - **Public Page**: `/{username}` (SEO optimized profile with dynamic metadata)
 - **Tracking**: Server-side click counting via Supabase RPC
@@ -99,33 +99,33 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 
 **Logged-in routes** (protected by `proxy.ts`):
 
-| Route           | Purpose                         |
-| :-------------- | :------------------------------ |
-| `/app`          | Platform shell (app switcher)   |
-| `/app/bio`      | Bio dashboard (link management) |
-| `/app/settings` | Account settings (profile)      |
+| Route           | Purpose                           |
+| :-------------- | :-------------------------------- |
+| `/app`          | Platform shell (app switcher)     |
+| `/app/bio`      | Bio dashboard (link management)   |
+| `/app/cashflow` | Cashflow dashboard                |
+| `/app/settings` | Account settings (profile)        |
+| `/onboarding`   | Username completion (OAuth users) |
 
 **Public routes**:
 
-| Route         | Purpose         |
-| :------------ | :-------------- |
-| `/{username}` | Public Bio page |
-| `/login`      | Login page      |
-| `/signup`     | Signup page     |
-
-**Legacy redirects** (for backward compatibility):
-
-| Old Route    | Redirects To    |
-| :----------- | :-------------- |
-| `/dashboard` | `/app/bio`      |
-| `/settings`  | `/app/settings` |
+| Route            | Purpose                |
+| :--------------- | :--------------------- |
+| `/{username}`    | Public Bio page        |
+| `/cashflow/[id]` | Public/Shared Cashflow |
+| `/login`         | Login page             |
+| `/signup`        | Signup page            |
 
 ### Project Structure
 
 ```text
 src/
 ├── app/
-│   ├── (platform)/                # Platform routes group
+│   ├── (marketing)/               # Marketing/Landing pages (no platform shell)
+│   │   ├── page.tsx               # Landing page
+│   │   └── loading.tsx
+│   ├── (platform)/                # Platform routes group (shared layout)
+│   │   ├── layout.tsx             # Platform shell with header
 │   │   ├── app/                   # Platform shell with app switcher
 │   │   │   └── page.tsx
 │   │   ├── bio/                   # Bio dashboard
@@ -140,24 +140,30 @@ src/
 │   │   │   ├── page.tsx
 │   │   │   ├── SettingsForm.tsx
 │   │   │   └── actions.ts
-│   │   └── cashflow/              # Cashflow app
+│   │   └── cashflow/              # Cashflow dashboard
 │   │       ├── page.tsx
-│   │       └── actions.ts
-│   ├── (auth)/
+│   │       ├── actions.ts
+│   │       └── components/
+│   ├── (auth)/                    # Auth pages (shared auth layout)
 │   │   ├── login/page.tsx
 │   │   ├── signup/page.tsx
 │   │   ├── forgot-password/page.tsx
 │   │   ├── layout.tsx
 │   │   └── actions.ts             # Auth + username check actions
-
-│   ├── auth/callback/route.ts     # Magic link handler
+│   ├── cashflow/[id]/             # Public cashflow detail (outside platform)
+│   │   ├── page.tsx
+│   │   └── loading.tsx
+│   ├── onboarding/page.tsx        # OAuth username completion
+│   ├── auth/callback/route.ts     # Magic link & OAuth handler
 │   ├── update-password/page.tsx
-│   ├── dashboard/page.tsx         # Legacy redirect → /app/bio
-│   ├── settings/page.tsx          # Legacy redirect → /app/settings
 │   ├── [username]/
 │   │   ├── page.tsx               # Public profile
 │   │   └── [linkId]/route.ts      # Click tracking redirect
-│   └── page.tsx                   # Landing page
+│   └── layout.tsx                 # Root layout
+├── components/
+│   ├── skeletons/                 # Reusable skeleton components
+│   │   └── platform-header-skeleton.tsx
+│   └── ui/                        # shadcn/ui components
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts
@@ -203,9 +209,11 @@ src/
 
 ### Auth Flow
 
-1. **Signup**: User picks username + Email + Password → Create profile (via DB trigger)
-2. **Login**: Email + Password → Redirect to `/app`
-3. **Forgot Password**: Email → Reset link → `/auth/callback` → `/update-password`
+1. **Email Signup**: User picks username + Email + Password → Create profile (via DB trigger)
+2. **Google OAuth Signup**: Google sign-in → Redirect to `/onboarding` (if no username) → Pick username → Complete profile
+3. **Login**: Email + Password OR Google OAuth → Redirect to `/app` (or `/onboarding` if profile incomplete)
+4. **Forgot Password**: Email → Reset link → `/auth/callback` → `/update-password`
+5. **Onboarding**: Users without a username are redirected here to complete their profile before accessing the platform
 
 ### Click Tracking (`/{username}/[linkId]`)
 

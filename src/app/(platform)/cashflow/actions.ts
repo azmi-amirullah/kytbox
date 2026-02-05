@@ -143,7 +143,7 @@ export async function addEntry(formData: FormData) {
 }
 
 export async function updateEntry(entryId: string, formData: FormData) {
-  const { supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
 
   const description = formData.get('description') as string;
   const amountStr = formData.get('amount') as string;
@@ -163,10 +163,44 @@ export async function updateEntry(entryId: string, formData: FormData) {
     return { error: 'Invalid type' };
   }
 
-  // Explicit ownership check via join could be complex, but we can trust RLS or do a pre-check.
-  // We'll trust RLS for the update, but catch '0 rows updated' if we want strictly better UX.
-  // However, simpler is often better. Let's add a robust RLS policy backing.
-  // For extra safety, we can check if the entry belongs to a cashflow owned by the user.
+  // Verify entry exists and user has edit permission (owner or editor)
+  const { data: entry } = await supabase
+    .from('cashflow_entries')
+    .select('cashflow_id')
+    .eq('id', entryId)
+    .single();
+
+  if (!entry) {
+    return { error: 'Entry not found' };
+  }
+
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('user_id')
+    .eq('id', entry.cashflow_id)
+    .single();
+
+  if (!cashflow) {
+    return { error: 'Cashflow not found' };
+  }
+
+  let canEdit = cashflow.user_id === user.id;
+
+  if (!canEdit) {
+    const { data: share } = await supabase
+      .from('cashflow_shares')
+      .select('role')
+      .eq('cashflow_id', entry.cashflow_id)
+      .eq('email', user.email?.toLowerCase() || '')
+      .eq('role', 'edit')
+      .single();
+
+    if (share) canEdit = true;
+  }
+
+  if (!canEdit) {
+    return { error: 'You do not have permission to edit this entry' };
+  }
 
   const { error } = await supabase
     .from('cashflow_entries')
@@ -177,7 +211,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
       date,
     })
     .eq('id', entryId);
-  // We implicitly rely on RLS here. If RLS is "user can update entries where cashflow.user_id = user.id", we are safe.
+
   if (error) {
     console.error('Failed to update entry:', error);
     return { error: error.message };
@@ -188,9 +222,47 @@ export async function updateEntry(entryId: string, formData: FormData) {
 }
 
 export async function deleteEntry(entryId: string) {
-  const { supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  // RLS ensures we can only delete our own entries (via cashflow ownership)
+  // Verify entry exists and user has edit permission (owner or editor)
+  const { data: entry } = await supabase
+    .from('cashflow_entries')
+    .select('cashflow_id')
+    .eq('id', entryId)
+    .single();
+
+  if (!entry) {
+    return { error: 'Entry not found' };
+  }
+
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('user_id')
+    .eq('id', entry.cashflow_id)
+    .single();
+
+  if (!cashflow) {
+    return { error: 'Cashflow not found' };
+  }
+
+  let canEdit = cashflow.user_id === user.id;
+
+  if (!canEdit) {
+    const { data: share } = await supabase
+      .from('cashflow_shares')
+      .select('role')
+      .eq('cashflow_id', entry.cashflow_id)
+      .eq('email', user.email?.toLowerCase() || '')
+      .eq('role', 'edit')
+      .single();
+
+    if (share) canEdit = true;
+  }
+
+  if (!canEdit) {
+    return { error: 'You do not have permission to delete this entry' };
+  }
+
   const { error } = await supabase
     .from('cashflow_entries')
     .delete()
