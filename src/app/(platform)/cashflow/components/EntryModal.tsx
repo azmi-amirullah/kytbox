@@ -20,16 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { LuLoader, LuFileText, LuDollarSign, LuCalendar } from 'react-icons/lu';
+import { LuLoader, LuFileText, LuCalendar } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { addEntry, updateEntry } from '../actions';
 import type { CashflowEntry } from '@/types/supabase';
+import { getCurrencySymbol } from '@/lib/currency';
 
 interface EntryModalProps {
   cashflowId: string;
   entry?: CashflowEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  currency: string | null;
 }
 
 export default function EntryModal({
@@ -37,6 +39,7 @@ export default function EntryModal({
   entry = null,
   open,
   onOpenChange,
+  currency,
 }: EntryModalProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -158,7 +161,9 @@ export default function EntryModal({
                   Amount<span className='text-destructive'>*</span>
                 </Label>
                 <div className='relative'>
-                  <LuDollarSign className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+                  <div className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm'>
+                    {getCurrencySymbol(currency || 'USD')}
+                  </div>
                   <Input
                     id='amount'
                     name='amount'

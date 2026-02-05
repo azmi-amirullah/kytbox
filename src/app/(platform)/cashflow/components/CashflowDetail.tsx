@@ -382,6 +382,7 @@ export default function CashflowDetail({
         entry={editingEntry}
         open={isEntryModalOpen}
         onOpenChange={setIsEntryModalOpen}
+        currency={currency}
       />
 
       {/* Delete Cashflow Dialog */}

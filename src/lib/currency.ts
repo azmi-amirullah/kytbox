@@ -43,3 +43,8 @@ export function formatCurrencyCompact(
   const currency = getCurrency(currencyCode);
   return `${currency.symbol} ${amount.toLocaleString(currency.locale)}`;
 }
+
+export function getCurrencySymbol(code: string | null | undefined): string {
+  const currency = getCurrency(code);
+  return currency.symbol;
+}
