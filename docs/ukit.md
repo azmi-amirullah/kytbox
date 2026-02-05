@@ -19,9 +19,10 @@ Users create one account and access multiple tools (apps) under that account.
 Examples of UKIT apps:
 
 - Bio (public-facing)
+- Cashflow (private / shareable)
 - List (private / shareable)
 - Track (private)
-- ID (search-based)
+- Lookup (search-based)
 
 UKIT is closer to Google than to a link-in-bio product.
 Bio is the first surface, not the identity.
@@ -131,8 +132,8 @@ Used for queries, not people.
 
 Pattern:
 
-- /id
-- /id/\*
+- /lookup
+- /lookup/\*
 
 Rules:
 
@@ -154,7 +155,11 @@ about
 help
 support
 app
-id
+bio
+cashflow
+list
+track
+lookup
 admin
 api
 blog
@@ -345,9 +350,10 @@ Each app gets its own dashboard under `/app/{app}`.
 Examples:
 
 - `/app/bio`
+- `/app/cashflow`
 - `/app/list`
 - `/app/track`
-- `/app/id` (only if this app exists)
+- `/app/lookup` (only if this app exists)
 
 App dashboards own:
 
@@ -389,6 +395,8 @@ Logged-in:
 - `/app/bio` → Bio dashboard
 - `/app/bio/links` → manage links
 - `/app/bio/analytics` → Bio analytics
+- `/app/cashflow` → Cashflow dashboard
+- `/app/lookup` → Lookup (Search)
 
 Public:
 

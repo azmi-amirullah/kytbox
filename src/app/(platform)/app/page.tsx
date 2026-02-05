@@ -8,7 +8,6 @@ import {
   LuLink2,
   LuListTodo,
   LuCar,
-  LuSearch,
   LuArrowRight,
   LuWallet,
 } from 'react-icons/lu';
@@ -18,7 +17,7 @@ const UKIT_APPS = [
   {
     id: 'bio',
     name: 'Bio',
-    description: 'Your public link-in-bio page',
+    description: 'Share all your links in one beautiful page',
     href: '/bio',
     icon: LuLink2,
     status: 'active' as const,
@@ -27,7 +26,7 @@ const UKIT_APPS = [
   {
     id: 'cashflow',
     name: 'Cashflow',
-    description: 'Track income & expenses',
+    description: 'Simple & effective personal finance tracking',
     href: '/cashflow',
     icon: LuWallet,
     status: 'active' as const,
@@ -36,7 +35,7 @@ const UKIT_APPS = [
   {
     id: 'list',
     name: 'List',
-    description: 'Todo, wishlist, and ideas',
+    description: 'Todo lists, wishlists & ideas',
     href: '/list',
     icon: LuListTodo,
     status: 'coming_soon' as const,
@@ -45,18 +44,9 @@ const UKIT_APPS = [
   {
     id: 'track',
     name: 'Track',
-    description: 'Motor & service tracking',
+    description: 'Vehicle & service tracking',
     href: '/track',
     icon: LuCar,
-    status: 'coming_soon' as const,
-    color: 'bg-green-500/10 text-green-600',
-  },
-  {
-    id: 'id',
-    name: 'ID',
-    description: 'Caller & number lookup',
-    href: '/id',
-    icon: LuSearch,
     status: 'coming_soon' as const,
     color: 'bg-orange-500/10 text-orange-600',
   },

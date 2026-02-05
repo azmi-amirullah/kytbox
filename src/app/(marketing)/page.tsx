@@ -5,10 +5,12 @@ import {
   LuLink2,
   LuListTodo,
   LuCar,
-  LuSearch,
   LuShieldCheck,
   LuZap,
   LuGlobe,
+  LuWallet,
+  LuFingerprint,
+  LuSmartphone,
 } from 'react-icons/lu';
 import { SiGithub, SiLinkedin } from 'react-icons/si';
 
@@ -28,6 +30,14 @@ const UKIT_APPS = [
     color: 'bg-primary/10 text-primary',
   },
   {
+    id: 'cashflow',
+    name: 'Cashflow',
+    description: 'Simple & effective personal finance tracking',
+    icon: LuWallet,
+    status: 'active' as const,
+    color: 'bg-emerald-500/10 text-emerald-600',
+  },
+  {
     id: 'list',
     name: 'List',
     description: 'Todo lists, wishlists & ideas',
@@ -40,14 +50,6 @@ const UKIT_APPS = [
     name: 'Track',
     description: 'Vehicle & service tracking',
     icon: LuCar,
-    status: 'coming_soon' as const,
-    color: 'bg-green-500/10 text-green-600',
-  },
-  {
-    id: 'id',
-    name: 'ID',
-    description: 'Caller & number lookup',
-    icon: LuSearch,
     status: 'coming_soon' as const,
     color: 'bg-orange-500/10 text-orange-600',
   },
@@ -102,8 +104,8 @@ export default async function LandingPage() {
             </h1>
 
             <p className='text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed'>
-              One account. Multiple tools. Bio, lists, tracking & more — all in
-              one place.
+              One account. Multiple tools. Bio, cashflow, lists, tracking & more
+              — all in one place.
             </p>
 
             <div className='flex flex-col sm:flex-row items-center justify-center gap-4 pt-8'>
@@ -158,30 +160,50 @@ export default async function LandingPage() {
         </section>
 
         {/* Features Grid */}
-        <section className='py-16 bg-secondary/5 border-y border-border/50'>
+        <section className='py-20 bg-secondary/5 border-y border-border/50'>
           <div className='max-w-5xl mx-auto px-6'>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-              <div className='p-6 rounded-2xl bg-card border hover:shadow-lg transition-all hover:-translate-y-1 group'>
-                <div className='w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <div className='p-8 rounded-2xl bg-card border hover:shadow-lg transition-all hover:-translate-y-1 group'>
+                <div className='w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6 group-hover:bg-blue-500/20 transition-colors'>
                   <LuZap className='w-6 h-6 text-blue-500' />
                 </div>
-                <h3 className='text-xl font-bold mb-2'>Blazing Fast</h3>
-                <p className='text-muted-foreground'>
-                  Built on Next.js 16 and Supabase for instant page loads and
-                  real-time updates.
+                <h3 className='text-xl font-bold mb-2'>Modern Stack</h3>
+                <p className='text-muted-foreground leading-relaxed'>
+                  Built on Next.js 16 and Supabase for instant page loads,
+                  real-time updates, and ultimate developer experience.
                 </p>
               </div>
 
-              <div className='p-6 rounded-2xl bg-card border hover:shadow-lg transition-all hover:-translate-y-1 group'>
-                <div className='w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:bg-purple-500/20 transition-colors'>
+              <div className='p-8 rounded-2xl bg-card border hover:shadow-lg transition-all hover:-translate-y-1 group'>
+                <div className='w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-6 group-hover:bg-purple-500/20 transition-colors'>
                   <LuShieldCheck className='w-6 h-6 text-purple-500' />
                 </div>
-                <h3 className='text-xl font-bold mb-2'>
-                  Your Data, Your Control
-                </h3>
-                <p className='text-muted-foreground'>
-                  No tracking pixels, no hidden algorithms. Your data stays
-                  yours.
+                <h3 className='text-xl font-bold mb-2'>Privacy First</h3>
+                <p className='text-muted-foreground leading-relaxed'>
+                  No tracking pixels, no data harvesting, no hidden algorithms.
+                  Your data remains yours, encrypted and secure.
+                </p>
+              </div>
+
+              <div className='p-8 rounded-2xl bg-card border hover:shadow-lg transition-all hover:-translate-y-1 group'>
+                <div className='w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center mb-6 group-hover:bg-orange-500/20 transition-colors'>
+                  <LuFingerprint className='w-6 h-6 text-orange-500' />
+                </div>
+                <h3 className='text-xl font-bold mb-2'>Unified Hub</h3>
+                <p className='text-muted-foreground leading-relaxed'>
+                  One account, multiple tools. Seamlessly switch between Bio,
+                  Cashflow, and future apps without losing context.
+                </p>
+              </div>
+
+              <div className='p-8 rounded-2xl bg-card border hover:shadow-lg transition-all hover:-translate-y-1 group'>
+                <div className='w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:bg-emerald-500/20 transition-colors'>
+                  <LuSmartphone className='w-6 h-6 text-emerald-500' />
+                </div>
+                <h3 className='text-xl font-bold mb-2'>Mobile-First DNA</h3>
+                <p className='text-muted-foreground leading-relaxed'>
+                  Every component is crafted for touch and small screens using
+                  atomic design for a native-app feel on the web.
                 </p>
               </div>
             </div>

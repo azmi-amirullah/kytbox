@@ -14,6 +14,8 @@ export const RESERVED_USERNAMES = [
   'list',
   'track',
   'id',
+  'lookup',
+  'cashflow',
 
   // --- Auth & Legal ---
   'login',
