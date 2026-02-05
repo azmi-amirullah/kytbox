@@ -47,12 +47,14 @@ interface CashflowCardProps {
   cashflow: Cashflow;
   entries: CashflowEntry[];
   currentUserId?: string;
+  currency: string | null;
 }
 
 export default function CashflowCard({
   cashflow,
   entries,
   currentUserId,
+  currency,
 }: CashflowCardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -257,6 +259,7 @@ export default function CashflowCard({
         entry={editingEntry}
         open={isEntryModalOpen}
         onOpenChange={setIsEntryModalOpen}
+        currency={currency}
       />
 
       {/* Share Modal */}

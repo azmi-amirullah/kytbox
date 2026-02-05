@@ -11,12 +11,14 @@ interface CashflowDashboardProps {
   initialCashflows: Cashflow[];
   initialEntries: CashflowEntry[];
   currentUserId?: string;
+  currency: string | null;
 }
 
 export default function CashflowDashboard({
   initialCashflows,
   initialEntries,
   currentUserId,
+  currency,
 }: CashflowDashboardProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -95,6 +97,7 @@ export default function CashflowDashboard({
               entries={initialEntries.filter(
                 (e) => e.cashflow_id === cashflow.id,
               )}
+              currency={currency}
             />
           ))}
         </div>
