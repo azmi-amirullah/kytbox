@@ -47,6 +47,7 @@ export default function CashflowModal({
       queueMicrotask(() => {
         setTitle(cashflow?.title || '');
         setError(null);
+        setIsLoading(false);
       });
     }
   }, [open, cashflow]);
@@ -83,7 +84,7 @@ export default function CashflowModal({
       setIsLoading(false);
     } else {
       toast.success(isEdit ? 'Cashflow updated!' : 'Cashflow created!');
-      setIsLoading(false);
+      // Keep isLoading true to prevent button flicker before modal closes
       startTransition(() => {
         router.refresh();
       });

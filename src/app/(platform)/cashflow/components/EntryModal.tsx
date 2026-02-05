@@ -67,6 +67,7 @@ export default function EntryModal({
         setType(entry?.type || 'expense');
         setDate(entry?.date || today);
         setError(null);
+        setIsLoading(false);
       });
     }
   }, [open, entry, today]);
@@ -105,7 +106,7 @@ export default function EntryModal({
       setIsLoading(false);
     } else {
       toast.success(isEdit ? 'Entry updated!' : 'Entry added!');
-      setIsLoading(false);
+      // Keep isLoading true to prevent button flicker before modal closes
       startTransition(() => {
         router.refresh();
       });

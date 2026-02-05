@@ -75,7 +75,11 @@ export default function CashflowDetail({
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<CashflowEntry | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+  const [isDeletingEntryId, setIsDeletingEntryId] = useState<string | null>(
+    null,
+  );
 
   const isOwner = currentUserId === cashflow.user_id;
 
@@ -100,27 +104,36 @@ export default function CashflowDetail({
   const balance = income - expense;
 
   async function handleDeleteCashflow() {
-    const result = await deleteCashflow(cashflow.id);
-    if (result.error) {
-      toast.error('Failed to delete cashflow');
-    } else {
-      toast.success('Cashflow deleted');
-      router.push('/cashflow');
-    }
-    setDeleteDialogOpen(false);
+    setIsDeleting(true);
+    startTransition(async () => {
+      const result = await deleteCashflow(cashflow.id);
+      if (result.error) {
+        toast.error('Failed to delete cashflow');
+        setIsDeleting(false);
+        setDeleteDialogOpen(false);
+      } else {
+        setDeleteDialogOpen(false);
+        toast.success('Cashflow deleted');
+        router.push('/cashflow');
+      }
+    });
   }
 
   async function handleDeleteEntry(entryId: string) {
-    const result = await deleteEntry(entryId);
-    if (result.error) {
-      toast.error('Failed to delete entry');
-    } else {
-      toast.success('Entry deleted');
-      startTransition(() => {
+    setIsDeletingEntryId(entryId);
+    startTransition(async () => {
+      const result = await deleteEntry(entryId);
+      if (result.error) {
+        toast.error('Failed to delete entry');
+        setIsDeletingEntryId(null);
+        setDeletingEntryId(null);
+      } else {
+        setDeletingEntryId(null);
+        toast.success('Entry deleted');
         router.refresh();
-      });
-    }
-    setDeletingEntryId(null);
+        // Keep isDeletingEntryId true to prevent flicker before refresh updates UI
+      }
+    });
   }
 
   async function handleBookmark() {
@@ -206,7 +219,10 @@ export default function CashflowDetail({
                     Rename
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => setDeleteDialogOpen(true)}
+                    onClick={() => {
+                      setIsDeleting(false);
+                      setDeleteDialogOpen(true);
+                    }}
                     className='text-destructive focus:text-destructive cursor-pointer'
                   >
                     <LuTrash2 className='w-4 h-4 mr-2' />
@@ -342,9 +358,12 @@ export default function CashflowDetail({
                             variant='ghost'
                             size='icon'
                             className='h-7 w-7 text-destructive hover:text-destructive'
-                            onClick={() => setDeletingEntryId(entry.id)}
+                            onClick={() => {
+                              setIsDeletingEntryId(null);
+                              setDeletingEntryId(entry.id);
+                            }}
                           >
-                            {isPending ? (
+                            {isDeletingEntryId === entry.id ? (
                               <LuLoader className='w-3.5 h-3.5 animate-spin' />
                             ) : (
                               <LuTrash2 className='w-3.5 h-3.5' />
@@ -398,10 +417,21 @@ export default function CashflowDetail({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteCashflow}
-              className='bg-destructive text-white hover:bg-destructive/90'
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteCashflow();
+              }}
+              disabled={isPending}
+              className='bg-destructive text-white hover:bg-destructive/90 min-w-[100px]'
             >
-              Delete
+              {isDeleting ? (
+                <div className='flex items-center gap-2'>
+                  <LuLoader className='w-4 h-4 animate-spin' />
+                  <span>Deleting...</span>
+                </div>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -423,12 +453,25 @@ export default function CashflowDetail({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
-                deletingEntryId && handleDeleteEntry(deletingEntryId)
-              }
-              className='bg-destructive text-white hover:bg-destructive/90'
+              onClick={(e) => {
+                e.preventDefault();
+                const id = deletingEntryId;
+                if (id) {
+                  setIsDeletingEntryId(id);
+                  handleDeleteEntry(id);
+                }
+              }}
+              disabled={!!isDeletingEntryId}
+              className='bg-destructive text-white hover:bg-destructive/90 min-w-[80px]'
             >
-              Delete
+              {isDeletingEntryId ? (
+                <div className='flex items-center gap-2'>
+                  <LuLoader className='w-3.5 h-3.5 animate-spin' />
+                  <span>Deleting...</span>
+                </div>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -131,12 +131,13 @@ export default function CashflowList({
     const result = await deleteCashflow(activeCashflow.id);
     if (result.error) {
       toast.error('Failed to delete cashflow');
+      setIsDeleting(false);
     } else {
+      setDeleteDialogOpen(false);
       toast.success('Cashflow deleted');
       router.refresh();
+      // We don't setIsDeleting(false) here because the dialog is closing
     }
-    setIsDeleting(false);
-    setDeleteDialogOpen(false);
   }
 
   function openShare(e: React.MouseEvent, cashflow: CashflowWithSummary) {
@@ -157,6 +158,7 @@ export default function CashflowList({
     e.preventDefault();
     e.stopPropagation();
     setActiveCashflow(cashflow);
+    setIsDeleting(false);
     setDeleteDialogOpen(true);
   }
 
@@ -425,7 +427,10 @@ export default function CashflowList({
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             >
               {isDeleting ? (
-                <LuLoader className='w-4 h-4 animate-spin' />
+                <div className='flex items-center gap-2'>
+                  <LuLoader className='w-4 h-4 animate-spin' />
+                  <span>Deleting...</span>
+                </div>
               ) : (
                 'Delete'
               )}
