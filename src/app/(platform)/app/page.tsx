@@ -59,6 +59,7 @@ const UKIT_APPS = [
 export default async function AppHomePage() {
   const supabase = await createClient();
 
+  // Layout already validates auth, get user for profile fetch
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -73,8 +74,9 @@ export default async function AppHomePage() {
     .eq('id', user.id)
     .single();
 
+  // Redirect to onboarding if profile doesn't exist
   if (!profile) {
-    redirect('/login');
+    redirect('/onboarding');
   }
 
   const publicUrl = `/${profile.username}`;

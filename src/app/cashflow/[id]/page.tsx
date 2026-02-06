@@ -15,30 +15,27 @@ export default async function CashflowDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  // 1. Get User (don't redirect yet)
+  // 1. Get User (don't redirect yet - public pages don't require login)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 2. Load Profile (only if user exists)
-  let profile = null;
-  if (user) {
-    const { data } = await supabase
-      .from('profiles')
+  // 2. Parallelize: profile (if user) AND cashflow + entries
+  const [profileResult, cashflowResult, entriesResult] = await Promise.all([
+    user
+      ? supabase.from('profiles').select('*').eq('id', user.id).single()
+      : Promise.resolve({ data: null }),
+    supabase.from('cashflows').select('*').eq('id', id).single(),
+    supabase
+      .from('cashflow_entries')
       .select('*')
-      .eq('id', user.id)
-      .single();
-    profile = data;
-  }
+      .eq('cashflow_id', id)
+      .order('date', { ascending: false }),
+  ]);
 
-  // 3. Get Cashflow
-  // RLS will ensure we only see what allowed.
-  // Public cashflows are visible to anon.
-  const { data: cashflow } = await supabase
-    .from('cashflows')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const profile = profileResult.data;
+  const cashflow = cashflowResult.data;
+  const entries = entriesResult.data;
 
   if (!cashflow) {
     notFound();
@@ -47,28 +44,10 @@ export default async function CashflowDetailPage({
   // 4. Access Control
   const isPublic = cashflow.is_public;
 
-  // We rely on RLS, but if RLS allowed it (e.g. public), we are good.
-  // Ideally, if it's NOT public and we are NOT logged in, RLS would return nothing anyway
-  // and we'd hit 404.
-  // BUT: If the user is not logged in, they might see a public cashflow.
-
-  // If we found a cashflow, it means we have access (public or owner/shared).
-  // However, verify logic:
-  // If !user and !isPublic -> The user shouldn't have been able to fetch it unless RLS failed.
-  // Actually, for "Join via Link" scenarios where RLS might not cover "invitations" not yet accepted
-  // (which is not the case here, invites are by email), we are safe.
-
   // Explicit check for better UX:
   if (!user && !isPublic) {
     redirect('/login');
   }
-
-  // Get entries
-  const { data: entries } = await supabase
-    .from('cashflow_entries')
-    .select('*')
-    .eq('cashflow_id', id)
-    .order('date', { ascending: false });
 
   // Prepare UI Data
   const publicUrl = profile ? `/${profile.username}` : undefined;

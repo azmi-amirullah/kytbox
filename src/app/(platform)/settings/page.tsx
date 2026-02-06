@@ -26,7 +26,7 @@ export default async function SettingsPage() {
     .single();
 
   if (!profile) {
-    redirect('/login');
+    redirect('/onboarding');
   }
 
   const publicUrl = `/${profile.username}`;

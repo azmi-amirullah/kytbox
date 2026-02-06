@@ -57,28 +57,30 @@ const UKIT_APPS = [
 
 export default async function LandingPage() {
   const supabase = await createClient();
+
+  // Get user first (required for profile lookup)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let profile = null;
+  // Fetch profile only if user exists (parallel not possible here due to dependency)
+  let userData = null;
   if (user) {
-    const { data } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
-      .select('*')
+      .select('username, avatar_url, display_name')
       .eq('id', user.id)
       .single();
-    profile = data;
-  }
 
-  const userData = profile
-    ? {
+    if (profile) {
+      userData = {
         username: profile.username,
         email: user?.email,
         avatar_url: profile.avatar_url,
         display_name: profile.display_name,
-      }
-    : null;
+      };
+    }
+  }
 
   return (
     <div className='relative min-h-screen flex flex-col'>

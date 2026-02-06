@@ -1,6 +1,11 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
+/**
+ * Platform Layout - Auth Guard Only
+ * Profile checks are handled by individual pages to avoid duplicate DB calls.
+ * Profile existence is guaranteed by the onboarding flow.
+ */
 export default async function PlatformLayout({
   children,
 }: {
@@ -13,18 +18,6 @@ export default async function PlatformLayout({
 
   if (!user) {
     redirect('/login');
-  }
-
-  // Check if user has a profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single();
-
-  // If no profile exists, they must complete onboarding
-  if (!profile) {
-    redirect('/onboarding');
   }
 
   return <>{children}</>;

@@ -16,23 +16,22 @@ export default async function CashflowPage() {
     redirect('/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // Parallelize profile and shares queries for better performance
+  const [profileResult, sharesResult] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase
+      .from('cashflow_shares')
+      .select('cashflow_id, is_included_in_totals')
+      .eq('email', user.email!.toLowerCase())
+      .eq('is_pinned', true),
+  ]);
+
+  const profile = profileResult.data;
+  const shares = sharesResult.data;
 
   if (!profile) {
-    redirect('/login');
+    redirect('/onboarding');
   }
-
-  // Get user's shares to check inclusion status
-  // Only get shares that are pinned to the dashboard
-  const { data: shares } = await supabase
-    .from('cashflow_shares')
-    .select('cashflow_id, is_included_in_totals')
-    .eq('email', user.email!.toLowerCase())
-    .eq('is_pinned', true);
 
   interface ShareWithInclusion {
     cashflow_id: string;

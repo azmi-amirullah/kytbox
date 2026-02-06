@@ -461,3 +461,76 @@ For implementation details and coverage status, see: [Loading States Documentati
 
 - [Bio Documentation](./link-in-bio.md)
 - [Cashflow Documentation](./cashflow.md)
+
+### 12.3 Complete Route Reference
+
+All page routes in UKIT with their rendering type and auth requirements:
+
+| Route              | Render  | Auth  | Description                      |
+| ------------------ | ------- | ----- | -------------------------------- |
+| `/`                | Dynamic | No    | Landing page                     |
+| `/login`           | Static  | No    | Login form                       |
+| `/signup`          | Static  | No    | Signup form                      |
+| `/forgot-password` | Static  | No    | Password reset request           |
+| `/update-password` | Static  | No    | Password reset form              |
+| `/onboarding`      | Static  | No    | Profile setup                    |
+| `/app`             | Dynamic | Yes   | Platform home / app switcher     |
+| `/bio`             | Dynamic | Yes   | Bio dashboard                    |
+| `/bio/analytics`   | Dynamic | Yes   | Bio analytics                    |
+| `/cashflow`        | Dynamic | Yes   | Cashflow list                    |
+| `/cashflow/[id]`   | Dynamic | Mixed | Cashflow detail (public or auth) |
+| `/settings`        | Dynamic | Yes   | Account settings                 |
+| `/[username]`      | Dynamic | No    | Public bio page                  |
+
+### 12.4 Future Optimization Options
+
+When scaling requires further performance improvements, consider these options:
+
+#### Caching (Next.js 16)
+
+1. **`cacheComponents`** - Enable Partial Prerendering (PPR)
+
+   ```ts
+   // next.config.ts
+   const nextConfig: NextConfig = {
+     cacheComponents: true,
+   };
+   ```
+
+2. **`'use cache'` directive** - Cache expensive functions
+
+   ```tsx
+   async function getProfile(userId: string) {
+     'use cache';
+     cacheLife({ expire: 60 }); // 1 minute
+     return db.profiles.findUnique({ where: { id: userId } });
+   }
+   ```
+
+3. **`unstable_cache()`** - Cache data fetching (legacy API)
+
+#### Database Optimization
+
+1. **Supabase Views** - Pre-join common queries (already using `cashflow_summaries`)
+2. **Database Indexes** - Add indexes for frequently filtered columns
+3. **Connection Pooling** - Use Supabase's built-in pgBouncer
+4. **Edge Functions** - Move complex queries closer to users
+
+#### CDN & Edge
+
+1. **Vercel Edge Config** - Store static config at edge
+2. **Image Optimization** - Already using `next/image`
+3. **Static Generation** - Convert marketing pages to static where possible
+
+#### Code-Level
+
+1. **React `cache()`** - Dedupe requests within same render
+2. **Suspense boundaries** - Stream non-critical content
+3. **Dynamic imports** - Code-split heavy components
+4. **Prefetching** - `<Link>` already prefetches on hover
+
+#### Monitoring
+
+- Vercel Speed Insights (already integrated)
+- Core Web Vitals tracking
+- Supabase Query Performance dashboard

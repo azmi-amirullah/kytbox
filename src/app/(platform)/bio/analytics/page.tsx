@@ -8,7 +8,6 @@ import AnalyticsClient from './components/AnalyticsClient';
 export default async function AnalyticsPage() {
   const supabase = await createClient();
 
-  // Get user
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -17,7 +16,6 @@ export default async function AnalyticsPage() {
     redirect('/login');
   }
 
-  // Get user profile
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -25,7 +23,7 @@ export default async function AnalyticsPage() {
     .single();
 
   if (!profile) {
-    redirect('/login');
+    redirect('/onboarding');
   }
 
   const publicUrl = `/${profile.username}`;

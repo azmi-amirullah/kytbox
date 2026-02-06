@@ -23,7 +23,7 @@ export default async function PublicProfilePage({
   const { username } = await params;
   const supabase = await createClient();
 
-  // Get profile (fetch fresh, no cache)
+  // Get profile first (required for links query)
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -37,7 +37,7 @@ export default async function PublicProfilePage({
   // Fire and forget tracking
   trackProfileView(profile.id);
 
-  // Get active links
+  // Get links for this specific user (filtered at DB level)
   const { data: links } = await supabase
     .from('links')
     .select('*')

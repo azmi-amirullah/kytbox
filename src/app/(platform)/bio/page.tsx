@@ -16,23 +16,28 @@ export default async function BioDashboardPage() {
     redirect('/login');
   }
 
-  // Get user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // Parallelize all queries for better performance
+  const [profileResult, linksResult] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase
+      .from('links')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('sort_order', { ascending: true }),
+  ]);
+
+  const profile = profileResult.data;
+  const links = linksResult.data;
 
   if (!profile) {
-    redirect('/login');
+    redirect('/onboarding');
   }
 
-  // Get user links
-  const { data: links } = await supabase
-    .from('links')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('sort_order', { ascending: true });
+  // Fetch views count (depends on profile.id)
+  const { count: totalViews } = await supabase
+    .from('profile_events')
+    .select('*', { count: 'exact', head: true })
+    .eq('profile_id', profile.id);
 
   const publicUrl = `/${profile.username}`;
 
@@ -42,12 +47,6 @@ export default async function BioDashboardPage() {
     avatar_url: profile.avatar_url,
     display_name: profile.display_name,
   };
-
-  // Get total profile views
-  const { count: totalViews } = await supabase
-    .from('profile_events')
-    .select('*', { count: 'exact', head: true })
-    .eq('profile_id', profile.id);
 
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>
