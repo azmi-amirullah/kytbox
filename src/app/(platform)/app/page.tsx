@@ -59,7 +59,7 @@ const UKIT_APPS = [
 export default async function AppHomePage() {
   const supabase = await createClient();
 
-  // Layout already validates auth, get user for profile fetch
+  // Middleware (proxy.ts) validates auth, get user for profile fetch
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -353,5 +353,4 @@ See `src/lib/username.ts` for full list.
 ## 11. Planned Features
 
 - Username change cooldown (§7 ukit.md)
-- Export analytics data
 - Custom user-defined themes (color picker UI)

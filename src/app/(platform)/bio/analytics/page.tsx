@@ -4,6 +4,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import AnalyticsClient from './components/AnalyticsClient';
+import { getAnalyticsData } from './actions';
 
 export default async function AnalyticsPage() {
   const supabase = await createClient();
@@ -26,6 +27,9 @@ export default async function AnalyticsPage() {
     redirect('/onboarding');
   }
 
+  // Prefetch initial analytics data with default filters
+  const initialData = await getAnalyticsData('24h', 'all');
+
   const publicUrl = `/${profile.username}`;
   const userData = {
     username: profile.username,
@@ -41,7 +45,7 @@ export default async function AnalyticsPage() {
 
       {/* Main Content */}
       <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8 flex-1 w-full'>
-        <AnalyticsClient />
+        <AnalyticsClient initialData={initialData} />
       </main>
 
       <Footer />
