@@ -2,9 +2,31 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  const pathname = request.nextUrl.pathname;
+
+  // Protected routes - require authentication
+  const protectedPaths = [
+    '/app',
+    '/bio',
+    '/cashflow',
+    '/settings',
+    '/update-password',
+  ];
+  const isProtectedRoute = protectedPaths.some((path) =>
+    pathname.startsWith(path),
+  );
+
+  // Auth routes - redirect logged-in users
+  const authPaths = ['/login', '/signup'];
+  const isAuthRoute = authPaths.some((path) => pathname.startsWith(path));
+
+  // Skip auth check for public routes (landing, public profiles, etc.)
+  if (!isProtectedRoute && !isAuthRoute) {
+    return NextResponse.next({ request });
+  }
+
+  // Only create Supabase client when needed
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,9 +40,7 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );
@@ -29,17 +49,12 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Refresh session if expired
+  // Get user only when needed
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected routes - all routes under /app require authentication
-  const protectedPaths = ['/app', '/update-password'];
-  const isProtectedRoute = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path),
-  );
-
+  // Protect routes
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
@@ -47,20 +62,13 @@ export async function proxy(request: NextRequest) {
   }
 
   // Redirect logged-in users away from auth pages
-  const authPaths = ['/login', '/signup'];
-  const isAuthRoute = authPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path),
-  );
-
   if (isAuthRoute && user) {
-    // Check if user has a profile (completed onboarding)
     const { data: profile } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', user.id)
       .single();
 
-    // Only redirect if they have a profile
     if (profile) {
       const url = request.nextUrl.clone();
       url.pathname = '/app';

@@ -1,24 +1,13 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-
 /**
- * Platform Layout - Auth Guard Only
- * Profile checks are handled by individual pages to avoid duplicate DB calls.
- * Profile existence is guaranteed by the onboarding flow.
+ * Platform Layout - No Blocking
+ * Auth is handled by proxy.ts (middleware).
+ * Profile checks are handled by individual pages.
+ * This layout is sync so loading.tsx shows immediately.
  */
-export default async function PlatformLayout({
+export default function PlatformLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
   return <>{children}</>;
 }
