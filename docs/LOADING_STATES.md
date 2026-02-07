@@ -6,18 +6,19 @@ This document tracks the implementation of Streaming SSR loading states (`loadin
 
 ## Route Coverage
 
-| Route              | Page Type          | Status         | File Location                             | Notes                                                    |
-| ------------------ | ------------------ | -------------- | ----------------------------------------- | -------------------------------------------------------- |
-| `/`                | Landing Page       | ✅ Implemented | `src/app/(marketing)/loading.tsx`         | Route group isolates marketing pages from platform shell |
-| `/app`             | Dashboard Home     | ✅ Implemented | `src/app/(platform)/app/loading.tsx`      | Shows app grid skeleton                                  |
-| `/bio`             | Bio Link Editor    | ✅ Implemented | `src/app/(platform)/bio/loading.tsx`      | Mimics split-pane layout                                 |
-| `/cashflow`        | Cashflow Dashboard | ✅ Implemented | `src/app/(platform)/cashflow/loading.tsx` | Mimics lists and stats                                   |
-| `/cashflow/[id]`   | Cashflow Detail    | ✅ Implemented | `src/app/cashflow/[id]/loading.tsx`       | Public/shared cashflow view (outside platform group)     |
-| `/settings`        | User Settings      | ✅ Implemented | `src/app/(platform)/settings/loading.tsx` | Uses `PlatformHeaderSkeleton`                            |
-| `/[username]`      | Public Profile     | ✅ Implemented | `src/app/[username]/loading.tsx`          | **Critical**: Public facing page. Uses neutral skeleton. |
-| `/login`           | Auth               | ❌ Not Needed  | -                                         | Static / Client-side form mostly                         |
-| `/signup`          | Auth               | ❌ Not Needed  | -                                         | Static / Client-side form mostly                         |
-| `/forgot-password` | Auth               | ❌ Not Needed  | -                                         | Static / Client-side form mostly                         |
+| Route              | Page Type          | Status         | File Location                                  | Notes                                                    |
+| ------------------ | ------------------ | -------------- | ---------------------------------------------- | -------------------------------------------------------- |
+| `/`                | Landing Page       | ✅ Implemented | `src/app/(marketing)/loading.tsx`              | Route group isolates marketing pages from platform shell |
+| `/app`             | Dashboard Home     | ✅ Implemented | `src/app/(platform)/app/loading.tsx`           | Shows app grid skeleton                                  |
+| `/bio`             | Bio Link Editor    | ✅ Implemented | `src/app/(platform)/bio/loading.tsx`           | Mimics split-pane layout                                 |
+| `/bio/analytics`   | Bio Analytics      | ✅ Implemented | `src/app/(platform)/bio/analytics/loading.tsx` | Uses client component with skeleton states               |
+| `/cashflow`        | Cashflow Dashboard | ✅ Implemented | `src/app/(platform)/cashflow/loading.tsx`      | Mimics lists and stats                                   |
+| `/cashflow/[id]`   | Cashflow Detail    | ✅ Implemented | `src/app/cashflow/[id]/loading.tsx`            | Public/shared cashflow view (outside platform group)     |
+| `/settings`        | User Settings      | ✅ Implemented | `src/app/(platform)/settings/loading.tsx`      | Uses `PlatformHeaderSkeleton`                            |
+| `/[username]`      | Public Profile     | ✅ Implemented | `src/app/[username]/loading.tsx`               | **Critical**: Public facing page. Uses neutral skeleton. |
+| `/login`           | Auth               | ❌ Not Needed  | -                                              | Static / Client-side form mostly                         |
+| `/signup`          | Auth               | ❌ Not Needed  | -                                              | Static / Client-side form mostly                         |
+| `/forgot-password` | Auth               | ❌ Not Needed  | -                                              | Static / Client-side form mostly                         |
 
 ## Reusable Skeleton Components
 

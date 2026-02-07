@@ -53,6 +53,20 @@ Individual transaction records.
 - `description` (text): Context for the transaction.
 - `date` (date): The logical date of the event.
 
+### 3.2 User Settings
+
+#### `user_settings`
+
+Per-user application preferences.
+
+- `user_id` (uuid): FK to `profiles.id`, Primary key.
+- `currency` (text): Preferred currency code (e.g., `USD`, `IDR`). Default: `USD`.
+- `created_at` (timestamptz): Record creation timestamp.
+- `updated_at` (timestamptz): Last modification timestamp.
+
+> [!NOTE]
+> Currency settings are user-specific and apply globally to all cashflows. The EntryModal component receives this currency preference from user settings.
+
 #### `cashflow_shares`
 
 The bridge table for collaboration and bookmarking.
