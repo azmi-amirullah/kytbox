@@ -461,6 +461,8 @@ For implementation details and coverage status, see: [Loading States Documentati
 
 - [Bio Documentation](./link-in-bio.md)
 - [Cashflow Documentation](./cashflow.md)
+- [Monetization Strategy](./MONETIZATION.md)
+- [Pre-Monetization Improvements](./PRE_MONETIZATION_IMPROVEMENTS.md)
 
 ### 12.3 Complete Route Reference
 
