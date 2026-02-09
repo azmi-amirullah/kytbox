@@ -73,12 +73,44 @@ Merchant of Record (Lemon Squeezy) requires these pages to be publicly accessibl
 - [ ] **Privacy Policy:** GDPR/CCPA compliance statement.
 - [ ] **Refund Policy:** Explicit rules (e.g., "14-day money-back guarantee").
 
-### 3.2 Support Infrastructure
+### 3.2 Support Infrastructure (Internal Ticket System)
 
-Paid users expect support.
+Paid users expect priority support. Email is messy and hard to track. We will build a **lightweight internal ticket system**.
 
-- [ ] **Support Channel:** Email alias (`support@ukit.com`) or Intercom/Crisp widget.
-- [ ] **Documentation:** Public help center for common issues (Domain setup, Billing).
+**Why Internal?**
+
+- Keeps users on the platform.
+- Allows us to track "Urgency" programmatically.
+- No need to pay for Intercom/Zendesk yet.
+- Admin dashboard can sort by "Paid User" + "Urgency".
+
+#### 3.2.1 User Experience
+
+1. **Submit Ticket:** Simple form (Subject, Message, Category) in `/app/support`.
+2. **Urgency Bump:** Users can click a "Bump Urgency" button once every 24 hours.
+   - _Logic:_ `urgency_score = (days_waiting * 1) + (bumps * 10)`
+   - _Constraint:_ 1 bump per 24h window.
+
+#### 3.2.2 Admin Experience
+
+- **Queue View:** List of open tickets.
+- **Sorting:** Sort by `urgency_score` desc.
+- **Action:** Reply (sends email notification), Resolve, or Ignore.
+
+#### 3.2.3 Data Model
+
+```sql
+create table support_tickets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users,
+  subject text not null,
+  message text not null,
+  status text default 'open', -- open, resolved, closed
+  urgency_score int default 0,
+  last_bumped_at timestamptz,
+  created_at timestamptz default now()
+);
+```
 
 ---
 
@@ -124,7 +156,8 @@ export const canAccess = (
 ### Phase 2: Operational (Before Stripe/Lemon Squeezy)
 
 1.  **Legal Pages:** Add `/terms` and `/privacy`.
-2.  **Support:** Set up support email reception.
+1.  **Legal Pages:** Add `/terms` and `/privacy`.
+1.  **Support System:** Build `/app/support` (User) and `/admin/support` (Admin).
 
 ### Phase 3: Monetization Core
 
@@ -137,6 +170,7 @@ export const canAccess = (
 
 - [ ] **High:** Refactor Bio Dashboard to Tabs (UX Scalability).
 - [ ] **High:** Create Legal Pages (Compliance).
+- [ ] **High:** Build Internal Support System (Critical for Trust).
 - [ ] **High:** Add `tier` column to schema (Architecture).
 - [ ] **Medium:** Auto-save for appearance.
 - [ ] **Low:** Advanced empty states.
