@@ -9,7 +9,7 @@ export default function TermsPage() {
   return (
     <>
       <h1>Terms of Service</h1>
-      <p className='lead'>Last updated: {new Date().toLocaleDateString()}</p>
+      <p className='lead'>Last updated: February 10, 2026</p>
 
       <p>
         Welcome to Kytbox. By accessing or using our website and services, you
@@ -78,7 +78,7 @@ export default function TermsPage() {
         </li>
       </ul>
 
-      <h2>4. Intellectual Property</h2>
+      <h2>5. Intellectual Property</h2>
       <p>
         The Service and its original content, features, and functionality are
         and will remain the exclusive property of Kytbox and its licensors. The
@@ -90,14 +90,16 @@ export default function TermsPage() {
         Service.
       </p>
 
-      <h2>5. Termination</h2>
+      <h2>6. Termination</h2>
       <p>
         We may terminate or suspend your account immediately, without prior
         notice or liability, for any reason whatsoever, including without
-        limitation if you breach the Terms.
+        limitation if you breach the Terms. Upon termination, your right to use
+        the Service will immediately cease. You may request deletion of your
+        data upon account termination by contacting us.
       </p>
 
-      <h2>6. Limitation of Liability</h2>
+      <h2>7. Limitation of Liability</h2>
       <p>
         In no event shall Kytbox, nor its directors, employees, partners,
         agents, suppliers, or affiliates, be liable for any indirect,
@@ -107,14 +109,22 @@ export default function TermsPage() {
         to access or use the Service.
       </p>
 
-      <h2>7. Changes to Terms</h2>
+      <h2>8. Governing Law</h2>
+      <p>
+        These Terms shall be governed and construed in accordance with the laws
+        of Indonesia, without regard to its conflict of law provisions. Any
+        disputes arising under these Terms shall be subject to the exclusive
+        jurisdiction of the courts of Indonesia.
+      </p>
+
+      <h2>9. Changes to Terms</h2>
       <p>
         We reserve the right, at our sole discretion, to modify or replace these
         Terms at any time. If a revision is material we will try to provide at
         least 30 days notice prior to any new terms taking effect.
       </p>
 
-      <h2>8. Contact Us</h2>
+      <h2>10. Contact Us</h2>
       <p>
         If you have any questions about these Terms, please contact us at{' '}
         <a href='mailto:support@kytbox.com'>support@kytbox.com</a>.

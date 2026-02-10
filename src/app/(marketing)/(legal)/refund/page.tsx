@@ -9,7 +9,7 @@ export default function RefundPage() {
   return (
     <>
       <h1>Refund Policy</h1>
-      <p className='lead'>Last updated: {new Date().toLocaleDateString()}</p>
+      <p className='lead'>Last updated: February 10, 2026</p>
 
       <p>
         We want you to be satisfied with Kytbox. If you are not completely happy

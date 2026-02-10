@@ -9,11 +9,11 @@ export default function PrivacyPage() {
   return (
     <>
       <h1>Privacy Policy</h1>
-      <p className='lead'>Last updated: {new Date().toLocaleDateString()}</p>
+      <p className='lead'>Last updated: February 10, 2026</p>
 
       <p>
         At Kytbox, we take your privacy seriously. This Privacy Policy explains
-        how we collect, use, disclosure, and safeguard your information when you
+        how we collect, use, disclose, and safeguard your information when you
         visit our website or use our services.
       </p>
 
@@ -25,11 +25,11 @@ export default function PrivacyPage() {
       </p>
       <ul>
         <li>Name and contact information (email address).</li>
-        <li>Account credentials (hashed passwords).</li>
+        <li>Authentication data (managed securely by Supabase Auth).</li>
         <li>Content you upload to the Service (bio links, cashflow data).</li>
         <li>
           Payment information (securely processed by our Merchant of Record,
-          Lemon Squeezy).
+          Lemon Squeezy — we do not store your payment details).
         </li>
       </ul>
 
@@ -54,10 +54,26 @@ export default function PrivacyPage() {
       <ul>
         <li>Hosting and infrastructure (Vercel, Supabase).</li>
         <li>Payment processing (Lemon Squeezy).</li>
-        <li>Analytics (Vercel Analytics).</li>
       </ul>
 
-      <h2>4. Data Security</h2>
+      <h2>4. International Data Transfers</h2>
+      <p>
+        Your data may be transferred to and processed in countries other than
+        your own, including the United States (where Vercel and Lemon Squeezy
+        operate). By using the Service, you consent to these transfers. We
+        ensure that appropriate safeguards are in place to protect your data in
+        accordance with this Privacy Policy.
+      </p>
+
+      <h2>5. Data Retention</h2>
+      <p>
+        We retain your personal data for as long as your account is active or as
+        needed to provide the Service. If you delete your account, we will
+        delete your personal data within 30 days, except where we are required
+        to retain it for legal or compliance purposes.
+      </p>
+
+      <h2>6. Data Security</h2>
       <p>
         We implement appropriate technical and organizational measures to
         protect the security of your personal information. However, please be
@@ -65,35 +81,44 @@ export default function PrivacyPage() {
         electronic storage is 100% secure.
       </p>
 
-      <h2>5. Your Rights</h2>
+      <h2>7. Your Rights</h2>
+      <p>Depending on your location, you may have the right to:</p>
+      <ul>
+        <li>Access and receive a copy of your personal data.</li>
+        <li>Correct inaccurate personal data.</li>
+        <li>Request deletion of your personal data.</li>
+        <li>Restrict or object to the processing of your data.</li>
+        <li>Data portability (receive your data in a structured format).</li>
+      </ul>
       <p>
-        Depending on your location, you may have the right to access, correct,
-        delete, or restrict the use of your personal data. You can manage most
-        of your data directly within your account settings.
+        You can manage most of your data directly within your account settings.
+        To exercise any other rights, contact us at{' '}
+        <a href='mailto:support@kytbox.com'>support@kytbox.com</a>.
       </p>
 
-      <h2>6. Cookies</h2>
+      <h2>8. Cookies</h2>
       <p>
-        We use cookies and similar tracking technologies to track the activity
-        on our Service and hold certain information. You can instruct your
-        browser to refuse all cookies or to indicate when a cookie is being
-        sent.
+        We use essential cookies for authentication and session management. We
+        do not use tracking cookies or third-party advertising cookies. You can
+        instruct your browser to refuse all cookies, but this may affect your
+        ability to use the Service.
       </p>
 
-      <h2>7. Children&apos;s Privacy</h2>
+      <h2>9. Children&apos;s Privacy</h2>
       <p>
         Our Service is not addressed to anyone under the age of 13. We do not
         knowingly collect personal identifiable information from children under
         13.
       </p>
 
-      <h2>8. Changes to This Policy</h2>
+      <h2>10. Changes to This Policy</h2>
       <p>
         We may update our Privacy Policy from time to time. We will notify you
-        of any changes by posting the new Privacy Policy on this page.
+        of any changes by posting the new Privacy Policy on this page and
+        updating the &quot;Last updated&quot; date.
       </p>
 
-      <h2>9. Contact Us</h2>
+      <h2>11. Contact Us</h2>
       <p>
         If you have any questions about this Privacy Policy, please contact us
         at <a href='mailto:support@kytbox.com'>support@kytbox.com</a>.
