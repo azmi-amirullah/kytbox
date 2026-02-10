@@ -31,6 +31,7 @@ export const RESERVED_USERNAMES = [
   'cookies',
   'legal',
   'compliance',
+  'refund',
 
   // --- Support & Official ---
   'about',

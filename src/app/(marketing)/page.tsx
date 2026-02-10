@@ -102,7 +102,6 @@ export default async function LandingPage() {
               <span className='text-primary decoration-wavy decoration-4 decoration-primary/30 underline-offset-4'>
                 Kit Box
               </span>
-              .
             </h1>
 
             <p className='text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed'>

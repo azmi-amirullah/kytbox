@@ -13,7 +13,7 @@ interface UserData {
 }
 
 interface HeaderProps {
-  variant: 'landing' | 'dashboard' | 'auth';
+  variant: 'landing' | 'dashboard' | 'auth' | 'legal';
   user?: UserData | null;
   publicUrl?: string;
 }
@@ -21,6 +21,7 @@ interface HeaderProps {
 export function Header({ variant, user, publicUrl }: HeaderProps) {
   const isLanding = variant === 'landing';
   const isAuth = variant === 'auth';
+  const isLegal = variant === 'legal';
 
   return (
     <header className='sticky top-0 z-50 w-full border-b border-border bg-background/60 backdrop-blur-md transition-all duration-200'>
@@ -29,7 +30,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           <BrandLogo className='cursor-default select-none' />
         ) : (
           <Link
-            href={isAuth ? '/' : '/app'}
+            href={isAuth ? '/' : '/'}
             className='hover:opacity-80 transition-opacity'
           >
             <BrandLogo />
@@ -59,7 +60,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           {!isAuth &&
             (user ? (
               <div className='flex items-center gap-4'>
-                {isLanding && (
+                {(isLanding || isLegal) && (
                   <Link href='/app'>
                     <Button>Dashboard</Button>
                   </Link>

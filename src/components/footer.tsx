@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 interface FooterProps {
   variant?: 'landing' | 'dashboard';
 }
@@ -26,6 +28,23 @@ export function Footer({ variant = 'dashboard' }: FooterProps) {
           </>
         )}
       </p>
+      <div className='mt-2 flex justify-center gap-4 text-xs text-muted-foreground/60'>
+        <Link href='/terms' className='hover:text-foreground transition-colors'>
+          Terms
+        </Link>
+        <Link
+          href='/privacy'
+          className='hover:text-foreground transition-colors'
+        >
+          Privacy
+        </Link>
+        <Link
+          href='/refund'
+          className='hover:text-foreground transition-colors'
+        >
+          Refund
+        </Link>
+      </div>
     </footer>
   );
 }
