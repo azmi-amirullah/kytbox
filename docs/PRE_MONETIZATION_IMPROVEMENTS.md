@@ -4,6 +4,8 @@ This document outlines the critical improvements and operational requirements ne
 
 > [!NOTE]
 > **Documentation Strategy:** We are detailing these requirements **now**—even if some implementation happens later—so we clearly understand the "Why" behind our implementation order. Knowing why we wait is just as important as knowing what we build.
+>
+> **See Also:** [MONETIZATION.md](./MONETIZATION.md) for pricing, payment integration architecture, and the full implementation roadmap.
 
 ---
 
@@ -11,10 +13,13 @@ This document outlines the critical improvements and operational requirements ne
 
 ### 1.1 Problem Analysis
 
-The current `/bio` dashboard is a monolithic view combining analytics, link management, and appearance.
+The current `/bio` dashboard is a monolithic view (`DashboardClient.tsx`) combining analytics, link management, and appearance into a single component.
 
 - **Scalability Risk:** Adding Pro features (SEO, Advanced Analytics) will make this unmanageable.
 - **Performance Risk:** Re-rendering the entire dashboard for minor edits is inefficient.
+
+> [!NOTE]
+> **Current State:** The dashboard is still monolithic as of February 2026. This refactor is a prerequisite for implementing Pro feature tabs.
 
 ### 1.2 Solution: Tab-Based Architecture
 
@@ -57,7 +62,11 @@ Restructure the Bio Dashboard into isolated contexts using URL-driven state (`?t
 
 ### 2.2 Data Model Impact
 
-No schema changes required. Theme preferences continue to be stored in `profiles.theme_config` JSONB column.
+No schema changes required. Theme preferences are stored as individual columns on `profiles`:
+
+- `theme_name` — Theme ID string (e.g., `'gradient'`, `'dark'`)
+- `button_style` — Button fill style (e.g., `'solid'`, `'outline'`)
+- `button_shape` — Button corner style (e.g., `'rounded'`, `'square'`)
 
 ---
 
@@ -75,7 +84,7 @@ Merchant of Record (Lemon Squeezy) requires these pages to be publicly accessibl
 
 ### 3.2 Support Infrastructure (Internal Ticket System)
 
-Paid users expect priority support. Email is messy and hard to track. We will build a **lightweight internal ticket system**.
+Paid users expect priority support. Email is messy and hard to track. We will build a **lightweight internal ticket system** (doubles as the "Contact Us" feature for all users).
 
 **Why Internal?**
 
@@ -83,6 +92,9 @@ Paid users expect priority support. Email is messy and hard to track. We will bu
 - Allows us to track "Urgency" programmatically.
 - No need to pay for Intercom/Zendesk yet.
 - Admin dashboard can sort by "Paid User" + "Urgency".
+
+> [!WARNING]
+> **YAGNI Check:** This system is planned for when we have paying users. If launch volume is low (< 50 tickets/month), consider starting with a simple email funnel and migrating to this system when ticket volume justifies it.
 
 #### 3.2.1 User Experience
 
@@ -105,7 +117,10 @@ create table support_tickets (
   user_id uuid references auth.users,
   subject text not null,
   message text not null,
-  status text default 'open', -- open, resolved, closed
+  category text not null default 'general'
+    check (category in ('general', 'bug', 'billing', 'feature_request', 'account')),
+  status text default 'open'
+    check (status in ('open', 'resolved', 'closed')),
   urgency_score int default 0,
   last_bumped_at timestamptz,
   created_at timestamptz default now()
@@ -123,25 +138,38 @@ Before integrating the payment provider, we must prepare the application core.
 **Schema Update:**
 
 ```sql
-alter table profiles add column tier text default 'free' check (tier in ('free', 'pro'));
-alter table profiles add column subscription_status text default 'none';
+alter table profiles add column tier text not null default 'free'
+  check (tier in ('free', 'pro'));
+alter table profiles add column subscription_status text not null default 'none';
 ```
 
-**Rationale:** Front-end components should never query the billing database directly. They should check `profile.tier`.
+**Rationale:** Front-end components should never query the billing database directly. They should check `profile.tier`. The sync between `subscriptions` and `profiles.tier` is handled by a database trigger — see [MONETIZATION.md § 3.3](./MONETIZATION.md#33-the-ispro-check-performance) for the full trigger implementation.
 
 ### 4.2 Feature Flag Utility
 
-Create a centralized utility to manage feature access.
+Create a centralized utility to manage feature access. Uses a feature map for easy extension.
 
 ```typescript
 // lib/permissions.ts
-export const canAccess = (
-  tier: string,
-  feature: 'custom_domain' | 'remove_branding',
-) => {
-  if (tier === 'pro') return true;
-  return false;
+const PRO_FEATURES = [
+  'custom_theme',
+  'remove_branding',
+  'custom_domain',
+  'advanced_analytics',
+] as const;
+
+type ProFeature = (typeof PRO_FEATURES)[number];
+
+const FEATURE_ACCESS: Record<ProFeature, string[]> = {
+  custom_theme: ['pro'],
+  remove_branding: ['pro'],
+  custom_domain: ['pro'],
+  advanced_analytics: ['pro'],
 };
+
+export function canAccess(tier: string, feature: ProFeature): boolean {
+  return FEATURE_ACCESS[feature]?.includes(tier) ?? false;
+}
 ```
 
 ---
@@ -153,16 +181,15 @@ export const canAccess = (
 1.  **Tab System:** Refactor Bio Dashboard layout.
 2.  **Appearance:** Implement auto-save and categories.
 
-### Phase 2: Operational (Before Stripe/Lemon Squeezy)
+### Phase 2: Operational (Before Lemon Squeezy Integration)
 
-1.  **Legal Pages:** Add `/terms` and `/privacy`.
-1.  **Legal Pages:** Add `/terms` and `/privacy`.
-1.  **Support System:** Build `/app/support` (User) and `/admin/support` (Admin).
+1.  **Legal Pages:** Add `/terms`, `/privacy`, and `/refund`.
+2.  **Support System:** Build `/app/support` (User) and `/admin/support` (Admin).
 
 ### Phase 3: Monetization Core
 
-1.  **Schema:** Run migrations for `subscriptions` and `profiles`.
-2.  **Integration:** Connect Lemon Squeezy API.
+1.  **Schema:** Run migrations for `subscriptions` and `profiles.tier`.
+2.  **Integration:** Connect Lemon Squeezy API (see [MONETIZATION.md](./MONETIZATION.md)).
 
 ---
 
@@ -175,4 +202,4 @@ export const canAccess = (
 - [ ] **Medium:** Auto-save for appearance.
 - [ ] **Low:** Advanced empty states.
 
-_Last Updated: February 2025_
+_Last Updated: February 2026_

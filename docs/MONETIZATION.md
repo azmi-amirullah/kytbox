@@ -7,6 +7,8 @@ This document defines the monetization model, pricing strategy, and technical ar
 > **Strategic Pivot (Feb 2025):** We use a **Merchant of Record (MoR)** strategy to avoid global tax liability.
 >
 > **Documentation Note:** This document includes detailed architectural specs for future phases (Payment Integration, Gating). We document them **now** so we understand the _implementation path_ and _structural requirements_ early, avoiding costly refactors later. **Knowing "Why later" is as important as knowing "What now".**
+>
+> **See Also:** [PRE_MONETIZATION_IMPROVEMENTS.md](./PRE_MONETIZATION_IMPROVEMENTS.md) for the UX, legal, and support readiness work required **before** enabling payments.
 
 ---
 
@@ -83,11 +85,12 @@ Strict tracking of subscription status in Supabase.
 -- public.subscriptions
 create table subscriptions (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users not null,
+  user_id uuid references auth.users not null unique, -- One active subscription per user
   store_id text,          -- Lemon Squeezy Store ID
   customer_id text,       -- Lemon Squeezy Customer ID
-  subscription_id text,   -- Lemon Squeezy Subscription ID
-  status text,            -- 'active', 'past_due', 'on_trial', 'unpaid', 'paused', 'cancelled'
+  subscription_id text unique, -- Lemon Squeezy Subscription ID (for idempotency)
+  status text not null default 'none'
+    check (status in ('active', 'past_due', 'on_trial', 'unpaid', 'paused', 'cancelled', 'expired', 'none')),
   variant_id text,        -- Plan ID (Monthly vs Annual)
   renews_at timestamptz,  -- When the next billing happens
   ends_at timestamptz,    -- When existing access expires (if cancelled)
@@ -95,65 +98,132 @@ create table subscriptions (
   updated_at timestamptz default now()
 );
 
+-- Index for quick lookups by user
+create index idx_subscriptions_user_id on subscriptions (user_id);
+
 -- RLS: Users can read their own subscription
 create policy "Users can read own subscription" on subscriptions
   for select using (auth.uid() = user_id);
 ```
 
-### 3.2 The "IsPro" Check (Performance)
+### 3.3 The "IsPro" Check (Performance)
 
 **Problem:** Joining the `subscriptions` table on every request is expensive and strictly unnecessary.
 **Solution:** Cache the status on the user's profile.
 
-1.  **Database Trigger:** When `subscriptions` changes, update `profiles.tier`.
-    ```sql
-    -- Pseudo-code for trigger function
-    if (new.status = 'active') then
-      update profiles set tier = 'pro' where id = new.user_id;
-    else
-      update profiles set tier = 'free' where id = new.user_id;
-    end if;
-    ```
-2.  **Frontend Check:**
-    ```typescript
-    // Fast, no JOIN check
-    if (user.profile.tier === 'pro') {
-      return <PremiumFeature />;
-    }
-    ```
+> [!IMPORTANT]
+> The `profiles.tier` column is the **single source of truth** for feature gating on the frontend. The `subscriptions` table is the **billing record**. A database trigger keeps them in sync.
+>
+> See [PRE_MONETIZATION_IMPROVEMENTS.md § 4.1](./PRE_MONETIZATION_IMPROVEMENTS.md#41-the-user-tier-system) for the `profiles.tier` schema change.
 
-### 3.3 Webhook Integration strategy
+**Database Trigger:** When `subscriptions` changes, update `profiles.tier`. Handles the cancellation grace period (`ends_at`).
 
-We must handle webhooks securely to keep the database in sync.
+```sql
+create or replace function sync_tier_from_subscription()
+returns trigger as $$
+begin
+  if new.status in ('active', 'on_trial') then
+    -- Actively subscribed → Pro
+    update profiles set tier = 'pro' where id = new.user_id;
+  elsif new.status = 'cancelled' and new.ends_at is not null and new.ends_at > now() then
+    -- Cancelled but still within paid period → stay Pro until ends_at
+    -- A scheduled cron job (pg_cron) will demote after ends_at passes
+    update profiles set tier = 'pro' where id = new.user_id;
+  elsif new.status = 'past_due' then
+    -- Grace period for failed payments → stay Pro briefly
+    -- Lemon Squeezy retries the charge automatically
+    update profiles set tier = 'pro' where id = new.user_id;
+  else
+    -- expired, unpaid, paused, none → Free
+    update profiles set tier = 'free' where id = new.user_id;
+  end if;
+
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_subscription_change
+  before insert or update on subscriptions
+  for each row execute function sync_tier_from_subscription();
+```
+
+**Cancellation Grace Period Cleanup (pg_cron):**
+
+```sql
+-- Runs daily: demote users whose cancelled subscriptions have expired
+select cron.schedule(
+  'demote-expired-subscriptions',
+  '0 0 * * *', -- Every midnight UTC
+  $$
+    update profiles set tier = 'free'
+    where id in (
+      select user_id from subscriptions
+      where status = 'cancelled' and ends_at <= now()
+    );
+    update subscriptions set status = 'expired'
+    where status = 'cancelled' and ends_at <= now();
+  $$
+);
+```
+
+**Frontend Check:**
+
+```typescript
+// Fast, no JOIN check
+if (user.profile.tier === 'pro') {
+  return <PremiumFeature />;
+}
+```
+
+### 3.4 Webhook Integration Strategy
+
+We must handle webhooks securely and idempotently to keep the database in sync.
 
 - **Endpoint:** `/api/webhooks/lemonsqueezy`
 - **Security:** Verify `X-Signature` header using the Signing Secret.
-- **Event Handling:**
+- **Idempotency:** Use `subscription_id` (unique) as the dedup key. On `subscription_created`, use `INSERT ... ON CONFLICT (subscription_id) DO UPDATE` to safely handle duplicate webhook deliveries.
 
-| Event                    | Action                                                                               |
-| :----------------------- | :----------------------------------------------------------------------------------- |
-| `subscription_created`   | Insert new row into `subscriptions`.                                                 |
-| `subscription_updated`   | Update `status`, `renews_at`, `variant_id`.                                          |
-| `subscription_cancelled` | Update `status` to `cancelled`, set `ends_at`. _User allows access until `ends_at`._ |
-| `subscription_expired`   | Update `status` to `expired`. _Access revoked._                                      |
+**Event Handling:**
+
+| Event                    | Action                                                                                |
+| :----------------------- | :------------------------------------------------------------------------------------ |
+| `subscription_created`   | Upsert row into `subscriptions` (idempotent via `subscription_id` unique constraint). |
+| `subscription_updated`   | Update `status`, `renews_at`, `variant_id`.                                           |
+| `subscription_cancelled` | Update `status` to `cancelled`, set `ends_at`. _User retains access until `ends_at`._ |
+| `subscription_expired`   | Update `status` to `expired`. _Access revoked via trigger._                           |
+
+> [!WARNING]
+> **Webhook Reliability:** Lemon Squeezy (and all webhook providers) may deliver the same event multiple times. Every webhook handler **must** be idempotent. Never assume a webhook fires exactly once.
+
+### 3.5 Pro Feature Boundaries
+
+The table below defines what is gated behind Pro. Both docs reference this as the canonical list.
+
+| Feature           | Free                    | Pro                                   |
+| :---------------- | :---------------------- | :------------------------------------ |
+| **Links**         | Unlimited               | Unlimited                             |
+| **Themes**        | Preset themes only      | + Custom user-defined themes          |
+| **Branding**      | "Powered by UKIT" shown | Removable                             |
+| **Analytics**     | Basic (clicks, views)   | Advanced (referrer breakdown, export) |
+| **Custom Domain** | ✗                       | ✓ (future)                            |
 
 ---
 
----
-
-## 5. Phasing Strategy Rationale
+## 4. Phasing Strategy & Rationale
 
 **Why do we implement features in this specific order?**
 
-1.  **Bio First (Phase 2):**
+1.  **Bio First:**
     - The Bio app is **public-facing**. Every free user is a walking billboard for UKIT (via the "Powered by UKIT" footer).
     - Monetizing "Branding Removal" capitalizes on this viral loop immediately.
     - Cashflow is private; it has no viral loop to monetize yet.
 
-2.  **Payment Integration Last (Phase 4):**
+2.  **Payment Integration Last:**
     - We must build the _value_ (themes, analytics, expert features) before we build the _gate_.
     - Asking for money without a polished product leads to high churn.
     - Legal compliance (Terms/Privacy) must exist before taking a single cent.
+    - See [PRE_MONETIZATION_IMPROVEMENTS.md](./PRE_MONETIZATION_IMPROVEMENTS.md) for the full pre-payment readiness checklist.
 
 3.  **Deferred Features (Post-Launch):**
     - **Link Scheduling:** Complex UI, niche use case. High effort, low initial impact.
@@ -161,19 +231,23 @@ We must handle webhooks securely to keep the database in sync.
 
 ---
 
-## 6. Implementation Status
+## 5. Implementation Roadmap
 
-### Phase 1: Foundation (Pre-Monetization)
+### Phase 1: Foundation & UX (Pre-Monetization)
 
-- [ ] Create `subscriptions` table.
-- [ ] Add `tier` column to `profiles`.
-- [ ] Implement `usePro` hook in frontend.
+- [ ] Refactor Bio Dashboard to tab-based architecture (see [PRE_MONETIZATION doc § 1](./PRE_MONETIZATION_IMPROVEMENTS.md#1-bio-dashboard-architecture-ux-refactor))
+- [ ] Legal pages: `/terms`, `/privacy`, `/refund` (see [PRE_MONETIZATION doc § 3.1](./PRE_MONETIZATION_IMPROVEMENTS.md#31-legal-compliance))
+- [ ] Internal support ticket system (see [PRE_MONETIZATION doc § 3.2](./PRE_MONETIZATION_IMPROVEMENTS.md#32-support-infrastructure-internal-ticket-system))
+- [ ] Add `tier` column to `profiles` (see [PRE_MONETIZATION doc § 4.1](./PRE_MONETIZATION_IMPROVEMENTS.md#41-the-user-tier-system))
+- [ ] Implement `canAccess()` feature gate utility (see [PRE_MONETIZATION doc § 4.2](./PRE_MONETIZATION_IMPROVEMENTS.md#42-feature-flag-utility))
 
-### Phase 2: Integration
+### Phase 2: Payment Integration
 
 - [ ] Set up Lemon Squeezy Store & Products.
+- [ ] Create `subscriptions` table (schema above).
 - [ ] Create API Route for Checkout Session creation.
-- [ ] Create API Route for Webhook handling.
+- [ ] Create API Route for Webhook handling (idempotent).
+- [ ] Set up `pg_cron` for grace period cleanup.
 
 ### Phase 3: Gating & UI
 
@@ -184,9 +258,20 @@ We must handle webhooks securely to keep the database in sync.
 ### Phase 4: Launch
 
 - [ ] Test purchase flow (Sandbox).
-- [ ] Verify webhook reliability.
+- [ ] Verify webhook reliability (multiple deliveries, edge cases).
 - [ ] Live switch.
 
 ---
 
-_Last Updated: February 2025_
+## 6. Rollback & Failure Modes
+
+| Failure Scenario              | Impact                            | Mitigation                                                    |
+| :---------------------------- | :-------------------------------- | :------------------------------------------------------------ |
+| Webhook endpoint down         | Subscription changes not recorded | Lemon Squeezy retries webhooks for up to 72h. Monitor alerts. |
+| Lemon Squeezy outage          | Users can't purchase/upgrade      | Display banner. Existing `profiles.tier` continues to work.   |
+| Trigger function error        | `tier` out of sync with billing   | Admin can manually query `subscriptions` and fix `profiles`.  |
+| `pg_cron` grace period missed | User retains Pro after `ends_at`  | Cron runs daily; max overshoot is ~24h. Acceptable trade-off. |
+
+---
+
+_Last Updated: February 2026_
