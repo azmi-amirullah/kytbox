@@ -236,7 +236,7 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 ### Phase 1: Foundation & UX (Pre-Monetization)
 
 - [ ] Refactor Bio Dashboard to tab-based architecture (see [PRE_MONETIZATION doc § 1](./PRE_MONETIZATION_IMPROVEMENTS.md#1-bio-dashboard-architecture-ux-refactor))
-- [ ] Legal pages: `/terms`, `/privacy`, `/refund` (see [PRE_MONETIZATION doc § 3.1](./PRE_MONETIZATION_IMPROVEMENTS.md#31-legal-compliance))
+- [x] Legal pages: `/terms`, `/privacy`, `/refund` (see [PRE_MONETIZATION doc § 3.1](./PRE_MONETIZATION_IMPROVEMENTS.md#31-legal-compliance))
 - [ ] Internal support ticket system (see [PRE_MONETIZATION doc § 3.2](./PRE_MONETIZATION_IMPROVEMENTS.md#32-support-infrastructure-internal-ticket-system))
 - [ ] Add `tier` column to `profiles` (see [PRE_MONETIZATION doc § 4.1](./PRE_MONETIZATION_IMPROVEMENTS.md#41-the-user-tier-system))
 - [ ] Implement `canAccess()` feature gate utility (see [PRE_MONETIZATION doc § 4.2](./PRE_MONETIZATION_IMPROVEMENTS.md#42-feature-flag-utility))

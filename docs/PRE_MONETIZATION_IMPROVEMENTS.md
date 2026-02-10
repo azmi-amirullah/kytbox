@@ -78,9 +78,9 @@ No schema changes required. Theme preferences are stored as individual columns o
 
 Merchant of Record (Lemon Squeezy) requires these pages to be publicly accessible:
 
-- [ ] **Terms of Service:** Define acceptable use, cancellation policy, and liability.
-- [ ] **Privacy Policy:** GDPR/CCPA compliance statement.
-- [ ] **Refund Policy:** Explicit rules (e.g., "14-day money-back guarantee").
+- [x] **Terms of Service:** Define acceptable use, cancellation policy, and liability.
+- [x] **Privacy Policy:** GDPR/CCPA compliance statement.
+- [x] **Refund Policy:** Explicit rules (e.g., "14-day money-back guarantee").
 
 ### 3.2 Support Infrastructure (Internal Ticket System)
 
@@ -183,7 +183,7 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 
 ### Phase 2: Operational (Before Lemon Squeezy Integration)
 
-1.  **Legal Pages:** Add `/terms`, `/privacy`, and `/refund`.
+1.  **Legal Pages:** Add `/terms`, `/privacy`, and `/refund`. (Done)
 2.  **Support System:** Build `/app/support` (User) and `/admin/support` (Admin).
 
 ### Phase 3: Monetization Core
@@ -196,7 +196,7 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 ## 6. Priority Checklist
 
 - [ ] **High:** Refactor Bio Dashboard to Tabs (UX Scalability).
-- [ ] **High:** Create Legal Pages (Compliance).
+- [x] **High:** Create Legal Pages (Compliance).
 - [ ] **High:** Build Internal Support System (Critical for Trust).
 - [ ] **High:** Add `tier` column to schema (Architecture).
 - [ ] **Medium:** Auto-save for appearance.
