@@ -84,7 +84,7 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
               href='/app'
               className='hover:text-foreground transition-colors'
             >
-              UKIT
+              Kytbox
             </Link>
             <LuChevronRight className='w-3 h-3' />
             <Link

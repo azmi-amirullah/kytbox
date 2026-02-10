@@ -1,9 +1,9 @@
-# UKIT — Product Specification
+# Kytbox — Product Specification
 
-This document defines how UKIT works as a platform.
+This document defines how Kytbox works as a platform.
 
-UKIT is not a single app.
-UKIT is a system that hosts multiple apps.
+Kytbox is not a single app.
+Kytbox is a system that hosts multiple apps.
 
 If implementation or future decisions conflict with this document:
 THIS DOCUMENT WINS.
@@ -12,11 +12,11 @@ THIS DOCUMENT WINS.
 
 ## 1. Product Overview
 
-UKIT is a personal utility platform.
+Kytbox is a personal utility platform.
 
 Users create one account and access multiple tools (apps) under that account.
 
-Examples of UKIT apps:
+Examples of Kytbox apps:
 
 - Bio (public-facing)
 - Cashflow (private / shareable)
@@ -24,14 +24,14 @@ Examples of UKIT apps:
 - Track (private)
 - Lookup (search-based)
 
-UKIT is closer to Google than to a link-in-bio product.
+Kytbox is closer to Google than to a link-in-bio product.
 Bio is the first surface, not the identity.
 
 ---
 
 ## 2. Identity Model
 
-UKIT uses layered identity.
+Kytbox uses layered identity.
 
 ### 2.1 Account (Primary Identity)
 
@@ -40,7 +40,7 @@ UKIT uses layered identity.
 - Never exposed publicly
 - All apps attach to this ID
 
-This is the real identity in UKIT.
+This is the real identity in Kytbox.
 
 ---
 
@@ -70,7 +70,7 @@ Display name: John Doe 🚀
 
 ## 3. App Model
 
-UKIT hosts multiple apps under one account.
+Kytbox hosts multiple apps under one account.
 
 Apps fall into three categories:
 
@@ -222,7 +222,7 @@ No fallback like `username_1` or `username-2`.
 
 ## 7. Username Change Policy
 
-UKIT allows username changes with restrictions.
+Kytbox allows username changes with restrictions.
 
 Usernames are public aliases, not cosmetic labels.
 
@@ -251,22 +251,22 @@ Display names and content remain fully editable.
 
 ---
 
-## 8. UKIT Bio (First App Only)
+## 8. Kytbox Bio (First App Only)
 
-UKIT Bio is:
+Kytbox Bio is:
 
 - the first public-facing app
 - a distribution surface
 - a validation tool
 
-UKIT Bio is not the identity root.
+Kytbox Bio is not the identity root.
 Other apps must not inherit Bio-specific assumptions.
 
 ---
 
 ## 9. Product Discipline
 
-UKIT is not:
+Kytbox is not:
 
 - a super app
 - a feature playground
@@ -285,9 +285,9 @@ Otherwise, reject it.
 
 ## 10. Kill Criteria (Bio-Specific)
 
-These apply to UKIT Bio specifically, not the entire platform.
+These apply to Kytbox Bio specifically, not the entire platform.
 
-30 days after UKIT Bio launch, stop or pivot Bio if:
+30 days after Kytbox Bio launch, stop or pivot Bio if:
 
 - Activation < 25%
 - Retention < 10%
@@ -312,14 +312,14 @@ Note: If Bio fails, the platform can pivot to other apps (List, Track, etc.).
 
 ## App Dashboards (Platform Shell + App Scope)
 
-UKIT uses a **single platform shell** with **app-scoped dashboards**.
+Kytbox uses a **single platform shell** with **app-scoped dashboards**.
 
 Principle:
 
 - The platform shell handles **account-level** concerns (identity, billing, security, navigation).
 - Each app handles **its own work**, settings, analytics, and permissions.
 
-This prevents a “mega-dashboard” and keeps apps clean as UKIT grows.
+This prevents a “mega-dashboard” and keeps apps clean as Kytbox grows.
 
 ---
 
@@ -415,9 +415,9 @@ Public:
 
 ## Status
 
-Product: UKIT  
+Product: Kytbox  
 Phase: Platform + Bio v1  
-Rule: This document defines how UKIT works
+Rule: This document defines how Kytbox works
 
 ---
 
@@ -454,7 +454,7 @@ Rule: This document defines how UKIT works
 
 ### 12.1 Performance & Loading States
 
-UKIT prioritizes perceived performance using Next.js Streaming SSR.
+Kytbox prioritizes perceived performance using Next.js Streaming SSR.
 For implementation details and coverage status, see: [Loading States Documentation](./LOADING_STATES.md)
 
 ### 12.2 App Documentation
@@ -466,7 +466,7 @@ For implementation details and coverage status, see: [Loading States Documentati
 
 ### 12.3 Complete Route Reference
 
-All page routes in UKIT with their rendering type and auth requirements:
+All page routes in Kytbox with their rendering type and auth requirements:
 
 | Route              | Render  | Auth  | Description                      |
 | ------------------ | ------- | ----- | -------------------------------- |

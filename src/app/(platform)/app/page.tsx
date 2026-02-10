@@ -12,8 +12,7 @@ import {
   LuWallet,
 } from 'react-icons/lu';
 
-// UKIT Apps configuration
-const UKIT_APPS = [
+const KYTBOX_APPS = [
   {
     id: 'bio',
     name: 'Bio',
@@ -54,7 +53,7 @@ const UKIT_APPS = [
 
 /**
  * Platform Home - App Switcher
- * Shows all available UKIT apps
+ * Shows all available Kytbox apps
  */
 export default async function AppHomePage() {
   const supabase = await createClient();
@@ -106,7 +105,7 @@ export default async function AppHomePage() {
 
         {/* App Grid */}
         <div className='grid sm:grid-cols-2 gap-4'>
-          {UKIT_APPS.map((app) => {
+          {KYTBOX_APPS.map((app) => {
             const Icon = app.icon;
             const isActive = app.status === 'active';
 

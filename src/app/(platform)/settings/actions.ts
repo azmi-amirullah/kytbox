@@ -12,7 +12,7 @@ export async function updateProfile(formData: FormData) {
   const bio = formData.get('bio') as string;
   const currency = formData.get('currency') as string | null;
 
-  // Validate username format using UKIT spec
+  // Validate username format using Kytbox spec
   const validation = validateUsername(username);
   if (!validation.valid) {
     return { error: validation.error };
@@ -145,7 +145,7 @@ export async function checkUsername(username: string) {
 
   const safeUsername = username.toLowerCase().trim();
 
-  // Validate format using UKIT spec
+  // Validate format using Kytbox spec
   const validation = validateUsername(safeUsername);
   if (!validation.valid) {
     return { available: false, error: validation.error };

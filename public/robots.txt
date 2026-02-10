@@ -1,4 +1,4 @@
-# UKIT - robots.txt
+# Kytbox - robots.txt
 # Block private app routes from indexing
 
 User-agent: *
@@ -12,4 +12,4 @@ Disallow: /update-password
 Allow: /*
 
 # Sitemap (add when ready)
-# Sitemap: https://ukit.app/sitemap.xml
+# Sitemap: https://kytbox.com/sitemap.xml

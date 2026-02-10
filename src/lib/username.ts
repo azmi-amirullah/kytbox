@@ -1,6 +1,6 @@
 /**
  * Username validation and reserved usernames
- * Based on UKIT platform specification (ukit.md)
+ * Based on Kytbox platform specification (Kytbox.md)
  */
 
 // Reserved routes that cannot be used as usernames
@@ -40,7 +40,7 @@ export const RESERVED_USERNAMES = [
   'faq',
   'pricing',
   'admin',
-  'ukit',
+  'kytbox',
   'official',
   'verified',
   'system',
@@ -68,7 +68,7 @@ export const RESERVED_USERNAMES = [
 ] as const;
 
 /**
- * Username format rules (from ukit.md):
+ * Username format rules (from kytbox spec):
  * - Lowercase letters a-z
  * - Numbers 0-9
  * - Single hyphen (-), not at start or end

@@ -1,4 +1,4 @@
-# UKIT
+# Kytbox
 
 A personal utility platform designed for speed and simplicity.
 
@@ -18,6 +18,6 @@ A personal utility platform designed for speed and simplicity.
 
 ## Documentation
 
-- [UKIT Platform Specs](docs/ukit.md)
-- [UKIT Bio Details](docs/link-in-bio.md)
-- [UKIT Cashflow Details](docs/cashflow.md)
+- [Kytbox Platform Specs](docs/Kytbox.md)
+- [Kytbox Bio Details](docs/link-in-bio.md)
+- [Kytbox Cashflow Details](docs/cashflow.md)

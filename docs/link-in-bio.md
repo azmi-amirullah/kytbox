@@ -1,4 +1,4 @@
-# UKIT Bio Documentation
+# Kytbox Bio Documentation
 
 Focus: **Speed to functional product.** Avoid "graveyard" features (custom themes, payments, custom domains) in version 1.
 
@@ -95,7 +95,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 
 ## 4. Architecture & Routing
 
-### Route Structure (UKIT Spec)
+### Route Structure (Kytbox Spec)
 
 **Logged-in routes** (protected by `proxy.ts`):
 
@@ -221,7 +221,7 @@ src/
 2. Server calls `increment_link_click` RPC to update count
 3. Redirects to actual `url`
 
-## 5. Username Rules (UKIT Spec)
+## 5. Username Rules (Kytbox Spec)
 
 ### Allowed Characters
 
@@ -252,7 +252,7 @@ See `src/lib/username.ts` for full list.
 - **URL Validation**: HTTP/HTTPS only, valid TLD enforcement
 - **User ID Checks**: All CRUD operations verify `user_id` ownership
 - **Avatar Validation**: Image type and 2MB size limit
-- **Username Validation**: UKIT-compliant format, reserved name blocking
+- **Username Validation**: Kytbox-compliant format, reserved name blocking
 - **Route Protection**: `proxy.ts` protects `/app/*` routes
 
 ## 7. Current Status
@@ -352,5 +352,5 @@ See `src/lib/username.ts` for full list.
 
 ## 11. Planned Features
 
-- Username change cooldown (§7 ukit.md)
+- Username change cooldown (§7 Kytbox.md)
 - Custom user-defined themes (color picker UI)

@@ -1,4 +1,4 @@
-# UKIT Cashflow Documentation
+# Kytbox Cashflow Documentation
 
 Focus: **Simple, effective personal finance tracking.**
 

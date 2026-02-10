@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { BackgroundBlobs } from '@/components/background-blobs';
 
 export const metadata: Metadata = {
-  title: 'UKIT - Authentication',
+  title: 'Kytbox - Authentication',
   description: 'Login or create an account',
 };
 
@@ -26,7 +26,7 @@ export default function AuthLayout({
         <div className='relative z-10 w-full max-w-md'>
           {children}
           <div className='mt-8 text-center text-xs text-muted-foreground'>
-            <p>© {new Date().getFullYear()} UKIT. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Kytbox. All rights reserved.</p>
           </div>
         </div>
       </div>

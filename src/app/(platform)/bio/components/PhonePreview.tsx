@@ -150,7 +150,7 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                     colors.footerBrandText,
                   )}
                 >
-                  UKIT
+                  Kytbox
                 </span>
               </div>
             </div>

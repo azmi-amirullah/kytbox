@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'UKIT',
-  description: 'Your personal UKIT page',
+  title: 'Kytbox',
+  description: 'Your personal kit box',
 };
 
 export default function RootLayout({

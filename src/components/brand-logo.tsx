@@ -8,7 +8,7 @@ export function BrandLogo({ className }: { className?: string }) {
         <LuSparkles className='w-5 h-5 text-primary' />
       </div>
       <span className='font-bold text-lg tracking-tight cursor-pointer select-none'>
-        UKIT
+        Kytbox
       </span>
     </div>
   );

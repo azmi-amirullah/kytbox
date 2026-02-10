@@ -1,6 +1,6 @@
-# UKIT Monetization Strategy & Architecture
+# Kytbox Monetization Strategy & Architecture
 
-This document defines the monetization model, pricing strategy, and technical architecture for UKIT.
+This document defines the monetization model, pricing strategy, and technical architecture for Kytbox.
 
 > [!IMPORTANT]
 > **Core Philosophy:** Free users get a fully functional product. Pro users pay for **advanced power**, **custom branding**, and **higher limits**.
@@ -38,7 +38,7 @@ This document defines the monetization model, pricing strategy, and technical ar
 
 ---
 
-## 2. UKIT Pricing Tiers
+## 2. Kytbox Pricing Tiers
 
 ### Launch Pricing (Early Adopter)
 
@@ -200,13 +200,13 @@ We must handle webhooks securely and idempotently to keep the database in sync.
 
 The table below defines what is gated behind Pro. Both docs reference this as the canonical list.
 
-| Feature           | Free                    | Pro                                   |
-| :---------------- | :---------------------- | :------------------------------------ |
-| **Links**         | Unlimited               | Unlimited                             |
-| **Themes**        | Preset themes only      | + Custom user-defined themes          |
-| **Branding**      | "Powered by UKIT" shown | Removable                             |
-| **Analytics**     | Basic (clicks, views)   | Advanced (referrer breakdown, export) |
-| **Custom Domain** | ✗                       | ✓ (future)                            |
+| Feature           | Free                      | Pro                                   |
+| :---------------- | :------------------------ | :------------------------------------ |
+| **Links**         | Unlimited                 | Unlimited                             |
+| **Themes**        | Preset themes only        | + Custom user-defined themes          |
+| **Branding**      | "Powered by Kytbox" shown | Removable                             |
+| **Analytics**     | Basic (clicks, views)     | Advanced (referrer breakdown, export) |
+| **Custom Domain** | ✗                         | ✓ (future)                            |
 
 ---
 
@@ -215,7 +215,7 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 **Why do we implement features in this specific order?**
 
 1.  **Bio First:**
-    - The Bio app is **public-facing**. Every free user is a walking billboard for UKIT (via the "Powered by UKIT" footer).
+    - The Bio app is **public-facing**. Every free user is a walking billboard for Kytbox (via the "Powered by Kytbox" footer).
     - Monetizing "Branding Removal" capitalizes on this viral loop immediately.
     - Cashflow is private; it has no viral loop to monetize yet.
 

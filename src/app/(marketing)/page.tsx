@@ -19,8 +19,8 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 
-// UKIT Apps for landing page
-const UKIT_APPS = [
+// Kytbox Apps for landing page
+const KYTBOX_APPS = [
   {
     id: 'bio',
     name: 'Bio',
@@ -94,13 +94,13 @@ export default async function LandingPage() {
           <div className='max-w-4xl mx-auto space-y-8'>
             <div className='inline-flex items-center rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-sm text-green-500 backdrop-blur-sm'>
               <span className='mr-2 flex h-2 w-2 rounded-full bg-green-500'></span>
-              UKIT v1.0 Live
+              Kytbox v1.0 Live
             </div>
 
             <h1 className='text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground'>
               Your Personal{' '}
               <span className='text-primary decoration-wavy decoration-4 decoration-primary/30 underline-offset-4'>
-                Utility Kit
+                Kit Box
               </span>
               .
             </h1>
@@ -128,7 +128,7 @@ export default async function LandingPage() {
               Everything you need, unified
             </h2>
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-              {UKIT_APPS.map((app) => {
+              {KYTBOX_APPS.map((app) => {
                 const Icon = app.icon;
                 const isActive = app.status === 'active';
 

@@ -164,7 +164,7 @@ export default async function PublicProfilePage({
                 colors.footerBrandText,
               )}
             >
-              UKIT
+              Kytbox
             </span>
           </Link>
         </div>

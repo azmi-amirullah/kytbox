@@ -103,7 +103,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
       clearTimeout(usernameTimeoutRef.current);
     }
 
-    // Validate format first (UKIT spec: a-z, 0-9, hyphen)
+    // Validate format first (Kytbox spec: a-z, 0-9, hyphen)
     if (username.length < 3 || !/^[a-z0-9-]+$/.test(username)) {
       queueMicrotask(() => setUsernameStatus('idle'));
       return;
@@ -289,7 +289,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
               </Label>
               <div className='flex'>
                 <span className='inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm'>
-                  ukit.app/
+                  kytbox.com/
                 </span>
                 <div className='relative flex-1'>
                   <Input

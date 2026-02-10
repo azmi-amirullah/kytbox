@@ -17,7 +17,7 @@ export default function Loading() {
             <div>
               <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-4'>
                 <span className='hover:text-foreground transition-colors'>
-                  UKIT
+                  Kytbox
                 </span>
                 <LuChevronRight className='w-3 h-3' />
                 <span className='hover:text-foreground transition-colors'>

@@ -144,7 +144,7 @@ export async function checkUsernameAvailable(username: string) {
 
   const safeUsername = username.toLowerCase().trim();
 
-  // Validate format using UKIT spec
+  // Validate format using Kytbox spec
   const validation = validateUsername(safeUsername);
   if (!validation.valid) {
     return { available: false, error: validation.error };

@@ -13,5 +13,5 @@ export const ratelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(10, '10s'),
   analytics: true,
   // Optional: Prefix for the keys in Redis
-  prefix: '@ukit/ratelimit',
+  prefix: '@kytbox/ratelimit',
 });
