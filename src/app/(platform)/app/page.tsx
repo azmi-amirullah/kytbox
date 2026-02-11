@@ -30,15 +30,6 @@ const KYTBOX_APPS = [
     color: 'bg-emerald-500/10 text-emerald-600',
   },
   {
-    id: 'support',
-    name: 'Support',
-    description: 'Get help from our team',
-    href: '/support',
-    icon: LuLifeBuoy,
-    status: 'active' as const,
-    color: 'bg-cyan-500/10 text-cyan-600',
-  },
-  {
     id: 'list',
     name: 'List',
     description: 'Todo lists, wishlists & ideas',
@@ -57,6 +48,14 @@ const KYTBOX_APPS = [
     color: 'bg-orange-500/10 text-orange-600',
   },
 ];
+
+const SUPPORT_SECTION = {
+  name: 'Support',
+  description: 'Get help from our team',
+  href: '/support',
+  icon: LuLifeBuoy,
+  color: 'bg-cyan-500/10 text-cyan-600',
+};
 
 /**
  * Platform Home - App Switcher
@@ -138,6 +137,30 @@ export default async function AppHomePage() {
             </Link>
           );
         })}
+      </div>
+
+      {/* Support */}
+      <div className='mt-8'>
+        <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3'>
+          Help
+        </h2>
+        <Link
+          href={SUPPORT_SECTION.href}
+          className='group relative p-6 rounded-2xl border bg-card transition-all duration-200 hover:border-primary/40 hover:shadow-lg cursor-pointer block'
+        >
+          <div className='flex items-start gap-4'>
+            <div className={`p-3 rounded-xl ${SUPPORT_SECTION.color}`}>
+              <SUPPORT_SECTION.icon className='w-6 h-6' />
+            </div>
+            <div className='flex-1'>
+              <h3 className='font-semibold text-lg'>{SUPPORT_SECTION.name}</h3>
+              <p className='text-sm text-muted-foreground mt-1'>
+                {SUPPORT_SECTION.description}
+              </p>
+            </div>
+            <LuArrowRight className='w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
+          </div>
+        </Link>
       </div>
     </div>
   );

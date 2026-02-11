@@ -21,6 +21,7 @@ interface HeaderProps {
 
 export function Header({ variant, user, publicUrl }: HeaderProps) {
   const isLanding = variant === 'landing';
+  const isDashboard = variant === 'dashboard';
   const isAuth = variant === 'auth';
   const isLegal = variant === 'legal';
 
@@ -31,7 +32,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           <BrandLogo className='cursor-default select-none' />
         ) : (
           <Link
-            href={isAuth ? '/' : '/'}
+            href={isDashboard ? '/app' : '/'}
             className='hover:opacity-80 transition-opacity'
           >
             <BrandLogo />
