@@ -1,5 +1,6 @@
 'use server';
 
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { validateUsername } from '@/lib/username';
@@ -45,98 +46,94 @@ export async function updateProfile(formData: FormData) {
   }
 
   revalidateTag(`profile-${username}`, 'max');
-  revalidatePath('/app/settings', 'page');
-  revalidatePath('/app/bio', 'page');
-  revalidatePath('/app/cashflow', 'page');
+  revalidatePath('/settings', 'page');
+  revalidatePath('/bio', 'page');
+  revalidatePath('/cashflow', 'page');
   return { success: true };
 }
 
+/**
+ * Upload Avatar
+ */
 export async function uploadAvatar(formData: FormData) {
-  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: 'Unauthorized' };
 
   const file = formData.get('avatar') as File;
+  if (!file) return { error: 'No file provided' };
 
-  if (!file || file.size === 0) {
-    return { error: 'No file provided' };
-  }
+  // Validate file type & size
+  const isValidType = ['image/jpeg', 'image/png', 'image/webp'].includes(
+    file.type,
+  );
+  const isValidSize = file.size <= 2 * 1024 * 1024; // 2MB
 
-  // Validate file type
-  if (!file.type.startsWith('image/')) {
-    return { error: 'File must be an image' };
-  }
-
-  // Limit file size to 2MB (will be compressed client-side, but safety check)
-  if (file.size > 2 * 1024 * 1024) {
-    return { error: 'Image must be less than 2MB' };
-  }
+  if (!isValidType)
+    return { error: 'Invalid file type. JPG, PNG or WebP only.' };
+  if (!isValidSize) return { error: 'File too large. Max 2MB.' };
 
   const fileExt = file.name.split('.').pop();
-  const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-  const filePath = fileName;
+  const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+  const filePath = `avatars/${fileName}`;
 
-  // Delete old avatar if exists
-  if (profile?.avatar_url) {
-    // Extract filename securely, handling potential query params
-    const oldFileName = profile.avatar_url.split('/').pop()?.split('?')[0];
-    if (oldFileName) {
-      await supabase.storage.from('avatars').remove([oldFileName]);
-    }
-  }
-
-  // Upload new avatar
   const { error: uploadError } = await supabase.storage
-    .from('avatars')
+    .from('profiles')
     .upload(filePath, file, { upsert: true });
 
   if (uploadError) {
-    return { error: uploadError.message };
+    console.error('Upload Error:', uploadError);
+    return { error: 'Failed to upload image' };
   }
 
-  // Get public URL
   const { data: urlData } = supabase.storage
-    .from('avatars')
+    .from('profiles')
     .getPublicUrl(filePath);
 
-  // Update profile with new avatar URL
-  const { error: updateError } = await supabase
+  const { data: profile, error: updateError } = await supabase
     .from('profiles')
     .update({ avatar_url: urlData.publicUrl })
-    .eq('id', user.id);
+    .eq('id', user.id)
+    .select('username')
+    .single();
 
   if (updateError) {
-    return { error: updateError.message };
+    console.error('Update Profile Error:', updateError);
+    return { error: 'Failed to update profile' };
   }
 
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
-  revalidatePath('/app/settings', 'page');
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/settings', 'page');
+  revalidatePath('/bio', 'page');
   return { success: true, url: urlData.publicUrl };
 }
 
+/**
+ * Remove Avatar
+ */
 export async function removeAvatar() {
-  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (profile?.avatar_url) {
-    // Delete from storage
-    const fileName = profile.avatar_url.split('/').pop()?.split('?')[0];
-    if (fileName) {
-      await supabase.storage.from('avatars').remove([fileName]);
-    }
-  }
+  if (!user) return { error: 'Unauthorized' };
 
-  // Clear avatar_url in profile
-  const { error } = await supabase
+  const { data: profile, error: updateError } = await supabase
     .from('profiles')
     .update({ avatar_url: null })
-    .eq('id', user.id);
+    .eq('id', user.id)
+    .select('username')
+    .single();
 
-  if (error) {
-    return { error: error.message };
-  }
+  if (updateError) return { error: 'Failed to remove avatar' };
 
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
-  revalidatePath('/app/settings', 'page');
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/settings', 'page');
+  revalidatePath('/bio', 'page');
   return { success: true };
 }
 

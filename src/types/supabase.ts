@@ -25,6 +25,7 @@ export interface Database {
           button_shape: string | null;
           default_currency: string | null;
           created_at: string;
+          role: 'user' | 'admin';
         };
         Insert: {
           id: string;
@@ -37,6 +38,7 @@ export interface Database {
           button_shape?: string | null;
           default_currency?: string | null;
           created_at?: string;
+          role?: 'user' | 'admin';
         };
         Update: {
           id?: string;
@@ -49,8 +51,107 @@ export interface Database {
           button_shape?: string | null;
           default_currency?: string | null;
           created_at?: string;
+          role?: 'user' | 'admin';
         };
         Relationships: [];
+      };
+      support_tickets: {
+        Row: {
+          id: string;
+          user_id: string;
+          subject: string;
+          category:
+            | 'general'
+            | 'bug'
+            | 'billing'
+            | 'feature_request'
+            | 'account';
+          status: 'open' | 'in_progress' | 'resolved' | 'closed';
+          urgency_score: number;
+          last_bumped_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          subject: string;
+          category:
+            | 'general'
+            | 'bug'
+            | 'billing'
+            | 'feature_request'
+            | 'account';
+          status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+          urgency_score?: number;
+          last_bumped_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          subject?: string;
+          category?:
+            | 'general'
+            | 'bug'
+            | 'billing'
+            | 'feature_request'
+            | 'account';
+          status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+          urgency_score?: number;
+          last_bumped_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'support_tickets_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      support_messages: {
+        Row: {
+          id: string;
+          ticket_id: string;
+          sender_id: string;
+          message: string;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          ticket_id: string;
+          sender_id: string;
+          message: string;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          ticket_id?: string;
+          sender_id?: string;
+          message?: string;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'support_messages_ticket_id_fkey';
+            columns: ['ticket_id'];
+            isOneToOne: false;
+            referencedRelation: 'support_tickets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'support_messages_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       links: {
         Row: {

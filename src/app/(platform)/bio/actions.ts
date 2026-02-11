@@ -64,7 +64,7 @@ export async function addLink(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -106,7 +106,7 @@ export async function updateLink(linkId: string, formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -124,7 +124,7 @@ export async function deleteLink(linkId: string) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -142,7 +142,7 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -160,7 +160,7 @@ export async function reorderLinks(linkIds: string[]) {
     return { error: 'Failed to reorder links' };
   }
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }
@@ -184,7 +184,7 @@ export async function updateAppearance(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidatePath('/app/bio', 'page');
+  revalidatePath('/bio', 'page');
   if (profile) {
     revalidateTag(`profile-${profile.username}`, 'max');
     revalidatePath(`/${profile.username}`, 'page');

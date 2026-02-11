@@ -32,12 +32,12 @@ const KYTBOX_APPS = [
     color: 'bg-emerald-500/10 text-emerald-600',
   },
   {
-    id: 'list',
-    name: 'List',
-    description: 'Todo lists, wishlists & ideas',
-    href: '/list',
+    id: 'support',
+    name: 'Support',
+    description: 'Get help from our team',
+    href: '/support',
     icon: LuListTodo,
-    status: 'coming_soon' as const,
+    status: 'active' as const,
     color: 'bg-blue-500/10 text-blue-600',
   },
   {

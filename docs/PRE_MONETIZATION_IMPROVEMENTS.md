@@ -109,20 +109,30 @@ Paid users expect priority support. Email is messy and hard to track. We will bu
 - **Sorting:** Sort by `urgency_score` desc.
 - **Action:** Reply (sends email notification), Resolve, or Ignore.
 
-#### 3.2.3 Data Model
+#### 3.2.3 Data Model (Implemented)
+
+See [20260210190000_create_support_system.sql](../supabase/migrations/20260210190000_create_support_system.sql) for the formal schema.
 
 ```sql
 create table support_tickets (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users,
+  user_id uuid references public.profiles(id),
   subject text not null,
-  message text not null,
   category text not null default 'general'
     check (category in ('general', 'bug', 'billing', 'feature_request', 'account')),
   status text default 'open'
-    check (status in ('open', 'resolved', 'closed')),
+    check (status in ('open', 'in_progress', 'resolved', 'closed')),
   urgency_score int default 0,
   last_bumped_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create table support_messages (
+  id uuid primary key default gen_random_uuid(),
+  ticket_id uuid references public.support_tickets(id),
+  sender_id uuid references public.profiles(id),
+  message text not null,
+  read_at timestamptz,
   created_at timestamptz default now()
 );
 ```
@@ -197,9 +207,9 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 
 - [ ] **High:** Refactor Bio Dashboard to Tabs (UX Scalability).
 - [x] **High:** Create Legal Pages (Compliance).
-- [ ] **High:** Build Internal Support System (Critical for Trust).
-- [ ] **High:** Add `tier` column to schema (Architecture).
+- [x] **High:** Build Internal Support System (Critical for Trust).
+- [x] **High:** Add `role` column to schema (Architecture).
 - [ ] **Medium:** Auto-save for appearance.
 - [ ] **Low:** Advanced empty states.
 
-_Last Updated: February 2026_
+_Last Updated: February 10, 2026_

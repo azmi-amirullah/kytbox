@@ -37,6 +37,7 @@ export const RESERVED_USERNAMES = [
   'about',
   'help',
   'support',
+  'support-admin',
   'contact',
   'faq',
   'pricing',

@@ -22,6 +22,7 @@ interface UserNavProps {
     email?: string;
     avatar_url?: string | null;
     display_name?: string | null;
+    role?: string;
   };
 }
 
@@ -59,6 +60,12 @@ export function UserNav({ user }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <Link href='/bio'>
+            <DropdownMenuItem className='cursor-pointer'>
+              <LuSettings className='mr-2 h-4 w-4' />
+              My Bio
+            </DropdownMenuItem>
+          </Link>
           <Link href='/settings'>
             <DropdownMenuItem className='cursor-pointer'>
               <LuSettings className='mr-2 h-4 w-4' />
@@ -66,6 +73,18 @@ export function UserNav({ user }: UserNavProps) {
             </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>
+        {user.role === 'admin' && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <Link href='/support-admin'>
+                <DropdownMenuItem className='cursor-pointer text-red-600 font-medium'>
+                  Admin Dashboard
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuGroup>
+          </>
+        )}
         <DropdownMenuSeparator />
         <form action={logout} className='w-full'>
           <button type='submit' className='w-full'>

@@ -154,6 +154,7 @@ pricing
 about
 help
 support
+support-admin
 app
 bio
 cashflow
@@ -391,8 +392,10 @@ Rules:
 Logged-in:
 
 - `/app` → platform home
-- `/app/settings` → account settings
-- `/app/bio` → Bio dashboard
+- `/settings` → account settings
+- `/support` → User support portal
+- `/support-admin` → Admin support dashboard
+- `/bio` → Bio dashboard
 - `/app/bio/links` → manage links
 - `/app/bio/analytics` → Bio analytics
 - `/app/cashflow` → Cashflow dashboard
@@ -429,13 +432,14 @@ Rule: This document defines how Kytbox works
 | ------- | ---------------------------------- | ------- |
 | §4.1    | Public route `/{username}`         | ✅ Done |
 | §4.2    | Private routes `/app/*`            | ✅ Done |
+| §4.2    | Support routes `/support*`         | ✅ Done |
 | §5      | Reserved usernames                 | ✅ Done |
 | §6      | Username format (a-z, 0-9, hyphen) | ✅ Done |
 | §6      | No auto-numbering on duplicate     | ✅ Done |
 | §6      | Case-insensitive, stored lowercase | ✅ Done |
 | §11     | Platform shell at `/app`           | ✅ Done |
 | §11     | Bio dashboard at `/app/bio`        | ✅ Done |
-| §11     | Settings at `/app/settings`        | ✅ Done |
+| §11     | Settings at `/settings`            | ✅ Done |
 | §11     | robots.txt blocking `/app/*`       | ✅ Done |
 
 ### 🔜 Deferred to Post-Launch
@@ -468,21 +472,26 @@ For implementation details and coverage status, see: [Loading States Documentati
 
 All page routes in Kytbox with their rendering type and auth requirements:
 
-| Route              | Render  | Auth  | Description                      |
-| ------------------ | ------- | ----- | -------------------------------- |
-| `/`                | Dynamic | No    | Landing page                     |
-| `/login`           | Static  | No    | Login form                       |
-| `/signup`          | Static  | No    | Signup form                      |
-| `/forgot-password` | Static  | No    | Password reset request           |
-| `/update-password` | Static  | No    | Password reset form              |
-| `/onboarding`      | Static  | No    | Profile setup                    |
-| `/app`             | Dynamic | Yes   | Platform home / app switcher     |
-| `/bio`             | Dynamic | Yes   | Bio dashboard                    |
-| `/bio/analytics`   | Dynamic | Yes   | Bio analytics                    |
-| `/cashflow`        | Dynamic | Yes   | Cashflow list                    |
-| `/cashflow/[id]`   | Dynamic | Mixed | Cashflow detail (public or auth) |
-| `/settings`        | Dynamic | Yes   | Account settings                 |
-| `/[username]`      | Dynamic | No    | Public bio page                  |
+| Route                 | Render  | Auth  | Description                      |
+| --------------------- | ------- | ----- | -------------------------------- |
+| `/`                   | Dynamic | No    | Landing page                     |
+| `/login`              | Static  | No    | Login form                       |
+| `/signup`             | Static  | No    | Signup form                      |
+| `/forgot-password`    | Static  | No    | Password reset request           |
+| `/update-password`    | Static  | No    | Password reset form              |
+| `/onboarding`         | Static  | No    | Profile setup                    |
+| `/app`                | Dynamic | Yes   | Platform home / app switcher     |
+| `/bio`                | Dynamic | Yes   | Bio dashboard                    |
+| `/bio/analytics`      | Dynamic | Yes   | Bio analytics                    |
+| `/cashflow`           | Dynamic | Yes   | Cashflow list                    |
+| `/cashflow/[id]`      | Dynamic | Mixed | Cashflow detail (public or auth) |
+| `/settings`           | Dynamic | Yes   | Account settings                 |
+| `/support`            | Dynamic | Yes   | User support portal              |
+| `/support/[id]`       | Dynamic | Yes   | Ticket thread view               |
+| `/support/new`        | Static  | Yes   | Create new ticket                |
+| `/support-admin`      | Dynamic | Yes   | Admin support dashboard          |
+| `/support-admin/[id]` | Dynamic | Yes   | Admin ticket reply view          |
+| `/[username]`         | Dynamic | No    | Public bio page                  |
 
 ### 12.4 Future Optimization Options
 
