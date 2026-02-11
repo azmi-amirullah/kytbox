@@ -12,6 +12,8 @@ export type SupportTicket = {
   unread_count?: number;
   awaiting_user_reply?: boolean;
   user_seen_no_reply?: boolean;
+  awaiting_admin_reply?: boolean;
+  admin_seen_no_reply?: boolean;
   // Joins
   profiles?: {
     username: string;

@@ -81,10 +81,20 @@ export function AdminTicketList({ tickets }: AdminTicketListProps) {
                       }
                     >
                       {ticket.user_seen_no_reply
-                        ? 'Seen, no reply yet'
-                        : 'Awaiting user reply'}
+                        ? 'Seen, waiting for user response'
+                        : 'Waiting for user response'}
                     </Badge>
                   )}
+                  {(ticket.unread_count || 0) === 0 &&
+                    ticket.awaiting_admin_reply &&
+                    ticket.admin_seen_no_reply && (
+                      <Badge
+                        variant='outline'
+                        className='bg-amber-100 text-amber-700 border-amber-200'
+                      >
+                        Waiting for your response
+                      </Badge>
+                    )}
                 </div>
               </div>
 

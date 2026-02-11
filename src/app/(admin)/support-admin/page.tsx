@@ -61,6 +61,8 @@ export default async function AdminSupportPage({
   const unreadByTicket = new Map<string, number>();
   const awaitingReplyByTicket = new Map<string, boolean>();
   const seenNoReplyByTicket = new Map<string, boolean>();
+  const awaitingAdminReplyByTicket = new Map<string, boolean>();
+  const adminSeenNoReplyByTicket = new Map<string, boolean>();
 
   if (ticketIds.length > 0) {
     const { data: ticketMessages } = await supabase
@@ -92,10 +94,17 @@ export default async function AdminSupportPage({
 
     lastMessageByTicket.forEach((lastMessage, ticketId) => {
       const awaitingUserReply = lastMessage.senderRole === 'admin';
+      const awaitingAdminReply =
+        lastMessage.senderRole !== null && lastMessage.senderRole !== 'admin';
       awaitingReplyByTicket.set(ticketId, awaitingUserReply);
       seenNoReplyByTicket.set(
         ticketId,
         awaitingUserReply && Boolean(lastMessage.readAt),
+      );
+      awaitingAdminReplyByTicket.set(ticketId, awaitingAdminReply);
+      adminSeenNoReplyByTicket.set(
+        ticketId,
+        awaitingAdminReply && Boolean(lastMessage.readAt),
       );
     });
   }
@@ -105,8 +114,14 @@ export default async function AdminSupportPage({
     return {
       ...ticket,
       unread_count: unreadByTicket.get(ticket.id) || 0,
-      awaiting_user_reply: isActive && (awaitingReplyByTicket.get(ticket.id) || false),
-      user_seen_no_reply: isActive && (seenNoReplyByTicket.get(ticket.id) || false),
+      awaiting_user_reply:
+        isActive && (awaitingReplyByTicket.get(ticket.id) || false),
+      user_seen_no_reply:
+        isActive && (seenNoReplyByTicket.get(ticket.id) || false),
+      awaiting_admin_reply:
+        isActive && (awaitingAdminReplyByTicket.get(ticket.id) || false),
+      admin_seen_no_reply:
+        isActive && (adminSeenNoReplyByTicket.get(ticket.id) || false),
     };
   });
 
