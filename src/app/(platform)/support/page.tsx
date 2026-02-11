@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/server';
 import { LuPlus } from 'react-icons/lu';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 export const metadata = {
   title: 'Support | Kytbox',
@@ -16,7 +17,7 @@ export default async function SupportPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return null; // Layout handles redirect usually
+    redirect('/login');
   }
 
   const { data: tickets } = await supabase
@@ -24,6 +25,56 @@ export default async function SupportPage() {
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  const ticketIds = (tickets || []).map((ticket) => ticket.id);
+  const unreadByTicket = new Map<string, number>();
+  const awaitingReplyByTicket = new Map<string, boolean>();
+  const seenNoReplyByTicket = new Map<string, boolean>();
+
+  if (ticketIds.length > 0) {
+    const { data: ticketMessages } = await supabase
+      .from('support_messages')
+      .select('ticket_id, created_at, read_at, profiles(role)')
+      .in('ticket_id', ticketIds)
+      .order('created_at', { ascending: true });
+
+    const lastMessageByTicket = new Map<
+      string,
+      { senderRole: string | null; readAt: string | null }
+    >();
+
+    (ticketMessages || []).forEach((message) => {
+      const senderRole = message.profiles?.role || null;
+
+      if (senderRole === 'admin' && !message.read_at) {
+        unreadByTicket.set(
+          message.ticket_id,
+          (unreadByTicket.get(message.ticket_id) || 0) + 1,
+        );
+      }
+
+      lastMessageByTicket.set(message.ticket_id, {
+        senderRole,
+        readAt: message.read_at,
+      });
+    });
+
+    lastMessageByTicket.forEach((lastMessage, ticketId) => {
+      const awaitingUserReply = lastMessage.senderRole === 'admin';
+      awaitingReplyByTicket.set(ticketId, awaitingUserReply);
+      seenNoReplyByTicket.set(
+        ticketId,
+        awaitingUserReply && Boolean(lastMessage.readAt),
+      );
+    });
+  }
+
+  const ticketsWithSignals = (tickets || []).map((ticket) => ({
+    ...ticket,
+    unread_count: unreadByTicket.get(ticket.id) || 0,
+    awaiting_user_reply: awaitingReplyByTicket.get(ticket.id) || false,
+    user_seen_no_reply: seenNoReplyByTicket.get(ticket.id) || false,
+  }));
 
   return (
     <div className='max-w-4xl mx-auto py-8 px-4'>
@@ -42,7 +93,7 @@ export default async function SupportPage() {
         </Button>
       </div>
 
-      <TicketList tickets={tickets || []} />
+      <TicketList tickets={ticketsWithSignals} />
     </div>
   );
 }

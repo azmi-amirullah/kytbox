@@ -435,6 +435,39 @@ export interface Database {
         Args: { p_link_ids: string[] };
         Returns: undefined;
       };
+      create_support_ticket: {
+        Args: {
+          p_subject: string;
+          p_category: string;
+          p_message: string;
+        };
+        Returns: string;
+      };
+      bump_support_ticket_urgency: {
+        Args: { p_ticket_id: string };
+        Returns: undefined;
+      };
+      mark_support_messages_read: {
+        Args: { p_ticket_id: string };
+        Returns: number;
+      };
+      get_support_ticket_queue: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          user_id: string;
+          subject: string;
+          category: string;
+          status: string;
+          urgency_score: number;
+          last_bumped_at: string | null;
+          created_at: string;
+          age_days: number;
+          total_urgency: number;
+          username: string | null;
+          avatar_url: string | null;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;

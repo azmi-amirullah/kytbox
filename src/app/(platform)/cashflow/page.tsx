@@ -1,8 +1,5 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/header';
-import { Footer } from '@/components/footer';
-import { BackgroundBlobs } from '@/components/background-blobs';
 import CashflowList from './components/CashflowList';
 
 export default async function CashflowPage() {
@@ -88,30 +85,13 @@ export default async function CashflowPage() {
     isIncluded: c.user_id === user.id || includedShareIds.has(c.id), // Owned always included by default logic, shared depends on DB
   }));
 
-  const publicUrl = `/${profile.username}`;
-
-  const userData = {
-    username: profile.username,
-    email: user.email,
-    avatar_url: profile.avatar_url,
-    display_name: profile.display_name,
-  };
-
   return (
-    <div className='min-h-screen relative bg-background flex flex-col'>
-      <BackgroundBlobs />
-
-      <Header variant='dashboard' user={userData} publicUrl={publicUrl} />
-
-      <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8 flex-1 w-full'>
-        <CashflowList
-          cashflows={cashflowSummaries}
-          currency={profile.default_currency}
-          currentUserId={user.id}
-        />
-      </main>
-
-      <Footer />
+    <div className='max-w-7xl mx-auto px-4 py-8 md:py-8 w-full'>
+      <CashflowList
+        cashflows={cashflowSummaries}
+        currency={profile.default_currency}
+        currentUserId={user.id}
+      />
     </div>
   );
 }

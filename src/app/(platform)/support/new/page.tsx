@@ -1,8 +1,19 @@
 import { CreateTicketForm } from '@/app/(platform)/support/components/CreateTicketForm';
+import { createClient } from '@/lib/supabase/server';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
-export default function NewTicketPage() {
+export default async function NewTicketPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
   return (
     <div className='max-w-4xl mx-auto py-8 px-4'>
       <div className='mb-6'>

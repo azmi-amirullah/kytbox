@@ -1,9 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import DashboardClient from './components/DashboardClient';
-import { Header } from '@/components/header';
-import { Footer } from '@/components/footer';
-import { BackgroundBlobs } from '@/components/background-blobs';
 
 export default async function BioDashboardPage() {
   const supabase = await createClient();
@@ -41,30 +38,14 @@ export default async function BioDashboardPage() {
 
   const publicUrl = `/${profile.username}`;
 
-  const userData = {
-    username: profile.username,
-    email: user.email,
-    avatar_url: profile.avatar_url,
-    display_name: profile.display_name,
-  };
-
   return (
-    <div className='min-h-screen relative bg-background flex flex-col'>
-      <BackgroundBlobs />
-
-      <Header variant='dashboard' user={userData} publicUrl={publicUrl} />
-
-      {/* Main Content */}
-      <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8 flex-1 w-full'>
-        <DashboardClient
-          initialLinks={links ?? []}
-          profile={profile}
-          publicUrl={publicUrl}
-          totalViews={totalViews || 0}
-        />
-      </main>
-
-      <Footer />
+    <div className='max-w-7xl mx-auto px-4 py-8 md:py-8 w-full'>
+      <DashboardClient
+        initialLinks={links ?? []}
+        profile={profile}
+        publicUrl={publicUrl}
+        totalViews={totalViews || 0}
+      />
     </div>
   );
 }

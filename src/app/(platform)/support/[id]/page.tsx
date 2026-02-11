@@ -1,7 +1,7 @@
 import { MessageList } from '@/app/(platform)/support/components/MessageList';
 import { ReplyForm } from '@/app/(platform)/support/components/ReplyForm';
 import { UrgencyControl } from '@/app/(platform)/support/components/UrgencyControl';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/support/StatusBadge';
 import { createClient } from '@/lib/supabase/server';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';
@@ -31,6 +31,8 @@ export default async function TicketDetailPage({
     return notFound();
   }
 
+  await supabase.rpc('mark_support_messages_read', { p_ticket_id: id });
+
   // Fetch messages
   const { data: messages } = await supabase
     .from('support_messages')
@@ -55,9 +57,7 @@ export default async function TicketDetailPage({
               <h1 className='text-2xl font-bold tracking-tight'>
                 {ticket.subject}
               </h1>
-              <Badge variant='outline' className='capitalize'>
-                {ticket.status.replace('_', ' ')}
-              </Badge>
+              <StatusBadge status={ticket.status} />
             </div>
             <div className='flex items-center gap-4 text-sm text-muted-foreground'>
               <p>Category: {ticket.category.replace('_', ' ')}</p>
@@ -75,19 +75,21 @@ export default async function TicketDetailPage({
         </div>
       </div>
 
-      <div className='bg-card border rounded-lg p-6 mb-6 min-h-[400px] flex flex-col'>
-        <div className='flex-1'>
+      <div className='bg-card border rounded-lg p-6 mb-6 min-h-[400px] max-h-[70vh] overflow-hidden flex flex-col'>
+        <div className='flex-1 min-h-0 overflow-y-auto pr-2'>
           <MessageList messages={messages || []} currentUserId={user.id} />
         </div>
 
-        {ticket.status === 'resolved' || ticket.status === 'closed' ? (
-          <div className='mt-6 p-4 bg-muted/50 rounded-lg text-center text-sm text-muted-foreground'>
-            This ticket is {ticket.status}. Please create a new ticket for
-            further assistance.
-          </div>
-        ) : (
-          <ReplyForm ticketId={ticket.id} />
-        )}
+        <div className='shrink-0'>
+          {ticket.status === 'resolved' || ticket.status === 'closed' ? (
+            <div className='mt-6 p-4 bg-muted/50 rounded-lg text-center text-sm text-muted-foreground'>
+              This ticket is {ticket.status}. Please create a new ticket for
+              further assistance.
+            </div>
+          ) : (
+            <ReplyForm ticketId={ticket.id} />
+          )}
+        </div>
       </div>
     </div>
   );

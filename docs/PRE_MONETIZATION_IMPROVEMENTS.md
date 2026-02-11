@@ -98,15 +98,16 @@ Paid users expect priority support. Email is messy and hard to track. We will bu
 
 #### 3.2.1 User Experience
 
-1. **Submit Ticket:** Simple form (Subject, Message, Category) in `/app/support`.
+1. **Submit Ticket:** Simple form (Subject, Message, Category) in `/support`.
 2. **Urgency Bump:** Users can click a "Bump Urgency" button once every 24 hours.
-   - _Logic:_ `urgency_score = (days_waiting * 1) + (bumps * 10)`
-   - _Constraint:_ 1 bump per 24h window.
+   - _Current logic:_ each successful bump adds `+10` to `urgency_score` (bump points).
+   - _Queue scoring:_ `total_urgency = age_days + urgency_score`.
+   - _Constraints:_ 1 bump per 24h window, user must own ticket, and closed/resolved tickets cannot be bumped.
 
 #### 3.2.2 Admin Experience
 
 - **Queue View:** List of open tickets.
-- **Sorting:** Sort by `urgency_score` desc.
+- **Sorting:** Sort by `total_urgency` desc, then `created_at` asc.
 - **Action:** Reply (sends email notification), Resolve, or Ignore.
 
 #### 3.2.3 Data Model (Implemented)
@@ -116,7 +117,7 @@ See [20260210190000_create_support_system.sql](../supabase/migrations/2026021019
 ```sql
 create table support_tickets (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references public.profiles(id),
+  user_id uuid references public.profiles(id) on delete cascade,
   subject text not null,
   category text not null default 'general'
     check (category in ('general', 'bug', 'billing', 'feature_request', 'account')),
@@ -129,13 +130,17 @@ create table support_tickets (
 
 create table support_messages (
   id uuid primary key default gen_random_uuid(),
-  ticket_id uuid references public.support_tickets(id),
-  sender_id uuid references public.profiles(id),
+  ticket_id uuid references public.support_tickets(id) on delete cascade,
+  sender_id uuid references public.profiles(id) on delete cascade,
   message text not null,
   read_at timestamptz,
   created_at timestamptz default now()
 );
 ```
+
+Implementation note:
+- Ticket creation is executed atomically via DB RPC `create_support_ticket`.
+- Urgency bump is enforced via DB RPC `bump_support_ticket_urgency`.
 
 ---
 
@@ -194,7 +199,7 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 ### Phase 2: Operational (Before Lemon Squeezy Integration)
 
 1.  **Legal Pages:** Add `/terms`, `/privacy`, and `/refund`. (Done)
-2.  **Support System:** Build `/app/support` (User) and `/admin/support` (Admin).
+2.  **Support System:** Build `/support` (User) and `/support-admin` (Admin).
 
 ### Phase 3: Monetization Core
 
@@ -212,4 +217,4 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 - [ ] **Medium:** Auto-save for appearance.
 - [ ] **Low:** Advanced empty states.
 
-_Last Updated: February 10, 2026_
+_Last Updated: February 11, 2026_

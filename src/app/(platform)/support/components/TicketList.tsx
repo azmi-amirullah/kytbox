@@ -4,6 +4,7 @@ import { LuArrowUp, LuClock } from 'react-icons/lu';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/support/StatusBadge';
 import { EmptyTicketState } from '@/components/support/EmptyTicketState';
+import { Badge } from '@/components/ui/badge';
 
 interface TicketListProps {
   tickets: SupportTicket[];
@@ -33,6 +34,24 @@ export function TicketList({ tickets }: TicketListProps) {
               <div className='flex items-center gap-2 mb-1'>
                 <h3 className='font-medium text-lg'>{ticket.subject}</h3>
                 <StatusBadge status={ticket.status} />
+                {(ticket.unread_count || 0) > 0 && (
+                  <Badge
+                    variant='outline'
+                    className='bg-red-100 text-red-700 border-red-200'
+                  >
+                    New Reply ({ticket.unread_count})
+                  </Badge>
+                )}
+                {(ticket.unread_count || 0) === 0 &&
+                  ticket.awaiting_user_reply &&
+                  ticket.user_seen_no_reply && (
+                    <Badge
+                      variant='outline'
+                      className='bg-amber-100 text-amber-700 border-amber-200'
+                    >
+                      Waiting for your response
+                    </Badge>
+                  )}
               </div>
               <p className='text-sm text-muted-foreground capitalize'>
                 Category: {ticket.category.replace('_', ' ')}

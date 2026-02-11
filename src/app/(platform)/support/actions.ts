@@ -39,39 +39,22 @@ export async function createTicket(prevState: State, formData: FormData) {
 
   const { subject, category, message } = validatedFields.data;
 
-  // 1. Create Ticket
-  const { data: ticket, error: ticketError } = await supabase
-    .from('support_tickets')
-    .insert({
-      user_id: user.id,
-      subject,
-      category,
-      status: 'open',
-    })
-    .select()
-    .single();
+  const { data: ticketId, error: ticketError } = await supabase.rpc(
+    'create_support_ticket',
+    {
+      p_subject: subject,
+      p_category: category,
+      p_message: message,
+    },
+  );
 
-  if (ticketError) {
+  if (ticketError || !ticketId) {
     console.error('Error creating ticket:', ticketError);
     return { error: 'Failed to create ticket' };
   }
 
-  // 2. Create Initial Message
-  const { error: messageError } = await supabase
-    .from('support_messages')
-    .insert({
-      ticket_id: ticket.id,
-      sender_id: user.id,
-      message,
-    });
-
-  if (messageError) {
-    console.error('Error creating message:', messageError);
-    return { error: 'Failed to create message' };
-  }
-
   revalidatePath('/support');
-  redirect(`/support/${ticket.id}`);
+  redirect(`/support/${ticketId}`);
 }
 
 const replySchema = z.object({
@@ -105,6 +88,12 @@ export async function replyToTicket(
   }
 
   const { message } = validatedFields.data;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  const isAdmin = profile?.role === 'admin';
 
   const { error } = await supabase.from('support_messages').insert({
     ticket_id: ticketId,
@@ -117,6 +106,20 @@ export async function replyToTicket(
     return { error: 'Failed to send reply', success: false };
   }
 
+  if (isAdmin) {
+    const { error: statusError } = await supabase
+      .from('support_tickets')
+      .update({ status: 'in_progress' })
+      .eq('id', ticketId)
+      .eq('status', 'open');
+
+    if (statusError) {
+      console.error('Error auto-updating ticket status:', statusError);
+    }
+  }
+
+  revalidatePath('/support');
+  revalidatePath('/support-admin');
   revalidatePath(`/support/${ticketId}`);
   revalidatePath(`/support-admin/${ticketId}`);
   return { error: '', success: true };
@@ -130,37 +133,27 @@ export async function bumpUrgency(ticketId: string) {
 
   if (!user) return { error: 'Unauthorized' };
 
-  // Fetch ticket to check ownership and last bump
-  const { data: ticket, error: fetchError } = await supabase
-    .from('support_tickets')
-    .select('user_id, last_bumped_at, urgency_score')
-    .eq('id', ticketId)
-    .single();
+  const { error } = await supabase.rpc('bump_support_ticket_urgency', {
+    p_ticket_id: ticketId,
+  });
 
-  if (fetchError || !ticket) return { error: 'Ticket not found' };
-  if (ticket.user_id !== user.id) return { error: 'Unauthorized' };
-
-  // Check 24h cooldown
-  const now = new Date();
-  if (ticket.last_bumped_at) {
-    const lastBump = new Date(ticket.last_bumped_at);
-    const diffHours = (now.getTime() - lastBump.getTime()) / (1000 * 60 * 60);
-    if (diffHours < 24) {
+  if (error) {
+    if (error.message.includes('24 hours')) {
       return { error: 'You can only bump urgency once every 24 hours.' };
     }
+    if (error.message.includes('Ticket not found')) {
+      return { error: 'Ticket not found' };
+    }
+    if (error.message.includes('Unauthorized')) {
+      return { error: 'Unauthorized' };
+    }
+    if (error.message.includes('already closed')) {
+      return { error: 'This ticket is already closed.' };
+    }
+    return { error: 'Failed to bump urgency' };
   }
 
-  // Bump score: +10 points
-  const { error: updateError } = await supabase
-    .from('support_tickets')
-    .update({
-      urgency_score: (ticket.urgency_score || 0) + 10,
-      last_bumped_at: now.toISOString(),
-    })
-    .eq('id', ticketId);
-
-  if (updateError) return { error: 'Failed to bump urgency' };
-
   revalidatePath(`/support/${ticketId}`);
+  revalidatePath('/support-admin');
   return { success: true };
 }

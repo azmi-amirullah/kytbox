@@ -10,6 +10,7 @@ interface UserData {
   email?: string;
   avatar_url: string | null;
   display_name: string | null;
+  role?: 'user' | 'admin';
 }
 
 interface HeaderProps {

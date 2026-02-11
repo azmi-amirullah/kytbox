@@ -5,6 +5,8 @@ import { LuArrowUp, LuClock } from 'react-icons/lu';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/support/StatusBadge';
 import { EmptyTicketState } from '@/components/support/EmptyTicketState';
+import { getUrgencyBadgeClass } from '@/lib/support-urgency';
+import { Badge } from '@/components/ui/badge';
 
 interface AdminTicketListProps {
   tickets: SupportTicket[];
@@ -31,66 +33,93 @@ export function AdminTicketList({ tickets }: AdminTicketListProps) {
       </div>
 
       <div className='divide-y'>
-        {tickets.map((ticket) => (
-          <Link
-            key={ticket.id}
-            href={`/support-admin/${ticket.id}`}
-            className='grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/50 transition-colors text-sm'
-          >
-            <div className='col-span-1 font-mono font-medium'>
-              <div
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs
-                ${
-                  ticket.urgency_score > 20
-                    ? 'bg-red-100 text-red-700'
-                    : ticket.urgency_score > 0
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                <LuArrowUp className='w-3 h-3' />
-                {ticket.urgency_score}
-              </div>
-            </div>
+        {tickets.map((ticket) => {
+          const totalUrgency = ticket.total_urgency ?? ticket.urgency_score;
+          const ageDays = ticket.age_days ?? 0;
+          const bumpPoints = ticket.urgency_score ?? 0;
 
-            <div className='col-span-5'>
-              <div className='font-medium truncate'>{ticket.subject}</div>
-              <div className='text-xs text-muted-foreground capitalize'>
-                {ticket.category.replace('_', ' ')}
-              </div>
-            </div>
-
-            <div className='col-span-2'>
-              <StatusBadge status={ticket.status} />
-            </div>
-
-            <div className='col-span-2'>
-              <div className='flex items-center gap-2'>
-                <Avatar className='w-6 h-6'>
-                  <AvatarImage
-                    src={ticket.profiles?.avatar_url || ''}
-                    alt={ticket.profiles?.username || 'User'}
-                  />
-                  <AvatarFallback className='text-[10px] font-bold'>
-                    {ticket.profiles?.username?.[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className='truncate max-w-[100px]'>
-                  {ticket.profiles?.username || 'Unknown'}
+          return (
+            <Link
+              key={ticket.id}
+              href={`/support-admin/${ticket.id}`}
+              className='grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/50 transition-colors text-sm'
+            >
+              <div className='col-span-1 font-mono font-medium'>
+                <div
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs
+                ${getUrgencyBadgeClass(totalUrgency)}`}
+                >
+                  <LuArrowUp className='w-3 h-3' />
+                  {totalUrgency}
+                </div>
+                <div className='text-[10px] text-muted-foreground mt-1'>
+                  {ageDays}d + {bumpPoints}
                 </div>
               </div>
-            </div>
 
-            <div className='col-span-2 text-right text-muted-foreground'>
-              <div className='flex items-center justify-end gap-1'>
-                <LuClock className='w-3 h-3' />
-                <span>
-                  {formatDistanceToNow(new Date(ticket.created_at))} ago
-                </span>
+              <div className='col-span-5'>
+                <div className='font-medium truncate'>{ticket.subject}</div>
+                <div className='text-xs text-muted-foreground capitalize'>
+                  {ticket.category.replace('_', ' ')}
+                </div>
+                <div className='mt-1 flex items-center gap-2 flex-wrap'>
+                  {(ticket.unread_count || 0) > 0 && (
+                    <Badge
+                      variant='outline'
+                      className='bg-blue-100 text-blue-700 border-blue-200'
+                    >
+                      Unread User Reply ({ticket.unread_count})
+                    </Badge>
+                  )}
+                  {ticket.awaiting_user_reply && (
+                    <Badge
+                      variant='outline'
+                      className={
+                        ticket.user_seen_no_reply
+                          ? 'bg-amber-100 text-amber-700 border-amber-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }
+                    >
+                      {ticket.user_seen_no_reply
+                        ? 'Seen, no reply yet'
+                        : 'Awaiting user reply'}
+                    </Badge>
+                  )}
+                </div>
               </div>
-            </div>
-          </Link>
-        ))}
+
+              <div className='col-span-2'>
+                <StatusBadge status={ticket.status} />
+              </div>
+
+              <div className='col-span-2'>
+                <div className='flex items-center gap-2'>
+                  <Avatar className='w-6 h-6'>
+                    <AvatarImage
+                      src={ticket.profiles?.avatar_url || ''}
+                      alt={ticket.profiles?.username || 'User'}
+                    />
+                    <AvatarFallback className='text-[10px] font-bold'>
+                      {ticket.profiles?.username?.[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className='truncate max-w-25'>
+                    {ticket.profiles?.username || 'Unknown'}
+                  </div>
+                </div>
+              </div>
+
+              <div className='col-span-2 text-right text-muted-foreground'>
+                <div className='flex items-center justify-end gap-1'>
+                  <LuClock className='w-3 h-3' />
+                  <span>
+                    {formatDistanceToNow(new Date(ticket.created_at))} ago
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

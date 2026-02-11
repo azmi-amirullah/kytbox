@@ -47,6 +47,7 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 1.  **Strict Isolation:** Nearly all `SELECT` and `INSERT` policies check `auth.uid() = user_id`.
 2.  **Shared Access:** Apps like Cashflow use `EXISTS` subqueries in RLS policies to allow invited users to view data without owning the `user_id`.
 3.  **Administrative Override:** The `profiles.role = 'admin'` flag allows access to all tickets and messages for system maintenance.
+4.  **Controlled Mutations:** In Support, users do not have direct `UPDATE` policy on `support_tickets`; controlled writes happen through RPC functions (`create_support_ticket`, `bump_support_ticket_urgency`).
 
 ### 3.2 Reference Migration History
 
@@ -54,7 +55,7 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 | :---- | :----------------------------------------- | :------------------------------------------ |
 | 1     | `001_initial_schema.sql`                   | Basic profiles and auth triggers.           |
 | 2     | `20260202_create_cashflow_tables.sql`      | Multi-tenant cashflow logic.                |
-| 3     | `20260210190000_create_support_system.sql` | `profiles.role` addition and ticket tables. |
+| 3     | `20260210190000_create_support_system.sql` | `profiles.role`, support tables, and support RPC functions. |
 
 ---
 
@@ -66,4 +67,4 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 
 ---
 
-_Last Updated: February 10, 2026_
+_Last Updated: February 11, 2026_

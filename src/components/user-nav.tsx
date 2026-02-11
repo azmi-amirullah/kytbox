@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LuLogOut, LuSettings } from 'react-icons/lu';
+import { LuLogOut, LuSettings, LuShield } from 'react-icons/lu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -60,12 +60,14 @@ export function UserNav({ user }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href='/bio'>
-            <DropdownMenuItem className='cursor-pointer'>
-              <LuSettings className='mr-2 h-4 w-4' />
-              My Bio
-            </DropdownMenuItem>
-          </Link>
+          {user.role === 'admin' && (
+            <Link href='/support-admin'>
+              <DropdownMenuItem className='cursor-pointer text-blue-600 font-semibold focus:text-blue-600 focus:bg-blue-50 dark:focus:bg-blue-950/30'>
+                <LuShield className='mr-2 h-4 w-4' />
+                Admin Dashboard
+              </DropdownMenuItem>
+            </Link>
+          )}
           <Link href='/settings'>
             <DropdownMenuItem className='cursor-pointer'>
               <LuSettings className='mr-2 h-4 w-4' />
@@ -73,18 +75,6 @@ export function UserNav({ user }: UserNavProps) {
             </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>
-        {user.role === 'admin' && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <Link href='/support-admin'>
-                <DropdownMenuItem className='cursor-pointer text-red-600 font-medium'>
-                  Admin Dashboard
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuGroup>
-          </>
-        )}
         <DropdownMenuSeparator />
         <form action={logout} className='w-full'>
           <button type='submit' className='w-full'>

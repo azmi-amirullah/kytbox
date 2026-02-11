@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const matchesRoute = (route: string) =>
+    pathname === route || pathname.startsWith(`${route}/`);
 
   // Protected routes - require authentication
   const protectedPaths = [
@@ -10,15 +12,15 @@ export async function proxy(request: NextRequest) {
     '/bio',
     '/cashflow',
     '/settings',
+    '/support',
+    '/support-admin',
     '/update-password',
   ];
-  const isProtectedRoute = protectedPaths.some((path) =>
-    pathname.startsWith(path),
-  );
+  const isProtectedRoute = protectedPaths.some(matchesRoute);
 
   // Auth routes - redirect logged-in users
   const authPaths = ['/login', '/signup'];
-  const isAuthRoute = authPaths.some((path) => pathname.startsWith(path));
+  const isAuthRoute = authPaths.some(matchesRoute);
 
   // Skip auth check for public routes (landing, public profiles, etc.)
   if (!isProtectedRoute && !isAuthRoute) {

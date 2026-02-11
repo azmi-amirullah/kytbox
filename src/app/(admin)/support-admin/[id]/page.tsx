@@ -4,7 +4,9 @@ import { StatusSelector } from '@/app/(admin)/support-admin/components/StatusSel
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { requireAdmin } from '@/lib/admin';
+import { getUrgencyBadgeClass } from '@/lib/support-urgency';
 import { createClient } from '@/lib/supabase/server';
+import { cn } from '@/lib/utils';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -35,6 +37,13 @@ export default async function AdminTicketDetailPage({
     return notFound();
   }
 
+  await supabase.rpc('mark_support_messages_read', { p_ticket_id: id });
+
+  const { data: queueRows } = await supabase.rpc('get_support_ticket_queue');
+  const queueTicket = queueRows?.find((queueRow) => queueRow.id === ticket.id);
+  const totalUrgency = queueTicket?.total_urgency ?? ticket.urgency_score;
+  const ageDays = queueTicket?.age_days ?? 0;
+
   // Fetch messages
   const { data: messages } = await supabase
     .from('support_messages')
@@ -59,9 +68,15 @@ export default async function AdminTicketDetailPage({
               <h1 className='text-2xl font-bold tracking-tight'>
                 {ticket.subject}
               </h1>
-              <Badge variant='outline' className='capitalize'>
-                Urgency: {ticket.urgency_score}
+              <Badge
+                variant='outline'
+                className={cn('font-medium', getUrgencyBadgeClass(totalUrgency))}
+              >
+                Urgency: {totalUrgency}
               </Badge>
+              <span className='text-xs text-muted-foreground'>
+                {ageDays}d + {ticket.urgency_score}
+              </span>
             </div>
 
             {/* User Info Card */}
@@ -92,12 +107,12 @@ export default async function AdminTicketDetailPage({
         </div>
       </div>
 
-      <div className='bg-card border rounded-lg p-6 mb-6 min-h-[400px] flex flex-col'>
-        <div className='flex-1'>
+      <div className='bg-card border rounded-lg p-6 mb-6 min-h-[400px] max-h-[70vh] overflow-hidden flex flex-col'>
+        <div className='flex-1 min-h-0 overflow-y-auto pr-2'>
           <MessageList messages={messages || []} currentUserId={user.id} />
         </div>
 
-        <div className='mt-8 pt-6 border-t'>
+        <div className='mt-8 pt-6 border-t shrink-0'>
           <h3 className='text-sm font-medium mb-2'>Reply as Support</h3>
           <ReplyForm ticketId={ticket.id} />
         </div>

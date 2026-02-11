@@ -17,7 +17,7 @@ export default async function LegalLayout({
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('username, avatar_url, display_name')
+      .select('username, avatar_url, display_name, role')
       .eq('id', user.id)
       .single();
 
@@ -27,6 +27,7 @@ export default async function LegalLayout({
         email: user.email,
         avatar_url: profile.avatar_url,
         display_name: profile.display_name,
+        role: profile.role,
       };
     }
   }
