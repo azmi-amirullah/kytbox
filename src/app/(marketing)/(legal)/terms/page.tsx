@@ -1,4 +1,10 @@
 import { Metadata } from 'next';
+import {
+  LEGAL_LAST_UPDATED,
+  SUPPORT_EMAIL,
+  LEGAL_ENTITY,
+  toSectionId,
+} from '../constants';
 
 export const metadata: Metadata = {
   title: 'Terms of Service - Kytbox',
@@ -10,10 +16,10 @@ const SECTIONS = [
     title: 'Introduction',
     content: (
       <p>
-        Kytbox (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) provides a
-        suite of personal utility tools including Bio link pages, Cashflow
-        planning, and other productivity applications (collectively, the
-        &quot;Service&quot;).
+        Kytbox (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), operated by{' '}
+        {LEGAL_ENTITY}, provides a suite of personal utility tools including Bio
+        link pages, Cashflow planning, and other productivity applications
+        (collectively, the &quot;Service&quot;).
       </p>
     ),
   },
@@ -98,46 +104,96 @@ const SECTIONS = [
         </p>
         <p>
           Your content remains yours. By using our Service, you grant us a
-          license to host, use, and display your content as necessary to provide
-          the Service.
+          non-exclusive, worldwide, royalty-free license to host, use, and
+          display your content solely as necessary to provide the Service.
         </p>
       </>
     ),
   },
   {
-    title: 'Termination',
+    title: 'Disclaimer of Warranties',
     content: (
-      <p>
-        We may terminate or suspend your account immediately, without prior
-        notice or liability, for any reason whatsoever, including without
-        limitation if you breach the Terms. Upon termination, your right to use
-        the Service will immediately cease. You may request deletion of your
-        data upon account termination by contacting us.
-      </p>
+      <>
+        <p>
+          THE SERVICE IS PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS
+          AVAILABLE&quot; BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS
+          OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF
+          MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+          NON-INFRINGEMENT.
+        </p>
+        <p>
+          We do not warrant that the Service will be uninterrupted, error-free,
+          or free of viruses or other harmful components. Your use of the
+          Service is at your sole risk.
+        </p>
+      </>
     ),
   },
   {
     title: 'Limitation of Liability',
     content: (
       <p>
-        In no event shall Kytbox, nor its directors, employees, partners,
-        agents, suppliers, or affiliates, be liable for any indirect,
-        incidental, special, consequential or punitive damages, including
-        without limitation, loss of profits, data, use, goodwill, or other
-        intangible losses, resulting from your access to or use of or inability
-        to access or use the Service.
+        In no event shall Kytbox, nor its operator, employees, partners, agents,
+        suppliers, or affiliates, be liable for any indirect, incidental,
+        special, consequential or punitive damages, including without
+        limitation, loss of profits, data, use, goodwill, or other intangible
+        losses, resulting from your access to or use of or inability to access
+        or use the Service.
       </p>
     ),
   },
   {
-    title: 'Governing Law',
+    title: 'Indemnification',
     content: (
       <p>
-        These Terms shall be governed and construed in accordance with the laws
-        of Indonesia, without regard to its conflict of law provisions. Any
-        disputes arising under these Terms shall be subject to the exclusive
-        jurisdiction of the courts of Indonesia.
+        You agree to indemnify, defend, and hold harmless Kytbox and its
+        operator from and against any claims, liabilities, damages, losses,
+        costs, or expenses (including reasonable legal fees) arising out of or
+        related to your use of the Service, your violation of these Terms, or
+        your violation of any rights of a third party.
       </p>
+    ),
+  },
+  {
+    title: 'Termination',
+    content: (
+      <>
+        <p>
+          We may terminate or suspend your account if you breach these Terms,
+          with notice where practicable. Upon termination, your right to use the
+          Service will immediately cease.
+        </p>
+        <p>
+          You may export your data at any time through your account settings
+          before termination. You may also request deletion of your data upon
+          account termination by contacting us at{' '}
+          <a href={`mailto:${SUPPORT_EMAIL}`} aria-label='Email Kytbox support'>
+            {SUPPORT_EMAIL}
+          </a>
+          .
+        </p>
+      </>
+    ),
+  },
+  {
+    title: 'Dispute Resolution',
+    content: (
+      <>
+        <p>
+          If you have a dispute with us, we encourage you to first contact us at{' '}
+          <a href={`mailto:${SUPPORT_EMAIL}`} aria-label='Email Kytbox support'>
+            {SUPPORT_EMAIL}
+          </a>{' '}
+          to attempt to resolve the matter informally. We will endeavor to
+          resolve your concern within 30 days.
+        </p>
+        <p>
+          If informal resolution is unsuccessful, any dispute arising under
+          these Terms shall be subject to the exclusive jurisdiction of the
+          courts of Indonesia, governed by the laws of Indonesia without regard
+          to its conflict of law provisions.
+        </p>
+      </>
     ),
   },
   {
@@ -145,8 +201,9 @@ const SECTIONS = [
     content: (
       <p>
         We reserve the right, at our sole discretion, to modify or replace these
-        Terms at any time. If a revision is material we will try to provide at
-        least 30 days notice prior to any new terms taking effect.
+        Terms at any time. If a revision is material, we will try to provide at
+        least 30 days&apos; notice prior to any new terms taking effect, via
+        email or prominent notice within the Service.
       </p>
     ),
   },
@@ -155,7 +212,10 @@ const SECTIONS = [
     content: (
       <p>
         If you have any questions about these Terms, please contact us at{' '}
-        <a href='mailto:support@kytbox.com'>support@kytbox.com</a>.
+        <a href={`mailto:${SUPPORT_EMAIL}`} aria-label='Email Kytbox support'>
+          {SUPPORT_EMAIL}
+        </a>
+        .
       </p>
     ),
   },
@@ -165,7 +225,7 @@ export default function TermsPage() {
   return (
     <>
       <h1>Terms of Service</h1>
-      <p className='lead'>Last updated: February 10, 2026</p>
+      <p className='lead'>Last updated: {LEGAL_LAST_UPDATED}</p>
 
       <p>
         Welcome to Kytbox. By accessing or using our website and services, you
@@ -173,7 +233,7 @@ export default function TermsPage() {
       </p>
 
       {SECTIONS.map((section, index) => (
-        <section key={section.title}>
+        <section key={section.title} id={toSectionId(section.title)}>
           <h2>
             {index + 1}. {section.title}
           </h2>

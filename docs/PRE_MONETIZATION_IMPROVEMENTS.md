@@ -78,9 +78,11 @@ No schema changes required. Theme preferences are stored as individual columns o
 
 Merchant of Record (Lemon Squeezy) requires these pages to be publicly accessible:
 
-- [x] **Terms of Service:** Define acceptable use, cancellation policy, and liability.
-- [x] **Privacy Policy:** GDPR/CCPA compliance statement.
-- [x] **Refund Policy:** Explicit rules (e.g., "14-day money-back guarantee").
+- [x] **Terms of Service:** Define acceptable use, cancellation policy, liability, disclaimer of warranties, indemnification, and dispute resolution.
+- [x] **Privacy Policy:** GDPR-compliant with legal basis for processing, SCCs for data transfers, data controller identification, and analytics disclosure.
+- [x] **Refund Policy:** Explicit rules (e.g., "14-day money-back guarantee") with statutory consumer rights disclaimer.
+- [x] **Shared Constants:** Legal entity, support email, and "Last updated" date extracted to `(legal)/constants.ts`.
+- [x] **Accessibility:** Section IDs for deep-linking and `aria-label` on mailto links.
 
 ### 3.2 Support Infrastructure (Internal Ticket System)
 
@@ -139,6 +141,7 @@ create table support_messages (
 ```
 
 Implementation note:
+
 - Ticket creation is executed atomically via DB RPC `create_support_ticket`.
 - Urgency bump is enforced via DB RPC `bump_support_ticket_urgency`.
 
@@ -217,4 +220,4 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 - [ ] **Medium:** Auto-save for appearance.
 - [ ] **Low:** Advanced empty states.
 
-_Last Updated: February 11, 2026_
+_Last Updated: February 13, 2026_

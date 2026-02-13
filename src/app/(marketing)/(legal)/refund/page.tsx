@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { LEGAL_LAST_UPDATED, SUPPORT_EMAIL, toSectionId } from '../constants';
 
 export const metadata: Metadata = {
   title: 'Refund Policy - Kytbox',
@@ -28,8 +29,13 @@ const SECTIONS = [
         <ul>
           <li>
             Email us at{' '}
-            <a href='mailto:support@kytbox.com'>support@kytbox.com</a> with your
-            account email and date of purchase.
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              aria-label='Email Kytbox support'
+            >
+              {SUPPORT_EMAIL}
+            </a>{' '}
+            with your account email and date of purchase.
           </li>
           <li>We will trigger the refund via the Lemon Squeezy dashboard.</li>
         </ul>
@@ -72,11 +78,26 @@ const SECTIONS = [
     ),
   },
   {
+    title: 'Statutory Rights',
+    content: (
+      <p>
+        This refund policy does not affect your statutory consumer rights under
+        applicable law, including but not limited to Indonesian consumer
+        protection regulations (UU No. 8/1999) and the EU Consumer Rights
+        Directive. Where statutory rights provide greater protection than this
+        policy, your statutory rights shall prevail.
+      </p>
+    ),
+  },
+  {
     title: 'Contact Us',
     content: (
       <p>
         If you have any questions about our Refund Policy, please contact us at{' '}
-        <a href='mailto:support@kytbox.com'>support@kytbox.com</a>.
+        <a href={`mailto:${SUPPORT_EMAIL}`} aria-label='Email Kytbox support'>
+          {SUPPORT_EMAIL}
+        </a>
+        .
       </p>
     ),
   },
@@ -86,7 +107,7 @@ export default function RefundPage() {
   return (
     <>
       <h1>Refund Policy</h1>
-      <p className='lead'>Last updated: February 10, 2026</p>
+      <p className='lead'>Last updated: {LEGAL_LAST_UPDATED}</p>
 
       <p>
         We want you to be satisfied with Kytbox. If you are not completely happy
@@ -99,7 +120,7 @@ export default function RefundPage() {
       </div>
 
       {SECTIONS.map((section, index) => (
-        <section key={section.title}>
+        <section key={section.title} id={toSectionId(section.title)}>
           <h2>
             {index + 1}. {section.title}
           </h2>

@@ -41,7 +41,6 @@ export default async function LegalLayout({
       </div>
 
       {/* Header */}
-      {/* Header */}
       <Header variant='legal' user={userData} />
 
       {/* Content */}
