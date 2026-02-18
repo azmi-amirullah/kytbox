@@ -150,6 +150,16 @@ export default function AppearanceEditor({
                 radius: 'rounded-xl',
               },
               {
+                id: 'pill' as ButtonShape,
+                name: 'Pill',
+                radius: 'rounded-full',
+              },
+              {
+                id: 'leaf' as ButtonShape,
+                name: 'Leaf',
+                radius: 'rounded-tr-2xl rounded-bl-2xl',
+              },
+              {
                 id: 'square' as ButtonShape,
                 name: 'Square',
                 radius: 'rounded-none',
@@ -196,12 +206,12 @@ export default function AppearanceEditor({
             {[
               {
                 id: 'default' as ButtonStyle,
-                name: 'Solid Fill',
+                name: 'Solid',
                 class: 'bg-card border-border shadow-sm',
               },
               {
                 id: 'outline' as ButtonStyle,
-                name: 'Outline',
+                name: 'Transparent',
                 class: 'bg-transparent border-2 border-foreground/20',
               },
             ].map((style) => (

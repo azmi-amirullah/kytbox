@@ -61,4 +61,4 @@ export type ThemeId =
   | 'charcoal';
 
 export type ButtonStyle = 'default' | 'outline';
-export type ButtonShape = 'rounded' | 'square';
+export type ButtonShape = 'rounded' | 'square' | 'pill' | 'leaf';

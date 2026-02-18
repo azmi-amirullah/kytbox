@@ -36,7 +36,10 @@ export function validateButtonStyle(
 export function validateButtonShape(
   value: string | null | undefined,
 ): ButtonShape {
-  return value === 'square' ? 'square' : 'rounded';
+  if (value === 'square') return 'square';
+  if (value === 'pill') return 'pill';
+  if (value === 'leaf') return 'leaf';
+  return 'rounded';
 }
 
 export interface ButtonClassOptions {
@@ -55,7 +58,14 @@ export function getButtonClasses(
 ): string {
   const { colors } = theme;
   const { variant = 'preview' } = options;
-  const shapeClass = buttonShape === 'square' ? 'rounded-none' : 'rounded-xl';
+  const shapeClass =
+    buttonShape === 'square'
+      ? 'rounded-none'
+      : buttonShape === 'pill'
+        ? 'rounded-full'
+        : buttonShape === 'leaf'
+          ? 'rounded-tr-2xl rounded-bl-2xl'
+          : 'rounded-xl';
 
   // Base classes for full variant (public profile pages)
   const fullBaseClasses =
@@ -102,5 +112,8 @@ export function getFooterClasses(theme: ThemeConfig): string {
  * Get shape class from button shape setting
  */
 export function getShapeClass(buttonShape: ButtonShape = 'rounded'): string {
-  return buttonShape === 'square' ? 'rounded-none' : 'rounded-xl';
+  if (buttonShape === 'square') return 'rounded-none';
+  if (buttonShape === 'pill') return 'rounded-full';
+  if (buttonShape === 'leaf') return 'rounded-tr-2xl rounded-bl-2xl';
+  return 'rounded-xl';
 }
