@@ -19,17 +19,17 @@ The current `/bio` dashboard is a monolithic view (`DashboardClient.tsx`) combin
 - **Performance Risk:** Re-rendering the entire dashboard for minor edits is inefficient.
 
 > [!NOTE]
-> **Current State:** The dashboard is still monolithic as of February 2026. This refactor is a prerequisite for implementing Pro feature tabs.
+> **Current State:** The dashboard was refactored to a tab-based architecture in February 2026. Links and Appearance are separate tabs with URL-driven state (`?tab=links|appearance`). PhonePreview is persistent across tab switches at the layout level.
 
 ### 1.2 Solution: Tab-Based Architecture
 
 Restructure the Bio Dashboard into isolated contexts using URL-driven state (`?tab=links`).
 
-| Tab scope           | Components                   | State Strategy                     |
-| :------------------ | :--------------------------- | :--------------------------------- |
-| **Links** (Default) | `LinkManager`, `StatsBar`    | Real-time updates (Server Actions) |
-| **Appearance**      | `ThemePicker`, `StyleEditor` | Debounced auto-save                |
-| **Settings**        | `SeoEditor` (Pro), `Config`  | Form-based submission              |
+| Tab scope           | Components                    | State Strategy                     |
+| :------------------ | :---------------------------- | :--------------------------------- |
+| **Links** (Default) | `LinksTabContent`, `StatsBar` | Real-time updates (Server Actions) |
+| **Appearance**      | `AppearanceEditor`            | Debounced auto-save (planned)      |
+| **Settings**        | `SeoEditor` (Pro), `Config`   | Form-based submission (planned)    |
 
 **Technical Implementation:**
 
@@ -213,7 +213,7 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 
 ## 6. Priority Checklist
 
-- [ ] **High:** Refactor Bio Dashboard to Tabs (UX Scalability).
+- [x] **High:** Refactor Bio Dashboard to Tabs (UX Scalability).
 - [x] **High:** Create Legal Pages (Compliance).
 - [x] **High:** Build Internal Support System (Critical for Trust).
 - [x] **High:** Add `role` column to schema (Architecture).

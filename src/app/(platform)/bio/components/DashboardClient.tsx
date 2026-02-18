@@ -1,26 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  LuExternalLink,
-  LuActivity as LuBarChart,
-  LuLink,
-  LuMousePointerClick,
-  LuEye,
-  LuPlus,
-  LuChevronRight,
-} from 'react-icons/lu';
-import LinkList from './LinkList';
-import LinkModal from './LinkModal';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { LuExternalLink, LuEye, LuLink, LuPalette } from 'react-icons/lu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import LinksTabContent from './LinksTabContent';
 import PhonePreview from './PhonePreview';
 import AppearanceEditor from './AppearanceEditor';
-import { Button } from '@/components/ui/button';
 import type { Database } from '@/types/supabase';
 
 type LinkType = Database['public']['Tables']['links']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
+
+type BioTab = 'links' | 'appearance';
+const VALID_TABS: BioTab[] = ['links', 'appearance'];
+const DEFAULT_TAB: BioTab = 'links';
 
 interface DashboardClientProps {
   initialLinks: LinkType[];
@@ -40,8 +35,14 @@ export default function DashboardClient({
   publicUrl,
   totalViews,
 }: DashboardClientProps) {
-  // Initialize state from props. Server-side revalidation will provide fresh initialLinks
-  // on navigation, and React's default behavior handles this correctly.
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const rawTab = searchParams.get('tab');
+  const activeTab: BioTab = VALID_TABS.includes(rawTab as BioTab)
+    ? (rawTab as BioTab)
+    : DEFAULT_TAB;
+
   const [links, setLinks] = useState<LinkType[]>(initialLinks);
   const [themeName, setThemeName] = useState(profile.theme_name || 'default');
   const [buttonStyle, setButtonStyle] = useState(
@@ -51,14 +52,18 @@ export default function DashboardClient({
     profile.button_shape || 'rounded',
   );
 
-  // Sync state with props when server-side data changes (e.g. navigation)
   useEffect(() => {
     setLinks(initialLinks);
   }, [initialLinks]);
 
-  // Derived state
-  const totalClicks = links.reduce((sum, link) => sum + link.clicks, 0);
-  const activeLinksCount = links.filter((l) => l.is_active).length;
+  const handleTabChange = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', value);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams],
+  );
 
   return (
     <div className='grid lg:grid-cols-[1fr_400px] gap-8'>
@@ -73,114 +78,53 @@ export default function DashboardClient({
             >
               Kytbox
             </Link>
-            <LuChevronRight className='w-3 h-3' />
+            <span className='text-muted-foreground'>/</span>
             <span className='text-foreground font-medium'>Bio</span>
           </nav>
           <h1 className='text-3xl font-bold tracking-tight text-foreground'>
             Bio
           </h1>
-          <p className='text-muted-foreground mt-1'>Manage your links here</p>
+          <p className='text-muted-foreground mt-1'>Manage your bio page</p>
         </div>
 
-        {/* Stats Bar */}
-        <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          <Link href='/bio/analytics' className='block group'>
-            <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
-              <div>
-                <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>
-                  Lifetime Profile Views
-                </p>
-                <p className='text-2xl font-bold tracking-tight'>
-                  {totalViews}
-                </p>
-              </div>
-              <div className='p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform'>
-                <LuEye className='w-5 h-5' />
-              </div>
-            </div>
-          </Link>
+        {/* Tab Navigation */}
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className='w-full sm:w-auto'>
+            <TabsTrigger value='links' className='gap-2'>
+              <LuLink className='w-4 h-4' />
+              <span>Links</span>
+            </TabsTrigger>
+            <TabsTrigger value='appearance' className='gap-2'>
+              <LuPalette className='w-4 h-4' />
+              <span>Appearance</span>
+            </TabsTrigger>
+          </TabsList>
 
-          <Link href='/bio/analytics' className='block group'>
-            <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
-              <div>
-                <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>
-                  Lifetime Link Clicks
-                </p>
-                <p className='text-2xl font-bold tracking-tight'>
-                  {totalClicks}
-                </p>
-              </div>
-              <div className='p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform'>
-                <LuMousePointerClick className='w-5 h-5' />
-              </div>
-            </div>
-          </Link>
+          <TabsContent value='links' className='mt-6'>
+            <LinksTabContent
+              links={links}
+              setLinks={setLinks}
+              totalViews={totalViews}
+            />
+          </TabsContent>
 
-          <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-green-500/20 transition-all duration-200'>
-            <div>
-              <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1'>
-                Active Links
-              </p>
-              <p className='text-2xl font-bold tracking-tight'>
-                {activeLinksCount}
-              </p>
-            </div>
-            <div className='p-3 bg-green-500/10 rounded-full text-green-600'>
-              <LuLink className='w-5 h-5' />
-            </div>
-          </div>
-
-          <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-blue-500/20 transition-all duration-200'>
-            <div>
-              <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1'>
-                Total Links
-              </p>
-              <p className='text-2xl font-bold tracking-tight'>
-                {links.length}
-              </p>
-            </div>
-            <div className='p-3 bg-blue-500/10 rounded-full text-blue-600'>
-              <LuBarChart className='w-5 h-5' />
-            </div>
-          </div>
-        </div>
-
-        {/* Links Editor */}
-        <div className='space-y-4'>
-          <Card className='border-border bg-card shadow-sm p-0 gap-0'>
-            <div className='flex items-center justify-end px-6 py-4 border-b border-border/50'>
-              <LinkModal
-                mode='create'
-                trigger={
-                  <Button
-                    size='sm'
-                    className='font-medium shadow-md shadow-primary/20'
-                  >
-                    <LuPlus className='w-4 h-4 mr-2' />
-                    Add Link
-                  </Button>
-                }
-              />
-            </div>
-            <CardContent className='p-0'>
-              <div className='p-6 min-h-[400px]'>
-                <LinkList links={links} setLinks={setLinks} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Appearance Editor */}
-          <AppearanceEditor
-            initialTheme={profile.theme_name || 'default'}
-            initialButtonStyle={profile.button_style || 'default'}
-            initialButtonShape={profile.button_shape || 'rounded'}
-            onPreviewUpdate={(theme: string, style: string, shape: string) => {
-              setThemeName(theme);
-              setButtonStyle(style);
-              setButtonShape(shape);
-            }}
-          />
-        </div>
+          <TabsContent value='appearance' className='mt-6'>
+            <AppearanceEditor
+              initialTheme={profile.theme_name || 'default'}
+              initialButtonStyle={profile.button_style || 'default'}
+              initialButtonShape={profile.button_shape || 'rounded'}
+              onPreviewUpdate={(
+                theme: string,
+                style: string,
+                shape: string,
+              ) => {
+                setThemeName(theme);
+                setButtonStyle(style);
+                setButtonShape(shape);
+              }}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Right Column: Live Preview (Hidden on small screens, Sticky on large) */}
@@ -216,7 +160,7 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Mobile Preview Button/Overlay (Optional, but let's keep it tidy) */}
+      {/* Mobile Preview FAB */}
       <div className='lg:hidden fixed bottom-6 right-6 z-50'>
         <Link
           href={publicUrl}

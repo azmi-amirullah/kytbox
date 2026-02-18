@@ -13,6 +13,11 @@ export default function Loading() {
             <Skeleton className='h-5 w-48' />
           </div>
 
+          {/* Tab Bar Skeleton */}
+          <div className='flex'>
+            <Skeleton className='h-9 w-full rounded-md' />
+          </div>
+
           {/* Stats Bar Skeleton */}
           <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
             {[1, 2, 3, 4].map((i) => (
@@ -30,37 +35,25 @@ export default function Loading() {
           </div>
 
           {/* Links Editor Skeleton */}
-          <div className='space-y-4'>
-            <div className='border border-border bg-card rounded-xl overflow-hidden'>
-              <div className='flex items-center justify-end px-6 py-4 border-b border-border/50'>
-                <Skeleton className='h-9 w-28' />
-              </div>
-              <div className='p-6 min-h-[400px] space-y-4'>
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className='flex items-center gap-4 p-4 border rounded-xl'
-                  >
-                    <Skeleton className='h-6 w-6' /> {/* Drag handle */}
-                    <div className='flex-1 space-y-2'>
-                      <Skeleton className='h-5 w-48' />
-                      <Skeleton className='h-4 w-32' />
-                    </div>
-                    <Skeleton className='h-8 w-12 rounded-full' /> {/* Switch */}
-                    <Skeleton className='h-8 w-8 rounded-md' /> {/* Edit btn */}
-                  </div>
-                ))}
-              </div>
+          <div className='border border-border bg-card rounded-xl overflow-hidden'>
+            <div className='flex items-center justify-end px-6 py-4 border-b border-border/50'>
+              <Skeleton className='h-9 w-28' />
             </div>
-
-            {/* Appearance Editor Skeleton */}
-            <div className='border border-border bg-card rounded-xl p-6 space-y-6'>
-              <Skeleton className='h-6 w-32' />
-              <div className='grid grid-cols-5 gap-3'>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className='aspect-square rounded-full' />
-                ))}
-              </div>
+            <div className='p-6 min-h-[400px] space-y-4'>
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className='flex items-center gap-4 p-4 border rounded-xl'
+                >
+                  <Skeleton className='h-6 w-6' />
+                  <div className='flex-1 space-y-2'>
+                    <Skeleton className='h-5 w-48' />
+                    <Skeleton className='h-4 w-32' />
+                  </div>
+                  <Skeleton className='h-8 w-12 rounded-full' />
+                  <Skeleton className='h-8 w-8 rounded-md' />
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -71,7 +64,6 @@ export default function Loading() {
             <div className='flex items-center justify-center mb-4 gap-2'>
               <Skeleton className='h-4 w-32' />
             </div>
-            {/* Phone Frame */}
             <div className='mx-auto w-[300px] h-[600px] rounded-[3rem] border-8 border-gray-900 bg-background overflow-hidden relative shadow-xl'>
               <div className='absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-20' />
               <div className='p-6 flex flex-col items-center pt-16 space-y-6 h-full bg-muted/20'>

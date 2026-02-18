@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import DashboardClient from './components/DashboardClient';
@@ -40,12 +41,14 @@ export default async function BioDashboardPage() {
 
   return (
     <div className='max-w-7xl mx-auto px-4 py-8 md:py-8 w-full'>
-      <DashboardClient
-        initialLinks={links ?? []}
-        profile={profile}
-        publicUrl={publicUrl}
-        totalViews={totalViews || 0}
-      />
+      <Suspense>
+        <DashboardClient
+          initialLinks={links ?? []}
+          profile={profile}
+          publicUrl={publicUrl}
+          totalViews={totalViews || 0}
+        />
+      </Suspense>
     </div>
   );
 }
