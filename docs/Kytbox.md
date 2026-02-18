@@ -113,8 +113,11 @@ Used for logged-in tools.
 
 Pattern:
 
-- /app
-- /app/\*
+- /app - platform home
+- /bio - bio dashboard
+- /cashflow - cashflow dashboard
+- /settings - account settings
+- /support - user support
 
 Rules:
 
@@ -305,6 +308,7 @@ Note: If Bio fails, the platform can pivot to other apps (List, Track, etc.).
 
 - Platform > Feature
 - Identity > UI
+- Mobile-First > Desktop-First
 - Trust > Flexibility
 - Focus > Ambition
 - Shipping > Overthinking
@@ -395,10 +399,10 @@ Logged-in:
 - `/settings` → account settings
 - `/support` → User support portal
 - `/support-admin` → Admin support dashboard
-- `/bio` → Bio dashboard
-- `/app/bio/links` → manage links
-- `/app/bio/analytics` → Bio analytics
-- `/app/cashflow` → Cashflow dashboard
+- `/bio` → Bio dashboard (Links + Appearance)
+- `/bio/analytics` → Bio analytics
+- `/cashflow` → Cashflow dashboard
+- `/settings` → Account settings
 - `/app/lookup` → Lookup (Search)
 
 Public:

@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition, useRef } from 'react';
-import { AnalyticsChart } from '@/components/analytics/AnalyticsChart';
-import {
-  DateRangePicker,
-  getDateRangeLabel,
-} from '@/components/analytics/DateRangePicker';
-import type { DateRange } from '@/types/analytics';
+import Link from 'next/link';
 import {
   LuMousePointer2,
   LuChevronRight,
@@ -17,7 +12,6 @@ import {
   LuEye,
   LuPercent,
 } from 'react-icons/lu';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,20 +19,34 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getAnalyticsData, type AnalyticsData } from '../actions';
-import { AnalyticsSkeleton } from './AnalyticsSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AnalyticsChart } from '@/components/analytics/AnalyticsChart';
+import {
+  DateRangePicker,
+  getDateRangeLabel,
+} from '@/components/analytics/DateRangePicker';
+import type { DateRange, AnalyticsData } from '@/types/analytics';
+import { getAnalyticsData } from '../actions';
+import StatsCard from '../../components/StatsCard';
 
 interface AnalyticsClientProps {
   initialData: AnalyticsData;
+  isLoading?: boolean;
 }
 
-export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
+export default function AnalyticsClient({
+  initialData,
+  isLoading,
+}: AnalyticsClientProps) {
   const [range, setRange] = useState<DateRange>('24h');
   const [selectedLink, setSelectedLink] = useState<string>('all');
   const [data, setData] = useState<AnalyticsData>(initialData);
   const [isPending, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMount = useRef(true);
+
+  // Combined loading state for initial load or filter transitions
+  const isActuallyLoading = isLoading || isPending;
 
   useEffect(() => {
     // Skip fetch on initial mount since we have server-provided data
@@ -114,22 +122,22 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
         </div>
 
         <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3'>
-          {/* Filters grouped on the right side on desktop, stacked on mobile */}
           <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:ml-auto w-full sm:w-auto'>
             {/* Link Filter */}
-            <div className='w-full lg:w-[220px]'>
+            <div className='w-full sm:w-[220px]'>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant='outline'
-                    disabled={isPending}
+                    disabled={isActuallyLoading}
                     className='w-full justify-between bg-background dark:bg-background disabled:opacity-100 disabled:text-muted-foreground'
                   >
                     <span className='truncate'>
                       {selectedLink === 'all'
                         ? 'All Links'
-                        : userLinks.find((l) => l.id === selectedLink)?.title ||
-                          'Filter by link'}
+                        : userLinks.find(
+                            (l: { id: string }) => l.id === selectedLink,
+                          )?.title || 'Filter by link'}
                     </span>
                     <LuChevronDown className='ml-2 h-4 w-4 opacity-50 shrink-0' />
                   </Button>
@@ -144,7 +152,7 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
                   >
                     All Links
                   </DropdownMenuItem>
-                  {userLinks.map((link) => (
+                  {userLinks.map((link: { id: string; title: string }) => (
                     <DropdownMenuItem
                       key={link.id}
                       className='cursor-pointer'
@@ -161,158 +169,178 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
             <DateRangePicker
               value={range}
               onChange={setRange}
-              disabled={isPending}
+              disabled={isActuallyLoading}
             />
           </div>
         </div>
       </div>
 
-      {/* Loading Skeleton - only shows on filter changes */}
-      {isPending && <AnalyticsSkeleton range={range} />}
-
       {/* Stats Grid */}
-      {!isPending && (
-        <>
-          <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
-            <div className='p-4 md:p-6 bg-card rounded-xl border shadow-sm'>
-              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
-                <LuEye className='w-4 h-4' />
-                <span className='text-sm font-medium'>Total Profile Views</span>
-              </div>
-              <div className='text-2xl font-bold'>{totalViews}</div>
-              <p className='text-xs text-muted-foreground mt-1'>
-                {range === 'lifetime' ? 'All time' : `In selected period`}
-              </p>
-            </div>
+      <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+        <StatsCard
+          label='Total Profile Views'
+          value={totalViews}
+          icon={LuEye}
+          isLoading={isActuallyLoading}
+          hideSecondaryIcon={true}
+          description={range === 'lifetime' ? 'All time' : 'In selected period'}
+        />
+        <StatsCard
+          label='Total Clicks'
+          value={totalClicks}
+          icon={LuMousePointer2}
+          isLoading={isActuallyLoading}
+          hideSecondaryIcon={true}
+          description={range === 'lifetime' ? 'All time' : 'In selected period'}
+        />
+        <StatsCard
+          label='CTR'
+          value={`${ctr.toFixed(1)}%`}
+          icon={LuPercent}
+          isLoading={isActuallyLoading}
+          hideSecondaryIcon={true}
+          description='Click-through rate'
+        />
+        <StatsCard
+          label='Top Source'
+          value={topReferer}
+          icon={LuGlobe}
+          isLoading={isActuallyLoading}
+          hideSecondaryIcon={true}
+          description='Most traffic from'
+        />
+        <StatsCard
+          label='Average'
+          value={
+            chartData.length > 0
+              ? Math.round(totalClicks / chartData.length)
+              : 0
+          }
+          icon={LuMousePointer2}
+          isLoading={isActuallyLoading}
+          hideSecondaryIcon={true}
+          description={
+            range === '24h'
+              ? 'Per hour'
+              : range === 'lifetime'
+                ? 'Per month'
+                : 'Per day'
+          }
+        />
+      </div>
 
-            <div className='p-4 md:p-6 bg-card rounded-xl border shadow-sm'>
-              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
-                <LuMousePointer2 className='w-4 h-4' />
-                <span className='text-sm font-medium'>Total Clicks</span>
-              </div>
-              <div className='text-2xl font-bold'>{totalClicks}</div>
-              <p className='text-xs text-muted-foreground mt-1'>
-                {range === 'lifetime' ? 'All time' : `In selected period`}
-              </p>
-            </div>
+      {/* Main Chart */}
+      <AnalyticsChart
+        data={chartData}
+        title='Click Activity'
+        isLoading={isActuallyLoading}
+        dateRange={
+          range === 'lifetime'
+            ? chartData.length > 0
+              ? chartData[0].label === chartData[chartData.length - 1].label
+                ? chartData[0].label
+                : `${chartData[0].label} - ${chartData[chartData.length - 1].label}`
+              : 'All time'
+            : getDateRangeLabel(range)
+        }
+        total={totalClicks}
+      />
 
-            <div className='p-6 bg-card rounded-xl border shadow-sm'>
-              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
-                <LuPercent className='w-4 h-4' />
-                <span className='text-sm font-medium'>CTR</span>
-              </div>
-              <div className='text-2xl font-bold'>{ctr.toFixed(1)}%</div>
-              <p className='text-xs text-muted-foreground mt-1'>
-                Click-through rate
-              </p>
-            </div>
-
-            <div className='p-6 bg-card rounded-xl border shadow-sm'>
-              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
-                <LuGlobe className='w-4 h-4' />
-                <span className='text-sm font-medium'>Top Source</span>
-              </div>
-              <div className='text-2xl font-bold truncate'>{topReferer}</div>
-              <p className='text-xs text-muted-foreground mt-1'>
-                Most traffic from
-              </p>
-            </div>
-
-            <div className='p-6 bg-card rounded-xl border shadow-sm'>
-              <div className='flex items-center gap-2 text-muted-foreground mb-2'>
-                <LuMousePointer2 className='w-4 h-4' />
-                <span className='text-sm font-medium'>Average</span>
-              </div>
-              <div className='text-2xl font-bold'>
-                {chartData.length > 0
-                  ? Math.round(totalClicks / chartData.length)
-                  : 0}
-              </div>
-              <p className='text-xs text-muted-foreground mt-1'>
-                {range === '24h'
-                  ? 'Per hour'
-                  : range === 'lifetime'
-                    ? 'Per month'
-                    : 'Per day'}
-              </p>
-            </div>
-          </div>
-
-          {/* Main Chart */}
-          <AnalyticsChart
-            data={chartData}
-            title='Click Activity'
-            dateRange={
-              range === 'lifetime'
-                ? chartData.length > 0
-                  ? chartData[0].label === chartData[chartData.length - 1].label
-                    ? chartData[0].label
-                    : `${chartData[0].label} - ${chartData[chartData.length - 1].label}`
-                  : 'All time'
-                : getDateRangeLabel(range)
-            }
-            total={totalClicks}
-          />
-
-          {/* Top Links Table */}
-          <div className='rounded-xl border bg-card shadow-sm overflow-hidden p-4 md:p-6'>
-            <div className='border-b flex items-center gap-2 text-muted-foreground pb-4'>
-              <LuLink className='w-4 h-4' />
-              <h3 className='font-semibold text-foreground'>
-                Top Performing Links
-              </h3>
-            </div>
-            <div className='p-0'>
-              {topLinks.length === 0 ? (
-                <div className='p-6 text-center text-muted-foreground'>
-                  No clicks recorded yet. Share your links to start tracking!
-                </div>
-              ) : (
-                <table className='w-full text-sm'>
-                  <thead>
-                    <tr className='border-b bg-muted/50'>
-                      <th className='h-10 px-4 text-left align-middle font-medium text-muted-foreground'>
-                        Link Title
-                      </th>
-                      <th className='h-10 px-4 text-left align-middle font-medium text-muted-foreground hidden md:table-cell'>
-                        URL
-                      </th>
-                      <th className='h-10 px-4 text-right align-middle font-medium text-muted-foreground'>
-                        Clicks
-                      </th>
+      {/* Top Links Table */}
+      <div className='rounded-xl border bg-card shadow-sm overflow-hidden p-4 md:p-6'>
+        <div className='border-b flex items-center gap-2 text-muted-foreground pb-4'>
+          <LuLink className='w-4 h-4' />
+          <h3 className='font-semibold text-foreground'>
+            Top Performing Links
+          </h3>
+        </div>
+        <div className='p-0'>
+          {isActuallyLoading ? (
+            <div className='overflow-x-auto'>
+              <table className='w-full text-sm font-medium'>
+                <thead>
+                  <tr className='border-b bg-muted/30 text-muted-foreground'>
+                    <th className='h-12 px-4 text-left font-medium'>
+                      Link Title
+                    </th>
+                    <th className='h-12 px-4 text-left font-medium hidden md:table-cell'>
+                      URL
+                    </th>
+                    <th className='h-12 px-4 text-right font-medium'>Clicks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3].map((i) => (
+                    <tr key={i} className='border-b last:border-0'>
+                      <td className='p-4'>
+                        <Skeleton className='h-4 w-32 rounded-md' />
+                      </td>
+                      <td className='p-4 hidden md:table-cell'>
+                        <Skeleton className='h-4 w-48 rounded-md' />
+                      </td>
+                      <td className='p-4 text-right'>
+                        <Skeleton className='h-4 w-12 rounded-md ml-auto' />
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {topLinks.map((link) => (
-                      <tr
-                        key={link.id}
-                        className='border-b last:border-0 hover:bg-muted/50 transition-colors'
-                      >
-                        <td className='p-3 md:p-4'>
-                          <div className='flex flex-col min-w-0'>
-                            <span className='font-medium truncate'>
-                              {link.title}
-                            </span>
-                            <span className='text-muted-foreground truncate md:hidden'>
-                              {link.url}
-                            </span>
-                          </div>
-                        </td>
-                        <td className='p-3 md:p-4 text-muted-foreground truncate max-w-[200px] hidden md:table-cell'>
-                          {link.url}
-                        </td>
-                        <td className='p-3 md:p-4 text-right font-medium'>
-                          {link.clicks}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </>
-      )}
+          ) : topLinks.length === 0 ? (
+            <div className='p-6 text-center text-muted-foreground'>
+              No clicks recorded yet. Share your links to start tracking!
+            </div>
+          ) : (
+            <table className='w-full text-sm'>
+              <thead>
+                <tr className='border-b bg-muted/50'>
+                  <th className='h-10 px-4 text-left align-middle font-medium text-muted-foreground'>
+                    Link Title
+                  </th>
+                  <th className='h-10 px-4 text-left align-middle font-medium text-muted-foreground hidden md:table-cell'>
+                    URL
+                  </th>
+                  <th className='h-10 px-4 text-right align-middle font-medium text-muted-foreground'>
+                    Clicks
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {topLinks.map(
+                  (link: {
+                    id: string;
+                    title: string;
+                    url: string;
+                    clicks: number;
+                  }) => (
+                    <tr
+                      key={link.id}
+                      className='border-b last:border-0 hover:bg-muted/50 transition-colors'
+                    >
+                      <td className='p-3 md:p-4'>
+                        <div className='flex flex-col min-w-0'>
+                          <span className='font-medium truncate'>
+                            {link.title}
+                          </span>
+                          <span className='text-muted-foreground truncate md:hidden'>
+                            {link.url}
+                          </span>
+                        </div>
+                      </td>
+                      <td className='p-3 md:p-4 text-muted-foreground truncate max-w-[200px] hidden md:table-cell'>
+                        {link.url}
+                      </td>
+                      <td className='p-3 md:p-4 text-right font-medium'>
+                        {link.clicks}
+                      </td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,16 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import DashboardClient from './components/DashboardClient';
+import DashboardClient, { type BioTab } from './components/DashboardClient';
+import type { Database } from '@/types/supabase';
 
-export default async function BioDashboardPage() {
+export default async function BioDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const params = await searchParams;
+  const activeTab = (params.tab as BioTab) || 'links';
   const supabase = await createClient();
 
   const {
@@ -39,14 +46,25 @@ export default async function BioDashboardPage() {
 
   const publicUrl = `/${profile.username}`;
 
+  const skeletonFallback = (
+    <DashboardClient
+      initialLinks={[]}
+      profile={{} as Database['public']['Tables']['profiles']['Row']}
+      publicUrl=''
+      totalViews={0}
+      isLoading={true}
+    />
+  );
+
   return (
     <div className='max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-8 w-full'>
-      <Suspense>
+      <Suspense fallback={skeletonFallback}>
         <DashboardClient
           initialLinks={links ?? []}
           profile={profile}
           publicUrl={publicUrl}
           totalViews={totalViews || 0}
+          activeTab={activeTab}
         />
       </Suspense>
     </div>

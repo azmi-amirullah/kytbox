@@ -4,6 +4,7 @@ import * as React from 'react';
 import { LuMoon, LuSun } from 'react-icons/lu';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -15,11 +16,7 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    return (
-      <Button variant='ghost' size='icon' disabled>
-        <LuSun className='h-4 w-4' />
-      </Button>
-    );
+    return <Skeleton className='h-9 w-9 rounded-full' />;
   }
 
   return (
@@ -30,9 +27,9 @@ export function ThemeToggle() {
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
     >
       {theme === 'dark' ? (
-        <LuSun className='h-4 w-4' />
-      ) : (
         <LuMoon className='h-4 w-4' />
+      ) : (
+        <LuSun className='h-4 w-4' />
       )}
       <span className='sr-only'>Toggle theme</span>
     </Button>

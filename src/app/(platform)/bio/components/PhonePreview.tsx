@@ -1,6 +1,5 @@
-'use client';
-
 import Image from 'next/image';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { getSocialIcon } from '@/lib/social-icons';
 import {
@@ -27,9 +26,14 @@ interface PhonePreviewProps {
     url: string;
     is_active: boolean;
   }[];
+  isLoading?: boolean;
 }
 
-export default function PhonePreview({ profile, links }: PhonePreviewProps) {
+export default function PhonePreview({
+  profile,
+  links,
+  isLoading,
+}: PhonePreviewProps) {
   const activeLinks = links.filter((l) => l.is_active);
 
   const theme = getTheme(profile?.theme_name);
@@ -61,7 +65,9 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                   colors.elementRing,
                 )}
               >
-                {profile.avatar_url ? (
+                {isLoading ? (
+                  <Skeleton className='w-full h-full' />
+                ) : profile.avatar_url ? (
                   <Image
                     src={profile.avatar_url}
                     alt='Avatar'
@@ -78,29 +84,42 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                 )}
               </div>
 
-              <h2
-                className={cn(
-                  'text-base font-bold tracking-tight mb-1 truncate max-w-full px-2 text-center',
-                  colors.textPrimary,
-                )}
-              >
-                {profile.display_name || profile.username || 'Your Name'}
-              </h2>
+              {isLoading ? (
+                <div className='flex flex-col items-center space-y-2 w-full'>
+                  <Skeleton className='h-5 w-32 rounded-md' />
+                  <Skeleton className='h-3 w-48 rounded-md mb-10' />
+                </div>
+              ) : (
+                <>
+                  <h2
+                    className={cn(
+                      'text-base font-bold tracking-tight mb-1 truncate max-w-full px-2 text-center',
+                      colors.textPrimary,
+                    )}
+                  >
+                    {profile.display_name || profile.username || 'Your Name'}
+                  </h2>
 
-              {profile.bio && (
-                <p
-                  className={cn(
-                    'text-[10px] line-clamp-2 px-4 text-center leading-relaxed opacity-80',
-                    colors.textSecondary,
+                  {profile.bio && (
+                    <p
+                      className={cn(
+                        'text-[10px] line-clamp-2 px-4 text-center leading-relaxed opacity-80',
+                        colors.textSecondary,
+                      )}
+                    >
+                      {profile.bio}
+                    </p>
                   )}
-                >
-                  {profile.bio}
-                </p>
+                </>
               )}
 
               {/* Links Preview */}
               <div className='w-full space-y-3 mt-10 px-4'>
-                {activeLinks.length > 0 ? (
+                {isLoading ? (
+                  [1, 2, 3].map((i) => (
+                    <Skeleton key={i} className='h-10 w-full rounded-lg' />
+                  ))
+                ) : activeLinks.length > 0 ? (
                   activeLinks.map((link) => (
                     <div
                       key={link.id}
@@ -121,11 +140,10 @@ export default function PhonePreview({ profile, links }: PhonePreviewProps) {
                       'text-center p-6 rounded-xl border border-dashed backdrop-blur-sm',
                       colors.elementBg,
                       colors.elementBorder,
+                      colors.textSecondary,
                     )}
                   >
-                    <p className={cn('text-[10px]', colors.textSecondary)}>
-                      No links added yet
-                    </p>
+                    <p className='text-[10px]'>No links added yet</p>
                   </div>
                 )}
               </div>

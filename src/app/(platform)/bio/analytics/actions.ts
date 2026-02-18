@@ -3,29 +3,12 @@
 import { subDays, subHours, startOfHour, startOfDay, format } from 'date-fns';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import type { DateRange } from '@/types/analytics';
-
-export interface ChartDataPoint {
-  label: string;
-  value: number;
-}
-
-export interface TopLink {
-  id: string;
-  title: string;
-  url: string;
-  clicks: number;
-}
-
-export interface AnalyticsData {
-  chartData: ChartDataPoint[];
-  totalClicks: number;
-  totalViews: number;
-  ctr: number;
-  topLinks: TopLink[];
-  topReferer: string | null;
-  userLinks: { id: string; title: string }[];
-}
+import type {
+  DateRange,
+  AnalyticsData,
+  ChartDataPoint,
+  TopLink,
+} from '@/types/analytics';
 
 export async function getAnalyticsData(
   range: DateRange,

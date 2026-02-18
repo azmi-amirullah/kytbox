@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { LuExternalLink, LuEye, LuLink, LuPalette } from 'react-icons/lu';
@@ -13,15 +14,17 @@ import type { Database } from '@/types/supabase';
 type LinkType = Database['public']['Tables']['links']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-type BioTab = 'links' | 'appearance';
-const VALID_TABS: BioTab[] = ['links', 'appearance'];
-const DEFAULT_TAB: BioTab = 'links';
+export type BioTab = 'links' | 'appearance';
+export const VALID_TABS: BioTab[] = ['links', 'appearance'];
+export const DEFAULT_TAB: BioTab = 'links';
 
 interface DashboardClientProps {
   initialLinks: LinkType[];
   profile: Profile;
   publicUrl: string;
   totalViews: number;
+  isLoading?: boolean;
+  activeTab?: BioTab;
 }
 
 /**
@@ -34,22 +37,19 @@ export default function DashboardClient({
   profile,
   publicUrl,
   totalViews,
+  isLoading,
+  activeTab = DEFAULT_TAB,
 }: DashboardClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const rawTab = searchParams.get('tab');
-  const activeTab: BioTab = VALID_TABS.includes(rawTab as BioTab)
-    ? (rawTab as BioTab)
-    : DEFAULT_TAB;
-
   const [links, setLinks] = useState<LinkType[]>(initialLinks);
-  const [themeName, setThemeName] = useState(profile.theme_name || 'default');
+  const [themeName, setThemeName] = useState(profile?.theme_name || 'default');
   const [buttonStyle, setButtonStyle] = useState(
-    profile.button_style || 'default',
+    profile?.button_style || 'default',
   );
   const [buttonShape, setButtonShape] = useState(
-    profile.button_shape || 'rounded',
+    profile?.button_shape || 'rounded',
   );
 
   useEffect(() => {
@@ -105,14 +105,15 @@ export default function DashboardClient({
               links={links}
               setLinks={setLinks}
               totalViews={totalViews}
+              isLoading={isLoading}
             />
           </TabsContent>
 
           <TabsContent value='appearance' className='mt-4 md:mt-6'>
             <AppearanceEditor
-              initialTheme={profile.theme_name || 'default'}
-              initialButtonStyle={profile.button_style || 'default'}
-              initialButtonShape={profile.button_shape || 'rounded'}
+              initialTheme={profile?.theme_name || 'default'}
+              initialButtonStyle={profile?.button_style || 'default'}
+              initialButtonShape={profile?.button_shape || 'rounded'}
               onPreviewUpdate={(
                 theme: string,
                 style: string,
@@ -137,39 +138,46 @@ export default function DashboardClient({
           </div>
           <PhonePreview
             profile={{
-              username: profile.username,
-              display_name: profile.display_name,
-              avatar_url: profile.avatar_url,
-              bio: profile.bio,
+              username: profile?.username || '',
+              display_name: profile?.display_name || '',
+              avatar_url: profile?.avatar_url || null,
+              bio: profile?.bio || null,
               theme_name: themeName,
               button_style: buttonStyle,
               button_shape: buttonShape,
             }}
             links={links}
+            isLoading={isLoading}
           />
           <div className='text-center mt-6'>
-            <a
-              href={publicUrl}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='inline-flex items-center gap-2 text-sm text-primary hover:underline'
-            >
-              Open public page <LuExternalLink className='w-3 h-3' />
-            </a>
+            {isLoading ? (
+              <Skeleton className='h-4 w-32 mx-auto rounded' />
+            ) : (
+              <a
+                href={publicUrl}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='inline-flex items-center gap-2 text-sm text-primary hover:underline'
+              >
+                Open public page <LuExternalLink className='w-3 h-3' />
+              </a>
+            )}
           </div>
         </div>
       </div>
 
       {/* Mobile Preview FAB */}
-      <div className='lg:hidden fixed bottom-6 right-3 z-60'>
-        <Link
-          href={publicUrl}
-          target='_blank'
-          className='flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg font-bold text-sm'
-        >
-          <LuEye className='w-4 h-4' /> Preview
-        </Link>
-      </div>
+      {!isLoading && (
+        <div className='lg:hidden fixed bottom-6 right-3 z-60'>
+          <Link
+            href={publicUrl}
+            target='_blank'
+            className='flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg font-bold text-sm'
+          >
+            <LuEye className='w-4 h-4' /> Preview
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

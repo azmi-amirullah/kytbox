@@ -1,61 +1,83 @@
-# Loading State Implementation Status
+# Loading State & Skeleton Architecture
 
-This document tracks the implementation of Streaming SSR loading states (`loading.tsx`) across the application.
+This document tracks the technical implementation of streaming SSR and unified skeleton states across the Kytbox platform.
 
-> **Why this matters:** `loading.tsx` allows the server to send an instant "App Shell" while fetching data in the background. This prevents the "blank screen" effect and improves perceived performance.
+## Architecture: Unified Skeleton Pattern
 
-## Route Coverage
+Kytbox uses a **Unified Skeleton Architecture**. Instead of maintaining separate skeleton components for `loading.tsx`, we pass an `isLoading` prop directly to the primary Client Components.
 
-| Route              | Page Type          | Status         | File Location                                  | Notes                                                    |
-| ------------------ | ------------------ | -------------- | ---------------------------------------------- | -------------------------------------------------------- |
-| `/`                | Landing Page       | ✅ Implemented | `src/app/(marketing)/loading.tsx`              | Route group isolates marketing pages from platform shell |
-| `/app`             | Dashboard Home     | ✅ Implemented | `src/app/(platform)/app/loading.tsx`           | Shows app grid skeleton                                  |
-| `/bio`             | Bio Link Editor    | ✅ Implemented | `src/app/(platform)/bio/loading.tsx`           | Mimics split-pane layout                                 |
-| `/bio/analytics`   | Bio Analytics      | ✅ Implemented | `src/app/(platform)/bio/analytics/loading.tsx` | Uses client component with skeleton states               |
-| `/cashflow`        | Cashflow Dashboard | ✅ Implemented | `src/app/(platform)/cashflow/loading.tsx`      | Mimics lists and stats                                   |
-| `/cashflow/[id]`   | Cashflow Detail    | ✅ Implemented | `src/app/cashflow/[id]/loading.tsx`            | Public/shared cashflow view (outside platform group)     |
-| `/settings`        | User Settings      | ✅ Implemented | `src/app/(platform)/settings/loading.tsx`      | Uses `PlatformHeaderSkeleton`                            |
-| `/[username]`      | Public Profile     | ✅ Implemented | `src/app/[username]/loading.tsx`               | **Critical**: Public facing page. Uses neutral skeleton. |
-| `/login`           | Auth               | ❌ Not Needed  | -                                              | Static / Client-side form mostly                         |
-| `/signup`          | Auth               | ❌ Not Needed  | -                                              | Static / Client-side form mostly                         |
-| `/forgot-password` | Auth               | ❌ Not Needed  | -                                              | Static / Client-side form mostly                         |
+### Benefits
 
-## Reusable Skeleton Components
+- **Zero Layout Shift (CLS)**: The skeleton uses the exact same grid, spacing, and dimensions as the real UI.
+- **Single Source of Truth**: UI changes made to the component automatically update the loading state.
+- **Lower Maintenance**: No need to sync two separate JSX trees.
 
-### `PlatformHeaderSkeleton`
-
-Location: `src/components/skeletons/platform-header-skeleton.tsx`
-
-A reusable skeleton for the platform header (logo, theme toggle, user nav). Used across multiple platform loading states to ensure consistency and reduce duplication.
+### Implementation Pattern
 
 ```tsx
-import { PlatformHeaderSkeleton } from '@/components/skeletons/platform-header-skeleton';
-
-export default function Loading() {
+// 1. The main Client Component accepts isLoading
+export default function FeatureClient({ data, isLoading }: Props) {
   return (
-    <>
-      <PlatformHeaderSkeleton />
-      {/* Page-specific skeleton content */}
-    </>
+    <div className='grid gap-4'>
+      {isLoading ? <Skeleton className='h-40' /> : <RealUI data={data} />}
+    </div>
   );
+}
+
+// 2. The loading.tsx file simply renders the client in loading mode
+export default function Loading() {
+  return <FeatureClient isLoading={true} data={[]} />;
 }
 ```
 
-## Best Practices
+## Hydration & Performance Best Practices
 
-When adding new pages, follow these rules:
+To prevent "Blank Flashes" or "Jank" during the transition from Server HTML to Client Interactivity, follow these rules:
 
-1. **Always add `loading.tsx`** if the page fetches data (e.g., `await supabase...`).
-2. **Match the Layout**: The skeleton should look _exactly_ like the final page to avoid Layout Shift (CLS).
-3. **Use shadcn/ui Skeleton**: Import `Skeleton` from `@/components/ui/skeleton`.
-4. **No Spinners**: Avoid full-screen spinners. Use skeletons that hint at the content structure.
-5. **Reuse Common Components**: Use `PlatformHeaderSkeleton` for platform pages to maintain consistency.
+### 1. Avoid `useSearchParams` for Initial Render
 
-## How to Check
+Components using `useSearchParams` can trigger a Suspense fallback during hydration.
 
-You can verify if a page has a loading state by checking for the existence of `loading.tsx` in its directory.
+- **Fix**: Identify the active tab/state in the server-side `page.tsx`.
+- **Action**: Pass the initial state as a **Prop** to the client component.
+- [DashboardClient.tsx](<file:///src/app/(platform)/bio/components/DashboardClient.tsx>) uses this pattern for the `activeTab`.
 
-```bash
-# Check for all loading.tsx files
-fd loading.tsx src/app
+### 2. The Hydration Guard (`mounted` state)
+
+Responsive components (like Recharts) often need to measure the DOM. If they render too early, they might show an empty space.
+
+- **Pattern**: Use a `mounted` state in `useEffect` to keep the skeleton visible until the client is fully hydrated and ready to measure.
+- [AnalyticsChart.tsx](file:///src/components/analytics/AnalyticsChart.tsx) implementation:
+
+```tsx
+const [mounted, setMounted] = useState(false);
+useEffect(() => {
+  const timer = setTimeout(() => setMounted(true), 0);
+  return () => clearTimeout(timer);
+}, []);
+
+const showSkeleton = isLoading || !mounted;
 ```
+
+### 3. Disable Growth Animations
+
+Default animations (e.g., bar charts growing from bottom) can look like "blank space" for the first 1.5 seconds.
+
+- **Action**: Set `isAnimationActive={false}` on charts to enable instant data appearance as soon as the skeleton disappears.
+
+## Reusable Components
+
+### `StatsCard`
+
+The [StatsCard](<file:///src/app/(platform)/bio/components/StatsCard.tsx>) is the primary stat driver. It supports:
+
+- `isLoading`: Shows internal skeleton for label and value.
+- `hideSecondaryIcon`: Removes large decorative icons for more compact dashboards (like Analytics).
+- `variant`: Supports thematic coloring (primary, blue, green, orange).
+
+## Best Practices Checklist
+
+1. **Match Container Hierarchy**: Ensure `loading.tsx` uses the same `max-w-*` and `px-*` wrappers as the main `page.tsx`.
+2. **Prop-Driven Skeletons**: Pass `isLoading` down the tree. Avoid `if (loading) return <Skeleton />` at the top level to keep the layout shell intact.
+3. **No Spinning Icons**: Use defined skeletons that hint at the final component structure.
+4. **Instant Interactivity**: Disable entrance animations on data-heavy elements to improve perceived speed.

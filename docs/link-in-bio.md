@@ -9,7 +9,7 @@ Focus: **Speed to functional product.** Avoid "graveyard" features (custom theme
 - **Public Page**: `/{username}` (SEO optimized profile with dynamic metadata)
 - **Tracking**: Server-side click counting via Supabase RPC
 - **Settings**: Profile management (username, display name, bio, avatar upload/removal)
-- **Dashboard**: Stats bar (lifetime clicks, active/total links), live phone preview, minimalist grid background
+- **Dashboard**: Tab-based management (Links vs Appearance), live phone preview, real-time stats, and mobile-first responsive architecture.
 
 ## 2. Tech Stack
 
@@ -99,13 +99,13 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 
 **Logged-in routes** (protected by `proxy.ts`):
 
-| Route           | Purpose                           |
-| :-------------- | :-------------------------------- |
-| `/app`          | Platform shell (app switcher)     |
-| `/app/bio`      | Bio dashboard (link management)   |
-| `/app/cashflow` | Cashflow dashboard                |
-| `/app/settings` | Account settings (profile)        |
-| `/onboarding`   | Username completion (OAuth users) |
+| Route         | Purpose                            |
+| :------------ | :--------------------------------- |
+| `/app`        | Platform header / app switcher     |
+| `/bio`        | Bio dashboard (Links + Appearance) |
+| `/cashflow`   | Cashflow dashboard                 |
+| `/settings`   | Account settings (profile)         |
+| `/onboarding` | Username completion (OAuth users)  |
 
 **Public routes**:
 
@@ -271,6 +271,8 @@ See `src/lib/username.ts` for full list.
 ✅ Analytics dashboard at `/app/bio/analytics` (link clicks, date filtering, chart)
 ✅ Bio Page View Tracking (Server-side via Supabase)
 ✅ Social Link Icons (Auto-detection with 20+ platforms)
+✅ Unified skeleton architecture for Bio & Analytics (zero-jank loading)
+✅ Visual parity between Bio and Analytics stats cards
 
 ## 8. Social Link Icons (Implemented)
 
@@ -297,8 +299,13 @@ See `src/lib/username.ts` for full list.
 - **Filters**:
   - **By Link**: Dropdown sorted by user's custom order.
   - **By Date**: Dropdown for time ranges (24h, 7d, 30d, Lifetime).
-  - **UX**: Filters are disabled (grayed out) while data is loading.
-  - **Lifetime Labels**: Dynamically shows "Month Year - Month Year" or single month if range is small.
+
+- **UX & Performance (Zero-Jank)**:
+  - **Unified Skeletons**: Uses actual client components with `isLoading` props to ensure 100% layout match during loading.
+  - **Instant Render**: Recharts animations disabled to prevent empty space flashes during data hydration.
+  - **Hydration Guards**: Charts and theme toggles use strict `mounted` states to avoid DOM measurement errors on load.
+  - **Consistency**: Analytics stats cards use standard `rounded-2xl` and `text-sm` typography to match the main Bio dashboard.
+- **Lifetime Labels**: Dynamically shows "Month Year - Month Year" or single month if range is small.
 
 - **Stats**:
   - **Total Clicks**: Aggregated count for selected period.
@@ -335,7 +342,7 @@ See `src/lib/username.ts` for full list.
 
 ### Button Options
 
-- **Shapes**: Rounded, Square
+- **Shapes**: Rounded, Square, Pill, Leaf
 - **Styles**: Solid Fill, Outline
 
 ### Technical Implementation

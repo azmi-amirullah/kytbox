@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, memo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSortable, defaultAnimateLayoutChanges } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -273,3 +274,22 @@ export default function SortableLink({
     </div>
   );
 }
+
+// Unified Skeleton Component
+SortableLink.Skeleton = function SortableLinkSkeleton() {
+  return (
+    <div className='group flex items-center gap-3 p-3 rounded-xl border bg-secondary/50 border-border'>
+      <Skeleton className='w-5 h-5 rounded' />
+      <Skeleton className='w-9 h-5 rounded-full' />
+      <div className='flex-1 min-w-0 ml-1 space-y-2'>
+        <Skeleton className='h-4 w-32 rounded-md' />
+        <Skeleton className='h-3 w-48 rounded-md' />
+      </div>
+      <div className='flex items-center gap-1 sm:gap-2'>
+        <Skeleton className='w-8 h-8 rounded-md' />
+        <Skeleton className='w-8 h-8 rounded-md' />
+        <Skeleton className='w-8 h-8 rounded-md' />
+      </div>
+    </div>
+  );
+};

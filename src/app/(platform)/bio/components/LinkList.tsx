@@ -27,9 +27,14 @@ type Link = Database['public']['Tables']['links']['Row'];
 interface LinkListProps {
   links: Link[];
   setLinks: React.Dispatch<React.SetStateAction<Link[]>>;
+  isLoading?: boolean;
 }
 
-export default function LinkList({ links, setLinks }: LinkListProps) {
+export default function LinkList({
+  links,
+  setLinks,
+  isLoading,
+}: LinkListProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -86,21 +91,12 @@ export default function LinkList({ links, setLinks }: LinkListProps) {
     router.refresh();
   }
 
-  // Show placeholder during SSR to avoid hydration mismatch with DndContext IDs
-  if (!mounted) {
+  // Show skeleton during loading or SSR to avoid hydration mismatch
+  if (isLoading || !mounted) {
     return (
       <div className='space-y-3'>
-        {links.map((link) => (
-          <div
-            key={link.id}
-            className='flex items-center gap-4 p-4 rounded-lg border bg-card border-border animate-pulse'
-          >
-            <div className='w-5 h-5 bg-muted rounded' />
-            <div className='flex-1 space-y-2'>
-              <div className='h-4 bg-muted rounded w-1/3' />
-              <div className='h-3 bg-muted rounded w-1/2' />
-            </div>
-          </div>
+        {(isLoading ? [1, 2, 3] : links).map((_, i) => (
+          <SortableLink.Skeleton key={i} />
         ))}
       </div>
     );
