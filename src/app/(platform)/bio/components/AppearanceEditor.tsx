@@ -96,20 +96,20 @@ export default function AppearanceEditor({
           Customize your Bio page&apos;s theme and button styles
         </CardDescription>
       </CardHeader>
-      <CardContent className='space-y-6'>
+      <CardContent className='space-y-4 md:space-y-6'>
         {/* Theme Selection */}
-        <div className='space-y-3'>
+        <div className='space-y-2 sm:space-y-3'>
           <Label className='text-sm font-bold uppercase tracking-wider opacity-60'>
             Background Theme
           </Label>
-          <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+          <div className='grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3'>
             {THEME_LIST.map((theme) => (
               <button
                 key={theme.id}
                 type='button'
                 onClick={() => handleUpdate('theme', theme.id)}
                 className={cn(
-                  'relative flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all shadow-sm group min-h-[100px]',
+                  'relative flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border-2 transition-all shadow-sm group min-h-[80px] sm:min-h-[100px]',
                   theme.previewClass,
                   themeName === theme.id
                     ? 'border-border ring-2 ring-primary/20'
@@ -138,7 +138,7 @@ export default function AppearanceEditor({
         </div>
 
         {/* Button Shape Selection */}
-        <div className='space-y-3'>
+        <div className='space-y-2 sm:space-y-3'>
           <Label className='text-sm font-bold uppercase tracking-wider opacity-60'>
             Button Shape
           </Label>
@@ -188,7 +188,7 @@ export default function AppearanceEditor({
         </div>
 
         {/* Button Style Selection (Fill) */}
-        <div className='space-y-3'>
+        <div className='space-y-2 sm:space-y-3'>
           <Label className='text-sm font-bold uppercase tracking-wider opacity-60'>
             Button Style (Fill)
           </Label>

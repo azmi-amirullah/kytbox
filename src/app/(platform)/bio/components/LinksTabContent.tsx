@@ -31,13 +31,13 @@ export default function LinksTabContent({
   const activeLinksCount = links.filter((l) => l.is_active).length;
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-4 min-w-0'>
       {/* Stats Bar */}
-      <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+      <div className='grid grid-cols-2 lg:grid-cols-4 gap-3'>
         <Link href='/bio/analytics' className='block group'>
-          <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
+          <div className='bg-card border rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
             <div>
-              <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>
+              <p className='text-[9px] sm:text-[10px] md:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors leading-tight'>
                 Lifetime Profile Views
               </p>
               <p className='text-2xl font-bold tracking-tight'>{totalViews}</p>
@@ -51,7 +51,7 @@ export default function LinksTabContent({
         <Link href='/bio/analytics' className='block group'>
           <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
             <div>
-              <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors'>
+              <p className='text-[9px] sm:text-[10px] md:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors leading-tight'>
                 Lifetime Link Clicks
               </p>
               <p className='text-2xl font-bold tracking-tight'>{totalClicks}</p>
@@ -62,9 +62,9 @@ export default function LinksTabContent({
           </div>
         </Link>
 
-        <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-green-500/20 transition-all duration-200'>
+        <div className='bg-card border rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm hover:border-green-500/20 transition-all duration-200'>
           <div>
-            <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1'>
+            <p className='text-[9px] sm:text-[10px] md:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 leading-tight'>
               Active Links
             </p>
             <p className='text-2xl font-bold tracking-tight'>
@@ -76,9 +76,9 @@ export default function LinksTabContent({
           </div>
         </div>
 
-        <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-blue-500/20 transition-all duration-200'>
+        <div className='bg-card border rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm hover:border-blue-500/20 transition-all duration-200'>
           <div>
-            <p className='text-[10px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1'>
+            <p className='text-[9px] sm:text-[10px] md:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 leading-tight'>
               Total Links
             </p>
             <p className='text-2xl font-bold tracking-tight'>{links.length}</p>
@@ -91,7 +91,7 @@ export default function LinksTabContent({
 
       {/* Links Editor */}
       <Card className='border-border bg-card shadow-sm p-0 gap-0'>
-        <div className='flex items-center justify-end px-6 py-4 border-b border-border/50'>
+        <div className='flex items-center justify-end px-4 py-3 sm:px-6 sm:py-4 border-b border-border/50'>
           <LinkModal
             mode='create'
             trigger={
@@ -106,7 +106,7 @@ export default function LinksTabContent({
           />
         </div>
         <CardContent className='p-0'>
-          <div className='p-6 min-h-[400px]'>
+          <div className='p-4 sm:p-6 min-h-[400px]'>
             <LinkList links={links} setLinks={setLinks} />
           </div>
         </CardContent>

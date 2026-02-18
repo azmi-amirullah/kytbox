@@ -44,7 +44,7 @@ export default async function PlatformLayout({
         user={userData}
         publicUrl={`/${profile.username}`}
       />
-      <main className='relative z-10 flex-1 w-full'>{children}</main>
+      <main className='relative z-20 flex-1 w-full'>{children}</main>
       <Footer />
     </div>
   );

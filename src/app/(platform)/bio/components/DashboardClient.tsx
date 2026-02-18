@@ -66,9 +66,9 @@ export default function DashboardClient({
   );
 
   return (
-    <div className='grid lg:grid-cols-[1fr_400px] gap-8'>
+    <div className='grid lg:grid-cols-[1fr_400px] gap-4 lg:gap-8'>
       {/* Left Column: Editor */}
-      <div className='space-y-6'>
+      <div className='space-y-4 md:space-y-6 min-w-0'>
         {/* Breadcrumb + Title */}
         <div>
           <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
@@ -100,7 +100,7 @@ export default function DashboardClient({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value='links' className='mt-6'>
+          <TabsContent value='links' className='mt-4 md:mt-6'>
             <LinksTabContent
               links={links}
               setLinks={setLinks}
@@ -108,7 +108,7 @@ export default function DashboardClient({
             />
           </TabsContent>
 
-          <TabsContent value='appearance' className='mt-6'>
+          <TabsContent value='appearance' className='mt-4 md:mt-6'>
             <AppearanceEditor
               initialTheme={profile.theme_name || 'default'}
               initialButtonStyle={profile.button_style || 'default'}
@@ -161,7 +161,7 @@ export default function DashboardClient({
       </div>
 
       {/* Mobile Preview FAB */}
-      <div className='lg:hidden fixed bottom-6 right-6 z-50'>
+      <div className='lg:hidden fixed bottom-6 right-3 z-60'>
         <Link
           href={publicUrl}
           target='_blank'
