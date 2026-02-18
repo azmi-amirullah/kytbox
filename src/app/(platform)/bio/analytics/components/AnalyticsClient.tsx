@@ -288,7 +288,16 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
                         key={link.id}
                         className='border-b last:border-0 hover:bg-muted/50 transition-colors'
                       >
-                        <td className='p-3 md:p-4 font-medium'>{link.title}</td>
+                        <td className='p-3 md:p-4'>
+                          <div className='flex flex-col min-w-0'>
+                            <span className='font-medium truncate'>
+                              {link.title}
+                            </span>
+                            <span className='text-muted-foreground truncate md:hidden'>
+                              {link.url}
+                            </span>
+                          </div>
+                        </td>
                         <td className='p-3 md:p-4 text-muted-foreground truncate max-w-[200px] hidden md:table-cell'>
                           {link.url}
                         </td>

@@ -100,7 +100,7 @@ export default function DashboardClient({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value='links' className='mt-4 md:mt-6'>
+          <TabsContent value='links' className='mt-2'>
             <LinksTabContent
               links={links}
               setLinks={setLinks}
@@ -131,7 +131,7 @@ export default function DashboardClient({
       <div className='hidden lg:block'>
         <div className='sticky top-24'>
           <div className='flex items-center justify-center mb-4 gap-2'>
-            <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2'>
+            <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2 select-none'>
               <LuEye className='w-4 h-4' /> Live Preview
             </h3>
           </div>

@@ -35,55 +35,59 @@ export default function LinksTabContent({
       {/* Stats Bar */}
       <div className='grid grid-cols-2 lg:grid-cols-4 gap-3'>
         <Link href='/bio/analytics' className='block group'>
-          <div className='bg-card border rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
-            <div>
-              <p className='text-[9px] sm:text-[10px] md:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors leading-tight'>
-                Lifetime Profile Views
-              </p>
+          <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
+            <div className='flex flex-col gap-1.5'>
+              <div className='flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors'>
+                <LuEye className='w-4 h-4 xs:hidden' />
+                <span className='text-sm font-medium'>Views</span>
+              </div>
               <p className='text-2xl font-bold tracking-tight'>{totalViews}</p>
             </div>
-            <div className='p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform'>
+            <div className='hidden xs:flex p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform'>
               <LuEye className='w-5 h-5' />
             </div>
           </div>
         </Link>
 
         <Link href='/bio/analytics' className='block group'>
-          <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-primary transition-all duration-200 cursor-pointer h-full'>
-            <div>
-              <p className='text-[9px] sm:text-[10px] md:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 group-hover:text-primary transition-colors leading-tight'>
-                Lifetime Link Clicks
-              </p>
+          <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm group-hover:border-blue-500/20 transition-all duration-200 cursor-pointer h-full'>
+            <div className='flex flex-col gap-1.5'>
+              <div className='flex items-center gap-2 text-muted-foreground group-hover:text-blue-600 transition-colors'>
+                <LuMousePointerClick className='w-4 h-4 xs:hidden' />
+                <span className='text-sm font-medium'>Clicks</span>
+              </div>
               <p className='text-2xl font-bold tracking-tight'>{totalClicks}</p>
             </div>
-            <div className='p-3 bg-primary/10 rounded-full text-primary group-hover:scale-110 transition-transform'>
+            <div className='hidden xs:flex p-3 bg-blue-500/10 rounded-full text-blue-600 group-hover:scale-110 transition-transform'>
               <LuMousePointerClick className='w-5 h-5' />
             </div>
           </div>
         </Link>
 
-        <div className='bg-card border rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm hover:border-green-500/20 transition-all duration-200'>
-          <div>
-            <p className='text-[9px] sm:text-[10px] md:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 leading-tight'>
-              Active Links
-            </p>
+        <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-green-500/20 transition-all duration-200'>
+          <div className='flex flex-col gap-1.5'>
+            <div className='flex items-center gap-2 text-muted-foreground'>
+              <LuLink className='w-4 h-4 xs:hidden' />
+              <span className='text-sm font-medium'>Active</span>
+            </div>
             <p className='text-2xl font-bold tracking-tight'>
               {activeLinksCount}
             </p>
           </div>
-          <div className='p-3 bg-green-500/10 rounded-full text-green-600'>
+          <div className='hidden xs:flex p-3 bg-green-500/10 rounded-full text-green-600'>
             <LuLink className='w-5 h-5' />
           </div>
         </div>
 
-        <div className='bg-card border rounded-2xl p-3 sm:p-4 flex items-center justify-between shadow-sm hover:border-blue-500/20 transition-all duration-200'>
-          <div>
-            <p className='text-[9px] sm:text-[10px] md:text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1 leading-tight'>
-              Total Links
-            </p>
+        <div className='bg-card border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-orange-500/20 transition-all duration-200'>
+          <div className='flex flex-col gap-1.5'>
+            <div className='flex items-center gap-2 text-muted-foreground'>
+              <LuBarChart className='w-4 h-4 xs:hidden' />
+              <span className='text-sm font-medium'>Total Links</span>
+            </div>
             <p className='text-2xl font-bold tracking-tight'>{links.length}</p>
           </div>
-          <div className='p-3 bg-blue-500/10 rounded-full text-blue-600'>
+          <div className='hidden xs:flex p-3 bg-orange-500/10 rounded-full text-orange-600'>
             <LuBarChart className='w-5 h-5' />
           </div>
         </div>
