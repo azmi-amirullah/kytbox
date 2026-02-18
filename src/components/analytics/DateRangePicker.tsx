@@ -38,7 +38,7 @@ export function DateRangePicker({
         <Button
           variant='outline'
           disabled={disabled}
-          className='w-[180px] justify-between bg-background dark:bg-background disabled:opacity-100 disabled:text-muted-foreground'
+          className='w-full sm:w-[180px] justify-between bg-background dark:bg-background disabled:opacity-100 disabled:text-muted-foreground'
         >
           {selectedLabel}
           <LuChevronDown className='ml-2 h-4 w-4 opacity-50' />

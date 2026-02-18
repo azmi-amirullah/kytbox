@@ -75,11 +75,11 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
   const userLinks = data.userLinks;
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-4 md:space-y-6'>
       {/* Header + Actions */}
-      <div className='flex flex-col gap-6'>
+      <div className='flex flex-col gap-4 md:gap-6'>
         <div>
-          <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-4'>
+          <nav className='flex items-center gap-1 text-xs sm:text-sm text-muted-foreground mb-3 md:mb-4'>
             <Link
               href='/app'
               className='hover:text-foreground transition-colors'
@@ -97,25 +97,27 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
             <span className='text-foreground font-medium'>Analytics</span>
           </nav>
 
-          <div className='flex items-center gap-4 mb-2'>
+          <div className='flex items-center gap-2 md:gap-4 mb-1 md:mb-2'>
             <Button variant='ghost' size='icon' asChild className='-ml-2'>
               <Link href='/bio'>
                 <LuArrowLeft className='w-5! h-5!' />
               </Link>
             </Button>
-            <h1 className='text-3xl font-bold tracking-tight'>Analytics</h1>
+            <h1 className='text-2xl md:text-3xl font-bold tracking-tight'>
+              Analytics
+            </h1>
           </div>
 
-          <p className='text-muted-foreground'>
+          <p className='text-sm text-muted-foreground'>
             Track your link performance and audience engagement.
           </p>
         </div>
 
-        <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4'>
+        <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3'>
           {/* Filters grouped on the right side on desktop, stacked on mobile */}
           <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:ml-auto w-full sm:w-auto'>
             {/* Link Filter */}
-            <div className='w-full sm:w-[200px]'>
+            <div className='w-full lg:w-[220px]'>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -132,7 +134,10 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
                     <LuChevronDown className='ml-2 h-4 w-4 opacity-50 shrink-0' />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className='w-[200px]' align='end'>
+                <DropdownMenuContent
+                  className='w-[calc(100vw-32px)] sm:w-[220px]'
+                  align='end'
+                >
                   <DropdownMenuItem
                     className='cursor-pointer'
                     onClick={() => setSelectedLink('all')}
@@ -168,8 +173,8 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
       {/* Stats Grid */}
       {!isPending && (
         <>
-          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
-            <div className='p-6 bg-card rounded-xl border shadow-sm'>
+          <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+            <div className='p-4 md:p-6 bg-card rounded-xl border shadow-sm'>
               <div className='flex items-center gap-2 text-muted-foreground mb-2'>
                 <LuEye className='w-4 h-4' />
                 <span className='text-sm font-medium'>Total Profile Views</span>
@@ -180,7 +185,7 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
               </p>
             </div>
 
-            <div className='p-6 bg-card rounded-xl border shadow-sm'>
+            <div className='p-4 md:p-6 bg-card rounded-xl border shadow-sm'>
               <div className='flex items-center gap-2 text-muted-foreground mb-2'>
                 <LuMousePointer2 className='w-4 h-4' />
                 <span className='text-sm font-medium'>Total Clicks</span>
@@ -250,7 +255,7 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
           />
 
           {/* Top Links Table */}
-          <div className='rounded-xl border bg-card shadow-sm overflow-hidden p-6'>
+          <div className='rounded-xl border bg-card shadow-sm overflow-hidden p-4 md:p-6'>
             <div className='border-b flex items-center gap-2 text-muted-foreground pb-4'>
               <LuLink className='w-4 h-4' />
               <h3 className='font-semibold text-foreground'>
@@ -283,11 +288,11 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
                         key={link.id}
                         className='border-b last:border-0 hover:bg-muted/50 transition-colors'
                       >
-                        <td className='p-4 font-medium'>{link.title}</td>
-                        <td className='p-4 text-muted-foreground truncate max-w-[200px] hidden md:table-cell'>
+                        <td className='p-3 md:p-4 font-medium'>{link.title}</td>
+                        <td className='p-3 md:p-4 text-muted-foreground truncate max-w-[200px] hidden md:table-cell'>
                           {link.url}
                         </td>
-                        <td className='p-4 text-right font-medium'>
+                        <td className='p-3 md:p-4 text-right font-medium'>
                           {link.clicks}
                         </td>
                       </tr>

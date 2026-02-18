@@ -28,7 +28,7 @@ export default async function AnalyticsPage() {
   const initialData = await getAnalyticsData('24h', 'all');
 
   return (
-    <div className='max-w-7xl mx-auto px-4 py-8 md:py-8 w-full'>
+    <div className='max-w-7xl mx-auto px-4 py-4 md:py-8 w-full'>
       <AnalyticsClient initialData={initialData} />
     </div>
   );
