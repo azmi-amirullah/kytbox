@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { LuEye, LuLink, LuPalette } from 'react-icons/lu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LinksTabContent from './LinksTabContent';
 import PhonePreview from './PhonePreview';
 import AppearanceEditor from './AppearanceEditor';
 import type { Database } from '@/types/supabase';
+import { cn } from '@/lib/utils';
 
 type LinkType = Database['public']['Tables']['links']['Row'];
 export type Profile = Omit<
@@ -44,8 +44,7 @@ export default function DashboardClient({
   isLoading,
   activeTab = DEFAULT_TAB,
 }: DashboardClientProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [currentTab, setCurrentTab] = useState<BioTab>(activeTab);
 
   const [links, setLinks] = useState<LinkType[]>(initialLinks);
   const [themeName, setThemeName] = useState(profile?.theme_name || 'default');
@@ -63,14 +62,13 @@ export default function DashboardClient({
     setLinks(initialLinks);
   }, [initialLinks]);
 
-  const handleTabChange = useCallback(
-    (value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', value);
-      router.replace(`?${params.toString()}`, { scroll: false });
-    },
-    [router, searchParams],
-  );
+  const handleTabChange = useCallback((value: string) => {
+    const newTab = value as BioTab;
+    setCurrentTab(newTab);
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', value);
+    window.history.replaceState(null, '', `?${params.toString()}`);
+  }, []);
 
   return (
     <div className='grid lg:grid-cols-[1fr_440px] gap-4 lg:gap-8'>
@@ -95,7 +93,7 @@ export default function DashboardClient({
         </div>
 
         {/* Tab Navigation */}
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <Tabs value={currentTab} onValueChange={handleTabChange}>
           <TabsList className='w-full sm:w-auto'>
             <TabsTrigger value='links' className='gap-2'>
               <LuLink className='w-4 h-4' />
@@ -107,7 +105,11 @@ export default function DashboardClient({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value='links' className='mt-2'>
+          <TabsContent
+            value='links'
+            forceMount
+            className={cn('mt-2', currentTab !== 'links' && 'hidden')}
+          >
             <LinksTabContent
               links={links}
               setLinks={setLinks}
@@ -116,7 +118,14 @@ export default function DashboardClient({
             />
           </TabsContent>
 
-          <TabsContent value='appearance' className='mt-4 md:mt-6'>
+          <TabsContent
+            value='appearance'
+            forceMount
+            className={cn(
+              'mt-4 md:mt-6',
+              currentTab !== 'appearance' && 'hidden',
+            )}
+          >
             <AppearanceEditor
               initialTheme={profile?.theme_name || 'default'}
               initialButtonStyle={profile?.button_style || 'default'}
