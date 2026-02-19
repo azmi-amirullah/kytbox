@@ -10,6 +10,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   default: {
     id: 'default',
     name: 'Clean Light',
+    category: 'solid',
     previewClass: 'bg-white border-neutral-200 text-neutral-900',
     colors: {
       background: 'bg-white',
@@ -36,6 +37,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   dark: {
     id: 'dark',
     name: 'Deep Dark',
+    category: 'solid',
     previewClass: 'bg-neutral-950 border-neutral-800 text-white',
     colors: {
       background: 'bg-neutral-950',
@@ -62,6 +64,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   gradient: {
     id: 'gradient',
     name: 'Cosmic Purple',
+    category: 'gradient',
     previewClass:
       'bg-gradient-to-br from-indigo-600 via-purple-700 to-slate-900 border-transparent text-white',
     colors: {
@@ -90,6 +93,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   peach: {
     id: 'peach',
     name: 'Peach Sunset',
+    category: 'gradient',
     previewClass:
       'bg-gradient-to-br from-orange-400 via-rose-500 to-pink-600 border-transparent text-white',
     colors: {
@@ -117,6 +121,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   deepsea: {
     id: 'deepsea',
     name: 'Deep Sea',
+    category: 'gradient',
     previewClass:
       'bg-gradient-to-br from-teal-500 via-blue-700 to-slate-900 border-transparent text-white',
     colors: {
@@ -144,6 +149,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   emerald: {
     id: 'emerald',
     name: 'Emerald Lake',
+    category: 'gradient',
     previewClass:
       'bg-gradient-to-br from-emerald-500 via-green-700 to-teal-900 border-transparent text-white',
     colors: {
@@ -172,6 +178,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   lavender: {
     id: 'lavender',
     name: 'Soft Lavender',
+    category: 'soft',
     previewClass:
       'bg-gradient-to-br from-violet-200 via-purple-300 to-fuchsia-400 border-transparent text-neutral-800',
     colors: {
@@ -200,6 +207,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   latte: {
     id: 'latte',
     name: 'Creamy Latte',
+    category: 'soft',
     previewClass:
       'bg-gradient-to-br from-orange-50 via-amber-50 to-stone-200 border-transparent text-neutral-800',
     colors: {
@@ -227,6 +235,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   midnight: {
     id: 'midnight',
     name: 'Midnight Blue',
+    category: 'gradient',
     previewClass:
       'bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 border-transparent text-white',
     colors: {
@@ -254,6 +263,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   sunset: {
     id: 'sunset',
     name: 'Sunset Gold',
+    category: 'gradient',
     previewClass:
       'bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 border-transparent text-white',
     colors: {
@@ -281,6 +291,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   rosegold: {
     id: 'rosegold',
     name: 'Rose Gold',
+    category: 'soft',
     previewClass:
       'bg-gradient-to-br from-rose-300 via-pink-400 to-fuchsia-600 border-transparent text-neutral-800',
     colors: {
@@ -308,6 +319,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   ocean: {
     id: 'ocean',
     name: 'Ocean Breeze',
+    category: 'soft',
     previewClass:
       'bg-gradient-to-br from-sky-400 via-cyan-500 to-blue-700 border-transparent text-neutral-800',
     colors: {
@@ -335,6 +347,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   charcoal: {
     id: 'charcoal',
     name: 'Charcoal',
+    category: 'gradient',
     previewClass:
       'bg-gradient-to-br from-zinc-800 via-neutral-900 to-stone-950 border-transparent text-white',
     colors: {

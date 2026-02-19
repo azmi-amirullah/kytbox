@@ -174,6 +174,11 @@ export function detectSocialPlatform(url: string): SocialPlatform | null {
       }
     }
 
+    // Special case for wa.me
+    if (hostname.includes('wa.me')) {
+      return SOCIAL_PLATFORMS.whatsapp;
+    }
+
     // Generic website fallback
     return {
       name: 'Website',

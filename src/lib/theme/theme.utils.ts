@@ -27,7 +27,8 @@ export function getContainerClasses(theme: ThemeConfig): string {
 export function validateButtonStyle(
   value: string | null | undefined,
 ): ButtonStyle {
-  return value === 'outline' ? 'outline' : 'default';
+  if (value === 'outline' || value === 'transparent') return 'transparent';
+  return 'default';
 }
 
 /**
@@ -77,7 +78,7 @@ export function getButtonClasses(
   const previewBaseClasses =
     variant === 'preview' ? 'shadow-sm backdrop-blur-sm' : '';
 
-  if (buttonStyle === 'outline') {
+  if (buttonStyle === 'transparent') {
     return `${fullBaseClasses} ${shapeClass} bg-transparent border-2 ${colors.outlineBorder} ${colors.outlineText} ${colors.outlineHoverBg}`.trim();
   }
 

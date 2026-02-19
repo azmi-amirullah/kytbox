@@ -12,7 +12,9 @@ import AppearanceEditor from './AppearanceEditor';
 import type { Database } from '@/types/supabase';
 
 type LinkType = Database['public']['Tables']['links']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'] & {
+  social_links?: Record<string, string> | null;
+};
 
 export type BioTab = 'links' | 'appearance';
 export const VALID_TABS: BioTab[] = ['links', 'appearance'];
@@ -50,6 +52,9 @@ export default function DashboardClient({
   );
   const [buttonShape, setButtonShape] = useState(
     profile?.button_shape || 'rounded',
+  );
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>(
+    (profile?.social_links as Record<string, string>) || {},
   );
 
   useEffect(() => {
@@ -114,14 +119,19 @@ export default function DashboardClient({
               initialTheme={profile?.theme_name || 'default'}
               initialButtonStyle={profile?.button_style || 'default'}
               initialButtonShape={profile?.button_shape || 'rounded'}
+              initialSocialLinks={
+                (profile?.social_links as Record<string, string>) || {}
+              }
               onPreviewUpdate={(
                 theme: string,
                 style: string,
                 shape: string,
+                social: Record<string, string>,
               ) => {
                 setThemeName(theme);
                 setButtonStyle(style);
                 setButtonShape(shape);
+                setSocialLinks(social);
               }}
             />
           </TabsContent>
@@ -145,6 +155,7 @@ export default function DashboardClient({
               theme_name: themeName,
               button_style: buttonStyle,
               button_shape: buttonShape,
+              social_links: socialLinks,
             }}
             links={links}
             isLoading={isLoading}

@@ -38,9 +38,12 @@ export interface ThemeColors {
   footerBrandText: string;
 }
 
+export type ThemeCategory = 'solid' | 'gradient' | 'soft' | 'special';
+
 export interface ThemeConfig {
   id: string;
   name: string;
+  category: ThemeCategory;
   previewClass: string; // Class for appearance editor theme card
   colors: ThemeColors;
 }
@@ -60,5 +63,5 @@ export type ThemeId =
   | 'ocean'
   | 'charcoal';
 
-export type ButtonStyle = 'default' | 'outline';
+export type ButtonStyle = 'default' | 'transparent';
 export type ButtonShape = 'rounded' | 'square' | 'pill' | 'leaf';

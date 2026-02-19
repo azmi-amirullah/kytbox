@@ -12,6 +12,7 @@ import {
   validateButtonStyle,
   validateButtonShape,
 } from '@/lib/theme';
+import SocialGrid from '../(platform)/bio/components/SocialGrid';
 
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>;
@@ -114,6 +115,17 @@ export default async function PublicProfilePage({
                 {profile.bio}
               </p>
             )}
+
+            {/* Social Grid */}
+            <div className='mt-6 flex justify-center w-full'>
+              <SocialGrid
+                socialLinks={
+                  (profile.social_links as Record<string, string>) || {}
+                }
+                theme={theme}
+                className='justify-center'
+              />
+            </div>
           </div>
 
           {/* Links */}

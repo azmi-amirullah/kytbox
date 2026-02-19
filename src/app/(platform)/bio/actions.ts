@@ -170,14 +170,30 @@ export async function updateAppearance(formData: FormData) {
   const themeName = formData.get('themeName') as string;
   const buttonStyle = formData.get('buttonStyle') as string;
   const buttonShape = formData.get('buttonShape') as string;
+  const socialLinksRaw = formData.get('socialLinks') as string;
+
+  const updateData: {
+    theme_name: string;
+    button_style: string;
+    button_shape: string;
+    social_links?: Record<string, string>;
+  } = {
+    theme_name: themeName,
+    button_style: buttonStyle,
+    button_shape: buttonShape,
+  };
+
+  if (socialLinksRaw) {
+    try {
+      updateData.social_links = JSON.parse(socialLinksRaw);
+    } catch (e) {
+      console.error('Failed to parse social links JSON', e);
+    }
+  }
 
   const { error } = await supabase
     .from('profiles')
-    .update({
-      theme_name: themeName,
-      button_style: buttonStyle,
-      button_shape: buttonShape,
-    })
+    .update(updateData)
     .eq('id', user.id);
 
   if (error) {

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { getSocialIcon } from '@/lib/social-icons';
+import SocialGrid from './SocialGrid';
 import {
   getTheme,
   getContainerClasses,
@@ -19,6 +20,7 @@ interface PhonePreviewProps {
     theme_name?: string | null;
     button_style?: string | null;
     button_shape?: string | null;
+    social_links?: Record<string, string> | null;
   };
   links: {
     id: string;
@@ -103,13 +105,20 @@ export default function PhonePreview({
                   {profile.bio && (
                     <p
                       className={cn(
-                        'text-[10px] line-clamp-2 px-4 text-center leading-relaxed opacity-80',
+                        'text-[10px] line-clamp-2 px-4 text-center leading-relaxed opacity-80 mb-4',
                         colors.textSecondary,
                       )}
                     >
                       {profile.bio}
                     </p>
                   )}
+
+                  {/* Social Grid */}
+                  <SocialGrid
+                    socialLinks={profile.social_links || {}}
+                    theme={theme}
+                    className='mb-4'
+                  />
                 </>
               )}
 

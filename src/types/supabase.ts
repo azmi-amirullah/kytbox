@@ -26,6 +26,8 @@ export interface Database {
           default_currency: string | null;
           created_at: string;
           role: 'user' | 'admin';
+          social_links: Json | null;
+          tier: 'free' | 'pro' | 'enterprise';
         };
         Insert: {
           id: string;
@@ -39,6 +41,8 @@ export interface Database {
           default_currency?: string | null;
           created_at?: string;
           role?: 'user' | 'admin';
+          social_links?: Json | null;
+          tier?: 'free' | 'pro' | 'enterprise';
         };
         Update: {
           id?: string;
@@ -52,6 +56,8 @@ export interface Database {
           default_currency?: string | null;
           created_at?: string;
           role?: 'user' | 'admin';
+          social_links?: Json | null;
+          tier?: 'free' | 'pro' | 'enterprise';
         };
         Relationships: [];
       };
