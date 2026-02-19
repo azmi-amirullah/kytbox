@@ -321,7 +321,7 @@ export default function AppearanceEditor({
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
                     className={cn(
-                      'px-3 py-1 text-[10px] font-bold uppercase tracking-tight rounded-md transition-all',
+                      'px-3 py-1 text-[10px] font-bold uppercase tracking-tight rounded-md transition-all cursor-pointer',
                       activeCategory === cat
                         ? 'bg-card text-foreground shadow-sm ring-1 ring-border'
                         : 'text-muted-foreground hover:text-foreground',
@@ -333,45 +333,41 @@ export default function AppearanceEditor({
               </div>
             </div>
 
-            <div className='grid grid-cols-2 sm:grid-cols-3 gap-3'>
-              <AnimatePresence mode='popLayout'>
-                {filteredThemes.map((theme) => (
-                  <motion.button
-                    key={theme.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    type='button'
-                    onClick={() => handleUpdate('theme', theme.id)}
+            <div
+              key={activeCategory}
+              className='grid grid-cols-2 sm:grid-cols-3 gap-3 animate-in fade-in duration-150'
+            >
+              {filteredThemes.map((theme) => (
+                <button
+                  key={theme.id}
+                  type='button'
+                  onClick={() => handleUpdate('theme', theme.id)}
+                  className={cn(
+                    'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all shadow-sm group min-h-[90px] cursor-pointer',
+                    theme.previewClass,
+                    themeName === theme.id
+                      ? 'border-primary ring-2 ring-primary/10'
+                      : 'border-border/50 hover:border-foreground/30',
+                  )}
+                >
+                  <span className='text-[10px] font-bold uppercase tracking-tight mb-2 opacity-80'>
+                    {theme.name}
+                  </span>
+                  <div
                     className={cn(
-                      'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all shadow-sm group min-h-[90px]',
-                      theme.previewClass,
-                      themeName === theme.id
-                        ? 'border-primary ring-2 ring-primary/10'
-                        : 'border-border/50 hover:border-foreground/30',
+                      'w-full h-6 rounded flex items-center justify-center text-[8px] font-medium border shadow-sm',
+                      getPreviewButtonClass(theme.id),
                     )}
                   >
-                    <span className='text-[10px] font-bold uppercase tracking-tight mb-2 opacity-80'>
-                      {theme.name}
-                    </span>
-                    <div
-                      className={cn(
-                        'w-full h-6 rounded flex items-center justify-center text-[8px] font-medium border shadow-sm',
-                        getPreviewButtonClass(theme.id),
-                      )}
-                    >
-                      Button
+                    Button
+                  </div>
+                  {themeName === theme.id && (
+                    <div className='absolute -top-1 -right-1 bg-primary rounded-full p-1 shadow-lg z-10 ring-2 ring-background'>
+                      <LuCheck className='w-3 h-3 text-primary-foreground' />
                     </div>
-                    {themeName === theme.id && (
-                      <div className='absolute -top-1 -right-1 bg-primary rounded-full p-1 shadow-lg z-10 ring-2 ring-background'>
-                        <LuCheck className='w-3 h-3 text-primary-foreground' />
-                      </div>
-                    )}
-                  </motion.button>
-                ))}
-              </AnimatePresence>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 
