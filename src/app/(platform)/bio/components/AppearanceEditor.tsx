@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LuCheck, LuPalette, LuShare2, LuChevronRight } from 'react-icons/lu';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Card,
   CardContent,
@@ -21,6 +22,7 @@ interface AppearanceEditorProps {
   initialButtonStyle: string;
   initialButtonShape: string;
   initialSocialLinks: Record<string, string>;
+  isLoading?: boolean;
   onPreviewUpdate: (
     theme: string,
     style: string,
@@ -122,21 +124,31 @@ export default function AppearanceEditor({
   initialButtonStyle,
   initialButtonShape,
   initialSocialLinks,
+  isLoading,
   onPreviewUpdate,
 }: AppearanceEditorProps) {
   const router = useRouter();
   const [themeName, setThemeName] = useState(initialTheme);
   const [buttonStyle, setButtonStyle] = useState<ButtonStyle>(
-    (initialButtonStyle as ButtonStyle) || 'default',
+    (initialButtonStyle as ButtonStyle) ?? 'default',
   );
   const [buttonShape, setButtonShape] = useState<ButtonShape>(
-    (initialButtonShape as ButtonShape) || 'rounded',
+    (initialButtonShape as ButtonShape) ?? 'rounded',
   );
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>(
     initialSocialLinks || {},
   );
 
-  const [activeCategory, setActiveCategory] = useState<ThemeCategory>('solid');
+  const initialCategory =
+    THEME_LIST.find((t) => t.id === initialTheme)?.category ?? null;
+  const [activeCategory, setActiveCategory] = useState<ThemeCategory | null>(
+    initialCategory,
+  );
+  const [prevCategory, setPrevCategory] = useState(initialCategory);
+  if (initialCategory !== prevCategory) {
+    setPrevCategory(initialCategory);
+    if (initialCategory) setActiveCategory(initialCategory);
+  }
   const [error, setError] = useState<string | null>(null);
   const [appearanceStatus, setAppearanceStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
@@ -285,9 +297,9 @@ export default function AppearanceEditor({
     return `${colors.buttonBg} ${colors.buttonBorder} ${colors.buttonText}`;
   };
 
-  const filteredThemes = THEME_LIST.filter(
-    (t) => t.category === activeCategory,
-  );
+  const filteredThemes = activeCategory
+    ? THEME_LIST.filter((t) => t.category === activeCategory)
+    : [];
 
   return (
     <div className='space-y-6'>
@@ -334,40 +346,50 @@ export default function AppearanceEditor({
             </div>
 
             <div
-              key={activeCategory}
+              key={activeCategory ?? 'empty'}
               className='grid grid-cols-2 sm:grid-cols-3 gap-3 animate-in fade-in duration-150'
             >
-              {filteredThemes.map((theme) => (
-                <button
-                  key={theme.id}
-                  type='button'
-                  onClick={() => handleUpdate('theme', theme.id)}
-                  className={cn(
-                    'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all shadow-sm group min-h-[90px] cursor-pointer',
-                    theme.previewClass,
-                    themeName === theme.id
-                      ? 'border-primary ring-2 ring-primary/10'
-                      : 'border-border/50 hover:border-foreground/30',
-                  )}
-                >
-                  <span className='text-[10px] font-bold uppercase tracking-tight mb-2 opacity-80'>
-                    {theme.name}
-                  </span>
-                  <div
-                    className={cn(
-                      'w-full h-6 rounded flex items-center justify-center text-[8px] font-medium border shadow-sm',
-                      getPreviewButtonClass(theme.id),
-                    )}
-                  >
-                    Button
-                  </div>
-                  {themeName === theme.id && (
-                    <div className='absolute -top-1 -right-1 bg-primary rounded-full p-1 shadow-lg z-10 ring-2 ring-background'>
-                      <LuCheck className='w-3 h-3 text-primary-foreground' />
+              {filteredThemes.length === 0
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className='flex flex-col items-center justify-center p-3 rounded-xl border-2 border-border/50 min-h-[90px] bg-secondary/50'
+                    >
+                      <Skeleton className='h-3 w-12 rounded mb-2' />
+                      <Skeleton className='w-full h-6 rounded' />
                     </div>
-                  )}
-                </button>
-              ))}
+                  ))
+                : filteredThemes.map((theme) => (
+                    <button
+                      key={theme.id}
+                      type='button'
+                      onClick={() => handleUpdate('theme', theme.id)}
+                      className={cn(
+                        'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all shadow-sm group min-h-[90px] cursor-pointer',
+                        theme.previewClass,
+                        themeName === theme.id
+                          ? 'border-primary ring-2 ring-primary/10'
+                          : 'border-border/50 hover:border-foreground/30',
+                      )}
+                    >
+                      <span className='text-[10px] font-bold uppercase tracking-tight mb-2 opacity-80'>
+                        {theme.name}
+                      </span>
+                      <div
+                        className={cn(
+                          'w-full h-6 rounded flex items-center justify-center text-[8px] font-medium border shadow-sm',
+                          getPreviewButtonClass(theme.id),
+                        )}
+                      >
+                        Button
+                      </div>
+                      {themeName === theme.id && (
+                        <div className='absolute -top-1 -right-1 bg-primary rounded-full p-1 shadow-lg z-10 ring-2 ring-background'>
+                          <LuCheck className='w-3 h-3 text-primary-foreground' />
+                        </div>
+                      )}
+                    </button>
+                  ))}
             </div>
           </div>
 
@@ -378,54 +400,63 @@ export default function AppearanceEditor({
                 Button Shape
               </Label>
               <div className='grid grid-cols-2 gap-2'>
-                {[
-                  {
-                    id: 'rounded' as ButtonShape,
-                    name: 'Rounded',
-                    radius: 'rounded-xl',
-                  },
-                  {
-                    id: 'pill' as ButtonShape,
-                    name: 'Pill',
-                    radius: 'rounded-full',
-                  },
-                  {
-                    id: 'leaf' as ButtonShape,
-                    name: 'Leaf',
-                    radius: 'rounded-tr-2xl rounded-bl-2xl',
-                  },
-                  {
-                    id: 'square' as ButtonShape,
-                    name: 'Square',
-                    radius: 'rounded-none',
-                  },
-                ].map((shape) => (
-                  <button
-                    key={shape.id}
-                    type='button'
-                    onClick={() => handleUpdate('shape', shape.id)}
-                    className={cn(
-                      'relative flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all bg-secondary/5',
-                      buttonShape === shape.id
-                        ? 'border-primary ring-2 ring-primary/5 bg-primary/5'
-                        : 'border-border/50 hover:border-foreground/20',
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        'w-full py-2 px-2 text-[9px] font-bold text-center border bg-card text-card-foreground border-border shadow-sm',
-                        shape.radius,
-                      )}
-                    >
-                      {shape.name}
-                    </div>
-                    {buttonShape === shape.id && (
-                      <div className='absolute -top-1 -right-1 bg-primary rounded-full p-0.5 shadow-md'>
-                        <LuCheck className='w-2.5 h-2.5 text-primary-foreground' />
+                {isLoading
+                  ? Array.from({ length: 4 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className='flex flex-col items-center justify-center p-3 rounded-lg border-2 border-border/50 bg-secondary/50'
+                      >
+                        <Skeleton className='w-full h-8 rounded' />
                       </div>
-                    )}
-                  </button>
-                ))}
+                    ))
+                  : [
+                      {
+                        id: 'rounded' as ButtonShape,
+                        name: 'Rounded',
+                        radius: 'rounded-xl',
+                      },
+                      {
+                        id: 'pill' as ButtonShape,
+                        name: 'Pill',
+                        radius: 'rounded-full',
+                      },
+                      {
+                        id: 'leaf' as ButtonShape,
+                        name: 'Leaf',
+                        radius: 'rounded-tr-2xl rounded-bl-2xl',
+                      },
+                      {
+                        id: 'square' as ButtonShape,
+                        name: 'Square',
+                        radius: 'rounded-none',
+                      },
+                    ].map((shape) => (
+                      <button
+                        key={shape.id}
+                        type='button'
+                        onClick={() => handleUpdate('shape', shape.id)}
+                        className={cn(
+                          'relative flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all bg-secondary/5',
+                          buttonShape === shape.id
+                            ? 'border-primary ring-2 ring-primary/5 bg-primary/5'
+                            : 'border-border/50 hover:border-foreground/20',
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'w-full py-2 px-2 text-[9px] font-bold text-center border bg-card text-card-foreground border-border shadow-sm',
+                            shape.radius,
+                          )}
+                        >
+                          {shape.name}
+                        </div>
+                        {buttonShape === shape.id && (
+                          <div className='absolute -top-1 -right-1 bg-primary rounded-full p-0.5 shadow-md'>
+                            <LuCheck className='w-2.5 h-2.5 text-primary-foreground' />
+                          </div>
+                        )}
+                      </button>
+                    ))}
               </div>
             </div>
 
@@ -435,44 +466,53 @@ export default function AppearanceEditor({
                 Button Fill
               </Label>
               <div className='grid grid-cols-2 gap-2'>
-                {[
-                  {
-                    id: 'default' as ButtonStyle,
-                    name: 'Solid',
-                    class: 'bg-card border-border shadow-sm',
-                  },
-                  {
-                    id: 'transparent' as ButtonStyle,
-                    name: 'Transparent',
-                    class: 'bg-transparent border-2 border-foreground/20',
-                  },
-                ].map((style) => (
-                  <button
-                    key={style.id}
-                    type='button'
-                    onClick={() => handleUpdate('style', style.id)}
-                    className={cn(
-                      'relative flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all bg-secondary/5',
-                      buttonStyle === style.id
-                        ? 'border-primary ring-2 ring-primary/5 bg-primary/5'
-                        : 'border-border/50 hover:border-foreground/20',
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        'w-full py-2 px-2 text-[9px] font-bold text-center rounded border flex items-center justify-center h-8',
-                        style.class,
-                      )}
-                    >
-                      {style.name}
-                    </div>
-                    {buttonStyle === style.id && (
-                      <div className='absolute -top-1 -right-1 bg-primary rounded-full p-0.5 shadow-md'>
-                        <LuCheck className='w-2.5 h-2.5 text-primary-foreground' />
+                {isLoading
+                  ? Array.from({ length: 2 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className='flex flex-col items-center justify-center p-3 rounded-lg border-2 border-border/50 bg-secondary/50'
+                      >
+                        <Skeleton className='w-full h-8 rounded' />
                       </div>
-                    )}
-                  </button>
-                ))}
+                    ))
+                  : [
+                      {
+                        id: 'default' as ButtonStyle,
+                        name: 'Solid',
+                        class: 'bg-card border-border shadow-sm',
+                      },
+                      {
+                        id: 'transparent' as ButtonStyle,
+                        name: 'Transparent',
+                        class: 'bg-transparent border-2 border-foreground/20',
+                      },
+                    ].map((style) => (
+                      <button
+                        key={style.id}
+                        type='button'
+                        onClick={() => handleUpdate('style', style.id)}
+                        className={cn(
+                          'relative flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all bg-secondary/5',
+                          buttonStyle === style.id
+                            ? 'border-primary ring-2 ring-primary/5 bg-primary/5'
+                            : 'border-border/50 hover:border-foreground/20',
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'w-full py-2 px-2 text-[9px] font-bold text-center rounded border flex items-center justify-center h-8',
+                            style.class,
+                          )}
+                        >
+                          {style.name}
+                        </div>
+                        {buttonStyle === style.id && (
+                          <div className='absolute -top-1 -right-1 bg-primary rounded-full p-0.5 shadow-md'>
+                            <LuCheck className='w-2.5 h-2.5 text-primary-foreground' />
+                          </div>
+                        )}
+                      </button>
+                    ))}
               </div>
             </div>
           </div>
@@ -528,6 +568,7 @@ export default function AppearanceEditor({
                     })
                   }
                   placeholder={platform.placeholder}
+                  disabled={isLoading}
                   className='h-9 text-xs pl-7 pr-8 bg-secondary/5 border-border/50 group-hover:border-foreground/30 transition-all focus-visible:ring-primary/20'
                 />
                 <div className='absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/30'>

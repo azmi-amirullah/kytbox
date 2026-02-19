@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { LuEye, LuLink, LuPalette } from 'react-icons/lu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LinksTabContent from './LinksTabContent';
@@ -44,7 +45,11 @@ export default function DashboardClient({
   isLoading,
   activeTab = DEFAULT_TAB,
 }: DashboardClientProps) {
-  const [currentTab, setCurrentTab] = useState<BioTab>(activeTab);
+  const searchParams = useSearchParams();
+  const urlTab = searchParams.get('tab') as BioTab | null;
+  const resolvedTab =
+    urlTab && VALID_TABS.includes(urlTab) ? urlTab : activeTab;
+  const [currentTab, setCurrentTab] = useState<BioTab>(resolvedTab);
 
   const [links, setLinks] = useState<LinkType[]>(initialLinks);
   const [themeName, setThemeName] = useState(profile?.theme_name || 'default');
@@ -61,6 +66,10 @@ export default function DashboardClient({
   useEffect(() => {
     setLinks(initialLinks);
   }, [initialLinks]);
+
+  useEffect(() => {
+    setCurrentTab(resolvedTab);
+  }, [resolvedTab]);
 
   const handleTabChange = useCallback((value: string) => {
     const newTab = value as BioTab;
@@ -127,12 +136,19 @@ export default function DashboardClient({
             )}
           >
             <AppearanceEditor
-              initialTheme={profile?.theme_name || 'default'}
-              initialButtonStyle={profile?.button_style || 'default'}
-              initialButtonShape={profile?.button_shape || 'rounded'}
-              initialSocialLinks={
-                (profile?.social_links as Record<string, string>) || {}
+              initialTheme={isLoading ? '' : profile?.theme_name || 'default'}
+              initialButtonStyle={
+                isLoading ? '' : profile?.button_style || 'default'
               }
+              initialButtonShape={
+                isLoading ? '' : profile?.button_shape || 'rounded'
+              }
+              initialSocialLinks={
+                isLoading
+                  ? {}
+                  : (profile?.social_links as Record<string, string>) || {}
+              }
+              isLoading={isLoading}
               onPreviewUpdate={(
                 theme: string,
                 style: string,
