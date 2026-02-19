@@ -9,6 +9,9 @@ This document defines the monetization model, pricing strategy, and technical ar
 > **Documentation Note:** This document includes detailed architectural specs for future phases (Payment Integration, Gating). We document them **now** so we understand the _implementation path_ and _structural requirements_ early, avoiding costly refactors later. **Knowing "Why later" is as important as knowing "What now".**
 >
 > **See Also:** [PRE_MONETIZATION_IMPROVEMENTS.md](./PRE_MONETIZATION_IMPROVEMENTS.md) for the UX, legal, and support readiness work required **before** enabling payments.
+>
+> > [!WARNING]
+> > **STATUS UPDATE (Feb 2026):** Implementation of this monetization architecture is currently **ON HOLD**. The team is prioritizing core product features (Bio Editor, Auto-save, etc.) before introducing payment gates. All schema migrations and integrations below are deferred.
 
 ---
 

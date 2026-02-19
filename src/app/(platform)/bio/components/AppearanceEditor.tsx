@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { LuCheck, LuPalette, LuLoader } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { LuCheck, LuPalette } from 'react-icons/lu';
 import { Label } from '@/components/ui/label';
 import {
   Card,
@@ -38,9 +37,67 @@ export default function AppearanceEditor({
   const [buttonShape, setButtonShape] = useState<ButtonShape>(
     (initialButtonShape as ButtonShape) || 'rounded',
   );
-  const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  // Removed manual saving state
   const [error, setError] = useState<string | null>(null);
+
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
+    'idle',
+  );
+
+  // Auto-save effect
+  useEffect(() => {
+    // Skip if values match initial (on mount) or if we are already saving
+    if (
+      themeName === initialTheme &&
+      buttonStyle === initialButtonStyle &&
+      buttonShape === initialButtonShape
+    ) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setStatus('saving');
+      const startTime = Date.now();
+
+      const formData = new FormData();
+      formData.append('themeName', themeName);
+      formData.append('buttonStyle', buttonStyle);
+      formData.append('buttonShape', buttonShape);
+
+      const result = await updateAppearance(formData);
+
+      // Enforce minimum display time for "Saving..." state (500ms)
+      const elapsed = Date.now() - startTime;
+      const minDuration = 500;
+      if (elapsed < minDuration) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, minDuration - elapsed),
+        );
+      }
+
+      if (result.error) {
+        setStatus('error');
+        setError(result.error);
+      } else {
+        setStatus('saved');
+        setError(null);
+        router.refresh();
+
+        // Reset to idle after showing saved state
+        setTimeout(() => setStatus('idle'), 2000);
+      }
+    }, 500); // 1s debounce
+
+    return () => clearTimeout(timer);
+  }, [
+    themeName,
+    buttonStyle,
+    buttonShape,
+    initialTheme,
+    initialButtonStyle,
+    initialButtonShape,
+    router,
+  ]);
 
   const handleUpdate = (type: 'theme' | 'style' | 'shape', value: string) => {
     if (type === 'theme') {
@@ -55,28 +112,6 @@ export default function AppearanceEditor({
     }
   };
 
-  async function handleSave() {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    const formData = new FormData();
-    formData.append('themeName', themeName);
-    formData.append('buttonStyle', buttonStyle);
-    formData.append('buttonShape', buttonShape);
-
-    const result = await updateAppearance(formData);
-
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setSuccess(true);
-      router.refresh();
-      setTimeout(() => setSuccess(false), 3000);
-    }
-    setIsLoading(false);
-  }
-
   // Get preview button class based on theme - uses centralized config
   const getPreviewButtonClass = (themeId: string) => {
     const theme = THEME_LIST.find((t) => t.id === themeId);
@@ -86,16 +121,53 @@ export default function AppearanceEditor({
   };
 
   return (
-    <Card className='border-border bg-card shadow-sm'>
-      <CardHeader>
-        <CardTitle className='text-lg flex items-center gap-2'>
-          <LuPalette className='w-5 h-5 text-primary' />
-          Appearance
-        </CardTitle>
-        <CardDescription>
-          Customize your Bio page&apos;s theme and button styles
-        </CardDescription>
+    <Card className='border-border bg-card shadow-sm relative overflow-hidden'>
+      {/* Scope the loader to the top of the card */}
+      {status === 'saving' && (
+        <div className='absolute top-0 left-0 right-0 h-1 bg-primary/20 z-10'>
+          <motion.div
+            className='h-full bg-primary'
+            initial={{ width: '0%' }}
+            animate={{ width: '100%' }}
+            transition={{ duration: 1, ease: 'linear' }}
+          />
+        </div>
+      )}
+
+      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-4'>
+        <div>
+          <CardTitle className='text-lg flex items-center gap-2'>
+            <LuPalette className='w-5 h-5 text-primary' />
+            Appearance
+          </CardTitle>
+          <CardDescription>
+            Customize your Bio page&apos;s theme and button styles
+          </CardDescription>
+        </div>
+
+        {/* Status Indicator */}
+        <div className='flex items-center gap-2 text-xs font-medium min-h-[20px]'>
+          {status === 'saving' && (
+            <span className='text-muted-foreground animate-pulse'>
+              Saving...
+            </span>
+          )}
+          {status === 'saved' && (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className='text-green-600 dark:text-green-400 flex items-center gap-1.5'
+            >
+              <LuCheck className='w-3.5 h-3.5' />
+              Saved
+            </motion.span>
+          )}
+          {status === 'error' && (
+            <span className='text-destructive'>Failed to save</span>
+          )}
+        </div>
       </CardHeader>
+
       <CardContent className='space-y-4 md:space-y-6'>
         {/* Theme Selection */}
         <div className='space-y-2 sm:space-y-3'>
@@ -247,46 +319,12 @@ export default function AppearanceEditor({
           </div>
         </div>
 
-        {/* Error/Success Messages */}
+        {/* Error Message */}
         {error && (
           <div className='p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs text-center'>
             {error}
           </div>
         )}
-
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className='p-3 rounded-md bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs text-center flex items-center justify-center gap-2'
-          >
-            <LuCheck className='w-3 h-3' />
-            Appearance updated
-          </motion.div>
-        )}
-
-        {/* Save Button */}
-        <div className='pt-2'>
-          <Button
-            onClick={handleSave}
-            disabled={
-              isLoading ||
-              (themeName === initialTheme &&
-                buttonStyle === initialButtonStyle &&
-                buttonShape === initialButtonShape)
-            }
-            className='w-full font-bold uppercase tracking-wider text-xs'
-          >
-            {isLoading ? (
-              <>
-                <LuLoader className='mr-2 h-3 w-3 animate-spin' />
-                Saving...
-              </>
-            ) : (
-              'Save Appearance'
-            )}
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

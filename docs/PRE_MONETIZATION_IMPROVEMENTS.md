@@ -6,6 +6,9 @@ This document outlines the critical improvements and operational requirements ne
 > **Documentation Strategy:** We are detailing these requirements **now**—even if some implementation happens later—so we clearly understand the "Why" behind our implementation order. Knowing why we wait is just as important as knowing what we build.
 >
 > **See Also:** [MONETIZATION.md](./MONETIZATION.md) for pricing, payment integration architecture, and the full implementation roadmap.
+>
+> > [!WARNING]
+> > **STATUS UPDATE (Feb 2026):** Monetization integration (Phase 3) is currently **ON HOLD** to prioritize core UX improvements. We will complete Phase 1 & 2 items before revisiting payments.
 
 ---
 
@@ -217,7 +220,7 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 - [x] **High:** Create Legal Pages (Compliance).
 - [x] **High:** Build Internal Support System (Critical for Trust).
 - [x] **High:** Add `role` column to schema (Architecture).
-- [ ] **Medium:** Auto-save for appearance.
+- [x] **Medium:** Auto-save for appearance.
 - [ ] **Low:** Advanced empty states.
 
 _Last Updated: February 13, 2026_
