@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { LuExternalLink, LuEye, LuLink, LuPalette } from 'react-icons/lu';
+import { LuEye, LuLink, LuPalette } from 'react-icons/lu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LinksTabContent from './LinksTabContent';
 import PhonePreview from './PhonePreview';
@@ -12,7 +11,10 @@ import AppearanceEditor from './AppearanceEditor';
 import type { Database } from '@/types/supabase';
 
 type LinkType = Database['public']['Tables']['links']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'] & {
+export type Profile = Omit<
+  Database['public']['Tables']['profiles']['Row'],
+  'social_links'
+> & {
   social_links?: Record<string, string> | null;
 };
 
@@ -71,7 +73,7 @@ export default function DashboardClient({
   );
 
   return (
-    <div className='grid lg:grid-cols-[1fr_400px] gap-4 lg:gap-8'>
+    <div className='grid lg:grid-cols-[1fr_440px] gap-4 lg:gap-8'>
       {/* Left Column: Editor */}
       <div className='space-y-4 md:space-y-6 min-w-0'>
         {/* Breadcrumb + Title */}
@@ -160,20 +162,6 @@ export default function DashboardClient({
             links={links}
             isLoading={isLoading}
           />
-          <div className='text-center mt-6'>
-            {isLoading ? (
-              <Skeleton className='h-4 w-32 mx-auto rounded' />
-            ) : (
-              <a
-                href={publicUrl}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='inline-flex items-center gap-2 text-sm text-primary hover:underline'
-              >
-                Open public page <LuExternalLink className='w-3 h-3' />
-              </a>
-            )}
-          </div>
         </div>
       </div>
 

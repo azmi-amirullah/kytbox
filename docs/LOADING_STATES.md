@@ -25,10 +25,24 @@ export default function FeatureClient({ data, isLoading }: Props) {
 }
 
 // 2. The loading.tsx file simply renders the client in loading mode
+// This ensures that the skeleton perfectly matches the hydrated state.
 export default function Loading() {
-  return <FeatureClient isLoading={true} data={[]} />;
+  return (
+    <FeatureClient
+      isLoading={true}
+      data={[]} // Pass empty/dummy data
+    />
+  );
 }
 ```
+
+### Pixel-Perfect Matching Requirements
+
+To achieve **Zero Layout Shift**, skeletons must exactly match the hydrated UI:
+
+- **Responsive Sizing**: Skeletons must use the same `md:` and `lg:` classes as the real content (e.g., responsive font sizes, avatar dimensions).
+- **Exact Heights**: Fixed-height elements (like buttons) must have their exact height defined in the skeleton (e.g., `h-[60px]`).
+- **Standard Link Count**: Common lists (like Bio links) should show **3 skeletons** by default to prevent vertical jumping when data arrives.
 
 ## Hydration & Performance Best Practices
 
@@ -58,6 +72,14 @@ useEffect(() => {
 
 const showSkeleton = isLoading || !mounted;
 ```
+
+### 3. Zero-Flash Hydration (Public Pages)
+
+On public-facing pages that are server-rendered with a theme (like the Bio profile), a hydration guard can cause a **"Double Flash"** (Server HTML -> Client Skeleton -> Real UI).
+
+- **Rule**: If the page is server-rendered and the content is static/themed, **do not** use a hydration guard for the entire layout.
+- **Action**: Render the themed HTML immediately. The client will hydrate in the background without switching back to a skeleton.
+- [ProfileView.tsx](file:///src/app/[username]/components/ProfileView.tsx) follows this pattern.
 
 ### 3. Disable Growth Animations
 

@@ -8,18 +8,42 @@ interface SocialGridProps {
   socialLinks: Record<string, string>;
   theme: ThemeConfig;
   className?: string;
+  isLoading?: boolean;
 }
 
 export default function SocialGrid({
   socialLinks,
   theme,
   className,
+  isLoading,
 }: SocialGridProps) {
+  const { colors } = theme;
+
+  if (isLoading) {
+    return (
+      <div
+        className={cn(
+          'flex flex-wrap items-center justify-center gap-3 w-full',
+          className,
+        )}
+      >
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className={cn(
+              'w-8 h-8 rounded-full border shadow-sm backdrop-blur-sm animate-pulse',
+              colors.elementBg,
+              colors.elementBorder,
+            )}
+          />
+        ))}
+      </div>
+    );
+  }
+
   const links = Object.entries(socialLinks).filter(([, url]) => !!url);
 
   if (links.length === 0) return null;
-
-  const { colors } = theme;
 
   return (
     <div

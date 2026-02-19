@@ -43,22 +43,15 @@ export function validateButtonShape(
   return 'rounded';
 }
 
-export interface ButtonClassOptions {
-  /** 'preview' for dashboard preview, 'full' for public profile with animations */
-  variant?: 'preview' | 'full';
-}
-
 /**
- * Get button classes based on theme, style, shape, and variant
+ * Get button classes based on theme, style, and shape
  */
 export function getButtonClasses(
   theme: ThemeConfig,
   buttonStyle: ButtonStyle = 'default',
   buttonShape: ButtonShape = 'rounded',
-  options: ButtonClassOptions = {},
 ): string {
   const { colors } = theme;
-  const { variant = 'preview' } = options;
   const shapeClass =
     buttonShape === 'square'
       ? 'rounded-none'
@@ -68,21 +61,15 @@ export function getButtonClasses(
           ? 'rounded-tr-2xl rounded-bl-2xl'
           : 'rounded-xl';
 
-  // Base classes for full variant (public profile pages)
-  const fullBaseClasses =
-    variant === 'full'
-      ? 'block w-full p-4 md:p-5 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5 backdrop-blur-sm'
-      : '';
-
-  // Preview variant classes (dashboard phone preview)
-  const previewBaseClasses =
-    variant === 'preview' ? 'shadow-sm backdrop-blur-sm' : '';
+  // Base classes for the unified profile buttons (mobile-standard)
+  const baseClasses =
+    'block w-full p-4 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5 backdrop-blur-sm shadow-sm';
 
   if (buttonStyle === 'transparent') {
-    return `${fullBaseClasses} ${shapeClass} bg-transparent border-2 ${colors.outlineBorder} ${colors.outlineText} ${colors.outlineHoverBg}`.trim();
+    return `${baseClasses} ${shapeClass} bg-transparent border-2 ${colors.outlineBorder} ${colors.outlineText} ${colors.outlineHoverBg}`.trim();
   }
 
-  return `${fullBaseClasses} ${previewBaseClasses} ${shapeClass} ${colors.buttonBg} border ${colors.buttonBorder} ${colors.buttonText} ${colors.buttonHoverBg} ${colors.buttonHoverBorder}`.trim();
+  return `${baseClasses} ${shapeClass} ${colors.buttonBg} border ${colors.buttonBorder} ${colors.buttonText} ${colors.buttonHoverBg} ${colors.buttonHoverBorder}`.trim();
 }
 
 /**

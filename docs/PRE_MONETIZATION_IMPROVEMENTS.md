@@ -214,13 +214,12 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 
 ---
 
-## 6. Priority Checklist
-
 - [x] **High:** Refactor Bio Dashboard to Tabs (UX Scalability).
+- [x] **High:** 1:1 Parity & Unified Skeleton Architecture (UX Quality).
 - [x] **High:** Create Legal Pages (Compliance).
 - [x] **High:** Build Internal Support System (Critical for Trust).
 - [x] **High:** Add `role` column to schema (Architecture).
-- [x] **Medium:** Auto-save for appearance.
+- [x] **High:** Auto-save for appearance (Operational Efficiency).
 - [ ] **Low:** Advanced empty states.
 
-_Last Updated: February 13, 2026_
+_Last Updated: February 19, 2026_

@@ -11,5 +11,4 @@ export {
   getShapeClass,
   validateButtonStyle,
   validateButtonShape,
-  type ButtonClassOptions,
 } from './theme.utils';
