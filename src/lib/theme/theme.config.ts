@@ -6,7 +6,7 @@ import type { ThemeConfig, ThemeId } from './theme.types';
  * Central config for all preset themes.
  * All colors are explicit Tailwind classes for theme isolation.
  */
-export const THEMES: Record<ThemeId, ThemeConfig> = {
+export const THEMES: Record<Exclude<ThemeId, 'custom'>, ThemeConfig> = {
   default: {
     id: 'default',
     name: 'Clean Light',

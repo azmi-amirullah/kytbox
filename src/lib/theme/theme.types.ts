@@ -38,7 +38,12 @@ export interface ThemeColors {
   footerBrandText: string;
 }
 
-export type ThemeCategory = 'solid' | 'gradient' | 'soft' | 'special';
+export type ThemeCategory =
+  | 'solid'
+  | 'gradient'
+  | 'soft'
+  | 'special'
+  | 'custom';
 
 export interface ThemeConfig {
   id: string;
@@ -61,7 +66,23 @@ export type ThemeId =
   | 'sunset'
   | 'rosegold'
   | 'ocean'
-  | 'charcoal';
+  | 'charcoal'
+  | 'custom';
 
 export type ButtonStyle = 'default' | 'transparent';
 export type ButtonShape = 'rounded' | 'square' | 'pill' | 'leaf';
+
+export interface CustomThemeData {
+  background: string;
+  textPrimary: string;
+  textSecondary: string;
+  elementBg: string;
+  elementBorder: string;
+  elementRing: string;
+  buttonBg: string;
+  buttonBorder: string;
+  buttonText: string;
+  footerBg: string;
+  footerBorder: string;
+  footerText: string;
+}

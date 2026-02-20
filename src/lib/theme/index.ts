@@ -9,6 +9,7 @@ export {
   getEmptyStateClasses,
   getFooterClasses,
   getShapeClass,
+  normalizeHex,
   validateButtonStyle,
   validateButtonShape,
 } from './theme.utils';

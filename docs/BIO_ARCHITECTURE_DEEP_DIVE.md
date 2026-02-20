@@ -59,8 +59,34 @@ The orchestrator. It is responsible for the themed container, branding footer, a
 
 Handles platform auto-detection. It now supports a premium loading state with circular icon skeletons to maintain row geometry.
 
-## 5. Summary of Achievements
+## 5. Dynamic Theme Engine
+
+In February 2026, we introduced a high-performance **Custom Theme System** that allows users to define their own visual branding while maintaining the "Parity" and "Performance" goals of the project.
+
+### 5.1 CSS Variable Injection
+
+To keep the components decoupled from specific hex values, we use **CSS Variables** (`--custom-bg`, `--custom-text-primary`, etc.).
+
+- **Centralized Logic**: [ProfileView.tsx](file:///src/app/[username]/components/ProfileView.tsx) acts as the bridge, injecting these variables via a `style` attribute on the root container.
+- **Tailwind Integration**: Components use standard Tailwind classes that reference these variables (e.g., `text-[var(--custom-text-primary)]`), allowing us to use Tailwind's utilities (like `opacity-80` or `hover:`) alongside custom colors.
+
+### 5.2 Performance: The Debounce Pattern
+
+To prevent UI lag in the Dashboard preview while users are typing Hex codes:
+
+1. **Local State Snapshot**: [AppearanceEditor.tsx](<file:///src/app/(platform)/bio/components/AppearanceEditor.tsx>) maintains a local synchronous state for the input boxes.
+2. **Debounced Propagation**: A `useEffect` hook waits for **300ms** of inactivity before updating the shared `previewState`. This ensures a buttery-smooth typing experience on mobile and desktop alike.
+
+### 5.3 Technical Resilience: Hex Normalization
+
+To ensure the CSS Variables never "break" during typing, we implemented an **Auto-Padding Normalizer** in [theme.utils.ts](file:///src/lib/theme/theme.utils.ts):
+
+- **Predictive Padding**: Incomplete hex codes like `#FF` are automatically treated as `#FF0000` (Red) in the CSS variables.
+- **Strict Validation**: If invalid characters (e.g., `X`, `G`) are detected, the system safely defaults to `#000000` (Black) to match native browser color-picker behavior.
+
+## 6. Summary of Achievements
 
 ✅ **Zero Layout Shift (CLS)**: Skeletons and UI are geographically identical.
 ✅ **Mobile-True Preview**: Dashboard preview is now an authentic representation of the public page.
 ✅ **Unified Codebase**: 40% reduction in conditional rendering logic in bio components.
+✅ **High-Performance Personalization**: Fluid, real-time custom theme engine with zero-lag inputs.

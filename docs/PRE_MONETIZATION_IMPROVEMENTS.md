@@ -63,13 +63,14 @@ Restructure the Bio Dashboard into isolated contexts using URL-driven state (`?t
   - **No Auto-Save:** Does _not_ save to database.
   - **Upgrade Trigger:** If the user tries to navigate away or "Publish", show the Upgrade Modal.
 
-### 2.2 Data Model Impact
+### 2.2 Data Model Implementation
 
-No schema changes required. Theme preferences are stored as individual columns on `profiles`:
+Originally planned as static themes, the system was upgraded in February 2026 to support **Dynamic Custom Themes**. This required specific schema additions to `profiles`:
 
-- `theme_name` — Theme ID string (e.g., `'gradient'`, `'dark'`)
-- `button_style` — Button fill style (e.g., `'solid'`, `'outline'`)
-- `button_shape` — Button corner style (e.g., `'rounded'`, `'square'`)
+- `custom_theme` (JSONB) — Stores hex variables and alpha channel data for the theme engine.
+- `button_style` — Button fill style (e.g., `'solid'`, `'outline'`).
+- `button_shape` — Button corner style (e.g., `'rounded'`, `'square'`).
+- `theme_name` — Theme ID string. Set to `'custom'` when the engine is active.
 
 ---
 
@@ -199,13 +200,13 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 
 ### Phase 1: Architecture & UX (Immediate)
 
-1.  **Tab System:** Refactor Bio Dashboard layout.
-2.  **Appearance:** Implement auto-save and categories.
+1.  **Tab System:** Refactor Bio Dashboard layout. [x]
+2.  **Appearance:** Implement categories and high-performance Custom Theme engine. [x]
 
 ### Phase 2: Operational (Before Lemon Squeezy Integration)
 
-1.  **Legal Pages:** Add `/terms`, `/privacy`, and `/refund`. (Done)
-2.  **Support System:** Build `/support` (User) and `/support-admin` (Admin).
+1.  **Legal Pages:** Add `/terms`, `/privacy`, and `/refund`. [x]
+2.  **Support System:** Build `/support` (User) and `/support-admin` (Admin). [x]
 
 ### Phase 3: Monetization Core
 
@@ -219,7 +220,9 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 - [x] **High:** Create Legal Pages (Compliance).
 - [x] **High:** Build Internal Support System (Critical for Trust).
 - [x] **High:** Add `role` column to schema (Architecture).
+- [x] **High:** Add `tier` column to schema (Architecture).
+- [ ] **High:** Add `canAccess` feature gate utility (Architecture).
 - [x] **High:** Auto-save for appearance (Operational Efficiency).
 - [ ] **Low:** Advanced empty states.
 
-_Last Updated: February 19, 2026_
+_Last Updated: February 20, 2026_

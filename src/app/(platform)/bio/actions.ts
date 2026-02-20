@@ -171,12 +171,14 @@ export async function updateAppearance(formData: FormData) {
   const buttonStyle = formData.get('buttonStyle') as string;
   const buttonShape = formData.get('buttonShape') as string;
   const socialLinksRaw = formData.get('socialLinks') as string;
+  const customThemeRaw = formData.get('customTheme') as string;
 
   const updateData: {
     theme_name: string;
     button_style: string;
     button_shape: string;
     social_links?: Record<string, string>;
+    custom_theme?: Record<string, string> | null;
   } = {
     theme_name: themeName,
     button_style: buttonStyle,
@@ -188,6 +190,14 @@ export async function updateAppearance(formData: FormData) {
       updateData.social_links = JSON.parse(socialLinksRaw);
     } catch (e) {
       console.error('Failed to parse social links JSON', e);
+    }
+  }
+
+  if (themeName === 'custom' && customThemeRaw) {
+    try {
+      updateData.custom_theme = JSON.parse(customThemeRaw);
+    } catch (e) {
+      console.error('Failed to parse custom theme JSON', e);
     }
   }
 

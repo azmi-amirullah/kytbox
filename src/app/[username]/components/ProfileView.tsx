@@ -8,7 +8,9 @@ import {
   validateButtonStyle,
   validateButtonShape,
   getContainerClasses,
+  normalizeHex,
 } from '@/lib/theme';
+import type { CustomThemeData } from '@/lib/theme/theme.types';
 import SocialGrid from '@/app/(platform)/bio/components/SocialGrid';
 import ProfileHeader from './ProfileHeader';
 import ProfileLinks from './ProfileLinks';
@@ -20,6 +22,7 @@ interface ProfileViewProps {
     avatar_url: string | null;
     bio: string | null;
     theme_name?: string | null;
+    custom_theme?: CustomThemeData | null;
     button_style?: string | null;
     button_shape?: string | null;
     social_links?: Record<string, string> | null;
@@ -39,7 +42,7 @@ export default function ProfileView({
   links,
   isLoading,
 }: ProfileViewProps) {
-  const theme = getTheme(profile?.theme_name);
+  const theme = getTheme(profile?.theme_name, profile?.custom_theme);
   const buttonStyle = validateButtonStyle(profile?.button_style);
   const buttonShape = validateButtonShape(profile?.button_shape);
 
@@ -56,6 +59,42 @@ export default function ProfileView({
         'flex-1 min-h-full w-full selection:bg-primary/10 selection:text-primary transition-colors duration-500',
         getContainerClasses(theme),
       )}
+      style={
+        theme.id === 'custom' && profile.custom_theme
+          ? ({
+              '--custom-bg': normalizeHex(profile.custom_theme.background),
+              '--custom-text-primary': normalizeHex(
+                profile.custom_theme.textPrimary,
+              ),
+              '--custom-text-secondary': normalizeHex(
+                profile.custom_theme.textSecondary,
+              ),
+              '--custom-element-bg': normalizeHex(
+                profile.custom_theme.elementBg,
+              ),
+              '--custom-element-border': normalizeHex(
+                profile.custom_theme.elementBorder,
+              ),
+              '--custom-element-ring': normalizeHex(
+                profile.custom_theme.elementRing,
+              ),
+              '--custom-button-bg': normalizeHex(profile.custom_theme.buttonBg),
+              '--custom-button-border': normalizeHex(
+                profile.custom_theme.buttonBorder,
+              ),
+              '--custom-button-text': normalizeHex(
+                profile.custom_theme.buttonText,
+              ),
+              '--custom-footer-bg': normalizeHex(profile.custom_theme.footerBg),
+              '--custom-footer-border': normalizeHex(
+                profile.custom_theme.footerBorder,
+              ),
+              '--custom-footer-text': normalizeHex(
+                profile.custom_theme.footerText,
+              ),
+            } as React.CSSProperties)
+          : undefined
+      }
     >
       <div className='flex flex-col items-center min-h-full w-full max-w-[680px] mx-auto px-4 pt-16 pb-12 '>
         {/* Header (Avatar, Name, Bio) */}

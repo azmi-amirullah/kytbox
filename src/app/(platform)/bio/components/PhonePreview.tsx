@@ -1,6 +1,7 @@
 'use client';
 
 import ProfileView from '@/app/[username]/components/ProfileView';
+import type { CustomThemeData } from '@/lib/theme/theme.types';
 
 interface PhonePreviewProps {
   profile: {
@@ -9,6 +10,7 @@ interface PhonePreviewProps {
     avatar_url: string | null;
     bio: string | null;
     theme_name?: string | null;
+    custom_theme?: CustomThemeData | null;
     button_style?: string | null;
     button_shape?: string | null;
     social_links?: Record<string, string> | null;

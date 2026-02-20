@@ -8,13 +8,16 @@ Kytbox uses a multi-tenant database architecture powered by Supabase (PostgreSQL
 
 The root identity for all Kytbox users.
 
-| Column             | Type   | Default     | Description                                               |
-| :----------------- | :----- | :---------- | :-------------------------------------------------------- |
-| `id`               | `uuid` | -           | Primary Key (links to `auth.users`).                      |
-| `username`         | `text` | -           | Unique public handle.                                     |
-| `role`             | `text` | `'user'`    | Either `'user'` or `'admin'`. Controls restricted access. |
-| `theme_name`       | `text` | `'default'` | Bio app visual theme.                                     |
-| `default_currency` | `text` | `'USD'`     | Cashflow app default currency.                            |
+| Column             | Type    | Default     | Description                                               |
+| :----------------- | :------ | :---------- | :-------------------------------------------------------- |
+| `id`               | `uuid`  | -           | Primary Key (links to `auth.users`).                      |
+| `username`         | `text`  | -           | Unique public handle.                                     |
+| `role`             | `text`  | `'user'`    | Either `'user'` or `'admin'`. Controls restricted access. |
+| `theme_name`       | `text`  | `'default'` | Bio app visual theme.                                     |
+| `custom_theme`     | `jsonb` | `null`      | Custom Hex variables and transparency data.               |
+| `button_style`     | `text`  | `'default'` | Shape/Border style for profile buttons.                   |
+| `button_shape`     | `text`  | `'rounded'` | Corner radius/leaf style for buttons.                     |
+| `default_currency` | `text`  | `'USD'`     | Cashflow app default currency.                            |
 
 ---
 
@@ -51,11 +54,12 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 
 ### 3.2 Reference Migration History
 
-| Order | Migration                                  | Purpose                                     |
-| :---- | :----------------------------------------- | :------------------------------------------ |
-| 1     | `001_initial_schema.sql`                   | Basic profiles and auth triggers.           |
-| 2     | `20260202_create_cashflow_tables.sql`      | Multi-tenant cashflow logic.                |
+| Order | Migration                                  | Purpose                                                     |
+| :---- | :----------------------------------------- | :---------------------------------------------------------- |
+| 1     | `001_initial_schema.sql`                   | Basic profiles and auth triggers.                           |
+| 2     | `20260202_create_cashflow_tables.sql`      | Multi-tenant cashflow logic.                                |
 | 3     | `20260210190000_create_support_system.sql` | `profiles.role`, support tables, and support RPC functions. |
+| 4     | `20260220_add_custom_theme_column.sql`     | `custom_theme` JSONB, `button_style`, and `button_shape`.   |
 
 ---
 

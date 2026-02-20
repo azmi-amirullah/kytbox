@@ -206,7 +206,7 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 | Feature           | Free                      | Pro                                   |
 | :---------------- | :------------------------ | :------------------------------------ |
 | **Links**         | Unlimited                 | Unlimited                             |
-| **Themes**        | Preset themes only        | + Custom user-defined themes          |
+| **Themes**        | Preset themes only        | + **Custom High-Performance Themes**  |
 | **Branding**      | "Powered by Kytbox" shown | Removable                             |
 | **Analytics**     | Basic (clicks, views)     | Advanced (referrer breakdown, export) |
 | **Custom Domain** | ✗                         | ✓ (future)                            |
@@ -238,10 +238,11 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 
 ### Phase 1: Foundation & UX (Pre-Monetization)
 
-- [ ] Refactor Bio Dashboard to tab-based architecture (see [PRE_MONETIZATION doc § 1](./PRE_MONETIZATION_IMPROVEMENTS.md#1-bio-dashboard-architecture-ux-refactor))
+- [x] Refactor Bio Dashboard to tab-based architecture (see [PRE_MONETIZATION doc § 1](./PRE_MONETIZATION_IMPROVEMENTS.md#1-bio-dashboard-architecture-ux-refactor))
 - [x] Legal pages: `/terms`, `/privacy`, `/refund` (see [PRE_MONETIZATION doc § 3.1](./PRE_MONETIZATION_IMPROVEMENTS.md#31-legal-compliance))
-- [ ] Internal support ticket system (see [PRE_MONETIZATION doc § 3.2](./PRE_MONETIZATION_IMPROVEMENTS.md#32-support-infrastructure-internal-ticket-system))
-- [ ] Add `tier` column to `profiles` (see [PRE_MONETIZATION doc § 4.1](./PRE_MONETIZATION_IMPROVEMENTS.md#41-the-user-tier-system))
+- [x] Internal support ticket system (see [PRE_MONETIZATION doc § 3.2](./PRE_MONETIZATION_IMPROVEMENTS.md#32-support-infrastructure-internal-ticket-system))
+- [x] High-performance Custom Theme engine (Debounced, CSS variables)
+- [x] Add `tier` column to `profiles` (see [PRE_MONETIZATION doc § 4.1](./PRE_MONETIZATION_IMPROVEMENTS.md#41-the-user-tier-system))
 - [ ] Implement `canAccess()` feature gate utility (see [PRE_MONETIZATION doc § 4.2](./PRE_MONETIZATION_IMPROVEMENTS.md#42-feature-flag-utility))
 
 ### Phase 2: Payment Integration
@@ -256,7 +257,7 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 
 - [ ] Add "Upgrade" buttons in UI.
 - [ ] Gate "Remove Branding" feature.
-- [ ] Gate "Custom Themes".
+- [ ] Gate "Custom Themes" (Engine is built, entry points need gating).
 
 ### Phase 4: Launch
 

@@ -22,13 +22,97 @@ interface AppearanceEditorProps {
   initialButtonStyle: string;
   initialButtonShape: string;
   initialSocialLinks: Record<string, string>;
+  initialCustomTheme?: import('@/lib/theme/theme.types').CustomThemeData | null;
   isLoading?: boolean;
   onPreviewUpdate: (
     theme: string,
     style: string,
     shape: string,
     social: Record<string, string>,
+    custom?: import('@/lib/theme/theme.types').CustomThemeData | null,
   ) => void;
+}
+
+function ColorPickerRow({
+  label,
+  colorKey,
+  customTheme,
+  onChange,
+}: {
+  label: string;
+  colorKey: keyof import('@/lib/theme/theme.types').CustomThemeData;
+  customTheme: import('@/lib/theme/theme.types').CustomThemeData;
+  onChange: (
+    key: keyof import('@/lib/theme/theme.types').CustomThemeData,
+    value: string,
+  ) => void;
+}) {
+  const fullHex = customTheme[colorKey] || '#000000';
+  const baseHex = fullHex.slice(0, 7).padEnd(7, '0');
+  let alphaHex = 'ff';
+  if (fullHex.length === 9) {
+    alphaHex = fullHex.slice(7, 9);
+  } else if (fullHex.length === 5) {
+    alphaHex = fullHex.slice(4, 5).repeat(2);
+  }
+  const alphaPercent = Math.round((parseInt(alphaHex, 16) / 255) * 100) || 0;
+
+  return (
+    <div className='flex flex-col gap-1.5'>
+      <Label
+        htmlFor={`${String(colorKey)}-hex`}
+        className='text-xs font-semibold'
+      >
+        {label}
+      </Label>
+      <div className='flex items-center gap-2 border border-border/50 bg-card rounded-md p-1.5 shadow-sm'>
+        <input
+          type='color'
+          value={baseHex}
+          onChange={(e) => {
+            const newAlpha = alphaPercent === 100 ? '' : alphaHex;
+            onChange(colorKey, e.target.value + newAlpha);
+          }}
+          className='w-7 h-7 cursor-pointer rounded bg-transparent border-0 p-0 shrink-0'
+        />
+        <Input
+          id={`${String(colorKey)}-hex`}
+          value={fullHex}
+          onChange={(e) => onChange(colorKey, e.target.value)}
+          className='h-7 flex-1 min-w-[75px] border-0 shadow-none focus-visible:ring-0 font-mono text-xs uppercase px-1'
+          maxLength={9}
+        />
+        <div className='flex items-center gap-1 border-l pl-2'>
+          <Input
+            id={`${String(colorKey)}-alpha`}
+            type='number'
+            min={0}
+            max={100}
+            value={alphaPercent}
+            onChange={(e) => {
+              let perc = parseInt(e.target.value);
+              if (isNaN(perc)) return; // Don't crash on empty input
+              perc = Math.max(0, Math.min(100, perc)); // Clamp between 0-100
+
+              if (perc === 100) {
+                onChange(colorKey, baseHex);
+              } else {
+                const newAlpha = Math.round((perc / 100) * 255)
+                  .toString(16)
+                  .padStart(2, '0');
+                onChange(colorKey, baseHex + newAlpha);
+              }
+            }}
+            className='h-7 w-12 border-0 shadow-none focus-visible:ring-0 font-mono text-xs px-1 text-center bg-transparent'
+            autoComplete='off'
+          />
+          <span className='text-[10px] text-muted-foreground font-mono pr-1'>
+            %
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const SOCIAL_PLATFORMS = [
@@ -124,6 +208,7 @@ export default function AppearanceEditor({
   initialButtonStyle,
   initialButtonShape,
   initialSocialLinks,
+  initialCustomTheme,
   isLoading,
   onPreviewUpdate,
 }: AppearanceEditorProps) {
@@ -138,9 +223,29 @@ export default function AppearanceEditor({
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>(
     initialSocialLinks || {},
   );
+  const [customTheme, setCustomTheme] = useState<
+    import('@/lib/theme/theme.types').CustomThemeData
+  >(
+    initialCustomTheme || {
+      background: '#ffffff',
+      textPrimary: '#000000',
+      textSecondary: '#666666',
+      elementBg: 'rgba(0,0,0,0.05)',
+      elementBorder: 'rgba(0,0,0,0.1)',
+      elementRing: 'rgba(0,0,0,0.05)',
+      buttonBg: '#000000',
+      buttonBorder: '#000000',
+      buttonText: '#ffffff',
+      footerBg: 'rgba(0,0,0,0.05)',
+      footerBorder: 'rgba(0,0,0,0.1)',
+      footerText: '#666666',
+    },
+  );
 
   const initialCategory =
-    THEME_LIST.find((t) => t.id === initialTheme)?.category ?? null;
+    initialTheme === 'custom'
+      ? 'custom'
+      : (THEME_LIST.find((t) => t.id === initialTheme)?.category ?? null);
   const [activeCategory, setActiveCategory] = useState<ThemeCategory | null>(
     initialCategory,
   );
@@ -157,15 +262,47 @@ export default function AppearanceEditor({
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
 
-  const themeCategories: ThemeCategory[] = ['solid', 'gradient', 'soft'];
+  const themeCategories: ThemeCategory[] = [
+    'solid',
+    'gradient',
+    'soft',
+    'custom',
+  ];
 
   // Appearance Auto-save
   useEffect(() => {
+    let isChanged = false;
+    if (themeName !== initialTheme) isChanged = true;
+    if (buttonStyle !== initialButtonStyle) isChanged = true;
+    if (buttonShape !== initialButtonShape) isChanged = true;
+
+    // Supabase JSONB reformats key order, so JSON.stringify is unreliable for equality checks.
+    const isCustomThemeEqual = (
+      a: Record<string, string> | null | undefined,
+      b: Record<string, string> | null | undefined,
+    ) => {
+      if (!a && !b) return true;
+      if (!a || !b) return false;
+      const keysA = Object.keys(a);
+      const keysB = Object.keys(b);
+      if (keysA.length !== keysB.length) return false;
+      for (const k of keysA) {
+        if (a[k] !== b[k]) return false;
+      }
+      return true;
+    };
+
     if (
-      themeName === initialTheme &&
-      buttonStyle === initialButtonStyle &&
-      buttonShape === initialButtonShape
+      themeName === 'custom' &&
+      !isCustomThemeEqual(
+        customTheme as unknown as Record<string, string>,
+        (initialCustomTheme || {}) as Record<string, string>,
+      )
     ) {
+      isChanged = true;
+    }
+
+    if (!isChanged) {
       return;
     }
 
@@ -178,6 +315,9 @@ export default function AppearanceEditor({
       formData.append('buttonStyle', buttonStyle);
       formData.append('buttonShape', buttonShape);
       formData.append('socialLinks', JSON.stringify(socialLinks));
+      if (themeName === 'custom') {
+        formData.append('customTheme', JSON.stringify(customTheme));
+      }
 
       const result = await updateAppearance(formData);
 
@@ -205,9 +345,11 @@ export default function AppearanceEditor({
     themeName,
     buttonStyle,
     buttonShape,
+    customTheme,
     initialTheme,
     initialButtonStyle,
     initialButtonShape,
+    initialCustomTheme,
     socialLinks,
     router,
   ]);
@@ -230,6 +372,9 @@ export default function AppearanceEditor({
       formData.append('buttonStyle', buttonStyle);
       formData.append('buttonShape', buttonShape);
       formData.append('socialLinks', JSON.stringify(socialLinks));
+      if (themeName === 'custom') {
+        formData.append('customTheme', JSON.stringify(customTheme));
+      }
 
       const result = await updateAppearance(formData);
 
@@ -257,20 +402,52 @@ export default function AppearanceEditor({
     socialLinks,
     initialSocialLinks,
     themeName,
+    customTheme,
     buttonStyle,
     buttonShape,
     router,
   ]);
 
+  // Debounced Custom Theme Preview Update
+  useEffect(() => {
+    if (themeName !== 'custom') return;
+
+    const timer = setTimeout(() => {
+      onPreviewUpdate(
+        'custom',
+        buttonStyle,
+        buttonShape,
+        socialLinks,
+        customTheme,
+      );
+    }, 300); // 300ms sweet spot for typing vs visual feedback
+
+    return () => clearTimeout(timer);
+  }, [
+    customTheme,
+    themeName,
+    buttonStyle,
+    buttonShape,
+    socialLinks,
+    onPreviewUpdate,
+  ]);
+
   const handleUpdate = (
     type: 'theme' | 'style' | 'shape' | 'social',
     value: string | Record<string, string>,
+    overrideCustomTheme?: import('@/lib/theme/theme.types').CustomThemeData,
   ) => {
     if (type === 'theme') {
       const themeId = value as string;
       setThemeName(themeId);
       setAppearanceStatus('idle');
-      onPreviewUpdate(themeId, buttonStyle, buttonShape, socialLinks);
+      onPreviewUpdate(
+        themeId,
+        buttonStyle,
+        buttonShape,
+        socialLinks,
+        overrideCustomTheme !== undefined ? overrideCustomTheme : customTheme,
+      );
     } else if (type === 'style') {
       const style = value as ButtonStyle;
       setButtonStyle(style);
@@ -280,14 +457,31 @@ export default function AppearanceEditor({
       const shape = value as ButtonShape;
       setButtonShape(shape);
       setAppearanceStatus('idle');
-      onPreviewUpdate(themeName, buttonStyle, shape, socialLinks);
+      onPreviewUpdate(themeName, buttonStyle, shape, socialLinks, customTheme);
     } else if (type === 'social') {
       const social = value as Record<string, string>;
       const newSocial = { ...socialLinks, ...social };
       setSocialLinks(newSocial);
       setSocialStatus('idle');
-      onPreviewUpdate(themeName, buttonStyle, buttonShape, newSocial);
+      onPreviewUpdate(
+        themeName,
+        buttonStyle,
+        buttonShape,
+        newSocial,
+        customTheme,
+      );
     }
+  };
+
+  const handleCustomColorChange = (
+    key: keyof import('@/lib/theme/theme.types').CustomThemeData,
+    color: string,
+  ) => {
+    const newCustom = { ...customTheme, [key]: color };
+    setCustomTheme(newCustom);
+    setAppearanceStatus('idle');
+    setThemeName('custom');
+    // Removed immediate onPreviewUpdate to prevent typing lag
   };
 
   const getPreviewButtonClass = (themeId: string) => {
@@ -331,7 +525,37 @@ export default function AppearanceEditor({
                 {themeCategories.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setActiveCategory(cat)}
+                    onClick={async () => {
+                      setActiveCategory(cat);
+                      // If they specifically click the custom tab, auto-switch the theme to custom
+                      if (cat === 'custom') {
+                        let currentCustom = customTheme;
+
+                        // If they haven't set a custom theme yet, give them a clean default slate
+                        if (
+                          !currentCustom ||
+                          Object.keys(currentCustom).length === 0
+                        ) {
+                          currentCustom = {
+                            background: '#ffffff',
+                            textPrimary: '#000000',
+                            textSecondary: '#666666',
+                            elementBg: '#0000000d', // black/5
+                            elementBorder: '#0000001a', // black/10
+                            elementRing: '#00000033', // black/20
+                            buttonBg: '#000000',
+                            buttonBorder: '#000000',
+                            buttonText: '#ffffff',
+                            footerBg: '#0000000d',
+                            footerBorder: '#0000001a',
+                            footerText: '#666666',
+                          };
+                          setCustomTheme(currentCustom);
+                        }
+
+                        handleUpdate('theme', 'custom', currentCustom);
+                      }
+                    }}
                     className={cn(
                       'px-3 py-1 text-[10px] font-bold uppercase tracking-tight rounded-md transition-all cursor-pointer',
                       activeCategory === cat
@@ -345,52 +569,81 @@ export default function AppearanceEditor({
               </div>
             </div>
 
-            <div
-              key={activeCategory ?? 'empty'}
-              className='grid grid-cols-2 sm:grid-cols-3 gap-3 animate-in fade-in duration-150'
-            >
-              {filteredThemes.length === 0
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className='flex flex-col items-center justify-center p-3 rounded-xl border-2 border-border/50 min-h-[90px] bg-secondary/50'
-                    >
-                      <Skeleton className='h-3 w-12 rounded mb-2' />
-                      <Skeleton className='w-full h-6 rounded' />
-                    </div>
-                  ))
-                : filteredThemes.map((theme) => (
-                    <button
-                      key={theme.id}
-                      type='button'
-                      onClick={() => handleUpdate('theme', theme.id)}
-                      className={cn(
-                        'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all shadow-sm group min-h-[90px] cursor-pointer',
-                        theme.previewClass,
-                        themeName === theme.id
-                          ? 'border-primary ring-2 ring-primary/10'
-                          : 'border-border/50 hover:border-foreground/30',
-                      )}
-                    >
-                      <span className='text-[10px] font-bold uppercase tracking-tight mb-2 opacity-80'>
-                        {theme.name}
-                      </span>
+            {activeCategory === 'custom' ? (
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl border-2 border-border/50 bg-secondary/10 animate-in fade-in'>
+                <ColorPickerRow
+                  label='Background'
+                  colorKey='background'
+                  customTheme={customTheme}
+                  onChange={handleCustomColorChange}
+                />
+                <ColorPickerRow
+                  label='Text'
+                  colorKey='textPrimary'
+                  customTheme={customTheme}
+                  onChange={handleCustomColorChange}
+                />
+                <ColorPickerRow
+                  label='Button Fill'
+                  colorKey='buttonBg'
+                  customTheme={customTheme}
+                  onChange={handleCustomColorChange}
+                />
+                <ColorPickerRow
+                  label='Button Text'
+                  colorKey='buttonText'
+                  customTheme={customTheme}
+                  onChange={handleCustomColorChange}
+                />
+              </div>
+            ) : (
+              <div
+                key={activeCategory ?? 'empty'}
+                className='grid grid-cols-2 sm:grid-cols-3 gap-3 animate-in fade-in duration-150'
+              >
+                {filteredThemes.length === 0
+                  ? Array.from({ length: 3 }).map((_, i) => (
                       <div
+                        key={i}
+                        className='flex flex-col items-center justify-center p-3 rounded-xl border-2 border-border/50 min-h-[90px] bg-secondary/50'
+                      >
+                        <Skeleton className='h-3 w-12 rounded mb-2' />
+                        <Skeleton className='w-full h-6 rounded' />
+                      </div>
+                    ))
+                  : filteredThemes.map((theme) => (
+                      <button
+                        key={theme.id}
+                        type='button'
+                        onClick={() => handleUpdate('theme', theme.id)}
                         className={cn(
-                          'w-full h-6 rounded flex items-center justify-center text-[8px] font-medium border shadow-sm',
-                          getPreviewButtonClass(theme.id),
+                          'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all shadow-sm group min-h-[90px] cursor-pointer',
+                          theme.previewClass,
+                          themeName === theme.id
+                            ? 'border-primary ring-2 ring-primary/10'
+                            : 'border-border/50 hover:border-foreground/30',
                         )}
                       >
-                        Button
-                      </div>
-                      {themeName === theme.id && (
-                        <div className='absolute -top-1 -right-1 bg-primary rounded-full p-1 shadow-lg z-10 ring-2 ring-background'>
-                          <LuCheck className='w-3 h-3 text-primary-foreground' />
+                        <span className='text-[10px] font-bold uppercase tracking-tight mb-2 opacity-80'>
+                          {theme.name}
+                        </span>
+                        <div
+                          className={cn(
+                            'w-full h-6 rounded flex items-center justify-center text-[8px] font-medium border shadow-sm',
+                            getPreviewButtonClass(theme.id),
+                          )}
+                        >
+                          Button
                         </div>
-                      )}
-                    </button>
-                  ))}
-            </div>
+                        {themeName === theme.id && (
+                          <div className='absolute -top-1 -right-1 bg-primary rounded-full p-1 shadow-lg z-10 ring-2 ring-background'>
+                            <LuCheck className='w-3 h-3 text-primary-foreground' />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+              </div>
+            )}
           </div>
 
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>

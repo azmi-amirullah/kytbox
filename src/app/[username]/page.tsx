@@ -49,6 +49,9 @@ export default async function PublicProfilePage({
         profile={{
           ...profile,
           social_links: profile.social_links as Record<string, string>,
+          custom_theme: profile.custom_theme as
+            | import('@/lib/theme/theme.types').CustomThemeData
+            | null,
         }}
         links={typedLinks}
       />

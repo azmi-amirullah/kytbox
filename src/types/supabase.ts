@@ -27,6 +27,7 @@ export interface Database {
           created_at: string;
           role: 'user' | 'admin';
           social_links: Json | null;
+          custom_theme: Json | null;
           tier: 'free' | 'pro' | 'enterprise';
         };
         Insert: {
@@ -42,6 +43,7 @@ export interface Database {
           created_at?: string;
           role?: 'user' | 'admin';
           social_links?: Json | null;
+          custom_theme?: Json | null;
           tier?: 'free' | 'pro' | 'enterprise';
         };
         Update: {
@@ -57,6 +59,7 @@ export interface Database {
           created_at?: string;
           role?: 'user' | 'admin';
           social_links?: Json | null;
+          custom_theme?: Json | null;
           tier?: 'free' | 'pro' | 'enterprise';
         };
         Relationships: [];

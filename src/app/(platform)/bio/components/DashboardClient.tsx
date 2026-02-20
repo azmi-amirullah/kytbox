@@ -9,14 +9,16 @@ import LinksTabContent from './LinksTabContent';
 import PhonePreview from './PhonePreview';
 import AppearanceEditor from './AppearanceEditor';
 import type { Database } from '@/types/supabase';
+import type { CustomThemeData } from '@/lib/theme/theme.types';
 import { cn } from '@/lib/utils';
 
 type LinkType = Database['public']['Tables']['links']['Row'];
 export type Profile = Omit<
   Database['public']['Tables']['profiles']['Row'],
-  'social_links'
+  'social_links' | 'custom_theme'
 > & {
   social_links?: Record<string, string> | null;
+  custom_theme?: CustomThemeData | null;
 };
 
 export type BioTab = 'links' | 'appearance';
@@ -53,6 +55,9 @@ export default function DashboardClient({
 
   const [links, setLinks] = useState<LinkType[]>(initialLinks);
   const [themeName, setThemeName] = useState(profile?.theme_name || 'default');
+  const [customTheme, setCustomTheme] = useState<CustomThemeData | null>(
+    profile?.custom_theme || null,
+  );
   const [buttonStyle, setButtonStyle] = useState(
     profile?.button_style || 'default',
   );
@@ -148,18 +153,26 @@ export default function DashboardClient({
                   ? {}
                   : (profile?.social_links as Record<string, string>) || {}
               }
+              initialCustomTheme={
+                isLoading ? null : profile?.custom_theme || null
+              }
               isLoading={isLoading}
-              onPreviewUpdate={(
-                theme: string,
-                style: string,
-                shape: string,
-                social: Record<string, string>,
-              ) => {
-                setThemeName(theme);
-                setButtonStyle(style);
-                setButtonShape(shape);
-                setSocialLinks(social);
-              }}
+              onPreviewUpdate={useCallback(
+                (
+                  theme: string,
+                  style: string,
+                  shape: string,
+                  social: Record<string, string>,
+                  custom?: CustomThemeData | null,
+                ) => {
+                  setThemeName(theme);
+                  setButtonStyle(style);
+                  setButtonShape(shape);
+                  setSocialLinks(social);
+                  if (custom !== undefined) setCustomTheme(custom);
+                },
+                [],
+              )}
             />
           </TabsContent>
         </Tabs>
@@ -180,6 +193,7 @@ export default function DashboardClient({
               avatar_url: profile?.avatar_url || null,
               bio: profile?.bio || null,
               theme_name: themeName,
+              custom_theme: customTheme,
               button_style: buttonStyle,
               button_shape: buttonShape,
               social_links: socialLinks,

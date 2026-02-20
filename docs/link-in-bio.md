@@ -1,6 +1,6 @@
 # Kytbox Bio Documentation
 
-Focus: **Speed to functional product.** Avoid "graveyard" features (custom themes, payments, custom domains) in version 1.
+Focus: **Scalable branding and high-performance UX.**
 
 ## 1. Core Features
 
@@ -33,14 +33,22 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 
 ### `profiles`
 
-| Column         | Type        | Notes                               |
-| :------------- | :---------- | :---------------------------------- |
-| `id`           | uuid        | PK, references `auth.users.id`      |
-| `username`     | text        | Unique, index. Used for public URL. |
-| `display_name` | text        |                                     |
-| `bio`          | text        |                                     |
-| `avatar_url`   | text        | Nullable                            |
-| `created_at`   | timestamptz |                                     |
+| Column             | Type        | Notes                               |
+| :----------------- | :---------- | :---------------------------------- |
+| `id`               | uuid        | PK, references `auth.users.id`      |
+| `username`         | text        | Unique, index. Used for public URL. |
+| `display_name`     | text        | Nullable                            |
+| `bio`              | text        | Nullable                            |
+| `avatar_url`       | text        | Nullable                            |
+| `theme_name`       | text        | Nullable                            |
+| `button_style`     | text        | Nullable                            |
+| `button_shape`     | text        | Nullable                            |
+| `default_currency` | text        | Nullable                            |
+| `created_at`       | timestamptz |                                     |
+| `role`             | text        | 'user' or 'admin'                   |
+| `social_links`     | json        | Nullable                            |
+| `custom_theme`     | jsonb       | Hex & Alpha variables for engine    |
+| `tier`             | text        | 'free', 'pro', or 'enterprise'      |
 
 ### `links`
 
@@ -99,13 +107,15 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 
 **Logged-in routes** (protected by `proxy.ts`):
 
-| Route         | Purpose                            |
-| :------------ | :--------------------------------- |
-| `/app`        | Platform header / app switcher     |
-| `/bio`        | Bio dashboard (Links + Appearance) |
-| `/cashflow`   | Cashflow dashboard                 |
-| `/settings`   | Account settings (profile)         |
-| `/onboarding` | Username completion (OAuth users)  |
+| Route            | Purpose                            |
+| :--------------- | :--------------------------------- |
+| `/app`           | Platform header / app switcher     |
+| `/bio`           | Bio dashboard (Links + Appearance) |
+| `/cashflow`      | Cashflow dashboard                 |
+| `/settings`      | Account settings (profile)         |
+| `/onboarding`    | Username completion (OAuth users)  |
+| `/support`       | User support portal                |
+| `/support-admin` | Admin support dashboard            |
 
 **Public routes**:
 
@@ -275,6 +285,7 @@ See `src/lib/username.ts` for full list.
 ✅ Visual parity between Bio and Analytics stats cards
 ✅ Unified Profile Component Architecture (100% parity via mobile-first CSS scaling)
 ✅ Zero-Flash Hydration & Unified Skeleton Architecture
+✅ High-Performance Custom Theme Engine (Debounced + CSS Variables)
 
 ## 8. Social Link Icons (Implemented)
 
@@ -352,7 +363,8 @@ See `src/lib/username.ts` for full list.
 - **Centralized Config**: All themes defined in `src/lib/theme/theme.config.ts`
 - **Type-Safe**: TypeScript interfaces in `src/lib/theme/theme.types.ts`
 - **Utility Functions**: `getTheme()`, `getContainerClasses()`, `getButtonClasses()` in `src/lib/theme/theme.utils.ts`
-- **Theme Isolation**: Uses explicit Tailwind classes (not CSS variables) so public profiles render consistently regardless of visitor's system dark/light mode
+- **Theme Isolation**: Uses explicit Tailwind classes (for presets) and CSS Variable injection (for custom themes) to ensure profiles render consistently regardless of visitor's system dark/light mode.
+- **Dynamic Normalization**: Incomplete hex codes are predictive-padded at the edge to ensure CSS variable validity during real-time typing.
 
 ### Adding New Themes
 
@@ -362,4 +374,5 @@ See `src/lib/username.ts` for full list.
 ## 11. Planned Features
 
 - Username change cooldown (§7 Kytbox.md)
-- Custom user-defined themes (color picker UI)
+- Custom Domain support
+- Advanced SEO metadata editor
