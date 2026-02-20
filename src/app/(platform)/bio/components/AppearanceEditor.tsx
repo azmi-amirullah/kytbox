@@ -249,11 +249,6 @@ export default function AppearanceEditor({
   const [activeCategory, setActiveCategory] = useState<ThemeCategory | null>(
     initialCategory,
   );
-  const [prevCategory, setPrevCategory] = useState(initialCategory);
-  if (initialCategory !== prevCategory) {
-    setPrevCategory(initialCategory);
-    if (initialCategory) setActiveCategory(initialCategory);
-  }
   const [error, setError] = useState<string | null>(null);
   const [appearanceStatus, setAppearanceStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
