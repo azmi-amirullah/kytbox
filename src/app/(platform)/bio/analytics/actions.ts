@@ -16,11 +16,11 @@ export async function getAnalyticsData(
 ): Promise<AnalyticsData> {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  // Get all user's links (ordered by user's sort_order for dropdown filter)
   const { data: links } = await supabase
     .from('links')
     .select('id, title, url, clicks')
     .eq('user_id', user.id)
+    .eq('is_folder', false)
     .order('sort_order', { ascending: true });
 
   if (!links || links.length === 0) {

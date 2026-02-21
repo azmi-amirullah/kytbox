@@ -54,13 +54,14 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 
 ### 3.2 Reference Migration History
 
-| Order | Migration                                  | Purpose                                                     |
-| :---- | :----------------------------------------- | :---------------------------------------------------------- |
-| 1     | `001_initial_schema.sql`                   | Basic profiles and auth triggers.                           |
-| 2     | `20260202_create_cashflow_tables.sql`      | Multi-tenant cashflow logic.                                |
-| 3     | `20260210190000_create_support_system.sql` | `profiles.role`, support tables, and support RPC functions. |
-| 4     | `20260220_add_custom_theme_column.sql`     | `custom_theme` JSONB, `button_style`, and `button_shape`.   |
-| 5     | `20260220104943_add_nested_folders.sql`    | `is_folder` and `parent_id` to `links` table.               |
+| Order | Migration                                       | Purpose                                                           |
+| :---- | :---------------------------------------------- | :---------------------------------------------------------------- |
+| 1     | `001_initial_schema.sql`                        | Basic profiles and auth triggers.                                 |
+| 2     | `20260202_create_cashflow_tables.sql`           | Multi-tenant cashflow logic.                                      |
+| 3     | `20260210190000_create_support_system.sql`      | `profiles.role`, support tables, and support RPC functions.       |
+| 4     | `20260220_add_custom_theme_column.sql`          | `custom_theme` JSONB, `button_style`, and `button_shape`.         |
+| 5     | `20260220104943_add_nested_folders.sql`         | `is_folder` and `parent_id` to `links` table.                     |
+| 6     | `20260221061001_enforce_folder_depth_limit.sql` | Postgres Trigger on `links` to prevent infinite folder recursion. |
 
 ---
 
