@@ -306,7 +306,17 @@ export async function toggleCashflowInclusion(
     error = result.error;
   } else {
     // Creating new share via public access
-    // This will error if cashflow is not public due to RLS, which is desired
+    // MUST explicitly check if cashflow is public before creating a public share
+    const { data: cashflow } = await supabase
+      .from('cashflows')
+      .select('is_public')
+      .eq('id', cashflowId)
+      .single();
+
+    if (!cashflow || !cashflow.is_public) {
+      return { error: 'Access denied: Cashflow is not public' };
+    }
+
     const result = await supabase.from('cashflow_shares').insert({
       cashflow_id: cashflowId,
       email: user.email.toLowerCase(),

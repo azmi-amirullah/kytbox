@@ -12,10 +12,15 @@ export async function trackProfileView(profileId: string) {
   const country = headerStore.get('x-vercel-ip-country');
   const city = headerStore.get('x-vercel-ip-city');
 
-  // Extract IP for rate limiting
+  // Extract IP for rate limiting with Vercel priority
+  const vercelIp = headerStore.get('x-vercel-forwarded-for');
+  const realIp = headerStore.get('x-real-ip');
+  const forwardedFor = headerStore.get('x-forwarded-for');
+
   const ip =
-    headerStore.get('x-forwarded-for')?.split(',')[0].trim() ||
-    headerStore.get('x-real-ip')?.trim() ||
+    (vercelIp && vercelIp.split(',')[0].trim()) ||
+    (realIp && realIp.trim()) ||
+    (forwardedFor && forwardedFor.split(',')[0].trim()) ||
     '127.0.0.1';
 
   // Offload DB write to after() so response isn't blocked

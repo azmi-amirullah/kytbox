@@ -12,19 +12,17 @@ interface RedirectRouteProps {
   }>;
 }
 
-// Helper to get IP for rate limiting
+// Helper to get IP for rate limiting safely
 async function getIp() {
   const headersList = await headers();
-  const forwardedFor = headersList.get('x-forwarded-for');
+  // Vercel specific guarantees - prioritize these over generic headers
+  const vercelIp = headersList.get('x-vercel-forwarded-for');
   const realIp = headersList.get('x-real-ip');
+  const forwardedFor = headersList.get('x-forwarded-for');
 
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-
-  if (realIp) {
-    return realIp.trim();
-  }
+  if (vercelIp) return vercelIp.split(',')[0].trim();
+  if (realIp) return realIp.trim();
+  if (forwardedFor) return forwardedFor.split(',')[0].trim();
 
   return '127.0.0.1';
 }
@@ -33,10 +31,14 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
   const { username, linkId } = await params;
 
   // 1. Rate Limiting Check
-  // We check this FIRST to protect from analytics spam
-  // But we continue execution ensuring the user still gets redirected
+  // Check FIRST to protect from analytics spam AND database abuse
   const ip = await getIp();
   const { success: isNotRateLimited } = await ratelimit.limit(ip);
+
+  if (!isNotRateLimited) {
+    // Return 429 Too Many Requests immediately to stop DB queries
+    return new Response('Too Many Requests', { status: 429 });
+  }
 
   const supabase = await createClient();
 
@@ -98,20 +100,25 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
   after(async () => {
     // ONLY track if within rate limits
     if (isNotRateLimited) {
-      // Use the ADMIN client for secure tracking
-      // This allows us to disable public INSERT on the link_events table
-      const trackingSupabase = createAdminClient();
+      try {
+        // Use the ADMIN client for secure tracking
+        // This allows us to disable public INSERT on the link_events table
+        const trackingSupabase = createAdminClient();
 
-      await Promise.all([
-        // Legacy counter for fast lifetime display
-        trackingSupabase.rpc('increment_link_click', { link_id: link.id }),
-        // New event row for time-based analytics
-        trackingSupabase.from('link_events').insert({
-          link_id: link.id,
-          user_agent: userAgent,
-          referer: referer,
-        }),
-      ]);
+        await Promise.all([
+          // Legacy counter for fast lifetime display
+          trackingSupabase.rpc('increment_link_click', { link_id: link.id }),
+          // New event row for time-based analytics
+          trackingSupabase.from('link_events').insert({
+            link_id: link.id,
+            user_agent: userAgent,
+            referer: referer,
+          }),
+        ]);
+      } catch (error) {
+        // Log background tracking failures instead of crashing
+        console.error('Failed background link tracking computation:', error);
+      }
     }
   });
 
