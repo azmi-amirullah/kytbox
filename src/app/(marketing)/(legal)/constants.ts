@@ -1,4 +1,4 @@
-export const LEGAL_LAST_UPDATED = 'February 13, 2026';
+export const LEGAL_LAST_UPDATED = 'February 21, 2026';
 
 export const SUPPORT_EMAIL = 'support@kytbox.com';
 

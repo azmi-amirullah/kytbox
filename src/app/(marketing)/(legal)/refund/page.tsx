@@ -59,6 +59,10 @@ const SECTIONS = [
           </li>
           <li>Purchases made more than 14 days ago.</li>
           <li>
+            Annual subscriptions beyond the 14-day refund window (annual plans
+            are not pro-rated upon cancellation).
+          </li>
+          <li>
             Accounts suspended or terminated for violation of our Terms of
             Service.
           </li>

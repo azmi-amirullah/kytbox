@@ -28,6 +28,11 @@ const SECTIONS = [
     content: (
       <>
         <p>
+          You must be at least 13 years old (or 16 in the European Economic
+          Area) to use this Service. By registering, you represent that you meet
+          this age requirement.
+        </p>
+        <p>
           To access certain features of the Service, you must register for an
           account. You agree to provide accurate, current, and complete
           information during the registration process and to keep your account
@@ -132,14 +137,21 @@ const SECTIONS = [
   {
     title: 'Limitation of Liability',
     content: (
-      <p>
-        In no event shall Kytbox, nor its operator, employees, partners, agents,
-        suppliers, or affiliates, be liable for any indirect, incidental,
-        special, consequential or punitive damages, including without
-        limitation, loss of profits, data, use, goodwill, or other intangible
-        losses, resulting from your access to or use of or inability to access
-        or use the Service.
-      </p>
+      <>
+        <p>
+          In no event shall Kytbox, nor its operator, employees, partners,
+          agents, suppliers, or affiliates, be liable for any indirect,
+          incidental, special, consequential or punitive damages, including
+          without limitation, loss of profits, data, use, goodwill, or other
+          intangible losses, resulting from your access to or use of or
+          inability to access or use the Service.
+        </p>
+        <p>
+          Our total aggregate liability for any claim arising out of or relating
+          to the Service shall not exceed the amount you paid us during the 12
+          months preceding the claim, or $100 USD, whichever is greater.
+        </p>
+      </>
     ),
   },
   {
@@ -164,13 +176,12 @@ const SECTIONS = [
           Service will immediately cease.
         </p>
         <p>
-          You may export your data at any time through your account settings
-          before termination. You may also request deletion of your data upon
-          account termination by contacting us at{' '}
+          You may request a copy of your data or deletion of your account at any
+          time by contacting us at{' '}
           <a href={`mailto:${SUPPORT_EMAIL}`} aria-label='Email Kytbox support'>
             {SUPPORT_EMAIL}
           </a>
-          .
+          . We will process your request within 30 days.
         </p>
       </>
     ),
@@ -192,6 +203,12 @@ const SECTIONS = [
           these Terms shall be subject to the exclusive jurisdiction of the
           courts of Indonesia, governed by the laws of Indonesia without regard
           to its conflict of law provisions.
+        </p>
+        <p>
+          Nothing in these Terms shall deprive you of any mandatory consumer
+          protection rights under the laws of your country of residence,
+          including the right to bring claims in your local courts where
+          required by applicable law.
         </p>
       </>
     ),

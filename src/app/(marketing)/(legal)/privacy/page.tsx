@@ -112,7 +112,9 @@ const SECTIONS = [
         <ul>
           <li>Hosting and infrastructure (Vercel, Supabase).</li>
           <li>Payment processing (Lemon Squeezy).</li>
+          <li>Rate limiting and security (Upstash).</li>
           <li>Analytics (Vercel Web Analytics — privacy-friendly, no PII).</li>
+          <li>Performance monitoring (Vercel Speed Insights — no PII).</li>
         </ul>
       </>
     ),
@@ -147,24 +149,42 @@ const SECTIONS = [
   {
     title: 'Data Retention',
     content: (
-      <p>
-        We retain your personal data for as long as your account is active or as
-        needed to provide the Service. If you delete your account, we will
-        delete your personal data within 30 days, except where we are required
-        to retain it for legal or compliance purposes.
-      </p>
+      <>
+        <p>
+          We retain your personal data for as long as your account is active or
+          as needed to provide the Service. You may request deletion of your
+          account and personal data at any time by contacting us at{' '}
+          <a href={`mailto:${SUPPORT_EMAIL}`} aria-label='Email Kytbox support'>
+            {SUPPORT_EMAIL}
+          </a>
+          . We will process deletion requests within 30 days, except where we
+          are required to retain data for legal or compliance purposes.
+        </p>
+        <p>
+          Server access logs (including IP addresses) are retained for a
+          reasonable period for security and operational purposes and are
+          periodically purged.
+        </p>
+      </>
     ),
   },
   {
     title: 'Data Security',
     content: (
-      <p>
-        We implement appropriate technical and organizational measures to
-        protect the security of your personal information, including encryption
-        in transit (TLS) and at rest. However, please be aware that no method of
-        transmission over the Internet or method of electronic storage is 100%
-        secure.
-      </p>
+      <>
+        <p>
+          We implement appropriate technical and organizational measures to
+          protect the security of your personal information, including
+          encryption in transit (TLS) and at rest. However, please be aware that
+          no method of transmission over the Internet or method of electronic
+          storage is 100% secure.
+        </p>
+        <p>
+          In the event of a data breach that affects your personal data, we will
+          notify you and the relevant supervisory authority within 72 hours of
+          becoming aware of the breach, as required by applicable law.
+        </p>
+      </>
     ),
   },
   {
