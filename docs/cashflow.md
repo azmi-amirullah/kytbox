@@ -73,6 +73,7 @@ The bridge table for collaboration and bookmarking.
 
 - `email` (text): Target user identification.
 - `role` (text): `read` (viewer) or `edit` (can manage entries).
+- `is_pinned` (boolean): Whether the share is visible on the user's dashboard.
 - `is_included_in_totals` (boolean): Per-user dashboard calculation preference.
 - `created_via_public_access` (boolean): DISTINCTION flag. Set to `true` when a user bookmarks a public link vs being explicitly invited.
 
@@ -95,6 +96,65 @@ Permissions are enforced strictly at the database level via PostgreSQL Row Level
 
 > [!NOTE]
 > All email-based security checks use `LOWER()` to ensure case-insensitive matching between auth sessions and share records.
+
+### 4.1 Trigger-Based Column Guard
+
+The `check_cashflow_share_update` trigger prevents privilege escalation by blocking non-owners from modifying restricted columns (`role`, `email`, `created_via_public_access`, `cashflow_id`) on `cashflow_shares`. Users can only self-manage `is_pinned` and `is_included_in_totals`.
+
+### 4.2 Removal Behavior
+
+- **Guest bookmarks** (`created_via_public_access = true`): Fully deleted on removal, revoking all access.
+- **Explicit invites** (`created_via_public_access = false`): Only unpinned (`is_pinned = false`), preserving the permission record so the user can re-pin later.
+
+### 4.3 Permission Matrix
+
+| Action                     | Owner | Invited Editor | Invited Reader |  Public Guest  | Unauthenticated |
+| :------------------------- | :---: | :------------: | :------------: | :------------: | :-------------: |
+| View cashflow & entries    |  ✅   |       ✅       |       ✅       |       ✅       |   ✅ (public)   |
+| Add/Edit/Delete entries    |  ✅   |       ✅       |       ❌       |       ❌       |       ❌        |
+| Rename/Delete cashflow     |  ✅   |       ❌       |       ❌       |       ❌       |       ❌        |
+| Toggle `is_public`         |  ✅   |       ❌       |       ❌       |       ❌       |       ❌        |
+| Invite/Remove users        |  ✅   |       ❌       |       ❌       |       ❌       |       ❌        |
+| Change user roles          |  ✅   |       ❌       |       ❌       |       ❌       |       ❌        |
+| Pin to own dashboard       |  N/A  |       ✅       |       ✅       |       ✅       |       ❌        |
+| Unpin from own dashboard   |  N/A  |   ✅ (unpin)   |   ✅ (unpin)   |  ✅ (delete)   |       ❌        |
+| Re-pin after unpin         |  N/A  |       ✅       |       ✅       | ✅ (if public) |       ❌        |
+| Toggle "Include in Totals" |  N/A  |       ✅       |       ✅       |       ✅       |       ❌        |
+| Modify own `role`          |  N/A  |  ❌ (trigger)  |  ❌ (trigger)  |  ❌ (trigger)  |       ❌        |
+
+> [!IMPORTANT]
+> "Public Guest" refers to an authenticated user who bookmarked a public cashflow. "Unauthenticated" users can only view public cashflows without any interactive features.
+
+### 4.4 Access Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Public: Owner sets is_public = true
+    [*] --> Invited: Owner sends email invitation
+
+    Public --> Guest_Bookmark: User clicks "Add to Dashboard"
+    Guest_Bookmark --> Deleted: User clicks "Remove" (full delete)
+    Deleted --> Guest_Bookmark: User re-bookmarks (if still public)
+
+    Invited --> Pinned: Auto-pinned on invite
+    Pinned --> Unpinned: User clicks "Remove" (unpin only)
+    Unpinned --> Pinned: User clicks "Add to Dashboard" (re-pin)
+
+    Guest_Bookmark --> Invited: Owner invites same email (promotion)
+
+    Public --> Private: Owner sets is_public = false
+    Private --> Public: Owner sets is_public = true
+
+    note right of Invited: Retains access even if cashflow goes private
+    note right of Guest_Bookmark: Loses access if cashflow goes private
+```
+
+**Key transitions:**
+
+- **Promotion**: When an owner invites a user who already has a guest bookmark, the record is promoted to an explicit invite (`created_via_public_access = false`). The user retains access even if the cashflow later becomes private.
+- **Demotion (Private)**: When a cashflow is set to private, public guests with stale bookmarks cannot re-pin or re-subscribe. Their existing bookmark becomes inaccessible.
+- **Re-pinning (Invited)**: An invited user who unpinned a cashflow can always re-pin it, regardless of `is_public` status, because their permission record is preserved.
+- **Re-pinning (Guest)**: A public guest who deleted their bookmark can only re-subscribe if the cashflow is still public.
 
 ## 5. Design Decisions & Rationale
 

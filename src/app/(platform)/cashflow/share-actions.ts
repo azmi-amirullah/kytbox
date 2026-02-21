@@ -68,29 +68,42 @@ export async function inviteUser(
 export async function removeShare(shareId: string) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  // Fetch share to check ownership/target
+  // Fetch share to check ownership/target and type
   const { data: share } = await supabase
     .from('cashflow_shares')
-    .select('email, cashflow_id')
+    .select('email, cashflow_id, created_via_public_access')
     .eq('id', shareId)
     .single();
 
   if (!share) return { error: 'Share not found' };
 
   // If the user removing the share is the one it belongs to (removing from their own dashboard)
-  // we just unpin it to preserve permissions
   if (share.email.toLowerCase() === user.email?.toLowerCase()) {
-    const { error } = await supabase
-      .from('cashflow_shares')
-      .update({
-        is_pinned: false,
-        is_included_in_totals: false,
-      })
-      .eq('id', shareId);
+    if (share.created_via_public_access) {
+      // It was a guest bookmark. Fully delete it to revoke their access.
+      const { error } = await supabase
+        .from('cashflow_shares')
+        .delete()
+        .eq('id', shareId);
 
-    if (error) {
-      console.error('Failed to unpin share:', error);
-      return { error: error.message };
+      if (error) {
+        console.error('Failed to remove public share:', error);
+        return { error: error.message };
+      }
+    } else {
+      // It was an explicit invite. Just unpin it from the dashboard.
+      const { error } = await supabase
+        .from('cashflow_shares')
+        .update({
+          is_pinned: false,
+          is_included_in_totals: false,
+        })
+        .eq('id', shareId);
+
+      if (error) {
+        console.error('Failed to unpin share:', error);
+        return { error: error.message };
+      }
     }
   } else {
     // If it's the owner removing someone else, we delete as before
@@ -173,36 +186,36 @@ export async function subscribeToPublicCashflow(cashflowId: string) {
     .eq('email', user.email.toLowerCase())
     .maybeSingle();
 
-  // If they don't have a share record, they can only bookmark if it's public
-  if (!existingShare && !cashflow.is_public) {
-    return { error: 'This cashflow is not public' };
-  }
-
   let result;
   if (existingShare) {
-    // If it exists, we just update is_pinned.
-    // This is covered by the "Users can update their own shares" policy
-    // which DOES NOT check if the cashflow is public.
+    // Re-pinning an existing invite is always allowed (even for private cashflows).
+    // Re-pinning a public guest bookmark requires the cashflow to still be public.
+    if (existingShare.created_via_public_access && !cashflow.is_public) {
+      return { error: 'This cashflow is no longer public' };
+    }
+
     result = await supabase
       .from('cashflow_shares')
       .update({
         is_pinned: true,
-        is_included_in_totals: true, // Also re-enable in totals when re-added
+        is_included_in_totals: true,
       })
       .eq('id', existingShare.id)
       .select()
       .single();
   } else {
-    // If it doesn't exist, we insert.
-    // This is covered by the "Users can subscribe to public cashflows" policy
-    // which correctly enforces is_public = true.
+    // New subscription requires the cashflow to be public
+    if (!cashflow.is_public) {
+      return { error: 'This cashflow is not public' };
+    }
+
     result = await supabase
       .from('cashflow_shares')
       .insert({
         cashflow_id: cashflowId,
         email: user.email.toLowerCase(),
         is_pinned: true,
-        is_included_in_totals: true, // Also enable in totals by default
+        is_included_in_totals: true,
         created_via_public_access: true,
       })
       .select()

@@ -62,6 +62,7 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 | 4     | `20260220_add_custom_theme_column.sql`          | `custom_theme` JSONB, `button_style`, and `button_shape`.         |
 | 5     | `20260220104943_add_nested_folders.sql`         | `is_folder` and `parent_id` to `links` table.                     |
 | 6     | `20260221061001_enforce_folder_depth_limit.sql` | Postgres Trigger on `links` to prevent infinite folder recursion. |
+| 7     | `20260221133300_fix_privilege_escalation.sql`   | Trigger on `cashflow_shares` to prevent self-role escalation.     |
 
 ---
 
@@ -70,7 +71,8 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 - **Never Hardcode Secrets:** Always use Supabase `service_role` only in restricted background worker scripts.
 - **RLS First:** Always enable RLS before inserting data into a new table.
 - **Server Actions:** All database mutations must happen via Server Actions with manual `auth.getUser()` validation to supplement RLS.
+- **Trigger Guards:** Use `BEFORE UPDATE` triggers to restrict which columns non-owners can modify, preventing privilege escalation even with permissive RLS UPDATE policies.
 
 ---
 
-_Last Updated: February 20, 2026_
+_Last Updated: February 21, 2026_
