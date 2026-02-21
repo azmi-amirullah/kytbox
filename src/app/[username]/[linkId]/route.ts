@@ -64,6 +64,7 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
       .eq('user_id', profile.id)
       .eq('short_id', parseInt(linkId, 10))
       .eq('is_active', true)
+      .eq('is_folder', false)
       .single();
     link = data;
   } else {
@@ -73,6 +74,7 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
       .select('id, url')
       .eq('id', linkId)
       .eq('is_active', true)
+      .eq('is_folder', false)
       .single();
     link = data;
   }

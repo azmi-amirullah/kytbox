@@ -7,6 +7,7 @@ export async function addLink(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   const title = formData.get('title') as string;
+  const parentId = formData.get('parentId') as string | null;
   let url = formData.get('url') as string;
 
   if (!/^https?:\/\//i.test(url)) {
@@ -58,6 +59,7 @@ export async function addLink(formData: FormData) {
     url,
     sort_order: nextOrder,
     short_id: nextShortId,
+    parent_id: parentId || null,
   });
 
   if (error) {
@@ -73,32 +75,38 @@ export async function updateLink(linkId: string, formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   const title = formData.get('title') as string;
-  let url = formData.get('url') as string;
+  let url = formData.get('url') as string | null;
+  const isFolder = formData.get('isFolder') === 'true';
 
-  if (!/^https?:\/\//i.test(url)) {
-    url = `https://${url}`;
-  }
+  const updates: { title: string; url?: string } = { title };
 
-  // Validate URL scheme to prevent XSS
-  try {
-    const parsed = new URL(url);
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      return { error: 'Only HTTP and HTTPS URLs are allowed' };
+  if (!isFolder && url) {
+    if (!/^https?:\/\//i.test(url)) {
+      url = `https://${url}`;
     }
-    // Enforce domain format: must have TLD (letters only, 2+ chars)
-    if (
-      !/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(parsed.hostname) &&
-      parsed.hostname !== 'localhost'
-    ) {
-      return { error: 'Invalid URL' };
+
+    // Validate URL scheme to prevent XSS
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return { error: 'Only HTTP and HTTPS URLs are allowed' };
+      }
+      // Enforce domain format: must have TLD (letters only, 2+ chars)
+      if (
+        !/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(parsed.hostname) &&
+        parsed.hostname !== 'localhost'
+      ) {
+        return { error: 'Invalid URL' };
+      }
+    } catch {
+      return { error: 'Invalid URL format' };
     }
-  } catch {
-    return { error: 'Invalid URL format' };
+    updates.url = url;
   }
 
   const { error } = await supabase
     .from('links')
-    .update({ title, url })
+    .update(updates)
     .eq('id', linkId)
     .eq('user_id', user.id);
 
@@ -215,5 +223,54 @@ export async function updateAppearance(formData: FormData) {
     revalidateTag(`profile-${profile.username}`, 'max');
     revalidatePath(`/${profile.username}`, 'page');
   }
+  return { success: true };
+}
+
+export async function createFolder(title: string) {
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+
+  // Get the highest sort_order
+  const { data: lastLink } = await supabase
+    .from('links')
+    .select('sort_order')
+    .eq('user_id', user.id)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .single();
+
+  const nextOrder = (lastLink?.sort_order ?? 0) + 1;
+
+  const { error } = await supabase.from('links').insert({
+    user_id: user.id,
+    title,
+    url: '#', // Folders don't have a real URL
+    sort_order: nextOrder,
+    is_folder: true,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/bio', 'page');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  return { success: true };
+}
+
+export async function moveToFolder(linkId: string, parentId: string | null) {
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+
+  const { error } = await supabase
+    .from('links')
+    .update({ parent_id: parentId })
+    .eq('id', linkId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/bio', 'page');
+  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
   return { success: true };
 }

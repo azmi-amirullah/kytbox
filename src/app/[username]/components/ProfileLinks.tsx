@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { LinkButton } from './LinkButton';
 import type { ThemeConfig } from '@/lib/theme/theme.types';
+import { AnimatePresence, motion } from 'framer-motion';
+import { LuArrowLeft, LuFolderOpen } from 'react-icons/lu';
 
 interface ProfileLinksProps {
   links: {
@@ -12,6 +15,8 @@ interface ProfileLinksProps {
     url: string;
     is_active: boolean;
     short_id?: string | number | null;
+    is_folder?: boolean;
+    parent_id?: string | null;
   }[];
   username: string;
   theme: ThemeConfig;
@@ -28,40 +33,140 @@ export default function ProfileLinks({
 }: ProfileLinksProps) {
   const { colors } = theme;
   const activeLinks = links.filter((l) => l.is_active);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+
+  // Determine which links to show
+  const visibleLinks = activeLinks.filter((l) =>
+    currentFolderId ? l.parent_id === currentFolderId : !l.parent_id,
+  );
+
+  const currentFolder = currentFolderId
+    ? activeLinks.find((l) => l.id === currentFolderId)
+    : null;
+
+  // Animation variants
+  const variants = {
+    initial: (direction: number) => ({
+      x: direction > 0 ? 100 : -100,
+      opacity: 0,
+    }),
+    animate: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        type: 'tween' as const,
+        ease: 'easeOut' as const,
+        duration: 0.1,
+      },
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 100 : -100,
+      opacity: 0,
+      transition: {
+        type: 'tween' as const,
+        ease: 'easeIn' as const,
+        duration: 0.1,
+      },
+    }),
+  };
+
+  if (isLoading) {
+    return (
+      <div className='w-full space-y-4'>
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className='w-full rounded-lg h-[60px]' />
+        ))}
+      </div>
+    );
+  }
+
+  // Direction: 1 for going deeper, -1 for going back
+  const direction = currentFolderId ? 1 : -1;
 
   return (
-    <div className='w-full space-y-4'>
-      {isLoading ? (
-        [1, 2, 3].map((i) => (
-          <Skeleton key={i} className='w-full rounded-lg h-[60px]' />
-        ))
-      ) : activeLinks.length > 0 ? (
-        activeLinks.map((link, index) => (
-          <LinkButton
-            key={link.id}
-            href={`/${username}/${link.short_id ?? link.id}`}
-            title={link.title}
-            url={link.url}
-            className={cn(
-              buttonClasses,
-              'animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both',
-            )}
-            style={{ animationDelay: `${index * 100}ms` }}
-          />
-        ))
-      ) : (
-        <div
-          className={cn(
-            'text-center rounded-xl border border-dashed backdrop-blur-sm p-8',
-            colors.elementBg,
-            colors.elementBorder,
-          )}
+    <div className='w-full relative'>
+      <AnimatePresence initial={false} mode='wait' custom={direction}>
+        <motion.div
+          key={currentFolderId || 'root'}
+          custom={direction}
+          variants={variants}
+          initial='initial'
+          animate='animate'
+          exit='exit'
+          className='w-full space-y-4'
         >
-          <p className={cn(colors.textSecondary, 'text-base')}>
-            No links added yet
-          </p>
-        </div>
-      )}
+          {/* Header/Back Button */}
+          {currentFolderId && currentFolder && (
+            <div className='flex items-center gap-2 mb-4'>
+              <button
+                onClick={() => setCurrentFolderId(null)}
+                className='flex items-center justify-center p-2 rounded-xl backdrop-blur-sm transition-opacity hover:opacity-70 cursor-pointer'
+                style={{
+                  backgroundColor: colors.elementBg,
+                  borderColor: colors.elementBorder,
+                  color: colors.textPrimary,
+                  borderWidth: '1px',
+                }}
+              >
+                <LuArrowLeft className='w-5 h-5 mr-2' />
+                <h2
+                  className='font-bold text-lg'
+                  style={{ color: colors.textPrimary }}
+                >
+                  {currentFolder.title}
+                </h2>
+              </button>
+            </div>
+          )}
+
+          {activeLinks.length > 0 ? (
+            visibleLinks.map((link, index) => {
+              if (link.is_folder) {
+                return (
+                  <button
+                    key={link.id}
+                    onClick={() => setCurrentFolderId(link.id)}
+                    className={cn(
+                      buttonClasses,
+                      'w-full flex items-center justify-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-250 transition-all fill-mode-both cursor-pointer',
+                    )}
+                    style={{ animationDelay: `${index * 25}ms` }}
+                  >
+                    <LuFolderOpen className='w-5 h-5 opacity-80' />
+                    <span>{link.title}</span>
+                  </button>
+                );
+              }
+
+              return (
+                <LinkButton
+                  key={link.id}
+                  href={`/${username}/${link.short_id ?? link.id}`}
+                  title={link.title}
+                  url={link.url}
+                  className={cn(
+                    buttonClasses,
+                    'animate-in fade-in slide-in-from-bottom-4 duration-250 transition-all fill-mode-both',
+                  )}
+                  style={{ animationDelay: `${index * 25}ms` }}
+                />
+              );
+            })
+          ) : (
+            <div
+              className={cn(
+                'text-center rounded-xl border border-dashed backdrop-blur-sm p-8',
+                colors.elementBg,
+                colors.elementBorder,
+              )}
+            >
+              <p className={cn(colors.textSecondary, 'text-base')}>
+                No links added yet
+              </p>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

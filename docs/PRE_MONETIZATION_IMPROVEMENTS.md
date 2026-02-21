@@ -202,6 +202,7 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 
 1.  **Tab System:** Refactor Bio Dashboard layout. [x]
 2.  **Appearance:** Implement categories and high-performance Custom Theme engine. [x]
+3.  **Nested Folders:** Drill-down UI and public slide animations for link organization. [x]
 
 ### Phase 2: Operational (Before Lemon Squeezy Integration)
 
@@ -217,6 +218,7 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 
 - [x] **High:** Refactor Bio Dashboard to Tabs (UX Scalability).
 - [x] **High:** 1:1 Parity & Unified Skeleton Architecture (UX Quality).
+- [x] **High:** Implement Nested Folders (UX Organization).
 - [x] **High:** Create Legal Pages (Compliance).
 - [x] **High:** Build Internal Support System (Critical for Trust).
 - [x] **High:** Add `role` column to schema (Architecture).

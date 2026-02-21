@@ -52,18 +52,20 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 
 ### `links`
 
-| Column            | Type        | Notes                                              |
-| :---------------- | :---------- | :------------------------------------------------- |
-| `id`              | uuid        | PK                                                 |
-| `user_id`         | uuid        | FK -> `profiles.id`                                |
-| `title`           | text        | Display text                                       |
-| `url`             | text        | Destination URL                                    |
-| `sort_order`      | int         | For ordering links                                 |
-| `is_active`       | bool        | Toggle visibility                                  |
-| `clicks`          | int         | Default 0                                          |
-| `last_clicked_at` | timestamptz | Nullable. Tracks last usage.                       |
-| `created_at`      | timestamptz |                                                    |
-| `short_id`        | int         | Per-user sequential ID (1, 2, 3). Unique per user. |
+| Column            | Type        | Notes                                               |
+| :---------------- | :---------- | :-------------------------------------------------- |
+| `id`              | uuid        | PK                                                  |
+| `user_id`         | uuid        | FK -> `profiles.id`                                 |
+| `title`           | text        | Display text                                        |
+| `url`             | text        | Destination URL                                     |
+| `sort_order`      | int         | For ordering links                                  |
+| `is_active`       | bool        | Toggle visibility                                   |
+| `clicks`          | int         | Default 0                                           |
+| `last_clicked_at` | timestamptz | Nullable. Tracks last usage.                        |
+| `is_folder`       | bool        | True if item is a folder                            |
+| `parent_id`       | uuid        | Self-referencing FK for nesting (ON DELETE CASCADE) |
+| `created_at`      | timestamptz |                                                     |
+| `short_id`        | int         | Per-user sequential ID (1, 2, 3). Unique per user.  |
 
 ### `link_events` (Analytics)
 
@@ -207,6 +209,8 @@ src/
 | `deleteLink`       | Delete link by ID (with user_id check) |
 | `toggleLinkActive` | Toggle link visibility                 |
 | `reorderLinks`     | Update sort_order for all links        |
+| `createFolder`     | Create a new nested directory folder   |
+| `moveToFolder`     | Move a link into or out of a folder    |
 
 #### Settings Actions (`src/app/(platform)/settings/actions.ts`)
 
@@ -286,6 +290,7 @@ See `src/lib/username.ts` for full list.
 ✅ Unified Profile Component Architecture (100% parity via mobile-first CSS scaling)
 ✅ Zero-Flash Hydration & Unified Skeleton Architecture
 ✅ High-Performance Custom Theme Engine (Debounced + CSS Variables)
+✅ Nested Folders (Drill-Down UI & Native iOS-style slide transitions)
 
 ## 8. Social Link Icons (Implemented)
 

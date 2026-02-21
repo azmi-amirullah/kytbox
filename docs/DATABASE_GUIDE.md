@@ -25,7 +25,7 @@ The root identity for all Kytbox users.
 
 ### 2.1 Bio App (`links`, `link_events`)
 
-- **`links`**: Individual links on a user's bio page.
+- **`links`**: Individual links and folders on a user's bio page. Uses `is_folder` (boolean) and `parent_id` (uuid, self-referencing) to support nested directory structures.
 - **`link_events`**: Analytics for link clicks (UA, Country, Referer).
 
 ### 2.2 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`)
@@ -60,6 +60,7 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 | 2     | `20260202_create_cashflow_tables.sql`      | Multi-tenant cashflow logic.                                |
 | 3     | `20260210190000_create_support_system.sql` | `profiles.role`, support tables, and support RPC functions. |
 | 4     | `20260220_add_custom_theme_column.sql`     | `custom_theme` JSONB, `button_style`, and `button_shape`.   |
+| 5     | `20260220104943_add_nested_folders.sql`    | `is_folder` and `parent_id` to `links` table.               |
 
 ---
 
@@ -71,4 +72,4 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 
 ---
 
-_Last Updated: February 11, 2026_
+_Last Updated: February 20, 2026_

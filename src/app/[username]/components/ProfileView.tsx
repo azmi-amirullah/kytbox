@@ -96,7 +96,7 @@ export default function ProfileView({
           : undefined
       }
     >
-      <div className='flex flex-col items-center min-h-full w-full max-w-[680px] mx-auto px-4 pt-16 pb-12 '>
+      <div className='flex flex-col items-center min-h-full w-full max-w-[680px] mx-auto px-8 pt-16 pb-12 '>
         {/* Header (Avatar, Name, Bio) */}
         <ProfileHeader
           profile={profile}

@@ -16,17 +16,21 @@ import {
 } from '@/components/ui/dialog';
 import { LuLoader, LuType, LuGlobe } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import { addLink, updateLink } from '../actions';
+import { addLink, updateLink, createFolder } from '../actions';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LuFolderOpen } from 'react-icons/lu';
 
 interface Link {
   id: string;
   title: string;
   url: string;
+  is_folder: boolean;
 }
 
 interface LinkModalProps {
   mode: 'create' | 'edit';
   link?: Link | null;
+  parentId?: string | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
@@ -35,6 +39,7 @@ interface LinkModalProps {
 export default function LinkModal({
   mode,
   link = null,
+  parentId = null,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   trigger,
@@ -47,6 +52,7 @@ export default function LinkModal({
   const [shouldClose, setShouldClose] = useState(false);
 
   // Form state
+  const [type, setType] = useState<'link' | 'folder'>('link');
   const [title, setTitle] = useState(link?.title || '');
   const [url, setUrl] = useState(link?.url || '');
 
@@ -62,6 +68,7 @@ export default function LinkModal({
   useEffect(() => {
     if (open) {
       queueMicrotask(() => {
+        setType(link?.is_folder ? 'folder' : 'link');
         setTitle(link?.title || '');
         setUrl(link?.url || '');
         setError(null);
@@ -86,21 +93,31 @@ export default function LinkModal({
 
     const formData = new FormData();
     formData.append('title', title);
-    formData.append('url', url);
+    if (type === 'link') formData.append('url', url);
+    formData.append('isFolder', type === 'folder' ? 'true' : 'false');
+    if (parentId) formData.append('parentId', parentId);
 
     let result;
     if (isEdit && link) {
       result = await updateLink(link.id, formData);
+    } else if (type === 'folder') {
+      result = await createFolder(title);
     } else {
       result = await addLink(formData);
     }
 
     if (result?.error) {
       setError(result.error);
-      toast.error(isEdit ? 'Failed to update link' : 'Failed to add link');
+      toast.error(
+        isEdit ? `Failed to update ${type}` : `Failed to add ${type}`,
+      );
       setIsLoading(false);
     } else {
-      toast.success(isEdit ? 'Link updated!' : 'Link added!');
+      toast.success(
+        isEdit
+          ? `${type === 'folder' ? 'Folder' : 'Link'} updated!`
+          : `${type === 'folder' ? 'Folder' : 'Link'} added!`,
+      );
       setIsLoading(false);
       startTransition(() => {
         router.refresh();
@@ -114,23 +131,45 @@ export default function LinkModal({
       <div className='p-6 pb-0'>
         <DialogHeader className='mb-6'>
           <DialogTitle className='text-xl text-center'>
-            {isEdit ? 'Edit Link' : 'Add New Link'}
+            {isEdit
+              ? `Edit ${type === 'folder' ? 'Folder' : 'Link'}`
+              : 'Add New Link'}
           </DialogTitle>
           <DialogDescription className='text-center'>
             {isEdit
-              ? 'Make changes to your link here. Click save when you&apos;re done.'
+              ? `Make changes to your ${type} here. Click save when you're done.`
               : 'Add a new link to share with your audience.'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
+          {!isEdit && (
+            <Tabs
+              value={type}
+              onValueChange={(val) => setType(val as 'link' | 'folder')}
+              className='w-full'
+            >
+              <TabsList className='w-full grid grid-cols-2 bg-secondary'>
+                <TabsTrigger value='link' className='gap-2'>
+                  <LuGlobe className='w-4 h-4' />
+                  Link
+                </TabsTrigger>
+                <TabsTrigger value='folder' className='gap-2'>
+                  <LuFolderOpen className='w-4 h-4' />
+                  Folder
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+
           <div className='grid gap-4'>
             <div className='grid gap-2'>
               <Label
                 htmlFor='title'
                 className='font-medium text-foreground/80 gap-0.5'
               >
-                Link Title<span className='text-destructive'>*</span>
+                {type === 'folder' ? 'Folder Name' : 'Link Title'}
+                <span className='text-destructive'>*</span>
               </Label>
               <div className='relative'>
                 <LuType className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
@@ -139,33 +178,41 @@ export default function LinkModal({
                   name='title'
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder='My Awesome Website'
+                  placeholder={
+                    type === 'folder'
+                      ? 'My Awesome Folder'
+                      : 'My Awesome Website'
+                  }
                   required
                   className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
                 />
               </div>
             </div>
-            <div className='grid gap-2'>
-              <Label
-                htmlFor='url'
-                className='font-medium text-foreground/80 gap-0.5'
-              >
-                Destination URL<span className='text-destructive'>*</span>
-              </Label>
-              <div className='relative'>
-                <LuGlobe className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
-                <Input
-                  id='url'
-                  name='url'
-                  type='text'
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder='https://example.com/awesome-page'
-                  required
-                  className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
-                />
+
+            {type === 'link' && (
+              <div className='grid gap-2'>
+                <Label
+                  htmlFor='url'
+                  className='font-medium text-foreground/80 gap-0.5'
+                >
+                  Destination URL<span className='text-destructive'>*</span>
+                </Label>
+                <div className='relative'>
+                  <LuGlobe className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+                  <Input
+                    id='url'
+                    name='url'
+                    type='text'
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder='https://example.com/awesome-page'
+                    required
+                    className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
             {error && (
               <p className='text-sm text-destructive text-center bg-destructive/10 p-2 rounded-md font-medium'>
                 {error}

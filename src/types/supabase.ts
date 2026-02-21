@@ -174,6 +174,8 @@ export interface Database {
           last_clicked_at: string | null;
           created_at: string;
           short_id: number | null;
+          is_folder: boolean;
+          parent_id: string | null;
         };
         Insert: {
           id?: string;
@@ -186,6 +188,8 @@ export interface Database {
           last_clicked_at?: string | null;
           created_at?: string;
           short_id?: number;
+          is_folder?: boolean;
+          parent_id?: string | null;
         };
         Update: {
           id?: string;
@@ -198,6 +202,8 @@ export interface Database {
           last_clicked_at?: string | null;
           created_at?: string;
           short_id?: number;
+          is_folder?: boolean;
+          parent_id?: string | null;
         };
         Relationships: [
           {

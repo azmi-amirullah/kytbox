@@ -90,3 +90,37 @@ To ensure the CSS Variables never "break" during typing, we implemented an **Aut
 ✅ **Mobile-True Preview**: Dashboard preview is now an authentic representation of the public page.
 ✅ **Unified Codebase**: 40% reduction in conditional rendering logic in bio components.
 ✅ **High-Performance Personalization**: Fluid, real-time custom theme engine with zero-lag inputs.
+
+## 7. Nested Directory Architecture
+
+In late February 2026, we introduced Nested Folders for the Bio profile, architected specifically to preserve the Unified Profile ideals (Zero CLS and strict 1:1 parity).
+
+### 7.1 Single-Table Design
+
+Instead of creating a separate `folders` table, folders exist as rows within the existing `links` table.
+
+- **Columns Added**: `is_folder` (boolean) and `parent_id` (uuid, self-referencing).
+- **Integrity**: `parent_id` is bound by a PostgreSQL `ON DELETE CASCADE` constraint. Deleting a folder guarantees the instant deletion of all nested links, preventing orphan rows without requiring application-level cleanup logic.
+- **Performance**: This allows the frontend to fetch the entire directory structure in a single, simple Supabase query without `JOIN` operations.
+
+### 7.2 The "Drill-Down" Dashboard UI
+
+To prevent the chaotic UX of dragging and dropping items into deep, expanding trees on mobile screens, the Creator Dashboard uses a **Drill-Down** architecture.
+
+- Clicking a folder replaces the active root view with the folder's view.
+- Drag-and-drop ordering is strictly maintained within the isolated view of that specific folder.
+- A "Move to Folder" Modal handles cross-directory transport, bypassing complex multi-touch gestures.
+
+### 7.3 Public View Slide Transitions
+
+Expanding folders via Accordions pushes content down, causing massive Cumulative Layout Shift (CLS) penalties and breaking the premium feel.
+
+- **Framer Motion**: The `ProfileLinks` component uses `<AnimatePresence>` to render iOS-style sliding transitions.
+- When navigating into a folder, the root links slide out to the left, and the folder contents slide in from the right, maintaining a static viewport height and a native-app feel.
+
+### 7.4 Technical Debt & Future Optimizations (Code Review Notes)
+
+As identified by the architectural review (`@[/code-reviewer]`), two areas require monitoring as the product scales:
+
+1.  **Analytics Ambiguity**: Folders are currently recorded in the `links` table. Analytics queries (e.g., `get_analytics_chart_data`) must explicitly filter out `is_folder = true` to prevent false "clicks" being registered when a user simply opens a folder.
+2.  **Schema Recursion**: The UI strictly enforces a 1-level limit (folders cannot contain folders). However, the underlying Postgres schema technically allows infinite recursion. If the API is ever exposed publicly, a Postgres trigger should be implemented to reject `parent_id` updates where the target parent is itself a child.

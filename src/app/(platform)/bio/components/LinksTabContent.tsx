@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -30,6 +31,8 @@ export default function LinksTabContent({
   totalViews,
   isLoading,
 }: LinksTabContentProps) {
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+
   const totalClicks = links.reduce((sum, link) => sum + link.clicks, 0);
   const activeLinksCount = links.filter((l) => l.is_active).length;
 
@@ -81,6 +84,7 @@ export default function LinksTabContent({
           ) : (
             <LinkModal
               mode='create'
+              parentId={currentFolderId}
               trigger={
                 <Button
                   size='sm'
@@ -95,7 +99,13 @@ export default function LinksTabContent({
         </div>
         <CardContent className='p-0'>
           <div className='p-4 sm:p-6 min-h-[400px]'>
-            <LinkList links={links} setLinks={setLinks} isLoading={isLoading} />
+            <LinkList
+              links={links}
+              setLinks={setLinks}
+              isLoading={isLoading}
+              currentFolderId={currentFolderId}
+              onDrillDown={setCurrentFolderId}
+            />
           </div>
         </CardContent>
       </Card>

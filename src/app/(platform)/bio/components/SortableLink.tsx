@@ -11,6 +11,9 @@ import {
   LuActivity,
   LuCheck,
   LuPencil,
+  LuFolderOpen,
+  LuFolderInput,
+  LuTriangleAlert,
 } from 'react-icons/lu';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -39,6 +42,8 @@ interface SortableLinkProps {
   link: Link;
   onToggle: (linkId: string, isActive: boolean) => void;
   onDelete: (linkId: string) => void;
+  onMove: (linkId: string) => void;
+  onDrillDown: (folderId: string) => void;
 }
 
 const LinkItemContent = memo(function LinkItemContent({
@@ -47,12 +52,14 @@ const LinkItemContent = memo(function LinkItemContent({
   listeners,
   onToggle,
   onDelete,
+  onMove,
 }: {
   link: Link;
   attributes?: ReturnType<typeof useSortable>['attributes'];
   listeners?: ReturnType<typeof useSortable>['listeners'];
   onToggle: (linkId: string, isActive: boolean) => void;
   onDelete: (linkId: string) => void;
+  onMove: (linkId: string) => void;
 }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -79,13 +86,14 @@ const LinkItemContent = memo(function LinkItemContent({
       <button
         {...attributes}
         {...listeners}
+        onClick={(e) => e.stopPropagation()}
         className='p-2 cursor-move text-muted-foreground/50 hover:text-foreground touch-none select-none transition-colors'
       >
         <LuGripVertical className='w-5 h-5' />
       </button>
 
       {/* Toggle */}
-      <div className='flex items-center'>
+      <div className='flex items-center' onClick={(e) => e.stopPropagation()}>
         <Switch
           checked={link.is_active}
           onCheckedChange={(checked) => onToggle(link.id, checked)}
@@ -97,11 +105,14 @@ const LinkItemContent = memo(function LinkItemContent({
       <div className='flex-1 min-w-0 ml-1'>
         <div className='flex items-center gap-2'>
           <h3
-            className={`font-semibold truncate text-sm sm:text-base ${
+            className={`font-semibold truncate text-sm sm:text-base flex items-center gap-1.5 ${
               !link.is_active &&
               'text-muted-foreground line-through decoration-muted-foreground/50'
             }`}
           >
+            {link.is_folder && (
+              <LuFolderOpen className='w-4 h-4 shrink-0 text-muted-foreground' />
+            )}
             {link.title}
           </h3>
           {!link.is_active && (
@@ -110,48 +121,84 @@ const LinkItemContent = memo(function LinkItemContent({
             </span>
           )}
         </div>
-        <a
-          href={link.url}
-          target='_blank'
-          rel='noopener noreferrer'
-          className='text-xs text-muted-foreground truncate hover:text-primary transition-colors hover:underline block'
-          onClick={(e) => e.stopPropagation()}
-        >
-          {link.url}
-        </a>
+        {!link.is_folder && (
+          <a
+            href={link.url}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='text-xs text-muted-foreground truncate hover:text-primary transition-colors hover:underline block'
+            onClick={(e) => e.stopPropagation()}
+          >
+            {link.url}
+          </a>
+        )}
       </div>
 
       {/* Stats */}
-      <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
-        <LuActivity className='w-3.5 h-3.5' />
-        {link.clicks}
-        <span className='opacity-70'>clicks</span>
-      </div>
+      {!link.is_folder && (
+        <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
+          <LuActivity className='w-3.5 h-3.5' />
+          {link.clicks}
+          <span className='opacity-70'>clicks</span>
+        </div>
+      )}
 
       {/* Actions */}
-      <div className='flex items-center gap-1 sm:gap-2'>
-        <TooltipProvider>
-          <Tooltip open={hasCopied || undefined}>
-            <TooltipTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='w-8 h-8 text-primary hover:text-primary hover:bg-primary/10'
-                onClick={copyToClipboard}
-              >
-                {hasCopied ? (
-                  <LuCheck className='w-4 h-4' />
-                ) : (
-                  <LuCopy className='w-4 h-4' />
-                )}
-                <span className='sr-only'>Copy URL</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{hasCopied ? 'Copied!' : 'Copy URL'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      <div
+        className='flex items-center gap-1 sm:gap-2'
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!link.is_folder && (
+          <TooltipProvider>
+            <Tooltip open={hasCopied || undefined}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='w-8 h-8 text-primary hover:text-primary hover:bg-primary/10'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyToClipboard();
+                  }}
+                >
+                  {hasCopied ? (
+                    <LuCheck className='w-4 h-4' />
+                  ) : (
+                    <LuCopy className='w-4 h-4' />
+                  )}
+                  <span className='sr-only'>Copy URL</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{hasCopied ? 'Copied!' : 'Copy URL'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {!link.is_folder && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='w-8 h-8 text-primary hover:text-primary hover:bg-primary/10'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMove(link.id);
+                  }}
+                >
+                  <LuFolderInput className='w-4 h-4' />
+                  <span className='sr-only'>Move</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Move</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
 
         <TooltipProvider>
           <Tooltip>
@@ -160,7 +207,10 @@ const LinkItemContent = memo(function LinkItemContent({
                 variant='ghost'
                 size='icon'
                 className='w-8 h-8 text-primary hover:text-primary hover:bg-primary/10'
-                onClick={() => setShowEditModal(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowEditModal(true);
+                }}
               >
                 <LuPencil className='w-4 h-4' />
                 <span className='sr-only'>Edit</span>
@@ -179,7 +229,10 @@ const LinkItemContent = memo(function LinkItemContent({
                 variant='ghost'
                 size='icon'
                 className='w-8 h-8 text-destructive hover:text-destructive hover:bg-destructive/10'
-                onClick={handleDeleteClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick();
+                }}
               >
                 <LuTrash2 className='w-4 h-4' />
                 <span className='sr-only'>Delete</span>
@@ -196,10 +249,22 @@ const LinkItemContent = memo(function LinkItemContent({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Link</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete &quot;{link.title}&quot;? This
-              action cannot be undone.
+            <AlertDialogTitle className='pb-2 border-b mb-2'>
+              Delete {link.is_folder ? 'Folder' : 'Link'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className='space-y-3'>
+              <p>
+                Are you sure you want to delete &quot;{link.title}&quot;? This
+                action cannot be undone.
+              </p>
+              {link.is_folder && (
+                <div className='p-3 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-lg flex items-start gap-2 text-left mt-2 dark:text-amber-500'>
+                  <LuTriangleAlert className='w-4 h-4 shrink-0 mt-0.5' />
+                  <p className='text-sm font-medium'>
+                    This will permanently delete ALL links inside this folder.
+                  </p>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -227,6 +292,8 @@ export default function SortableLink({
   link,
   onToggle,
   onDelete,
+  onMove,
+  onDrillDown,
 }: SortableLinkProps) {
   const {
     attributes,
@@ -254,14 +321,29 @@ export default function SortableLink({
     <div
       ref={setNodeRef}
       style={style}
+      onClick={(e) => {
+        if (!link.is_folder) return;
+        const target = e.target as HTMLElement;
+        const currentTarget = e.currentTarget as HTMLElement;
+        if (
+          target.closest('button') ||
+          target.closest('a') ||
+          target.closest('input')
+        )
+          return;
+        if (!currentTarget.contains(target)) return;
+        onDrillDown(link.id);
+      }}
+      role={link.is_folder ? 'button' : undefined}
       className={`
         group flex items-center gap-3 p-3 rounded-xl border
-        bg-secondary/50 border-border transition-colors duration-200
+        bg-secondary/50 border-border transition-all duration-200
         ${
           isDragging
             ? 'opacity-50 shadow-xl ring-1 ring-primary/20'
             : 'hover:border-primary/20 hover:shadow-sm hover:bg-secondary/80'
         }
+        ${link.is_folder && !isDragging ? 'cursor-pointer hover:border-primary/50' : ''}
       `}
     >
       <LinkItemContent
@@ -270,6 +352,7 @@ export default function SortableLink({
         listeners={listeners}
         onToggle={onToggle}
         onDelete={onDelete}
+        onMove={onMove}
       />
     </div>
   );

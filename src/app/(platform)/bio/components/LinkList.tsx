@@ -16,10 +16,11 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import SortableLink from './SortableLink';
 import { reorderLinks, toggleLinkActive, deleteLink } from '../actions';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import MoveToFolderModal from './MoveToFolderModal';
+import SortableLink from './SortableLink';
 import type { Database } from '@/types/supabase';
 
 type Link = Database['public']['Tables']['links']['Row'];
@@ -28,15 +29,20 @@ interface LinkListProps {
   links: Link[];
   setLinks: React.Dispatch<React.SetStateAction<Link[]>>;
   isLoading?: boolean;
+  currentFolderId: string | null;
+  onDrillDown: (folderId: string | null) => void;
 }
 
 export default function LinkList({
   links,
   setLinks,
   isLoading,
+  currentFolderId,
+  onDrillDown,
 }: LinkListProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [linkToMove, setLinkToMove] = useState<Link | null>(null);
 
   // Delay DndContext render to avoid hydration mismatch
   useEffect(() => {
@@ -111,27 +117,74 @@ export default function LinkList({
     );
   }
 
+  // Filter links based on folder view
+  const visibleLinks = links.filter((l) =>
+    currentFolderId ? l.parent_id === currentFolderId : l.parent_id === null,
+  );
+
+  const folders = links.filter((l) => l.is_folder);
+  const currentFolder = currentFolderId
+    ? links.find((l) => l.id === currentFolderId)
+    : null;
+
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={links.map((l) => l.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className='space-y-3'>
-          {links.map((link) => (
-            <SortableLink
-              key={link.id}
-              link={link}
-              onToggle={handleToggle}
-              onDelete={handleDelete}
-            />
-          ))}
+    <>
+      {currentFolderId && currentFolder && (
+        <div className='mb-4 pb-4 border-b border-border flex items-center gap-2 text-sm'>
+          <button
+            onClick={() => onDrillDown(null)}
+            className='text-muted-foreground hover:text-foreground transition-colors font-medium flex items-center gap-1 cursor-pointer'
+          >
+            ← Back to main list
+          </button>
+          <span className='text-muted-foreground'>/</span>
+          <span className='font-semibold'>{currentFolder.title}</span>
         </div>
-      </SortableContext>
-    </DndContext>
+      )}
+
+      {visibleLinks.length === 0 && (
+        <div className='text-center py-12 text-muted-foreground'>
+          <p>This folder is empty.</p>
+          <p className='text-sm'>Move or add links here.</p>
+        </div>
+      )}
+
+      {visibleLinks.length > 0 && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={visibleLinks.map((l) => l.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className='space-y-3'>
+              {visibleLinks.map((link) => (
+                <SortableLink
+                  key={link.id}
+                  link={link}
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                  onMove={(id) =>
+                    setLinkToMove(links.find((l) => l.id === id) || null)
+                  }
+                  onDrillDown={onDrillDown}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+
+      {linkToMove && (
+        <MoveToFolderModal
+          link={linkToMove}
+          folders={folders}
+          open={!!linkToMove}
+          onOpenChange={(open) => !open && setLinkToMove(null)}
+        />
+      )}
+    </>
   );
 }
