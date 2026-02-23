@@ -76,36 +76,36 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Performance & Architecture
 
-| ID  | Severity  | File                     | Issue                                                                                          | Fix                                      |
-| :-- | :-------- | :----------------------- | :--------------------------------------------------------------------------------------------- | :--------------------------------------- |
-| P1  | 🚨 High   | `analytics/actions.ts`   | **4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views)           | `Promise.all()` — est. 4x speedup        |
-| P2  | ⚠️ Medium | `bio/actions.ts`         | `addLink` runs 2 sequential independent queries (sort_order + RPC)                             | `Promise.all()`                          |
-| P3  | ⚠️ Medium | `cashflow/actions.ts`    | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)                 | Join or RPC                              |
-| P4  | ⚠️ Medium | `[username]/page.tsx`    | **Profile queried twice** — once in `page()`, once in `generateMetadata()`                     | Use `cache()` wrapper or request dedup   |
-| P5  | ⚠️ Medium | `cashflow/[id]/page.tsx` | **Sequential queries** — fetches cashflow inside `Promise.all`, then awaits `share` separately | Move share query to `Promise.all`        |
-| P6  | 💡 Low    | `src/lib/data-cache.ts`  | **Dead code** — `unstable_cache` helpers are defined but never used                            | Implement in static pages or remove      |
-| P7  | 💡 Low    | 9 pages                  | `select('*')` over-fetches columns (profiles, links, cashflows, tickets)                       | Select only needed columns               |
-| P8  | 🚨 High   | `cashflow_shares` (DB)   | **Missing `email` index** on `cashflow_shares` causes full sequential table scans for users    | `CREATE INDEX idx_cashflow_shares_email` |
+| ID    | Severity  | File                     | Issue                                                                                          | Fix                                      |
+| :---- | :-------- | :----------------------- | :--------------------------------------------------------------------------------------------- | :--------------------------------------- |
+| ✅ P1 | 🚨 High   | `analytics/actions.ts`   | ~~**4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views)~~       | ✅ Fixed                                 |
+| P2    | ⚠️ Medium | `bio/actions.ts`         | `addLink` runs 2 sequential independent queries (sort_order + RPC)                             | `Promise.all()`                          |
+| P3    | ⚠️ Medium | `cashflow/actions.ts`    | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)                 | Join or RPC                              |
+| P4    | ⚠️ Medium | `[username]/page.tsx`    | **Profile queried twice** — once in `page()`, once in `generateMetadata()`                     | Use `cache()` wrapper or request dedup   |
+| P5    | ⚠️ Medium | `cashflow/[id]/page.tsx` | **Sequential queries** — fetches cashflow inside `Promise.all`, then awaits `share` separately | Move share query to `Promise.all`        |
+| P6    | 💡 Low    | `src/lib/data-cache.ts`  | **Dead code** — `unstable_cache` helpers are defined but never used                            | Implement in static pages or remove      |
+| P7    | 💡 Low    | 9 pages                  | `select('*')` over-fetches columns (profiles, links, cashflows, tickets)                       | Select only needed columns               |
+| P8    | 🚨 High   | `cashflow_shares` (DB)   | **Missing `email` index** on `cashflow_shares` causes full sequential table scans for users    | `CREATE INDEX idx_cashflow_shares_email` |
 
 ### Code Quality & Security
 
-| ID  | Severity  | File                  | Issue                                                                                   | Fix                                    |
-| :-- | :-------- | :-------------------- | :-------------------------------------------------------------------------------------- | :------------------------------------- |
-| Q1  | ⚠️ Medium | `cashflow/actions.ts` | **Edit-permission logic duplicated 3x** across `addEntry`, `updateEntry`, `deleteEntry` | Extract `checkEditPermission()` helper |
-| Q2  | 💡 Low    | `share-actions.ts`    | `updateShareRole` lacks App-level ownership check (DB trigger already protects this)    | Add explicit ownership verification    |
-| Q3  | 💡 Low    | `cashflow/page.tsx`   | Triple `as unknown as` casts — Supabase types mismatch                                  | Fix types or use `.returns<T>()`       |
-| Q4  | 🚨 High   | Server Actions        | **No Zod validation** on `FormData` processing, relying blindly on type casting         | Implement strict Zod parsing           |
-| Q5  | ⚠️ Medium | `components/`         | **Component Data Leaks** — Risk of passing entire DB rows from Server to Client props   | Map strictly to DTOs in Client layers  |
+| ID  | Severity    | File                  | Issue                                                                                   | Fix                                                                      |
+| :-- | :---------- | :-------------------- | :-------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| Q1  | ⚠️ Medium   | `cashflow/actions.ts` | **Edit-permission logic duplicated 3x** across `addEntry`, `updateEntry`, `deleteEntry` | Extract `checkEditPermission()` helper                                   |
+| Q2  | 💡 Low      | `share-actions.ts`    | `updateShareRole` lacks App-level ownership check (DB trigger already protects this)    | Add explicit ownership verification                                      |
+| Q3  | 💡 Low      | `cashflow/page.tsx`   | Triple `as unknown as` casts — Supabase types mismatch                                  | Fix types or use `.returns<T>()`                                         |
+| Q4  | 🚨 Critical | Server Actions        | **No schema validation** on `FormData` processing, relying blindly on type casting      | Implement strict parsing (Valibot for Edge, or Zod 4)                    |
+| Q5  | 🚨 Critical | `components/`         | **Component Data Leaks** — Risk of passing entire DB rows from Server to Client props   | Map strictly to DTOs in Client layers. NEVER pass raw DB rows to client. |
 
 ### Error Handling & Reliability
 
-| ID  | Severity  | File                                  | Issue                                                                                   | Fix                              |
-| :-- | :-------- | :------------------------------------ | :-------------------------------------------------------------------------------------- | :------------------------------- |
-| E1  | ⚠️ Medium | `cashflow/`, `support-admin/`, `app/` | **Missing `error.tsx` boundaries** — only bio, settings, [username] have them           | Add error boundaries             |
-| E2  | ⚠️ Medium | `cashflow/[id]/page.tsx`              | **Unsafe non-null assertion** — `user.email!.toLowerCase()` will crash if email missing | Add `user.email ?` check         |
-| E3  | 💡 Low    | `(auth)/actions.ts` L106              | `resetPassword` builds redirect URL from `origin` header — could be manipulated         | Validate against allowed origins |
-| E4  | ⚠️ Medium | `(auth)/actions.ts` L142              | `checkUsernameAvailable` has NO rate limiting — active username enumeration risk        | Add rate limit or debounce       |
-| E5  | 🚨 High   | `(auth)/actions.ts`                   | **Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`               | Add Upstash Redis rate limiting  |
+| ID  | Severity    | File                                  | Issue                                                                                   | Fix                              |
+| :-- | :---------- | :------------------------------------ | :-------------------------------------------------------------------------------------- | :------------------------------- |
+| E1  | 🚨 High     | `cashflow/`, `support-admin/`, `app/` | **Missing `error.tsx` boundaries** — only bio, settings, [username] have them           | Add error boundaries             |
+| E2  | 🚨 High     | `cashflow/[id]/page.tsx`              | **Unsafe non-null assertion** — `user.email!.toLowerCase()` will crash if email missing | Add `user.email ?` check         |
+| E3  | 💡 Low      | `(auth)/actions.ts` L106              | `resetPassword` builds redirect URL from `origin` header — could be manipulated         | Validate against allowed origins |
+| E4  | ⚠️ Medium   | `(auth)/actions.ts` L142              | `checkUsernameAvailable` has NO rate limiting — active username enumeration risk        | Add rate limit or debounce       |
+| E5  | 🚨 Critical | `(auth)/actions.ts`                   | **Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`               | Add Upstash Redis rate limiting  |
 
 ### Accessibility & Configuration (A11y/Infra)
 
@@ -113,15 +113,15 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | :-- | :-------- | :------------- | :-------------------------------------------------------------------------------- | :----------------------------------- |
 | A1  | ⚠️ Medium | All Components | **Missing ARIA attributes** — only 1 `aria-expanded` found in entire UI layer     | Add standard radix/aria tags         |
 | A2  | 💡 Low    | `package.json` | **Phantom dependency** — `@types/crypto-js` in devDeps but no `crypto-js` in deps | Run `npm uninstall @types/crypto-js` |
-| A3  | ⚠️ Medium | `components/`  | **UI Architecture Compliance** — Missing clear Atomic Design directory splits     | Refactor into atoms/molecules/orgs   |
+| A3  | 💡 Low    | `components/`  | **UI Architecture Compliance** — Missing clear Atomic Design directory splits     | Refactor into atoms/molecules/orgs   |
 
 ### Type Safety
 
-| ID  | Severity | File                                                         | Issue                                                                |
-| :-- | :------- | :----------------------------------------------------------- | :------------------------------------------------------------------- |
-| T1  | 💡 Low   | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | `formData.get() as string` without null checks (~15 occurrences)     |
-| T2  | 💡 Low   | `bio/page.tsx`                                               | `profile={{} as Profile}` for loading states lies to the type system |
-| T3  | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                       |
+| ID  | Severity | File                                                         | Issue                                                                | Fix                                                         |
+| :-- | :------- | :----------------------------------------------------------- | :------------------------------------------------------------------- | :---------------------------------------------------------- |
+| T1  | � High   | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | `formData.get() as string` without null checks (~15 occurrences)     | Add null checks and/or Zod validation to prevent 500 errors |
+| T2  | 💡 Low   | `bio/page.tsx`                                               | `profile={{} as Profile}` for loading states lies to the type system | Use proper loading skeleton or `Partial<Profile>` types     |
+| T3  | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                       | Fix types to remove unsafe casts                            |
 
 ### ⚠️ Missing Pillars (Unaudited, Tracked for March)
 
@@ -136,29 +136,36 @@ The following enterprise categories are completely missing from the codebase and
 
 ### What's Already Good ✅
 
-- **Zero XSS vectors** — no `dangerouslySetInnerHTML` anywhere in the codebase
+- **XSS Mitigations** — no `dangerouslySetInnerHTML`. However, **requires validation** that user inputs like `href={userLink}` strictly sanitize protocol schemes (e.g., prevents `javascript:alert('pwned')`).
 - **Admin client** only used in link redirect route (server-side, properly scoped)
 - **Environment variables** — only `NEXT_PUBLIC_SUPABASE_URL` and publishable key exposed (safe)
 - **Error boundaries** exist for bio, settings, and public profile pages
 - **Auth helper** uses `getUser()` (server-verified) not `getSession()` (client-spoofable)
 - **All actions** return consistent `{ error }` / `{ success }` shapes with `console.error`
-- **URL validation** thorough with protocol + TLD checks
+- **URL validation** thorough with protocol + TLD checks (as long as it's enforced on ALL user inputs)
 - **NPM Audit** — 0 vulnerabilities in production dependencies
 
-### Fix Priority
+### Action Plan Matrix
 
-1. **Q4** — Install and enforce **Zod validation** for ALL Server Actions (Input sanitation is non-negotiable).
-2. **E5** — Implement Upstash **Rate Limiting** on `login`, `signup`, and `resetPassword` actions (Critical security gap).
-3. **P8** — Add missing index to `cashflow_shares` (critical DB performance fix).
-4. **P1** — Parallelize analytics queries (biggest user-facing speedup).
-5. **E4** — Rate limit `checkUsernameAvailable` (active username enumeration risk).
-6. **Q5** — Audit all `use client` component boundaries and map DB rows strictly to DTOs.
-7. **Q1** — Extract edit-permission helper (reduce 45 lines duplication).
-8. **Q2** — Add ownership check to `updateShareRole` (defense in depth, though protected by DB trigger).
-9. **E2** — Fix unsafe non-null assertion in public cashflow route (prevents crash).
-10. **A3** — Refactor `components/` into proper Atomic architecture (atoms, molecules, organisms) to satisfy global mandates.
-11. **E1** — Add missing error boundaries (crash resilience).
-12. **P5 & P2** — Parallelize remaining sequential queries.
-13. **P4** — Cache public profile query (avoid double fetch).
+| ID         | Issue                                                          | Severity        | Effort Target          |
+| :--------- | :------------------------------------------------------------- | :-------------- | :--------------------- |
+| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~             | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
+| **T1**     | Fix blind `as string` casts in `formData` (add `?.toString()`) | 🚨 High         | ⚡ Quick Win           |
+| **E2**     | Fix unsafe non-null assertion `user.email!` in cashflow route  | 🚨 High         | ⚡ Quick Win           |
+| **A2**     | Uninstall phantom dependency `@types/crypto-js`                | 💡 Low          | ⚡ Quick Win           |
+| **E5**     | Implement Upstash Rate Limiting on auth actions                | 🚨 Critical     | 🧰 Medium (Infra)      |
+| **Q4**     | Install and enforce **Zod 4** validation for ALL actions       | 🚨 Critical     | 🛠️ Hard Refactor       |
+| **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)       | 🚨 Critical     | 🛠️ Hard Refactor       |
+| **E1**     | Add missing `error.tsx` boundaries to route tree               | 🚨 High         | 🧰 Medium              |
+| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                   | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| **E4**     | Rate limit `checkUsernameAvailable` endpoint                   | ⚠️ Medium       | 🧰 Medium              |
+| **P2**     | Parallelize `addLink` queries                                  | ⚠️ Medium       | ⚡ Quick Win           |
+| **P4**     | Cache public profile query (prevent db double-fetch)           | ⚠️ Medium       | ⚡ Quick Win           |
+| **P5**     | Parallelize cashflow share query in Promise.all                | ⚠️ Medium       | ⚡ Quick Win           |
+| **Q1**     | Extract edit-permission helper logic                           | 💡 Low          | 🧰 Medium (Refactor)   |
+| **Q2**     | Add redundant ownership check to share roles                   | 💡 Low          | ⚡ Quick Win           |
+| **T2**     | Fix TS lie: `profile={{} as Profile}`                          | 💡 Low          | ⚡ Quick Win           |
+| **T3**     | Fix unsafe TS casts in `AppearanceEditor`                      | 💡 Low          | 🧰 Medium              |
+| **A3**     | Architecture: Refactor components to Atomic Design             | 💡 Low          | 🧱 Long-term Refactor  |
 
-> **[@code-reviewer note]**: The audit document was updated by `@code-reviewer` to reflect accurate severities, point out the existing database protections for `Q2`, and add the critical `P8` missing index vulnerability.
+> **[@code-reviewer note]**: The audit document was updated by `@code-reviewer` to reflect accurate severities, prioritizing Security > Stability > Performance > Code Quality. The list above is the true priority list required for an enterprise-ready release.
