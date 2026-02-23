@@ -84,52 +84,54 @@ export async function getAnalyticsData(
       bucketInterval = 'hour';
   }
 
-  // Try optimized RPC queries first, fallback to JS aggregation if RPC not available
-  let chartData: ChartDataPoint[];
-  let totalClicks: number;
+  // Run all four major data-fetching queries in parallel for performance (Fix P1)
+  const [chartDataResult, topReferer, topLinks, totalViews] = await Promise.all(
+    [
+      // 1. Chart Data & Clicks (with fallback wrapper)
+      getAggregatedChartData(
+        supabase,
+        targetLinkIds,
+        startDate,
+        bucketInterval,
+        range,
+        now,
+      ).then(async (rpcResult) => {
+        if (rpcResult.success) {
+          return {
+            chartData: rpcResult.chartData,
+            totalClicks: rpcResult.totalClicks,
+          };
+        }
+        const fallbackResult = await getClientSideAggregation(
+          supabase,
+          targetLinkIds,
+          startDate,
+          range,
+          now,
+        );
+        return {
+          chartData: fallbackResult.chartData,
+          totalClicks: fallbackResult.totalClicks,
+        };
+      }),
 
-  const rpcResult = await getAggregatedChartData(
-    supabase,
-    targetLinkIds,
-    startDate,
-    bucketInterval,
-    range,
-    now,
+      // 2. Top Referer
+      getTopRefererData(supabase, targetLinkIds, startDate),
+
+      // 3. Top Links Analytics
+      getTopLinksData(
+        supabase,
+        links.filter((l) => targetLinkIds.includes(l.id)),
+        targetLinkIds,
+        startDate,
+      ),
+
+      // 4. Total Profile Views
+      getTotalProfileViews(supabase, user.id, startDate),
+    ],
   );
 
-  if (rpcResult.success) {
-    chartData = rpcResult.chartData;
-    totalClicks = rpcResult.totalClicks;
-  } else {
-    // Fallback to client-side aggregation
-    const fallbackResult = await getClientSideAggregation(
-      supabase,
-      targetLinkIds,
-      startDate,
-      range,
-      now,
-    );
-    chartData = fallbackResult.chartData;
-    totalClicks = fallbackResult.totalClicks;
-  }
-
-  // Get top referer (try RPC, fallback to client-side)
-  const topReferer = await getTopRefererData(
-    supabase,
-    targetLinkIds,
-    startDate,
-  );
-
-  // Get clicks per link in the time range for top links
-  const topLinks = await getTopLinksData(
-    supabase,
-    links.filter((l) => targetLinkIds.includes(l.id)),
-    targetLinkIds,
-    startDate,
-  );
-
-  // Get total profile views
-  const totalViews = await getTotalProfileViews(supabase, user.id, startDate);
+  const { chartData, totalClicks } = chartDataResult;
 
   // Calculate CTR
   const ctr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;

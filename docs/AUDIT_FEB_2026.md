@@ -72,33 +72,48 @@ Systematic security + code quality review of every commit day in February 2026.
 
 ## Code Quality Audit (Feb 21)
 
-Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin client, public routes, all components.
+Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin client, public routes, all components, and configuration. (Analyzed via `@[/code-reviewer]` standards)
 
-### Performance
+### Performance & Architecture
 
-| ID  | Severity  | File                   | Issue                                                                                | Fix                                    |
-| :-- | :-------- | :--------------------- | :----------------------------------------------------------------------------------- | :------------------------------------- |
-| P1  | 🚨 High   | `analytics/actions.ts` | **4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views) | `Promise.all()` — est. 4x speedup      |
-| P2  | ⚠️ Medium | `bio/actions.ts`       | `addLink` runs 2 sequential independent queries (sort_order + RPC)                   | `Promise.all()`                        |
-| P3  | ⚠️ Medium | `cashflow/actions.ts`  | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)       | Join or RPC                            |
-| P4  | ⚠️ Medium | `[username]/page.tsx`  | **Profile queried twice** — once in `page()`, once in `generateMetadata()`           | Use `cache()` wrapper or request dedup |
-| P5  | 💡 Low    | 9 pages                | `select('*')` over-fetches columns (profiles, links, cashflows, tickets)             | Select only needed columns             |
+| ID  | Severity  | File                     | Issue                                                                                          | Fix                                      |
+| :-- | :-------- | :----------------------- | :--------------------------------------------------------------------------------------------- | :--------------------------------------- |
+| P1  | 🚨 High   | `analytics/actions.ts`   | **4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views)           | `Promise.all()` — est. 4x speedup        |
+| P2  | ⚠️ Medium | `bio/actions.ts`         | `addLink` runs 2 sequential independent queries (sort_order + RPC)                             | `Promise.all()`                          |
+| P3  | ⚠️ Medium | `cashflow/actions.ts`    | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)                 | Join or RPC                              |
+| P4  | ⚠️ Medium | `[username]/page.tsx`    | **Profile queried twice** — once in `page()`, once in `generateMetadata()`                     | Use `cache()` wrapper or request dedup   |
+| P5  | ⚠️ Medium | `cashflow/[id]/page.tsx` | **Sequential queries** — fetches cashflow inside `Promise.all`, then awaits `share` separately | Move share query to `Promise.all`        |
+| P6  | 💡 Low    | `src/lib/data-cache.ts`  | **Dead code** — `unstable_cache` helpers are defined but never used                            | Implement in static pages or remove      |
+| P7  | 💡 Low    | 9 pages                  | `select('*')` over-fetches columns (profiles, links, cashflows, tickets)                       | Select only needed columns               |
+| P8  | 🚨 High   | `cashflow_shares` (DB)   | **Missing `email` index** on `cashflow_shares` causes full sequential table scans for users    | `CREATE INDEX idx_cashflow_shares_email` |
 
-### Code Quality
+### Code Quality & Security
 
 | ID  | Severity  | File                  | Issue                                                                                   | Fix                                    |
 | :-- | :-------- | :-------------------- | :-------------------------------------------------------------------------------------- | :------------------------------------- |
 | Q1  | ⚠️ Medium | `cashflow/actions.ts` | **Edit-permission logic duplicated 3x** across `addEntry`, `updateEntry`, `deleteEntry` | Extract `checkEditPermission()` helper |
-| Q2  | ⚠️ Medium | `share-actions.ts`    | `updateShareRole` has **no ownership check** (unlike `inviteUser`)                      | Add explicit ownership verification    |
+| Q2  | 💡 Low    | `share-actions.ts`    | `updateShareRole` lacks App-level ownership check (DB trigger already protects this)    | Add explicit ownership verification    |
 | Q3  | 💡 Low    | `cashflow/page.tsx`   | Triple `as unknown as` casts — Supabase types mismatch                                  | Fix types or use `.returns<T>()`       |
+| Q4  | 🚨 High   | Server Actions        | **No Zod validation** on `FormData` processing, relying blindly on type casting         | Implement strict Zod parsing           |
+| Q5  | ⚠️ Medium | `components/`         | **Component Data Leaks** — Risk of passing entire DB rows from Server to Client props   | Map strictly to DTOs in Client layers  |
 
-### Error Handling
+### Error Handling & Reliability
 
-| ID  | Severity  | File                                  | Issue                                                                           | Fix                                    |
-| :-- | :-------- | :------------------------------------ | :------------------------------------------------------------------------------ | :------------------------------------- |
-| E1  | ⚠️ Medium | `cashflow/`, `support-admin/`, `app/` | **Missing `error.tsx` boundaries** — only bio, settings, [username] have them   | Add error boundaries                   |
-| E2  | 💡 Low    | `(auth)/actions.ts` L106-108          | `resetPassword` builds redirect URL from `origin` header — could be manipulated | Validate against allowed origins       |
-| E3  | 💡 Low    | `(auth)/actions.ts` L142              | `checkUsernameAvailable` has no rate limiting — enumeration risk                | Add rate limit or debounce server-side |
+| ID  | Severity  | File                                  | Issue                                                                                   | Fix                              |
+| :-- | :-------- | :------------------------------------ | :-------------------------------------------------------------------------------------- | :------------------------------- |
+| E1  | ⚠️ Medium | `cashflow/`, `support-admin/`, `app/` | **Missing `error.tsx` boundaries** — only bio, settings, [username] have them           | Add error boundaries             |
+| E2  | ⚠️ Medium | `cashflow/[id]/page.tsx`              | **Unsafe non-null assertion** — `user.email!.toLowerCase()` will crash if email missing | Add `user.email ?` check         |
+| E3  | 💡 Low    | `(auth)/actions.ts` L106              | `resetPassword` builds redirect URL from `origin` header — could be manipulated         | Validate against allowed origins |
+| E4  | ⚠️ Medium | `(auth)/actions.ts` L142              | `checkUsernameAvailable` has NO rate limiting — active username enumeration risk        | Add rate limit or debounce       |
+| E5  | 🚨 High   | `(auth)/actions.ts`                   | **Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`               | Add Upstash Redis rate limiting  |
+
+### Accessibility & Configuration (A11y/Infra)
+
+| ID  | Severity  | File           | Issue                                                                             | Fix                                  |
+| :-- | :-------- | :------------- | :-------------------------------------------------------------------------------- | :----------------------------------- |
+| A1  | ⚠️ Medium | All Components | **Missing ARIA attributes** — only 1 `aria-expanded` found in entire UI layer     | Add standard radix/aria tags         |
+| A2  | 💡 Low    | `package.json` | **Phantom dependency** — `@types/crypto-js` in devDeps but no `crypto-js` in deps | Run `npm uninstall @types/crypto-js` |
+| A3  | ⚠️ Medium | `components/`  | **UI Architecture Compliance** — Missing clear Atomic Design directory splits     | Refactor into atoms/molecules/orgs   |
 
 ### Type Safety
 
@@ -107,6 +122,17 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | T1  | 💡 Low   | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | `formData.get() as string` without null checks (~15 occurrences)     |
 | T2  | 💡 Low   | `bio/page.tsx`                                               | `profile={{} as Profile}` for loading states lies to the type system |
 | T3  | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                       |
+
+### ⚠️ Missing Pillars (Unaudited, Tracked for March)
+
+The following enterprise categories are completely missing from the codebase and therefore could not be audited. They must be implemented to reach production-grade maturity:
+
+| Pillar                | Issue                                                         | Impact                                                            |
+| :-------------------- | :------------------------------------------------------------ | :---------------------------------------------------------------- |
+| **Automated Testing** | Zero testing frameworks installed (no Jest, Playwright, etc.) | Regressions in business logic cannot be caught automatically      |
+| **CI/CD Pipelines**   | No automated deployment workflows (e.g., GitHub Actions)      | Code is deployed without pre-flight linting or type-checking      |
+| **Observability**     | No application-layer error tracking (e.g., Sentry)            | Server crashes and client exceptions fail silently in production  |
+| **SEO & OpenGraph**   | Missing `generateMetadata` on core marketing/legal pages      | Search engine visibility and social shareability are bottlenecked |
 
 ### What's Already Good ✅
 
@@ -117,14 +143,22 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 - **Auth helper** uses `getUser()` (server-verified) not `getSession()` (client-spoofable)
 - **All actions** return consistent `{ error }` / `{ success }` shapes with `console.error`
 - **URL validation** thorough with protocol + TLD checks
-- **Cashflow page** already uses `Promise.all` for parallel queries
+- **NPM Audit** — 0 vulnerabilities in production dependencies
 
 ### Fix Priority
 
-1. **P1** — Parallelize analytics queries (biggest user-facing speedup)
-2. **Q1** — Extract edit-permission helper (reduce 45 lines duplication)
-3. **Q2** — Add ownership check to `updateShareRole` (defense in depth)
-4. **E1** — Add missing error boundaries (crash resilience)
-5. **P2** — Parallelize `addLink` queries (minor speed win)
-6. **P4** — Cache public profile query (avoid double fetch)
-7. **E2, E3, T1-T3, P5** — Low priority polish
+1. **Q4** — Install and enforce **Zod validation** for ALL Server Actions (Input sanitation is non-negotiable).
+2. **E5** — Implement Upstash **Rate Limiting** on `login`, `signup`, and `resetPassword` actions (Critical security gap).
+3. **P8** — Add missing index to `cashflow_shares` (critical DB performance fix).
+4. **P1** — Parallelize analytics queries (biggest user-facing speedup).
+5. **E4** — Rate limit `checkUsernameAvailable` (active username enumeration risk).
+6. **Q5** — Audit all `use client` component boundaries and map DB rows strictly to DTOs.
+7. **Q1** — Extract edit-permission helper (reduce 45 lines duplication).
+8. **Q2** — Add ownership check to `updateShareRole` (defense in depth, though protected by DB trigger).
+9. **E2** — Fix unsafe non-null assertion in public cashflow route (prevents crash).
+10. **A3** — Refactor `components/` into proper Atomic architecture (atoms, molecules, organisms) to satisfy global mandates.
+11. **E1** — Add missing error boundaries (crash resilience).
+12. **P5 & P2** — Parallelize remaining sequential queries.
+13. **P4** — Cache public profile query (avoid double fetch).
+
+> **[@code-reviewer note]**: The audit document was updated by `@code-reviewer` to reflect accurate severities, point out the existing database protections for `Q2`, and add the critical `P8` missing index vulnerability.
