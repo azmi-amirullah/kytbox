@@ -31,22 +31,20 @@ export async function addLink(formData: FormData) {
     return { error: 'Invalid URL format' };
   }
 
-  // Get the highest sort_order
-  const { data: lastLink } = await supabase
-    .from('links')
-    .select('sort_order')
-    .eq('user_id', user.id)
-    .order('sort_order', { ascending: false })
-    .limit(1)
-    .single();
+  // Get the highest sort_order and next short_id in parallel
+  const [{ data: lastLink }, { data: nextShortId, error: rpcError }] =
+    await Promise.all([
+      supabase
+        .from('links')
+        .select('sort_order')
+        .eq('user_id', user.id)
+        .order('sort_order', { ascending: false })
+        .limit(1)
+        .single(),
+      supabase.rpc('get_next_short_id', { p_user_id: user.id }),
+    ]);
 
   const nextOrder = (lastLink?.sort_order ?? 0) + 1;
-
-  // Get next short_id for this user
-  const { data: nextShortId, error: rpcError } = await supabase.rpc(
-    'get_next_short_id',
-    { p_user_id: user.id },
-  );
 
   if (rpcError) {
     console.error('Failed to get next short_id:', rpcError);
