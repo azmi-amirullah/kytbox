@@ -109,11 +109,11 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Accessibility & Configuration (A11y/Infra)
 
-| ID  | Severity  | File           | Issue                                                                             | Fix                                  |
-| :-- | :-------- | :------------- | :-------------------------------------------------------------------------------- | :----------------------------------- |
-| A1  | ⚠️ Medium | All Components | **Missing ARIA attributes** — only 1 `aria-expanded` found in entire UI layer     | Add standard radix/aria tags         |
-| A2  | 💡 Low    | `package.json` | **Phantom dependency** — `@types/crypto-js` in devDeps but no `crypto-js` in deps | Run `npm uninstall @types/crypto-js` |
-| A3  | 💡 Low    | `components/`  | **UI Architecture Compliance** — Missing clear Atomic Design directory splits     | Refactor into atoms/molecules/orgs   |
+| ID    | Severity  | File           | Issue                                                                                 | Fix                                |
+| :---- | :-------- | :------------- | :------------------------------------------------------------------------------------ | :--------------------------------- |
+| A1    | ⚠️ Medium | All Components | **Missing ARIA attributes** — only 1 `aria-expanded` found in entire UI layer         | Add standard radix/aria tags       |
+| ✅ A2 | 💡 Low    | `package.json` | ~~**Phantom dependency** — `@types/crypto-js` in devDeps but no `crypto-js` in deps~~ | ✅ Fixed                           |
+| A3    | 💡 Low    | `components/`  | **UI Architecture Compliance** — Missing clear Atomic Design directory splits         | Refactor into atoms/molecules/orgs |
 
 ### Type Safety
 
@@ -143,7 +143,7 @@ The following enterprise categories are completely missing from the codebase and
 - **Auth helper** uses `getUser()` (server-verified) not `getSession()` (client-spoofable)
 - **All actions** return consistent `{ error }` / `{ success }` shapes with `console.error`
 - **URL validation** thorough with protocol + TLD checks (as long as it's enforced on ALL user inputs)
-- **NPM Audit** — 0 vulnerabilities in production dependencies
+- **NPM Audit** — 14 vulnerabilities remaining (0 moderate, 14 high). Resolved moderate `ajv` ReDoS via `npm audit fix`. Remaining 14 are `minimatch` ReDoS in `devDependencies` (ESLint toolchain) — zero impact on production bundle.
 
 ### Action Plan Matrix
 
@@ -152,7 +152,7 @@ The following enterprise categories are completely missing from the codebase and
 | ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                 | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
 | ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
 | ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~  | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| **A2**     | Uninstall phantom dependency `@types/crypto-js`                    | 💡 Low          | ⚡ Quick Win           |
+| ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | **E5**     | Implement Upstash Rate Limiting on auth actions                    | 🚨 Critical     | 🧰 Medium (Infra)      |
 | **Q4**     | Install and enforce **Zod 4** validation for ALL actions           | 🚨 Critical     | 🛠️ Hard Refactor       |
 | **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)           | 🚨 Critical     | 🛠️ Hard Refactor       |
