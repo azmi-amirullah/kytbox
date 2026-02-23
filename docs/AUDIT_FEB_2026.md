@@ -147,25 +147,25 @@ The following enterprise categories are completely missing from the codebase and
 
 ### Action Plan Matrix
 
-| ID         | Issue                                                          | Severity        | Effort Target          |
-| :--------- | :------------------------------------------------------------- | :-------------- | :--------------------- |
-| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~             | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
-| **T1**     | Fix blind `as string` casts in `formData` (add `?.toString()`) | 🚨 High         | ⚡ Quick Win           |
-| **E2**     | Fix unsafe non-null assertion `user.email!` in cashflow route  | 🚨 High         | ⚡ Quick Win           |
-| **A2**     | Uninstall phantom dependency `@types/crypto-js`                | 💡 Low          | ⚡ Quick Win           |
-| **E5**     | Implement Upstash Rate Limiting on auth actions                | 🚨 Critical     | 🧰 Medium (Infra)      |
-| **Q4**     | Install and enforce **Zod 4** validation for ALL actions       | 🚨 Critical     | 🛠️ Hard Refactor       |
-| **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)       | 🚨 Critical     | 🛠️ Hard Refactor       |
-| **E1**     | Add missing `error.tsx` boundaries to route tree               | 🚨 High         | 🧰 Medium              |
-| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                   | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| **E4**     | Rate limit `checkUsernameAvailable` endpoint                   | ⚠️ Medium       | 🧰 Medium              |
-| **P2**     | Parallelize `addLink` queries                                  | ⚠️ Medium       | ⚡ Quick Win           |
-| **P4**     | Cache public profile query (prevent db double-fetch)           | ⚠️ Medium       | ⚡ Quick Win           |
-| **P5**     | Parallelize cashflow share query in Promise.all                | ⚠️ Medium       | ⚡ Quick Win           |
-| **Q1**     | Extract edit-permission helper logic                           | 💡 Low          | 🧰 Medium (Refactor)   |
-| **Q2**     | Add redundant ownership check to share roles                   | 💡 Low          | ⚡ Quick Win           |
-| **T2**     | Fix TS lie: `profile={{} as Profile}`                          | 💡 Low          | ⚡ Quick Win           |
-| **T3**     | Fix unsafe TS casts in `AppearanceEditor`                      | 💡 Low          | 🧰 Medium              |
-| **A3**     | Architecture: Refactor components to Atomic Design             | 💡 Low          | 🧱 Long-term Refactor  |
+| ID         | Issue                                                              | Severity        | Effort Target          |
+| :--------- | :----------------------------------------------------------------- | :-------------- | :--------------------- |
+| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                 | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
+| ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| **E2**     | Fix unsafe non-null assertion `user.email!` in cashflow route      | 🚨 High         | ⚡ Quick Win           |
+| **A2**     | Uninstall phantom dependency `@types/crypto-js`                    | 💡 Low          | ⚡ Quick Win           |
+| **E5**     | Implement Upstash Rate Limiting on auth actions                    | 🚨 Critical     | 🧰 Medium (Infra)      |
+| **Q4**     | Install and enforce **Zod 4** validation for ALL actions           | 🚨 Critical     | 🛠️ Hard Refactor       |
+| **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)           | 🚨 Critical     | 🛠️ Hard Refactor       |
+| **E1**     | Add missing `error.tsx` boundaries to route tree                   | 🚨 High         | 🧰 Medium              |
+| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                       | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| **E4**     | Rate limit `checkUsernameAvailable` endpoint                       | ⚠️ Medium       | 🧰 Medium              |
+| **P2**     | Parallelize `addLink` queries                                      | ⚠️ Medium       | ⚡ Quick Win           |
+| **P4**     | Cache public profile query (prevent db double-fetch)               | ⚠️ Medium       | ⚡ Quick Win           |
+| **P5**     | Parallelize cashflow share query in Promise.all                    | ⚠️ Medium       | ⚡ Quick Win           |
+| **Q1**     | Extract edit-permission helper logic                               | 💡 Low          | 🧰 Medium (Refactor)   |
+| **Q2**     | Add redundant ownership check to share roles                       | 💡 Low          | ⚡ Quick Win           |
+| **T2**     | Fix TS lie: `profile={{} as Profile}`                              | 💡 Low          | ⚡ Quick Win           |
+| **T3**     | Fix unsafe TS casts in `AppearanceEditor`                          | 💡 Low          | 🧰 Medium              |
+| **A3**     | Architecture: Refactor components to Atomic Design                 | 💡 Low          | 🧱 Long-term Refactor  |
 
 > **[@code-reviewer note]**: The audit document was updated by `@code-reviewer` to reflect accurate severities, prioritizing Security > Stability > Performance > Code Quality. The list above is the true priority list required for an enterprise-ready release.

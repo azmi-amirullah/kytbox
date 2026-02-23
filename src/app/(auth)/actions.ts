@@ -10,8 +10,8 @@ export async function login(formData: FormData) {
   const supabase = await createClient();
 
   const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+    email: formData.get('email')?.toString() || '',
+    password: formData.get('password')?.toString() || '',
   };
 
   const { error } = await supabase.auth.signInWithPassword(data);
@@ -34,9 +34,11 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const supabase = await createClient();
 
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const username = (formData.get('username') as string).toLowerCase().trim();
+  const email = formData.get('email')?.toString() || '';
+  const password = formData.get('password')?.toString() || '';
+  const username = (formData.get('username')?.toString() || '')
+    .toLowerCase()
+    .trim();
 
   // Validate the username
   const validation = validateUsername(username);
@@ -99,7 +101,7 @@ export async function logout() {
 
 export async function resetPassword(formData: FormData) {
   const supabase = await createClient();
-  const email = formData.get('email') as string;
+  const email = formData.get('email')?.toString() || '';
 
   // Get origin from request headers
   const headersList = await headers();
@@ -121,7 +123,7 @@ export async function resetPassword(formData: FormData) {
 
 export async function updatePassword(formData: FormData) {
   const supabase = await createClient();
-  const password = formData.get('password') as string;
+  const password = formData.get('password')?.toString() || '';
 
   const { error } = await supabase.auth.updateUser({
     password,
@@ -162,7 +164,9 @@ export async function checkUsernameAvailable(username: string) {
 
 export async function updateUsername(formData: FormData) {
   const supabase = await createClient();
-  const username = (formData.get('username') as string).toLowerCase().trim();
+  const username = (formData.get('username')?.toString() || '')
+    .toLowerCase()
+    .trim();
 
   // Validate
   const validation = validateUsername(username);

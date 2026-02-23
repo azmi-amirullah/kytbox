@@ -6,9 +6,9 @@ import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 export async function addLink(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
-  const title = formData.get('title') as string;
-  const parentId = formData.get('parentId') as string | null;
-  let url = formData.get('url') as string;
+  const title = formData.get('title')?.toString() || '';
+  const parentId = formData.get('parentId')?.toString() || null;
+  let url = formData.get('url')?.toString() || '';
 
   if (!/^https?:\/\//i.test(url)) {
     url = `https://${url}`;
@@ -74,8 +74,8 @@ export async function addLink(formData: FormData) {
 export async function updateLink(linkId: string, formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
-  const title = formData.get('title') as string;
-  let url = formData.get('url') as string | null;
+  const title = formData.get('title')?.toString() || '';
+  let url = formData.get('url')?.toString() || null;
   const isFolder = formData.get('isFolder') === 'true';
 
   const updates: { title: string; url?: string } = { title };
@@ -175,11 +175,11 @@ export async function reorderLinks(linkIds: string[]) {
 export async function updateAppearance(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
-  const themeName = formData.get('themeName') as string;
-  const buttonStyle = formData.get('buttonStyle') as string;
-  const buttonShape = formData.get('buttonShape') as string;
-  const socialLinksRaw = formData.get('socialLinks') as string;
-  const customThemeRaw = formData.get('customTheme') as string;
+  const themeName = formData.get('themeName')?.toString() || '';
+  const buttonStyle = formData.get('buttonStyle')?.toString() || '';
+  const buttonShape = formData.get('buttonShape')?.toString() || '';
+  const socialLinksRaw = formData.get('socialLinks')?.toString() || '';
+  const customThemeRaw = formData.get('customTheme')?.toString() || '';
 
   const updateData: {
     theme_name: string;

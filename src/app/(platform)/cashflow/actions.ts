@@ -6,7 +6,7 @@ import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 export async function createCashflow(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const title = formData.get('title') as string;
+  const title = formData.get('title')?.toString() || '';
 
   if (!title?.trim()) {
     return { error: 'Title is required' };
@@ -29,7 +29,7 @@ export async function createCashflow(formData: FormData) {
 export async function updateCashflow(cashflowId: string, formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const title = formData.get('title') as string;
+  const title = formData.get('title')?.toString() || '';
 
   if (!title?.trim()) {
     return { error: 'Title is required' };
@@ -72,11 +72,11 @@ export async function deleteCashflow(cashflowId: string) {
 export async function addEntry(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const cashflowId = formData.get('cashflowId') as string;
-  const description = formData.get('description') as string;
-  const amountStr = formData.get('amount') as string;
-  const type = formData.get('type') as 'income' | 'expense';
-  const date = formData.get('date') as string;
+  const cashflowId = formData.get('cashflowId')?.toString() || '';
+  const description = formData.get('description')?.toString() || '';
+  const amountStr = formData.get('amount')?.toString() || '';
+  const type = formData.get('type')?.toString() as 'income' | 'expense';
+  const date = formData.get('date')?.toString() || '';
 
   if (!description?.trim()) {
     return { error: 'Description is required' };
@@ -145,10 +145,10 @@ export async function addEntry(formData: FormData) {
 export async function updateEntry(entryId: string, formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const description = formData.get('description') as string;
-  const amountStr = formData.get('amount') as string;
-  const type = formData.get('type') as 'income' | 'expense';
-  const date = formData.get('date') as string;
+  const description = formData.get('description')?.toString() || '';
+  const amountStr = formData.get('amount')?.toString() || '';
+  const type = formData.get('type')?.toString() as 'income' | 'expense';
+  const date = formData.get('date')?.toString() || '';
 
   if (!description?.trim()) {
     return { error: 'Description is required' };
