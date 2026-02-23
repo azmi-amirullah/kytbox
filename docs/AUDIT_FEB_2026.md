@@ -99,13 +99,13 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Error Handling & Reliability
 
-| ID  | Severity    | File                                  | Issue                                                                                   | Fix                              |
-| :-- | :---------- | :------------------------------------ | :-------------------------------------------------------------------------------------- | :------------------------------- |
-| E1  | 🚨 High     | `cashflow/`, `support-admin/`, `app/` | **Missing `error.tsx` boundaries** — only bio, settings, [username] have them           | Add error boundaries             |
-| E2  | 🚨 High     | `cashflow/[id]/page.tsx`              | **Unsafe non-null assertion** — `user.email!.toLowerCase()` will crash if email missing | Add `user.email ?` check         |
-| E3  | 💡 Low      | `(auth)/actions.ts` L106              | `resetPassword` builds redirect URL from `origin` header — could be manipulated         | Validate against allowed origins |
-| E4  | ⚠️ Medium   | `(auth)/actions.ts` L142              | `checkUsernameAvailable` has NO rate limiting — active username enumeration risk        | Add rate limit or debounce       |
-| E5  | 🚨 Critical | `(auth)/actions.ts`                   | **Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`               | Add Upstash Redis rate limiting  |
+| ID    | Severity    | File                                  | Issue                                                                                       | Fix                              |
+| :---- | :---------- | :------------------------------------ | :------------------------------------------------------------------------------------------ | :------------------------------- |
+| E1    | 🚨 High     | `cashflow/`, `support-admin/`, `app/` | **Missing `error.tsx` boundaries** — only bio, settings, [username] have them               | Add error boundaries             |
+| ✅ E2 | 🚨 High     | `cashflow/[id]/page.tsx`              | ~~**Unsafe non-null assertion** — `user.email!.toLowerCase()` will crash if email missing~~ | ✅ Fixed                         |
+| E3    | 💡 Low      | `(auth)/actions.ts` L106              | `resetPassword` builds redirect URL from `origin` header — could be manipulated             | Validate against allowed origins |
+| E4    | ⚠️ Medium   | `(auth)/actions.ts` L142              | `checkUsernameAvailable` has NO rate limiting — active username enumeration risk            | Add rate limit or debounce       |
+| E5    | 🚨 Critical | `(auth)/actions.ts`                   | **Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`                   | Add Upstash Redis rate limiting  |
 
 ### Accessibility & Configuration (A11y/Infra)
 
@@ -117,11 +117,11 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Type Safety
 
-| ID  | Severity | File                                                         | Issue                                                                | Fix                                                         |
-| :-- | :------- | :----------------------------------------------------------- | :------------------------------------------------------------------- | :---------------------------------------------------------- |
-| T1  | � High   | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | `formData.get() as string` without null checks (~15 occurrences)     | Add null checks and/or Zod validation to prevent 500 errors |
-| T2  | 💡 Low   | `bio/page.tsx`                                               | `profile={{} as Profile}` for loading states lies to the type system | Use proper loading skeleton or `Partial<Profile>` types     |
-| T3  | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                       | Fix types to remove unsafe casts                            |
+| ID    | Severity | File                                                         | Issue                                                                   | Fix                                                     |
+| :---- | :------- | :----------------------------------------------------------- | :---------------------------------------------------------------------- | :------------------------------------------------------ |
+| ✅ T1 | 🚨 High  | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | ~~**Unsafe casting** — `formData.get() as string` without null checks~~ | ✅ Fixed                                                |
+| T2    | 💡 Low   | `bio/page.tsx`                                               | `profile={{} as Profile}` for loading states lies to the type system    | Use proper loading skeleton or `Partial<Profile>` types |
+| T3    | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                          | Fix types to remove unsafe casts                        |
 
 ### ⚠️ Missing Pillars (Unaudited, Tracked for March)
 
@@ -151,7 +151,7 @@ The following enterprise categories are completely missing from the codebase and
 | :--------- | :----------------------------------------------------------------- | :-------------- | :--------------------- |
 | ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                 | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
 | ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| **E2**     | Fix unsafe non-null assertion `user.email!` in cashflow route      | 🚨 High         | ⚡ Quick Win           |
+| ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~  | ~~🚨 High~~     | ~~✅ Fixed~~           |
 | **A2**     | Uninstall phantom dependency `@types/crypto-js`                    | 💡 Low          | ⚡ Quick Win           |
 | **E5**     | Implement Upstash Rate Limiting on auth actions                    | 🚨 Critical     | 🧰 Medium (Infra)      |
 | **Q4**     | Install and enforce **Zod 4** validation for ALL actions           | 🚨 Critical     | 🛠️ Hard Refactor       |

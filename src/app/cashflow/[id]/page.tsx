@@ -72,12 +72,14 @@ export default async function CashflowDetailPage({
     if (cashflow.user_id === user.id) {
       initialUserRole = 'owner';
     } else {
-      const { data: share } = await supabase
-        .from('cashflow_shares')
-        .select('id, role, is_pinned')
-        .eq('cashflow_id', id)
-        .eq('email', user.email!.toLowerCase())
-        .maybeSingle();
+      const { data: share } = user.email
+        ? await supabase
+            .from('cashflow_shares')
+            .select('id, role, is_pinned')
+            .eq('cashflow_id', id)
+            .eq('email', user.email.toLowerCase())
+            .maybeSingle()
+        : { data: null };
 
       if (share) {
         initialUserRole = share.role || 'read';
