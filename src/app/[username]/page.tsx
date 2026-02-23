@@ -2,6 +2,17 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { trackProfileView } from '@/lib/tracking';
 import ProfileView from './components/ProfileView';
+import { cache } from 'react';
+
+const getProfile = cache(async (username: string) => {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', username)
+    .single();
+  return profile;
+});
 
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>;
@@ -14,11 +25,7 @@ export default async function PublicProfilePage({
   const supabase = await createClient();
 
   // Get profile first (required for links query)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('username', username)
-    .single();
+  const profile = await getProfile(username);
 
   if (!profile) {
     notFound();
@@ -63,13 +70,7 @@ export default async function PublicProfilePage({
 
 export async function generateMetadata({ params }: PublicProfilePageProps) {
   const { username } = await params;
-  const supabase = await createClient();
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('username', username)
-    .single();
+  const profile = await getProfile(username);
 
   return {
     title: profile?.display_name || `@${username}`,

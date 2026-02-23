@@ -81,7 +81,7 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | ✅ P1 | 🚨 High   | `analytics/actions.ts`   | ~~**4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views)~~       | ✅ Fixed                                 |
 | ✅ P2 | ⚠️ Medium | `bio/actions.ts`         | ~~`addLink` runs 2 sequential independent queries (sort_order + RPC)~~                         | ✅ Fixed                                 |
 | P3    | ⚠️ Medium | `cashflow/actions.ts`    | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)                 | Join or RPC                              |
-| P4    | ⚠️ Medium | `[username]/page.tsx`    | **Profile queried twice** — once in `page()`, once in `generateMetadata()`                     | Use `cache()` wrapper or request dedup   |
+| ✅ P4 | ⚠️ Medium | `[username]/page.tsx`    | ~~**Profile queried twice** — once in `page()`, once in `generateMetadata()`~~                 | ✅ Fixed                                 |
 | P5    | ⚠️ Medium | `cashflow/[id]/page.tsx` | **Sequential queries** — fetches cashflow inside `Promise.all`, then awaits `share` separately | Move share query to `Promise.all`        |
 | P6    | 💡 Low    | `src/lib/data-cache.ts`  | **Dead code** — `unstable_cache` helpers are defined but never used                            | Implement in static pages or remove      |
 | P7    | 💡 Low    | 9 pages                  | `select('*')` over-fetches columns (profiles, links, cashflows, tickets)                       | Select only needed columns               |
@@ -160,7 +160,7 @@ The following enterprise categories are completely missing from the codebase and
 | ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                       | ~~🚨 High~~     | ~~✅ Fixed~~           |
 | **E4**     | Rate limit `checkUsernameAvailable` endpoint                       | ⚠️ Medium       | 🧰 Medium              |
 | ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                  | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| **P4**     | Cache public profile query (prevent db double-fetch)               | ⚠️ Medium       | ⚡ Quick Win           |
+| ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~           | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | **P5**     | Parallelize cashflow share query in Promise.all                    | ⚠️ Medium       | ⚡ Quick Win           |
 | **Q1**     | Extract edit-permission helper logic                               | 💡 Low          | 🧰 Medium (Refactor)   |
 | **Q2**     | Add redundant ownership check to share roles                       | 💡 Low          | ⚡ Quick Win           |
