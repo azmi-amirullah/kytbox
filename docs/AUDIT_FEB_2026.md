@@ -117,11 +117,11 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Type Safety
 
-| ID    | Severity | File                                                         | Issue                                                                   | Fix                                                     |
-| :---- | :------- | :----------------------------------------------------------- | :---------------------------------------------------------------------- | :------------------------------------------------------ |
-| ✅ T1 | 🚨 High  | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | ~~**Unsafe casting** — `formData.get() as string` without null checks~~ | ✅ Fixed                                                |
-| T2    | 💡 Low   | `bio/page.tsx`                                               | `profile={{} as Profile}` for loading states lies to the type system    | Use proper loading skeleton or `Partial<Profile>` types |
-| T3    | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                          | Fix types to remove unsafe casts                        |
+| ID    | Severity | File                                                         | Issue                                                                    | Fix                              |
+| :---- | :------- | :----------------------------------------------------------- | :----------------------------------------------------------------------- | :------------------------------- |
+| ✅ T1 | 🚨 High  | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | ~~**Unsafe casting** — `formData.get() as string` without null checks~~  | ✅ Fixed                         |
+| ✅ T2 | 💡 Low   | `bio/page.tsx`                                               | ~~`profile={{} as Profile}` for loading states lies to the type system~~ | ✅ Fixed                         |
+| T3    | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                           | Fix types to remove unsafe casts |
 
 ### ⚠️ Missing Pillars (Unaudited, Tracked for March)
 
@@ -164,7 +164,7 @@ The following enterprise categories are completely missing from the codebase and
 | ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | **Q1**     | Extract edit-permission helper logic                               | 💡 Low          | 🧰 Medium (Refactor)   |
 | ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                   | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| **T2**     | Fix TS lie: `profile={{} as Profile}`                              | 💡 Low          | ⚡ Quick Win           |
+| ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                          | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | **T3**     | Fix unsafe TS casts in `AppearanceEditor`                          | 💡 Low          | 🧰 Medium              |
 | **A3**     | Architecture: Refactor components to Atomic Design                 | 💡 Low          | 🧱 Long-term Refactor  |
 

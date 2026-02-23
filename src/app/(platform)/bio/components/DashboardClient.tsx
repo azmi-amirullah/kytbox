@@ -27,7 +27,7 @@ export const DEFAULT_TAB: BioTab = 'links';
 
 interface DashboardClientProps {
   initialLinks: LinkType[];
-  profile: Profile;
+  profile: Partial<Profile>;
   publicUrl: string;
   totalViews: number;
   isLoading?: boolean;

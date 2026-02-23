@@ -1,10 +1,7 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import DashboardClient, {
-  type BioTab,
-  type Profile,
-} from './components/DashboardClient';
+import DashboardClient, { type BioTab } from './components/DashboardClient';
 
 export default async function BioDashboardPage({
   searchParams,
@@ -51,7 +48,7 @@ export default async function BioDashboardPage({
   const skeletonFallback = (
     <DashboardClient
       initialLinks={[]}
-      profile={{} as Profile}
+      profile={{}}
       publicUrl=''
       totalViews={0}
       isLoading={true}
@@ -63,7 +60,13 @@ export default async function BioDashboardPage({
       <Suspense fallback={skeletonFallback}>
         <DashboardClient
           initialLinks={links ?? []}
-          profile={profile as unknown as Profile}
+          profile={{
+            ...profile,
+            social_links: profile.social_links as Record<string, string>,
+            custom_theme: profile.custom_theme as
+              | import('@/lib/theme/theme.types').CustomThemeData
+              | null,
+          }}
           publicUrl={publicUrl}
           totalViews={totalViews || 0}
           activeTab={activeTab}
