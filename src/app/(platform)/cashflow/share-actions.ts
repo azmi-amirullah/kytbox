@@ -123,7 +123,28 @@ export async function removeShare(shareId: string) {
 }
 
 export async function updateShareRole(shareId: string, role: 'read' | 'edit') {
-  const { supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
+
+  // First fetch the share to get its associated cashflow ID
+  const { data: share } = await supabase
+    .from('cashflow_shares')
+    .select('cashflow_id')
+    .eq('id', shareId)
+    .single();
+
+  if (!share) return { error: 'Share not found' };
+
+  // Verify that the current user owns the cashflow
+  const { data: cashflow, error: ownershipError } = await supabase
+    .from('cashflows')
+    .select('id')
+    .eq('id', share.cashflow_id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (ownershipError || !cashflow) {
+    return { error: 'Only the cashflow owner can update roles' };
+  }
 
   const { error } = await supabase
     .from('cashflow_shares')
