@@ -20,22 +20,32 @@ export default async function CashflowDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 2. Parallelize: profile (if user) AND cashflow + entries
-  const [profileResult, cashflowResult, entriesResult] = await Promise.all([
-    user
-      ? supabase.from('profiles').select('*').eq('id', user.id).single()
-      : Promise.resolve({ data: null }),
-    supabase.from('cashflows').select('*').eq('id', id).single(),
-    supabase
-      .from('cashflow_entries')
-      .select('*')
-      .eq('cashflow_id', id)
-      .order('date', { ascending: false }),
-  ]);
+  // 2. Parallelize: profile (if user) AND cashflow + entries + share
+  const [profileResult, cashflowResult, entriesResult, shareResult] =
+    await Promise.all([
+      user
+        ? supabase.from('profiles').select('*').eq('id', user.id).single()
+        : Promise.resolve({ data: null }),
+      supabase.from('cashflows').select('*').eq('id', id).single(),
+      supabase
+        .from('cashflow_entries')
+        .select('*')
+        .eq('cashflow_id', id)
+        .order('date', { ascending: false }),
+      user?.email
+        ? supabase
+            .from('cashflow_shares')
+            .select('id, role, is_pinned')
+            .eq('cashflow_id', id)
+            .eq('email', user.email.toLowerCase())
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
   const profile = profileResult.data;
   const cashflow = cashflowResult.data;
   const entries = entriesResult.data;
+  const share = shareResult.data;
 
   if (!cashflow) {
     notFound();
@@ -72,15 +82,6 @@ export default async function CashflowDetailPage({
     if (cashflow.user_id === user.id) {
       initialUserRole = 'owner';
     } else {
-      const { data: share } = user.email
-        ? await supabase
-            .from('cashflow_shares')
-            .select('id, role, is_pinned')
-            .eq('cashflow_id', id)
-            .eq('email', user.email.toLowerCase())
-            .maybeSingle()
-        : { data: null };
-
       if (share) {
         initialUserRole = share.role || 'read';
         initialShareId = share.id;

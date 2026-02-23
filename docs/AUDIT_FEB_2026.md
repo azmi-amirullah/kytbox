@@ -76,16 +76,16 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Performance & Architecture
 
-| ID    | Severity  | File                     | Issue                                                                                          | Fix                                      |
-| :---- | :-------- | :----------------------- | :--------------------------------------------------------------------------------------------- | :--------------------------------------- |
-| ✅ P1 | 🚨 High   | `analytics/actions.ts`   | ~~**4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views)~~       | ✅ Fixed                                 |
-| ✅ P2 | ⚠️ Medium | `bio/actions.ts`         | ~~`addLink` runs 2 sequential independent queries (sort_order + RPC)~~                         | ✅ Fixed                                 |
-| P3    | ⚠️ Medium | `cashflow/actions.ts`    | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)                 | Join or RPC                              |
-| ✅ P4 | ⚠️ Medium | `[username]/page.tsx`    | ~~**Profile queried twice** — once in `page()`, once in `generateMetadata()`~~                 | ✅ Fixed                                 |
-| P5    | ⚠️ Medium | `cashflow/[id]/page.tsx` | **Sequential queries** — fetches cashflow inside `Promise.all`, then awaits `share` separately | Move share query to `Promise.all`        |
-| P6    | 💡 Low    | `src/lib/data-cache.ts`  | **Dead code** — `unstable_cache` helpers are defined but never used                            | Implement in static pages or remove      |
-| P7    | 💡 Low    | 9 pages                  | `select('*')` over-fetches columns (profiles, links, cashflows, tickets)                       | Select only needed columns               |
-| P8    | 🚨 High   | `cashflow_shares` (DB)   | **Missing `email` index** on `cashflow_shares` causes full sequential table scans for users    | `CREATE INDEX idx_cashflow_shares_email` |
+| ID    | Severity  | File                     | Issue                                                                                              | Fix                                      |
+| :---- | :-------- | :----------------------- | :------------------------------------------------------------------------------------------------- | :--------------------------------------- |
+| ✅ P1 | 🚨 High   | `analytics/actions.ts`   | ~~**4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views)~~           | ✅ Fixed                                 |
+| ✅ P2 | ⚠️ Medium | `bio/actions.ts`         | ~~`addLink` runs 2 sequential independent queries (sort_order + RPC)~~                             | ✅ Fixed                                 |
+| P3    | ⚠️ Medium | `cashflow/actions.ts`    | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)                     | Join or RPC                              |
+| ✅ P4 | ⚠️ Medium | `[username]/page.tsx`    | ~~**Profile queried twice** — once in `page()`, once in `generateMetadata()`~~                     | ✅ Fixed                                 |
+| ✅ P5 | ⚠️ Medium | `cashflow/[id]/page.tsx` | ~~**Sequential queries** — fetches cashflow inside `Promise.all`, then awaits `share` separately~~ | ✅ Fixed                                 |
+| P6    | 💡 Low    | `src/lib/data-cache.ts`  | **Dead code** — `unstable_cache` helpers are defined but never used                                | Implement in static pages or remove      |
+| P7    | 💡 Low    | 9 pages                  | `select('*')` over-fetches columns (profiles, links, cashflows, tickets)                           | Select only needed columns               |
+| P8    | 🚨 High   | `cashflow_shares` (DB)   | **Missing `email` index** on `cashflow_shares` causes full sequential table scans for users        | `CREATE INDEX idx_cashflow_shares_email` |
 
 ### Code Quality & Security
 
@@ -161,7 +161,7 @@ The following enterprise categories are completely missing from the codebase and
 | **E4**     | Rate limit `checkUsernameAvailable` endpoint                       | ⚠️ Medium       | 🧰 Medium              |
 | ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                  | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~           | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| **P5**     | Parallelize cashflow share query in Promise.all                    | ⚠️ Medium       | ⚡ Quick Win           |
+| ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | **Q1**     | Extract edit-permission helper logic                               | 💡 Low          | 🧰 Medium (Refactor)   |
 | **Q2**     | Add redundant ownership check to share roles                       | 💡 Low          | ⚡ Quick Win           |
 | **T2**     | Fix TS lie: `profile={{} as Profile}`                              | 💡 Low          | ⚡ Quick Win           |
