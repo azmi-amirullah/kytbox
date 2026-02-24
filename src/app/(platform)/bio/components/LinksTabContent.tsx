@@ -91,7 +91,7 @@ export default function LinksTabContent({
                   className='font-medium shadow-md shadow-primary/20'
                 >
                   <LuPlus className='w-4 h-4 mr-2' />
-                  Add Link
+                  Add Item
                 </Button>
               }
             />

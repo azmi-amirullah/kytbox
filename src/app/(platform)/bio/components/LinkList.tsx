@@ -112,7 +112,7 @@ export default function LinkList({
     return (
       <div className='text-center py-12 text-muted-foreground'>
         <p>No links yet.</p>
-        <p className='text-sm'>Click &quot;Add Link&quot; to get started.</p>
+        <p className='text-sm'>Click &quot;Add Item&quot; to get started.</p>
       </div>
     );
   }

@@ -137,12 +137,12 @@ export default function LinkModal({
           <DialogTitle className='text-xl text-center'>
             {isEdit
               ? `Edit ${type === 'folder' ? 'Folder' : 'Link'}`
-              : 'Add New Link'}
+              : `Add New ${type === 'folder' ? 'Folder' : 'Link'}`}
           </DialogTitle>
           <DialogDescription className='text-center'>
             {isEdit
               ? `Make changes to your ${type} here. Click save when you're done.`
-              : 'Add a new link to share with your audience.'}
+              : `Add a new ${type} to share with your audience.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -239,12 +239,14 @@ export default function LinkModal({
                 {isBusy ? (
                   <>
                     <LuLoader className='mr-2 h-4 w-4 animate-spin' />
-                    {isEdit ? 'Saving...' : 'Adding...'}
+                    {isEdit
+                      ? 'Saving...'
+                      : `Adding ${type === 'folder' ? 'Folder' : 'Link'}...`}
                   </>
                 ) : isEdit ? (
                   'Save Changes'
                 ) : (
-                  'Add Link'
+                  `Add ${type === 'folder' ? 'Folder' : 'Link'}`
                 )}
               </Button>
             </div>
