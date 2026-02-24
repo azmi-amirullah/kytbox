@@ -156,7 +156,7 @@ The following enterprise categories are completely missing from the codebase and
 | ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~  | ~~🚨 High~~     | ~~✅ Fixed~~           |
 | ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
-| **Q4**     | Install and enforce **Zod 4** validation for ALL actions           | 🚨 Critical     | 🛠️ Hard Refactor       |
+| ~~**Q4**~~ | ~~Install and enforce **Zod 4** validation for ALL actions~~       | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
 | **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)           | 🚨 Critical     | 🛠️ Hard Refactor       |
 | **E1**     | Add missing `error.tsx` boundaries to route tree                   | 🚨 High         | 🧰 Medium              |
 | ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                       | ~~🚨 High~~     | ~~✅ Fixed~~           |
@@ -171,6 +171,18 @@ The following enterprise categories are completely missing from the codebase and
 | **A3**     | Architecture: Refactor components to Atomic Design                 | 💡 Low          | 🧱 Long-term Refactor  |
 
 > **[@code-reviewer note]**: The audit document was updated by `@code-reviewer` to reflect accurate severities, prioritizing Security > Stability > Performance > Code Quality. The list above is the true priority list required for an enterprise-ready release.
+
+### 🔬 @tech-stack-researcher: Q4 Validation Strategy (2026)
+
+**Verdict:** Stop bikeshedding and use **Zod 4**.
+
+Your codebase currently has ZERO validation and blind `as string` casts. Worrying about Valibot's micro-optimizations in bundle size when your app trusts raw form data blindly is missing the forest for the trees. Furthermore, in Next.js Server Actions, validation runs on the _server_, making Valibot's client-side bundle size advantages largely irrelevant to your architecture.
+
+**Zod 4 (Released 2025) vs Valibot:**
+
+- **The Zod 4 Reality:** Zod 4 obliterated Valibot's main advantage. It introduced `@zod/mini` (sub-2KB gzipped), parses objects 6.5x faster, and crucially, compiles TypeScript 10x faster than Zod 3.
+- **Developer Experience (DX):** Valibot's functional API (`v.string()`, `v.minLength()`) requires importing a dozen utility functions per schema—a miserable DX compared to Zod's fluent method chaining (`z.string().min(1)`). Since your team is relying on blind casts, you need the tool with the absolute lowest friction.
+- **Recommendation:** Overwhelmingly **Zod 4**. It integrates flawlessly with your stack, has vastly improved TS inference speed, and its chaining API will actually encourage you to write schemas before a malicious payload nukes your Supabase DB.
 
 ---
 

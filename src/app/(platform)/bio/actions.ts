@@ -2,13 +2,21 @@
 
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import {
+  addLinkSchema,
+  updateLinkSchema,
+  updateAppearanceSchema,
+  moveToFolderSchema,
+} from '@/lib/schemas';
 
 export async function addLink(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
-  const title = formData.get('title')?.toString() || '';
-  const parentId = formData.get('parentId')?.toString() || null;
-  let url = formData.get('url')?.toString() || '';
+  const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { title, parentId } = parsed.data;
+  let url = parsed.data.url || '';
 
   if (!/^https?:\/\//i.test(url)) {
     url = `https://${url}`;
@@ -72,9 +80,15 @@ export async function addLink(formData: FormData) {
 export async function updateLink(linkId: string, formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
-  const title = formData.get('title')?.toString() || '';
-  let url = formData.get('url')?.toString() || null;
-  const isFolder = formData.get('isFolder') === 'true';
+  const rawData = Object.fromEntries(formData);
+  const parsed = updateLinkSchema.safeParse({
+    ...rawData,
+    isFolder: rawData.isFolder === 'true',
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { title, isFolder } = parsed.data;
+  let url = parsed.data.url || null;
 
   const updates: { title: string; url?: string } = { title };
 
@@ -173,11 +187,16 @@ export async function reorderLinks(linkIds: string[]) {
 export async function updateAppearance(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
-  const themeName = formData.get('themeName')?.toString() || '';
-  const buttonStyle = formData.get('buttonStyle')?.toString() || '';
-  const buttonShape = formData.get('buttonShape')?.toString() || '';
-  const socialLinksRaw = formData.get('socialLinks')?.toString() || '';
-  const customThemeRaw = formData.get('customTheme')?.toString() || '';
+  const parsed = updateAppearanceSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const {
+    themeName = '',
+    buttonStyle = '',
+    buttonShape = '',
+    socialLinks: socialLinksRaw = '',
+    customTheme: customThemeRaw = '',
+  } = parsed.data;
 
   const updateData: {
     theme_name: string;
@@ -224,8 +243,13 @@ export async function updateAppearance(formData: FormData) {
   return { success: true };
 }
 
-export async function createFolder(title: string) {
+export async function createFolder(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+
+  const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { title, parentId } = parsed.data;
 
   // Get the highest sort_order
   const { data: lastLink } = await supabase
@@ -244,6 +268,7 @@ export async function createFolder(title: string) {
     url: '#', // Folders don't have a real URL
     sort_order: nextOrder,
     is_folder: true,
+    parent_id: parentId || null,
   });
 
   if (error) {
@@ -255,12 +280,17 @@ export async function createFolder(title: string) {
   return { success: true };
 }
 
-export async function moveToFolder(linkId: string, parentId: string | null) {
+export async function moveToFolder(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+
+  const parsed = moveToFolderSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { linkId, parentId } = parsed.data;
 
   const { error } = await supabase
     .from('links')
-    .update({ parent_id: parentId })
+    .update({ parent_id: parentId || null })
     .eq('id', linkId)
     .eq('user_id', user.id);
 

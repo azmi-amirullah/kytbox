@@ -3,18 +3,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { z, ZodIssue } from 'zod';
-
-const createTicketSchema = z.object({
-  subject: z.string().min(5, 'Subject must be at least 5 characters'),
-  category: z.enum(['general', 'bug', 'billing', 'feature_request', 'account']),
-  message: z.string().min(10, 'Message must be at least 10 characters'),
-});
+import { z } from 'zod';
+import { supportTicketSchema, replyTicketSchema } from '@/lib/schemas';
 
 export type State = {
   error?: string | null;
   success?: boolean;
-  issues?: ZodIssue[];
+  issues?: z.core.$ZodIssue[];
 };
 
 export async function createTicket(prevState: State, formData: FormData) {
@@ -27,14 +22,15 @@ export async function createTicket(prevState: State, formData: FormData) {
     return { error: 'Unauthorized' };
   }
 
-  const validatedFields = createTicketSchema.safeParse({
-    subject: formData.get('subject'),
-    category: formData.get('category'),
-    message: formData.get('message'),
-  });
+  const validatedFields = supportTicketSchema.safeParse(
+    Object.fromEntries(formData),
+  );
 
   if (!validatedFields.success) {
-    return { error: 'Invalid fields', issues: validatedFields.error.issues };
+    return {
+      error: validatedFields.error.issues[0].message,
+      issues: validatedFields.error.issues,
+    };
   }
 
   const { subject, category, message } = validatedFields.data;
@@ -57,10 +53,6 @@ export async function createTicket(prevState: State, formData: FormData) {
   redirect(`/support/${ticketId}`);
 }
 
-const replySchema = z.object({
-  message: z.string().min(1, 'Message cannot be empty'),
-});
-
 export async function replyToTicket(
   ticketId: string,
   prevState: State,
@@ -75,13 +67,13 @@ export async function replyToTicket(
     return { error: 'Unauthorized', success: false };
   }
 
-  const validatedFields = replySchema.safeParse({
-    message: formData.get('message'),
-  });
+  const validatedFields = replyTicketSchema.safeParse(
+    Object.fromEntries(formData),
+  );
 
   if (!validatedFields.success) {
     return {
-      error: 'Invalid fields',
+      error: validatedFields.error.issues[0].message,
       issues: validatedFields.error.issues,
       success: false,
     };

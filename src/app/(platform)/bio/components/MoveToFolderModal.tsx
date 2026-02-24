@@ -62,7 +62,11 @@ export default function MoveToFolderModal({
       return;
     }
 
-    const result = await moveToFolder(link.id, folderId);
+    const formData = new FormData();
+    formData.append('linkId', link.id);
+    if (folderId) formData.append('parentId', folderId);
+
+    const result = await moveToFolder(formData);
 
     if (result?.error) {
       toast.error('Failed to move link');

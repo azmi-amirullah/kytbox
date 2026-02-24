@@ -101,7 +101,11 @@ export default function LinkModal({
     if (isEdit && link) {
       result = await updateLink(link.id, formData);
     } else if (type === 'folder') {
-      result = await createFolder(title);
+      const folderData = new FormData();
+      folderData.append('title', title);
+      folderData.append('isFolder', 'true');
+      if (parentId) folderData.append('parentId', parentId);
+      result = await createFolder(folderData);
     } else {
       result = await addLink(formData);
     }

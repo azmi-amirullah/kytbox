@@ -2,15 +2,19 @@
 
 import { revalidatePath } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import { z } from 'zod';
+import { cashflowEntrySchema, updateCashflowEntrySchema } from '@/lib/schemas';
 
 export async function createCashflow(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const title = formData.get('title')?.toString() || '';
-
-  if (!title?.trim()) {
-    return { error: 'Title is required' };
+  const parsed = z
+    .object({ title: z.string().min(1, 'Title is required') })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
+  const title = parsed.data.title;
 
   const { error } = await supabase.from('cashflows').insert({
     user_id: user.id,
@@ -29,11 +33,13 @@ export async function createCashflow(formData: FormData) {
 export async function updateCashflow(cashflowId: string, formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const title = formData.get('title')?.toString() || '';
-
-  if (!title?.trim()) {
-    return { error: 'Title is required' };
+  const parsed = z
+    .object({ title: z.string().min(1, 'Title is required') })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
+  const title = parsed.data.title;
 
   // Explicitly check ownership before update (though RLS handles it, this is clearer)
   const { error } = await supabase
@@ -72,24 +78,14 @@ export async function deleteCashflow(cashflowId: string) {
 export async function addEntry(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const cashflowId = formData.get('cashflowId')?.toString() || '';
-  const description = formData.get('description')?.toString() || '';
-  const amountStr = formData.get('amount')?.toString() || '';
-  const type = formData.get('type')?.toString() as 'income' | 'expense';
-  const date = formData.get('date')?.toString() || '';
+  const formDataObj = Object.fromEntries(formData);
+  const parsed = updateCashflowEntrySchema.safeParse(formDataObj);
 
-  if (!description?.trim()) {
-    return { error: 'Description is required' };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
 
-  const amount = parseFloat(amountStr);
-  if (isNaN(amount) || amount <= 0) {
-    return { error: 'Amount must be a positive number' };
-  }
-
-  if (!['income', 'expense'].includes(type)) {
-    return { error: 'Invalid type' };
-  }
+  const { cashflowId, description, type, date, amount } = parsed.data;
 
   // Verify access (owner or editor)
   const { data: cashflow, error: checkError } = await supabase
@@ -145,23 +141,14 @@ export async function addEntry(formData: FormData) {
 export async function updateEntry(entryId: string, formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const description = formData.get('description')?.toString() || '';
-  const amountStr = formData.get('amount')?.toString() || '';
-  const type = formData.get('type')?.toString() as 'income' | 'expense';
-  const date = formData.get('date')?.toString() || '';
+  const formDataObj = Object.fromEntries(formData);
+  const parsed = cashflowEntrySchema.safeParse(formDataObj);
 
-  if (!description?.trim()) {
-    return { error: 'Description is required' };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
   }
 
-  const amount = parseFloat(amountStr);
-  if (isNaN(amount) || amount <= 0) {
-    return { error: 'Amount must be a positive number' };
-  }
-
-  if (!['income', 'expense'].includes(type)) {
-    return { error: 'Invalid type' };
-  }
+  const { description, type, date, amount } = parsed.data;
 
   // Verify entry exists and user has edit permission (owner or editor)
   const { data: entry } = await supabase

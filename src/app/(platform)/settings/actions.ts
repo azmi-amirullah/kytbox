@@ -5,6 +5,8 @@ import { randomUUID } from 'crypto';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { validateUsername } from '@/lib/username';
+import { z } from 'zod';
+import { updateProfileSchema } from '@/lib/schemas';
 
 const AVATAR_BUCKET = 'avatars';
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -26,10 +28,13 @@ function extractAvatarObjectPath(avatarUrl: string): string | null {
 export async function updateProfile(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  const username = (formData.get('username') as string).toLowerCase().trim();
-  const displayName = formData.get('displayName') as string;
-  const bio = formData.get('bio') as string;
-  const currency = formData.get('currency') as string | null;
+  const parsed = updateProfileSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const { displayName, bio = '', currency = null } = parsed.data;
+  const username = parsed.data.username.toLowerCase().trim();
 
   // Validate username format using Kytbox spec
   const validation = validateUsername(username);
@@ -81,8 +86,17 @@ export async function uploadAvatar(formData: FormData) {
 
   if (!user) return { error: 'Unauthorized' };
 
-  const file = formData.get('avatar') as File;
-  if (!file || file.size === 0) return { error: 'No file provided' };
+  const parsed = z
+    .object({
+      avatar: z.instanceof(File, { message: 'Avatar must be a file' }),
+    })
+    .safeParse({ avatar: formData.get('avatar') });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+  const file = parsed.data.avatar;
+  if (file.size === 0) return { error: 'No file provided' };
 
   const { data: currentProfile, error: currentProfileError } = await supabase
     .from('profiles')

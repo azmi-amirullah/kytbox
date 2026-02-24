@@ -5,22 +5,45 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { validateUsername } from '@/lib/username';
-import { authRateLimit, usernameRateLimit } from '@/lib/upstash/redis';
+import { authRateLimit, usernameRateLimit, redis } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
+import { loginSchema, signupSchema, resetPasswordSchema } from '@/lib/schemas';
+import { z } from 'zod';
+
+const COOLDOWN_PREFIX = '@kytbox/email-cooldown:';
+
+/**
+ * Check if the user is currently in a cooldown period
+ */
+async function getEmailCooldown(ip: string) {
+  const ttl = await redis.ttl(`${COOLDOWN_PREFIX}${ip}`);
+  return ttl > 0 ? ttl : 0;
+}
+
+/**
+ * Set a cooldown lock after a successful email action
+ */
+async function setEmailCooldown(ip: string) {
+  await redis.set(`${COOLDOWN_PREFIX}${ip}`, 'locked', { ex: 62 });
+}
 
 export async function login(formData: FormData) {
   const ip = await getIp();
-  const { success: rlSuccess } = await authRateLimit.limit(ip);
+  const { success: rlSuccess, reset } = await authRateLimit.limit(ip);
   if (!rlSuccess) {
-    return { error: 'Too many requests. Please try again later.' };
+    const seconds = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+    return {
+      error: `Too many login attempts. Please wait ${seconds} seconds.`,
+    };
   }
 
   const supabase = await createClient();
 
-  const data = {
-    email: formData.get('email')?.toString() || '',
-    password: formData.get('password')?.toString() || '',
-  };
+  const parsed = loginSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+  const data = parsed.data;
 
   const { error } = await supabase.auth.signInWithPassword(data);
 
@@ -41,6 +64,14 @@ export async function login(formData: FormData) {
 
 export async function signup(formData: FormData) {
   const ip = await getIp();
+
+  // 1. Check strict cooldown first
+  const cooldown = await getEmailCooldown(ip);
+  if (cooldown > 0) {
+    return { error: `Too many attempts. Please wait ${cooldown} seconds.` };
+  }
+
+  // 2. Bruteforce protection layer
   const { success: rlSuccess } = await authRateLimit.limit(ip);
   if (!rlSuccess) {
     return { error: 'Too many requests. Please try again later.' };
@@ -48,11 +79,14 @@ export async function signup(formData: FormData) {
 
   const supabase = await createClient();
 
-  const email = formData.get('email')?.toString() || '';
-  const password = formData.get('password')?.toString() || '';
-  const username = (formData.get('username')?.toString() || '')
-    .toLowerCase()
-    .trim();
+  const parsed = signupSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const email = parsed.data.email;
+  const password = parsed.data.password;
+  const username = parsed.data.username.toLowerCase().trim();
 
   // Validate the username
   const validation = validateUsername(username);
@@ -85,7 +119,14 @@ export async function signup(formData: FormData) {
   });
 
   if (authError) {
-    return { error: authError.message };
+    const message =
+      authError.message.charAt(0).toUpperCase() + authError.message.slice(1);
+    if (message.toLowerCase().includes('email rate limit exceeded')) {
+      return {
+        error: `${message}. Try sign up or sign in with Google instead.`,
+      };
+    }
+    return { error: message };
   }
 
   // Check if email confirmation is required
@@ -103,6 +144,7 @@ export async function signup(formData: FormData) {
   }
 
   // Email verification required - redirect to login with message
+  await setEmailCooldown(ip);
   redirect('/login?message=Check your email to confirm your account');
 }
 
@@ -115,13 +157,27 @@ export async function logout() {
 
 export async function resetPassword(formData: FormData) {
   const ip = await getIp();
+
+  // 1. Check strict cooldown first
+  const cooldown = await getEmailCooldown(ip);
+  if (cooldown > 0) {
+    return { error: `Too many attempts. Please wait ${cooldown} seconds.` };
+  }
+
+  // 2. Bruteforce protection layer
   const { success: rlSuccess } = await authRateLimit.limit(ip);
   if (!rlSuccess) {
     return { error: 'Too many requests. Please try again later.' };
   }
 
   const supabase = await createClient();
-  const email = formData.get('email')?.toString() || '';
+  const parsed = z
+    .object({ email: z.email({ message: 'Invalid email' }) })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+  const email = parsed.data.email;
 
   // Get origin from request headers
   const headersList = await headers();
@@ -138,12 +194,17 @@ export async function resetPassword(formData: FormData) {
     return { error: error.message };
   }
 
+  await setEmailCooldown(ip);
   return { success: true };
 }
 
 export async function updatePassword(formData: FormData) {
   const supabase = await createClient();
-  const password = formData.get('password')?.toString() || '';
+  const parsed = resetPasswordSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+  const password = parsed.data.password;
 
   const { error } = await supabase.auth.updateUser({
     password,
@@ -163,9 +224,10 @@ export async function updatePassword(formData: FormData) {
  */
 export async function checkUsernameAvailable(username: string) {
   const ip = await getIp();
-  const { success: rlSuccess } = await usernameRateLimit.limit(ip);
+  const { success: rlSuccess, reset } = await usernameRateLimit.limit(ip);
   if (!rlSuccess) {
-    return { available: false, error: 'Too many verification requests.' };
+    const seconds = Math.max(1, Math.ceil((reset - Date.now()) / 1000) + 1);
+    return { available: false, error: `Too many requests. Wait ${seconds}s.` };
   }
 
   const supabase = await createClient();
@@ -190,9 +252,13 @@ export async function checkUsernameAvailable(username: string) {
 
 export async function updateUsername(formData: FormData) {
   const supabase = await createClient();
-  const username = (formData.get('username')?.toString() || '')
-    .toLowerCase()
-    .trim();
+  const parsed = z
+    .object({ username: z.string().min(1, 'Username required') })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+  const username = parsed.data.username.toLowerCase().trim();
 
   // Validate
   const validation = validateUsername(username);
