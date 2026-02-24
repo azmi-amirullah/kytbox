@@ -2,7 +2,8 @@ import 'server-only';
 import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { after } from 'next/server';
-import { ratelimit } from '@/lib/upstash/redis';
+import { redirectRateLimit } from '@/lib/upstash/redis';
+import { getIp } from '@/lib/ip';
 
 export async function trackProfileView(profileId: string) {
   // Capture headers immediately (synchronously available in Server Components)
@@ -11,23 +12,13 @@ export async function trackProfileView(profileId: string) {
   const referer = headerStore.get('referer');
   const country = headerStore.get('x-vercel-ip-country');
   const city = headerStore.get('x-vercel-ip-city');
-
-  // Extract IP for rate limiting with Vercel priority
-  const vercelIp = headerStore.get('x-vercel-forwarded-for');
-  const realIp = headerStore.get('x-real-ip');
-  const forwardedFor = headerStore.get('x-forwarded-for');
-
-  const ip =
-    (vercelIp && vercelIp.split(',')[0].trim()) ||
-    (realIp && realIp.trim()) ||
-    (forwardedFor && forwardedFor.split(',')[0].trim()) ||
-    '127.0.0.1';
+  const ip = await getIp();
 
   // Offload DB write to after() so response isn't blocked
   after(async () => {
     // 1. Check Rate Limit
     // We check this before creating the client to save resources
-    const { success } = await ratelimit.limit(ip);
+    const { success } = await redirectRateLimit.limit(ip);
 
     if (!success) {
       return;

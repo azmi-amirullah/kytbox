@@ -106,8 +106,8 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | E1    | 🚨 High     | `cashflow/`, `support-admin/`, `app/` | **Missing `error.tsx` boundaries** — only bio, settings, [username] have them               | Add error boundaries             |
 | ✅ E2 | 🚨 High     | `cashflow/[id]/page.tsx`              | ~~**Unsafe non-null assertion** — `user.email!.toLowerCase()` will crash if email missing~~ | ✅ Fixed                         |
 | E3    | 💡 Low      | `(auth)/actions.ts` L106              | `resetPassword` builds redirect URL from `origin` header — could be manipulated             | Validate against allowed origins |
-| E4    | ⚠️ Medium   | `(auth)/actions.ts` L142              | `checkUsernameAvailable` has NO rate limiting — active username enumeration risk            | Add rate limit or debounce       |
-| E5    | 🚨 Critical | `(auth)/actions.ts`                   | **Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`                   | Add Upstash Redis rate limiting  |
+| ✅ E4 | ⚠️ Medium   | `(auth)/actions.ts` L142              | ~~`checkUsernameAvailable` has NO rate limiting — active username enumeration risk~~        | ✅ Fixed                         |
+| ✅ E5 | 🚨 Critical | `(auth)/actions.ts`                   | ~~**Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`~~               | ✅ Fixed                         |
 
 ### Accessibility & Configuration (A11y/Infra)
 
@@ -155,12 +155,12 @@ The following enterprise categories are completely missing from the codebase and
 | ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
 | ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~  | ~~🚨 High~~     | ~~✅ Fixed~~           |
 | ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| **E5**     | Implement Upstash Rate Limiting on auth actions                    | 🚨 Critical     | 🧰 Medium (Infra)      |
+| ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
 | **Q4**     | Install and enforce **Zod 4** validation for ALL actions           | 🚨 Critical     | 🛠️ Hard Refactor       |
 | **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)           | 🚨 Critical     | 🛠️ Hard Refactor       |
 | **E1**     | Add missing `error.tsx` boundaries to route tree                   | 🚨 High         | 🧰 Medium              |
 | ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                       | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| **E4**     | Rate limit `checkUsernameAvailable` endpoint                       | ⚠️ Medium       | 🧰 Medium              |
+| ~~**E4**~~ | ~~Rate limit `checkUsernameAvailable` endpoint~~                   | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                  | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~           | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |

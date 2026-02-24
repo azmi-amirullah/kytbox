@@ -5,8 +5,16 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { validateUsername } from '@/lib/username';
+import { authRateLimit, usernameRateLimit } from '@/lib/upstash/redis';
+import { getIp } from '@/lib/ip';
 
 export async function login(formData: FormData) {
+  const ip = await getIp();
+  const { success: rlSuccess } = await authRateLimit.limit(ip);
+  if (!rlSuccess) {
+    return { error: 'Too many requests. Please try again later.' };
+  }
+
   const supabase = await createClient();
 
   const data = {
@@ -32,6 +40,12 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
+  const ip = await getIp();
+  const { success: rlSuccess } = await authRateLimit.limit(ip);
+  if (!rlSuccess) {
+    return { error: 'Too many requests. Please try again later.' };
+  }
+
   const supabase = await createClient();
 
   const email = formData.get('email')?.toString() || '';
@@ -100,6 +114,12 @@ export async function logout() {
 }
 
 export async function resetPassword(formData: FormData) {
+  const ip = await getIp();
+  const { success: rlSuccess } = await authRateLimit.limit(ip);
+  if (!rlSuccess) {
+    return { error: 'Too many requests. Please try again later.' };
+  }
+
   const supabase = await createClient();
   const email = formData.get('email')?.toString() || '';
 
@@ -142,6 +162,12 @@ export async function updatePassword(formData: FormData) {
  * Does NOT require authentication
  */
 export async function checkUsernameAvailable(username: string) {
+  const ip = await getIp();
+  const { success: rlSuccess } = await usernameRateLimit.limit(ip);
+  if (!rlSuccess) {
+    return { available: false, error: 'Too many verification requests.' };
+  }
+
   const supabase = await createClient();
 
   const safeUsername = username.toLowerCase().trim();

@@ -2,8 +2,8 @@ import { notFound, redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { ratelimit } from '@/lib/upstash/redis';
-import { headers } from 'next/headers';
+import { redirectRateLimit } from '@/lib/upstash/redis';
+import { getIp } from '@/lib/ip';
 
 interface RedirectRouteProps {
   params: Promise<{
@@ -12,28 +12,13 @@ interface RedirectRouteProps {
   }>;
 }
 
-// Helper to get IP for rate limiting safely
-async function getIp() {
-  const headersList = await headers();
-  // Vercel specific guarantees - prioritize these over generic headers
-  const vercelIp = headersList.get('x-vercel-forwarded-for');
-  const realIp = headersList.get('x-real-ip');
-  const forwardedFor = headersList.get('x-forwarded-for');
-
-  if (vercelIp) return vercelIp.split(',')[0].trim();
-  if (realIp) return realIp.trim();
-  if (forwardedFor) return forwardedFor.split(',')[0].trim();
-
-  return '127.0.0.1';
-}
-
 export async function GET(request: Request, { params }: RedirectRouteProps) {
   const { username, linkId } = await params;
 
   // 1. Rate Limiting Check
   // Check FIRST to protect from analytics spam AND database abuse
   const ip = await getIp();
-  const { success: isNotRateLimited } = await ratelimit.limit(ip);
+  const { success: isNotRateLimited } = await redirectRateLimit.limit(ip);
 
   if (!isNotRateLimited) {
     // Return 429 Too Many Requests immediately to stop DB queries
