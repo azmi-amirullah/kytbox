@@ -35,7 +35,6 @@ export default function CashflowModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [shouldClose, setShouldClose] = useState(false);
 
   const [title, setTitle] = useState(cashflow?.title || '');
 
@@ -51,15 +50,6 @@ export default function CashflowModal({
       });
     }
   }, [open, cashflow]);
-
-  useEffect(() => {
-    if (shouldClose && !isPending) {
-      queueMicrotask(() => {
-        onOpenChange(false);
-        setShouldClose(false);
-      });
-    }
-  }, [shouldClose, isPending, onOpenChange]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -84,11 +74,10 @@ export default function CashflowModal({
       setIsLoading(false);
     } else {
       toast.success(isEdit ? 'Cashflow updated!' : 'Cashflow created!');
-      // Keep isLoading true to prevent button flicker before modal closes
+      onOpenChange(false);
       startTransition(() => {
         router.refresh();
       });
-      setShouldClose(true);
     }
   }
 

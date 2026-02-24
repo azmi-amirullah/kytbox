@@ -141,21 +141,18 @@ export default function CashflowList({
   }
 
   function openShare(e: React.MouseEvent, cashflow: CashflowWithSummary) {
-    e.preventDefault();
     e.stopPropagation();
     setActiveCashflow(cashflow);
     setIsShareModalOpen(true);
   }
 
   function openEdit(e: React.MouseEvent, cashflow: CashflowWithSummary) {
-    e.preventDefault();
     e.stopPropagation();
     setActiveCashflow(cashflow);
     setIsEditModalOpen(true);
   }
 
   function openDelete(e: React.MouseEvent, cashflow: CashflowWithSummary) {
-    e.preventDefault();
     e.stopPropagation();
     setActiveCashflow(cashflow);
     setIsDeleting(false);
