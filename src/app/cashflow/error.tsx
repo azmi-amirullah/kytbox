@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { ErrorState } from '@/components/ui/error-state';
-import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
-export default function GlobalError({
+export default function CashflowRootError({
   error,
   reset,
 }: {
@@ -17,8 +17,7 @@ export default function GlobalError({
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error('Global Application Error:', error, { path: pathname });
+    console.error('Cashflow Route Error:', error, { path: pathname });
 
     const checkAuth = async () => {
       const supabase = createClient();
@@ -45,23 +44,19 @@ export default function GlobalError({
   );
 
   return (
-    <html>
-      <body>
-        <div className='flex items-center justify-center min-h-screen w-full bg-background p-6'>
-          <ErrorState
-            variant='card'
-            title='Something went wrong'
-            context={pathname}
-            description={
-              <>
-                We encountered a critical error. Please try refreshing. If it
-                persists, contact us via {supportLink}.
-              </>
-            }
-            retryAction={reset}
-          />
-        </div>
-      </body>
-    </html>
+    <div className='flex items-center justify-center min-h-[500px] w-full p-6'>
+      <ErrorState
+        variant='card'
+        title='Cashflow System Error'
+        context={pathname}
+        description={
+          <>
+            We couldn&apos;t load the cashflow details. Please try again or
+            contact us at {supportLink}.
+          </>
+        }
+        retryAction={reset}
+      />
+    </div>
   );
 }
