@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { z } from 'zod';
 import { cashflowEntrySchema, updateCashflowEntrySchema } from '@/lib/schemas';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
 
 export async function createCashflow(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
@@ -75,6 +77,50 @@ export async function deleteCashflow(cashflowId: string) {
   return { success: true };
 }
 
+/**
+ * Internal helper to verify if a user has edit permissions for a cashflow.
+ * A user can edit if they are the owner OR have a share with the 'edit' role.
+ */
+async function checkEditPermission(
+  supabase: SupabaseClient<Database>,
+  cashflowId: string,
+  user: { id: string; email?: string },
+) {
+  // 1. Get cashflow to check ownership
+  const { data: cashflow, error: cashflowError } = await supabase
+    .from('cashflows')
+    .select('user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  if (cashflowError || !cashflow) {
+    return { canEdit: false, error: 'Cashflow not found or access denied' };
+  }
+
+  // 2. Check if owner
+  if (cashflow.user_id === user.id) {
+    return { canEdit: true };
+  }
+
+  // 3. Check for 'edit' role share
+  const { data: share } = await supabase
+    .from('cashflow_shares')
+    .select('role')
+    .eq('cashflow_id', cashflowId)
+    .eq('email', user.email?.toLowerCase() || '')
+    .eq('role', 'edit')
+    .single();
+
+  if (share) {
+    return { canEdit: true };
+  }
+
+  return {
+    canEdit: false,
+    error: 'You do not have permission to edit this cashflow',
+  };
+}
+
 export async function addEntry(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
@@ -88,35 +134,9 @@ export async function addEntry(formData: FormData) {
   const { cashflowId, description, type, date, amount } = parsed.data;
 
   // Verify access (owner or editor)
-  const { data: cashflow, error: checkError } = await supabase
-    .from('cashflows')
-    .select('id, user_id')
-    .eq('id', cashflowId)
-    .single();
-
-  if (checkError || !cashflow) {
-    return { error: 'Cashflow not found or access denied' };
-  }
-
-  // Check if owner or has edit role in shares
-  let canEdit = cashflow.user_id === user.id;
-
-  if (!canEdit) {
-    const { data: share } = await supabase
-      .from('cashflow_shares')
-      .select('role')
-      .eq('cashflow_id', cashflowId)
-      .eq('email', user.email?.toLowerCase() || '')
-      .eq('role', 'edit')
-      .single();
-
-    if (share) canEdit = true;
-  }
-
-  if (!canEdit) {
-    return {
-      error: 'You do not have permission to add entries to this cashflow',
-    };
+  const permission = await checkEditPermission(supabase, cashflowId, user);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
   }
 
   const { error } = await supabase.from('cashflow_entries').insert({
@@ -150,7 +170,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
 
   const { description, type, date, amount } = parsed.data;
 
-  // Verify entry exists and user has edit permission (owner or editor)
+  // Verify entry exists
   const { data: entry } = await supabase
     .from('cashflow_entries')
     .select('cashflow_id')
@@ -161,32 +181,14 @@ export async function updateEntry(entryId: string, formData: FormData) {
     return { error: 'Entry not found' };
   }
 
-  const { data: cashflow } = await supabase
-    .from('cashflows')
-    .select('user_id')
-    .eq('id', entry.cashflow_id)
-    .single();
-
-  if (!cashflow) {
-    return { error: 'Cashflow not found' };
-  }
-
-  let canEdit = cashflow.user_id === user.id;
-
-  if (!canEdit) {
-    const { data: share } = await supabase
-      .from('cashflow_shares')
-      .select('role')
-      .eq('cashflow_id', entry.cashflow_id)
-      .eq('email', user.email?.toLowerCase() || '')
-      .eq('role', 'edit')
-      .single();
-
-    if (share) canEdit = true;
-  }
-
-  if (!canEdit) {
-    return { error: 'You do not have permission to edit this entry' };
+  // Verify permission
+  const permission = await checkEditPermission(
+    supabase,
+    entry.cashflow_id,
+    user,
+  );
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
   }
 
   const { error } = await supabase
@@ -211,7 +213,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
 export async function deleteEntry(entryId: string) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
-  // Verify entry exists and user has edit permission (owner or editor)
+  // Verify entry exists
   const { data: entry } = await supabase
     .from('cashflow_entries')
     .select('cashflow_id')
@@ -222,32 +224,14 @@ export async function deleteEntry(entryId: string) {
     return { error: 'Entry not found' };
   }
 
-  const { data: cashflow } = await supabase
-    .from('cashflows')
-    .select('user_id')
-    .eq('id', entry.cashflow_id)
-    .single();
-
-  if (!cashflow) {
-    return { error: 'Cashflow not found' };
-  }
-
-  let canEdit = cashflow.user_id === user.id;
-
-  if (!canEdit) {
-    const { data: share } = await supabase
-      .from('cashflow_shares')
-      .select('role')
-      .eq('cashflow_id', entry.cashflow_id)
-      .eq('email', user.email?.toLowerCase() || '')
-      .eq('role', 'edit')
-      .single();
-
-    if (share) canEdit = true;
-  }
-
-  if (!canEdit) {
-    return { error: 'You do not have permission to delete this entry' };
+  // Verify permission
+  const permission = await checkEditPermission(
+    supabase,
+    entry.cashflow_id,
+    user,
+  );
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
   }
 
   const { error } = await supabase

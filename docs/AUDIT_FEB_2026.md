@@ -92,13 +92,13 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Code Quality & Security
 
-| ID    | Severity    | File                  | Issue                                                                                    | Fix                                                                      |
-| :---- | :---------- | :-------------------- | :--------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
-| Q1    | ⚠️ Medium   | `cashflow/actions.ts` | **Edit-permission logic duplicated 3x** across `addEntry`, `updateEntry`, `deleteEntry`  | Extract `checkEditPermission()` helper                                   |
-| ✅ Q2 | 💡 Low      | `share-actions.ts`    | ~~`updateShareRole` lacks App-level ownership check (DB trigger already protects this)~~ | ✅ Fixed                                                                 |
-| Q3    | 💡 Low      | `cashflow/page.tsx`   | Triple `as unknown as` casts — Supabase types mismatch                                   | Fix types or use `.returns<T>()`                                         |
-| Q4    | 🚨 Critical | Server Actions        | **No schema validation** on `FormData` processing, relying blindly on type casting       | Implement strict parsing (Valibot for Edge, or Zod 4)                    |
-| Q5    | 🚨 Critical | `components/`         | **Component Data Leaks** — Risk of passing entire DB rows from Server to Client props    | Map strictly to DTOs in Client layers. NEVER pass raw DB rows to client. |
+| ID    | Severity    | File                  | Issue                                                                                       | Fix                                                                      |
+| :---- | :---------- | :-------------------- | :------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------- |
+| ✅ Q1 | ⚠️ Medium   | `cashflow/actions.ts` | ~~**Edit-permission logic duplicated 3x** across `addEntry`, `updateEntry`, `deleteEntry`~~ | ✅ Fixed                                                                 |
+| ✅ Q2 | 💡 Low      | `share-actions.ts`    | ~~`updateShareRole` lacks App-level ownership check (DB trigger already protects this)~~    | ✅ Fixed                                                                 |
+| Q3    | 💡 Low      | `cashflow/page.tsx`   | Triple `as unknown as` casts — Supabase types mismatch                                      | Fix types or use `.returns<T>()`                                         |
+| Q4    | 🚨 Critical | Server Actions        | **No schema validation** on `FormData` processing, relying blindly on type casting          | Implement strict parsing (Valibot for Edge, or Zod 4)                    |
+| Q5    | 🚨 Critical | `components/`         | **Component Data Leaks** — Risk of passing entire DB rows from Server to Client props       | Map strictly to DTOs in Client layers. NEVER pass raw DB rows to client. |
 
 ### Error Handling & Reliability
 
@@ -165,7 +165,7 @@ The following enterprise categories are completely missing from the codebase and
 | ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                  | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~           | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| **Q1**     | Extract edit-permission helper logic                               | 💡 Low          | 🧰 Medium (Refactor)   |
+| ~~**Q1**~~ | ~~Extract edit-permission helper logic~~                           | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                   | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                          | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | **T3**     | Fix unsafe TS casts in `AppearanceEditor`                          | 💡 Low          | 🧰 Medium              |
