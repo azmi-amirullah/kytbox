@@ -85,39 +85,50 @@ async function checkEditPermission(
   supabase: SupabaseClient<Database>,
   cashflowId: string,
   user: { id: string; email?: string },
+  cachedOwnerId?: string,
 ) {
-  // 1. Get cashflow to check ownership
-  const { data: cashflow, error: cashflowError } = await supabase
-    .from('cashflows')
-    .select('user_id')
-    .eq('id', cashflowId)
-    .single();
+  // 1. If we already have the ownerId (from a join), check it first
+  if (cachedOwnerId) {
+    if (cachedOwnerId === user.id) return { canEdit: true };
 
-  if (cashflowError || !cashflow) {
-    return { canEdit: false, error: 'Cashflow not found or access denied' };
+    // Otherwise check for 'edit' share
+    const { data: share } = await supabase
+      .from('cashflow_shares')
+      .select('role')
+      .eq('cashflow_id', cashflowId)
+      .eq('email', user.email?.toLowerCase() || '')
+      .eq('role', 'edit')
+      .single();
+
+    return share
+      ? { canEdit: true }
+      : {
+          canEdit: false,
+          error: 'You do not have permission to edit this cashflow',
+        };
   }
 
-  // 2. Check if owner
-  if (cashflow.user_id === user.id) {
-    return { canEdit: true };
-  }
+  // 2. Fallback: Check owner and shares in parallel
+  const [ownerRes, shareRes] = await Promise.all([
+    supabase.from('cashflows').select('user_id').eq('id', cashflowId).single(),
+    supabase
+      .from('cashflow_shares')
+      .select('role')
+      .eq('cashflow_id', cashflowId)
+      .eq('email', user.email?.toLowerCase() || '')
+      .eq('role', 'edit')
+      .single(),
+  ]);
 
-  // 3. Check for 'edit' role share
-  const { data: share } = await supabase
-    .from('cashflow_shares')
-    .select('role')
-    .eq('cashflow_id', cashflowId)
-    .eq('email', user.email?.toLowerCase() || '')
-    .eq('role', 'edit')
-    .single();
-
-  if (share) {
+  if (ownerRes.data?.user_id === user.id || shareRes.data) {
     return { canEdit: true };
   }
 
   return {
     canEdit: false,
-    error: 'You do not have permission to edit this cashflow',
+    error: ownerRes.error
+      ? 'Cashflow not found'
+      : 'You do not have permission to edit this cashflow',
   };
 }
 
@@ -173,7 +184,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
   // Verify entry exists
   const { data: entry } = await supabase
     .from('cashflow_entries')
-    .select('cashflow_id')
+    .select('cashflow_id, cashflows(user_id)')
     .eq('id', entryId)
     .single();
 
@@ -186,6 +197,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
     supabase,
     entry.cashflow_id,
     user,
+    (entry.cashflows as { user_id: string } | null)?.user_id,
   );
   if (!permission.canEdit) {
     return { error: permission.error || 'Access denied' };
@@ -216,7 +228,7 @@ export async function deleteEntry(entryId: string) {
   // Verify entry exists
   const { data: entry } = await supabase
     .from('cashflow_entries')
-    .select('cashflow_id')
+    .select('cashflow_id, cashflows(user_id)')
     .eq('id', entryId)
     .single();
 
@@ -229,6 +241,7 @@ export async function deleteEntry(entryId: string) {
     supabase,
     entry.cashflow_id,
     user,
+    (entry.cashflows as { user_id: string } | null)?.user_id,
   );
   if (!permission.canEdit) {
     return { error: permission.error || 'Access denied' };

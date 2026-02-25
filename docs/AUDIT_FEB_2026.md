@@ -112,11 +112,11 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Accessibility & Configuration (A11y/Infra)
 
-| ID    | Severity  | File           | Issue                                                                                 | Fix                                |
-| :---- | :-------- | :------------- | :------------------------------------------------------------------------------------ | :--------------------------------- |
-| A1    | ⚠️ Medium | All Components | **Missing ARIA attributes** — only 1 `aria-expanded` found in entire UI layer         | Add standard radix/aria tags       |
-| ✅ A2 | 💡 Low    | `package.json` | ~~**Phantom dependency** — `@types/crypto-js` in devDeps but no `crypto-js` in deps~~ | ✅ Fixed                           |
-| A3    | 💡 Low    | `components/`  | **UI Architecture Compliance** — Missing clear Atomic Design directory splits         | Refactor into atoms/molecules/orgs |
+| ID    | Severity  | File           | Issue                                                                                    | Fix                                                       |
+| :---- | :-------- | :------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
+| A1    | ⚠️ Medium | All Components | **Missing ARIA attributes** — only 1 `aria-expanded` found in entire UI layer            | Add standard radix/aria tags                              |
+| ✅ A2 | 💡 Low    | `package.json` | ~~**Phantom dependency** — `@types/crypto-js` in devDeps but no `crypto-js` in deps~~    | ✅ Fixed                                                  |
+| A3    | 💡 Low    | `components/`  | **Architectural Soup** — Relying purely on Atomic Design for _logic_ separation is weak. | Implement Hybrid: FSD for logic, Atomic for UI components |
 
 ### Type Safety
 
@@ -126,16 +126,61 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | ✅ T2 | 💡 Low   | `bio/page.tsx`                                               | ~~`profile={{} as Profile}` for loading states lies to the type system~~ | ✅ Fixed                         |
 | T3    | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                           | Fix types to remove unsafe casts |
 
+### 🛠️ Pending Actions
+
+| ID     | Issue                                                    | Severity    | Effort Target          |
+| :----- | :------------------------------------------------------- | :---------- | :--------------------- |
+| **Q5** | Component Data Leaks (Map API/DB returns to strict DTOs) | 🚨 Critical | 🛠️ Hard Refactor       |
+| **A1** | Global ARIA/Accessibility Audit                          | ⚠️ Medium   | 🛠️ Hard Refactor       |
+| **P6** | Remove dead code in `data-cache.ts`                      | 💡 Low      | 💡 Low / Quick Win     |
+| **P7** | Optimize `select(*)` over-fetching across 9 pages        | 💡 Low      | 🧰 Medium              |
+| **Q3** | Fix triple `as unknown as` casts in `cashflow/page.tsx`  | 💡 Low      | 💡 Low / Quick Win     |
+| **E3** | Sanitize `origin` header in `resetPassword` redirect     | 💡 Low      | 💡 Low / Quick Win     |
+| **A3** | Architecture: Refactor to Hybrid Atomic-FSD Design       | 💡 Low      | 🏗️ Enterprise Refactor |
+
+### ✅ Resolved Actions
+
+| ID         | Issue                                                              | Severity        | Status                 |
+| :--------- | :----------------------------------------------------------------- | :-------------- | :--------------------- |
+| ~~**P3**~~ | ~~Parallelize `updateEntry` / `deleteEntry` queries~~              | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                 | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
+| ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
+| ~~**Q4**~~ | ~~Install and enforce **Zod 4** validation for ALL actions~~       | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
+| ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~  | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**E1**~~ | ~~Smart Error Boundaries (Auth-Aware Recovery)~~                   | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                       | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**E4**~~ | ~~Rate limit `checkUsernameAvailable` endpoint~~                   | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                  | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~           | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**Q1**~~ | ~~Extract edit-permission helper logic~~                           | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                   | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                          | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**T3**~~ | ~~Fix unsafe TS casts in `AppearanceEditor`~~                      | ~~💡 Low~~      | ~~✅ Fixed~~           |
+
 ### ⚠️ Missing Pillars (Unaudited, Tracked for March)
 
 The following enterprise categories are completely missing from the codebase and therefore could not be audited. They must be implemented to reach production-grade maturity:
 
-| Pillar                | Issue                                                         | Impact                                                            |
-| :-------------------- | :------------------------------------------------------------ | :---------------------------------------------------------------- |
-| **Automated Testing** | Zero testing frameworks installed (no Jest, Playwright, etc.) | Regressions in business logic cannot be caught automatically      |
-| **CI/CD Pipelines**   | No automated deployment workflows (e.g., GitHub Actions)      | Code is deployed without pre-flight linting or type-checking      |
-| **Observability**     | No application-layer error tracking (e.g., Sentry)            | Server crashes and client exceptions fail silently in production  |
-| **SEO & OpenGraph**   | Missing `generateMetadata` on core marketing/legal pages      | Search engine visibility and social shareability are bottlenecked |
+| Pillar                 | Verified 2026 Issue                                         | Enterprise Impact                                                            |
+| :--------------------- | :---------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| **Security Hardening** | Missing CSP (Content Security Policy) and HSTS headers      | Vulnerable to XSS, clickjacking, and protocol downgrade attacks              |
+| **Linguistic Scale**   | Zero Internationalization (i18n) infrastructure             | Hard-coded strings prevent growth into non-English markets                   |
+| **Env Integrity**      | No runtime validation of Environment Variables (Zod/T3-Env) | Potential runtime crashes or silent misconfigs due to missing/invalid `.env` |
+| **Accessibility**      | Missing ARIA roles and keyboard navigation (WCAG 2.2)       | Legal risk and reduced user reach (Mandatory by April 2026)                  |
+| **Modern Styling**     | Reliance on Media Queries over Container Queries & Subgrid  | Rigid components that don't scale well in complex FSD slices                 |
+| **Runtime Perf**       | Server Actions not yet optimized for Edge Runtime           | Higher latency for global users vs. Edge-first architectures                 |
+| **Automated Testing**  | Zero testing frameworks installed (Jest/Vitest, Playwright) | Regressions in business logic cannot be caught automatically                 |
+| **CI/CD Pipelines**    | No automated deployment workflows (GitHub Actions)          | Code is deployed without pre-flight linting or type-checking                 |
+| **Observability**      | No application-layer error tracking (Sentry/LogRocket)      | Server crashes and client exceptions fail silently in production             |
+| **PWA Readiness**      | Missing `manifest.json` and service worker infrastructure   | No "Add to Home Screen" support—unacceptable for mobile-first apps           |
+| **Asset Optimization** | No AVIF support in `next.config.ts`                         | Missing 20-30% bandwidth savings vs. standard WebP                           |
+| **SEO & OpenGraph**    | Missing `generateMetadata` on core marketing/legal pages    | Search engine visibility and social shareability are bottlenecked            |
+
+> [!NOTE]
+> **Edge Security**: `src/proxy.ts` usage was verified via **Context7** as the correct Next.js 16 standard (replacing `middleware.ts`). The architectural finding has been retracted.
 
 ### What's Already Good ✅
 
@@ -148,30 +193,18 @@ The following enterprise categories are completely missing from the codebase and
 - **URL validation** thorough with protocol + TLD checks (as long as it's enforced on ALL user inputs)
 - **NPM Audit** — 14 vulnerabilities remaining (0 moderate, 14 high). Resolved moderate `ajv` ReDoS via `npm audit fix`. Remaining 14 are `minimatch` ReDoS in `devDependencies` (ESLint toolchain) — zero impact on production bundle.
 
-### Action Plan Matrix
-
-| ID         | Issue                                                              | Severity        | Effort Target          |
-| :--------- | :----------------------------------------------------------------- | :-------------- | :--------------------- |
-| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                 | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
-| ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~  | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
-| ~~**Q4**~~ | ~~Install and enforce **Zod 4** validation for ALL actions~~       | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
-| **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)           | 🚨 Critical     | 🛠️ Hard Refactor       |
-| ~~**E1**~~ | ~~Smart Error Boundaries (Auth-Aware Recovery)~~                   | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                       | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**E4**~~ | ~~Rate limit `checkUsernameAvailable` endpoint~~                   | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                  | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~           | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**Q1**~~ | ~~Extract edit-permission helper logic~~                           | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                   | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                          | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**T3**~~ | ~~Fix unsafe TS casts in `AppearanceEditor`~~                      | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| **A3**     | Architecture: Refactor components to Atomic Design                 | 💡 Low          | 🧱 Long-term Refactor  |
-
 > **[@code-reviewer note]**: The audit document was updated by `@code-reviewer` to reflect accurate severities, prioritizing Security > Stability > Performance > Code Quality. The list above is the true priority list required for an enterprise-ready release.
+
+### ⚖️ Ranking Parameter Key
+
+The priority ranking in the Matrix above is calculated based on **Severity vs. Effort**:
+
+1. **Hierarchy**: **Security** (RLS/Auth) > **Stability** (Crashes/Boundaries) > **Performance** (DB Hits) > **TS Quality** (Casts).
+2. **Prioritization Logic**:
+   - **Priority 1**: High Severity + Low Effort (The "Quick Wins").
+   - **Priority 2**: High Severity + High Effort (The "Critical Refactors").
+   - **Priority 3**: Low Severity + Low Effort (The "Polishing").
+   - **Priority 4**: Architecture/Long-term items (The "Enterprise Roadmap").
 
 ### 🔬 @tech-stack-researcher: Q4 Validation Strategy (2026)
 
