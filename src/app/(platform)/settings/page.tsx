@@ -39,10 +39,14 @@ export default async function SettingsPage() {
 
         <div className='flex items-center gap-4 mb-2'>
           <BackButton />
-          <h1 className='text-3xl font-bold tracking-tight'>Account Settings</h1>
+          <h1 className='text-3xl font-bold tracking-tight'>
+            Account Settings
+          </h1>
         </div>
 
-        <p className='text-muted-foreground'>Manage your profile and preferences</p>
+        <p className='text-muted-foreground'>
+          Manage your profile and preferences
+        </p>
       </div>
       <SettingsForm profile={profile} email={user.email || ''} />
     </div>
