@@ -10,13 +10,16 @@ export async function proxy(request: NextRequest) {
   const protectedPaths = [
     '/app',
     '/bio',
-    '/cashflow',
+    '/onboarding',
     '/settings',
     '/support',
     '/support-admin',
     '/update-password',
   ];
-  const isProtectedRoute = protectedPaths.some(matchesRoute);
+  // Protect specific paths and EXACTLY '/cashflow' (the private list)
+  // Sub-paths like /cashflow/[id] are handled by the page logic for public access
+  const isProtectedRoute =
+    protectedPaths.some(matchesRoute) || pathname === '/cashflow';
 
   // Auth routes - redirect logged-in users
   const authPaths = ['/login', '/signup'];
