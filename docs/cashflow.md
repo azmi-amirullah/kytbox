@@ -27,8 +27,9 @@ The Cashflow app follows a clean separation of concerns between **Ownership**, *
 
 The application uses a hybrid routing model where `/cashflow/[id]` serves as both a private management view and a public shared surface.
 
-- **Private Dashboard (`/cashflow`)**: Queries the user's personal books and any books they have actively "bookmarked" or been invited to.
-- **Detail View (`/cashflow/[id]`)**: Resolution logic determines the user's role (Owner, Editor, Viewer, or Unauthorized) based on Supabase Auth and the `cashflow_shares` registry.
+- **Private Dashboard (`/cashflow`)**: Protected at the **Middleware layer** (`proxy.ts`). Redirects guests to login via an exact-match rule.
+- **Detail View (`/cashflow/[id]`)**: Resolution logic determines the user's role (Owner, Editor, Viewer, or Unauthorized) based on Supabase Auth and the `cashflow_shares` registry. Middleware allows sub-paths through, letting the page-level logic decide access.
+- **Error Boundaries**: A specialized `cashflow/error.tsx` provides "Smart Recovery"—offering the Support Page to logged-in users and Email Support to guests.
 
 ## 3. Database Schema (Supabase)
 
@@ -201,3 +202,5 @@ stateDiagram-v2
 ---
 
 _For loading state details, see [LOADING_STATES.md](./LOADING_STATES.md)_
+
+_Last Updated: February 25, 2026_

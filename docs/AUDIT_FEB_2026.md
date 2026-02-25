@@ -30,7 +30,7 @@ Systematic security + code quality review of every commit day in February 2026.
 | Feb 22 |  ❌   | Sunday    |   N/A   | No push                                                                                    |
 | Feb 23 |  ✅   | Monday    |   ✅    | 11 fixes: Query parallelizations, type safety fixes, ownership auth, missing index         |
 
-**✅ Audit complete — all 17 push days reviewed.**
+**✅ Audit complete — all relevant push days reviewed.**
 
 ## Audit Details
 
@@ -80,6 +80,7 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 | ID    | Severity  | File                     | Issue                                                                                              | Fix                                      |
 | :---- | :-------- | :----------------------- | :------------------------------------------------------------------------------------------------- | :--------------------------------------- |
+| ✅ P1 | 🚨 High   | `analytics/actions.ts`   | ~~**4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views)~~           | ✅ Fixed                                 |
 | ✅ P1 | 🚨 High   | `analytics/actions.ts`   | ~~**4 sequential DB calls** in `getAnalyticsData` (chart → referer → topLinks → views)~~           | ✅ Fixed                                 |
 | ✅ P2 | ⚠️ Medium | `bio/actions.ts`         | ~~`addLink` runs 2 sequential independent queries (sort_order + RPC)~~                             | ✅ Fixed                                 |
 | P3    | ⚠️ Medium | `cashflow/actions.ts`    | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)                     | Join or RPC                              |
@@ -149,26 +150,26 @@ The following enterprise categories are completely missing from the codebase and
 
 ### Action Plan Matrix
 
-| ID         | Issue                                                                 | Severity        | Effort Target          |
-| :--------- | :-------------------------------------------------------------------- | :-------------- | :--------------------- |
-| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                    | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
-| ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~    | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~     | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                   | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                   | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
-| ~~**Q4**~~ | ~~Install and enforce **Zod 4** validation for ALL actions~~          | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
-| **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)              | 🚨 Critical     | 🛠️ Hard Refactor       |
-| ~~**E1**~~ | ~~Add missing `error.tsx` boundaries (Consolidated Shared Approach)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                          | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**E4**~~ | ~~Rate limit `checkUsernameAvailable` endpoint~~                      | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                     | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~              | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                   | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| **Q1**     | Extract edit-permission helper logic                                  | 💡 Low          | 🧰 Medium (Refactor)   |
-| ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                      | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                             | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| **T3**     | Fix unsafe TS casts in `AppearanceEditor`                             | 💡 Low          | 🧰 Medium              |
-| **A3**     | Architecture: Refactor components to Atomic Design                    | 💡 Low          | 🧱 Long-term Refactor  |
+| ID         | Issue                                                              | Severity        | Effort Target          |
+| :--------- | :----------------------------------------------------------------- | :-------------- | :--------------------- |
+| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                 | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
+| ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~  | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
+| ~~**Q4**~~ | ~~Install and enforce **Zod 4** validation for ALL actions~~       | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
+| **Q5**     | Component Data Leaks (Map API/DB returns to strict DTOs)           | 🚨 Critical     | 🛠️ Hard Refactor       |
+| ~~**E1**~~ | ~~Smart Error Boundaries (Auth-Aware Recovery)~~                   | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                       | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**E4**~~ | ~~Rate limit `checkUsernameAvailable` endpoint~~                   | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                  | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~           | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| **Q1**     | Extract edit-permission helper logic                               | 💡 Low          | 🧰 Medium (Refactor)   |
+| ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                   | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                          | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| **T3**     | Fix unsafe TS casts in `AppearanceEditor`                          | 💡 Low          | 🧰 Medium              |
+| **A3**     | Architecture: Refactor components to Atomic Design                 | 💡 Low          | 🧱 Long-term Refactor  |
 
 > **[@code-reviewer note]**: The audit document was updated by `@code-reviewer` to reflect accurate severities, prioritizing Security > Stability > Performance > Code Quality. The list above is the true priority list required for an enterprise-ready release.
 

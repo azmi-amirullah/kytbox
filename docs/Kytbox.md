@@ -428,7 +428,7 @@ Rule: This document defines how Kytbox works
 
 ---
 
-_Last Updated: February 20, 2026_
+_Last Updated: February 25, 2026_
 
 ## Implementation Status
 
@@ -479,26 +479,27 @@ For implementation details and coverage status, see: [Loading States Documentati
 
 All page routes in Kytbox with their rendering type and auth requirements:
 
-| Route                 | Render  | Auth  | Description                      |
-| --------------------- | ------- | ----- | -------------------------------- |
-| `/`                   | Dynamic | No    | Landing page                     |
-| `/login`              | Static  | No    | Login form                       |
-| `/signup`             | Static  | No    | Signup form                      |
-| `/forgot-password`    | Static  | No    | Password reset request           |
-| `/update-password`    | Static  | No    | Password reset form              |
-| `/onboarding`         | Static  | No    | Profile setup                    |
-| `/app`                | Dynamic | Yes   | Platform home / app switcher     |
-| `/bio`                | Dynamic | Yes   | Bio dashboard                    |
-| `/bio/analytics`      | Dynamic | Yes   | Bio analytics                    |
-| `/cashflow`           | Dynamic | Yes   | Cashflow list                    |
-| `/cashflow/[id]`      | Dynamic | Mixed | Cashflow detail (public or auth) |
-| `/settings`           | Dynamic | Yes   | Account settings                 |
-| `/support`            | Dynamic | Yes   | User support portal              |
-| `/support/[id]`       | Dynamic | Yes   | Ticket thread view               |
-| `/support/new`        | Static  | Yes   | Create new ticket                |
-| `/support-admin`      | Dynamic | Yes   | Admin support dashboard          |
-| `/support-admin/[id]` | Dynamic | Yes   | Admin ticket reply view          |
-| `/[username]`         | Dynamic | No    | Public bio page                  |
+| Route                  | Render     | Auth      | Description                      |
+| ---------------------- | ---------- | --------- | -------------------------------- |
+| `/`                    | Dynamic    | No        | Landing page                     |
+| `/login`               | Static     | No        | Login form                       |
+| `/signup`              | Static     | No        | Signup form                      |
+| `/forgot-password`     | Static     | No        | Password reset request           |
+| `/update-password`     | Static     | No        | Password reset form              |
+| `/onboarding`          | Static     | No        | Profile setup                    |
+| `/app`                 | Dynamic    | Yes       | Platform home / app switcher     |
+| `/bio`                 | Dynamic    | Yes       | Bio dashboard                    |
+| `/bio/analytics`       | Dynamic    | Yes       | Bio analytics                    |
+| `/cashflow`            | Dynamic    | Yes       | Cashflow list                    |
+| `/cashflow/[id]`       | Dynamic    | Mixed     | Cashflow detail (public or auth) |
+| `/settings`            | Dynamic    | Yes       | Account settings                 |
+| `/support`             | Dynamic    | Yes       | User support portal              |
+| `/support/[id]`        | Dynamic    | Yes       | Ticket thread view               |
+| `/support/new`         | Static     | Yes       | Create new ticket                |
+| `/support-admin`       | Dynamic    | Yes       | Admin support dashboard          |
+| `/support-admin/[id]`  | Dynamic    | Yes       | Admin ticket reply view          |
+| `/[username]`          | Dynamic    | No        | Public bio page                  |
+| **Specialized Errors** | **Client** | **Mixed** | **Smart recovery boundaries**    |
 
 ### 12.4 Future Optimization Options
 

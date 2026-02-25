@@ -149,6 +149,10 @@ Implementation note:
 - Ticket creation is executed atomically via DB RPC `create_support_ticket`.
 - Urgency bump is enforced via DB RPC `bump_support_ticket_urgency`.
 
+#### 3.2.4 Error Boundary Integration (Implemented)
+
+The support system is explicitly linked to **Smart Error Boundaries** across the app. Logged-in users who encounter an error are automatically funneled to `/support` via a recovery link, while guests are funneled to email.
+
 ---
 
 ## 4. Technical Foundations for Monetization
@@ -221,10 +225,12 @@ export function canAccess(tier: string, feature: ProFeature): boolean {
 - [x] **High:** Implement Nested Folders (UX Organization).
 - [x] **High:** Create Legal Pages (Compliance).
 - [x] **High:** Build Internal Support System (Critical for Trust).
+- [x] **High:** Smart Error Boundaries & messaging.
 - [x] **High:** Add `role` column to schema (Architecture).
 - [x] **High:** Add `tier` column to schema (Architecture).
 - [ ] **High:** Add `canAccess` feature gate utility (Architecture).
 - [x] **High:** Auto-save for appearance (Operational Efficiency).
+- [x] **High:** Type safety & query parallelization audit.
 - [ ] **Low:** Advanced empty states.
 
-_Last Updated: February 20, 2026_
+_Last Updated: February 25, 2026_

@@ -22,11 +22,11 @@ graph TD
 
 ### 2.1 Component Logic
 
-| Component           | Responsibility                                    | Path                                 |
-| :------------------ | :------------------------------------------------ | :----------------------------------- |
-| **Ticket Portal**   | Dashboard for users to see their ticket history.  | `(platform)/support/page.tsx`        |
-| **Admin Dashboard** | High-level queue for administrators.              | `(admin)/support-admin/page.tsx`     |
-| **User Thread**     | User conversation view for an individual ticket.  | `(platform)/support/[id]/page.tsx`   |
+| Component           | Responsibility                                    | Path                                  |
+| :------------------ | :------------------------------------------------ | :------------------------------------ |
+| **Ticket Portal**   | Dashboard for users to see their ticket history.  | `(platform)/support/page.tsx`         |
+| **Admin Dashboard** | High-level queue for administrators.              | `(admin)/support-admin/page.tsx`      |
+| **User Thread**     | User conversation view for an individual ticket.  | `(platform)/support/[id]/page.tsx`    |
 | **Admin Thread**    | Admin conversation view for an individual ticket. | `(admin)/support-admin/[id]/page.tsx` |
 
 ## 3. Data Model
@@ -47,13 +47,13 @@ The system relies on two primary tables in the `public` schema.
 
 ### 3.2 `support_messages`
 
-| Column      | Type          | Description                                    |
-| :---------- | :------------ | :--------------------------------------------- |
-| `id`        | `uuid`        | Primary Key.                                   |
+| Column      | Type          | Description                                                |
+| :---------- | :------------ | :--------------------------------------------------------- |
+| `id`        | `uuid`        | Primary Key.                                               |
 | `ticket_id` | `uuid`        | Foreign key to `support_tickets.id` (`ON DELETE CASCADE`). |
 | `sender_id` | `uuid`        | Foreign key to `profiles.id` (`ON DELETE CASCADE`).        |
-| `message`   | `text`        | The content of the reply.                      |
-| `read_at`   | `timestamptz` | Track when the other party viewed the message. |
+| `message`   | `text`        | The content of the reply.                                  |
+| `read_at`   | `timestamptz` | Track when the other party viewed the message.             |
 
 ## 4. Security & RLS Policies
 
@@ -90,7 +90,22 @@ Users can "bump" their ticket importance once every 24 hours.
 4.  **Unread/Reply Signals:** User list shows `New Reply`; admin queue shows `Unread User Reply` and `Seen, no reply yet` when user read but has not replied.
 5.  **Resolution:** Admins can mark a ticket as `resolved`, which hides it from the default active queue.
 
-## 6. Implementation Reference
+## 6. Error Recovery Integration (Smart Boundaries)
+
+The support system is directly integrated with the application's global and route-specific error boundaries (`error.tsx`).
+
+### 6.1 Smart Link Logic
+
+Error boundaries use a client-side auth check to determine the best recovery path:
+
+- **Authenticated Users**: Shown a direct link to the **Internal Support Page** (`/support`). This ensures they stay within the platform for resolution.
+- **Unauthenticated Guests**: Shown a **Mailto Link** to `support@kytbox.com` since they cannot access the ticker system.
+
+### 6.2 Contextual Reporting
+
+Every error captured by these boundaries logs the `pathname` alongside the error object, facilitating faster debugging in the ticket thread if the user provides the context.
+
+## 7. Implementation Reference
 
 - **Server Actions:** `src/app/(platform)/support/actions.ts`
 - **Migration:** `supabase/migrations/20260210190000_create_support_system.sql`
@@ -100,4 +115,4 @@ Users can "bump" their ticket importance once every 24 hours.
 
 ---
 
-_Last Updated: February 11, 2026_
+_Last Updated: February 25, 2026_
