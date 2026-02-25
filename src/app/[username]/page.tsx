@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { trackProfileView } from '@/lib/tracking';
 import ProfileView from './components/ProfileView';
 import { cache } from 'react';
+import type { CustomThemeData } from '@/lib/theme';
 
 const getProfile = cache(async (username: string) => {
   const supabase = await createClient();
@@ -58,9 +59,7 @@ export default async function PublicProfilePage({
         profile={{
           ...profile,
           social_links: profile.social_links as Record<string, string>,
-          custom_theme: profile.custom_theme as
-            | import('@/lib/theme/theme.types').CustomThemeData
-            | null,
+          custom_theme: profile.custom_theme as CustomThemeData | null,
         }}
         links={typedLinks}
       />

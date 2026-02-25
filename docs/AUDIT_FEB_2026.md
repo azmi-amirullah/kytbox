@@ -168,7 +168,7 @@ The following enterprise categories are completely missing from the codebase and
 | ~~**Q1**~~ | ~~Extract edit-permission helper logic~~                           | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                   | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                          | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| **T3**     | Fix unsafe TS casts in `AppearanceEditor`                          | 💡 Low          | 🧰 Medium              |
+| ~~**T3**~~ | ~~Fix unsafe TS casts in `AppearanceEditor`~~                      | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | **A3**     | Architecture: Refactor components to Atomic Design                 | 💡 Low          | 🧱 Long-term Refactor  |
 
 > **[@code-reviewer note]**: The audit document was updated by `@code-reviewer` to reflect accurate severities, prioritizing Security > Stability > Performance > Code Quality. The list above is the true priority list required for an enterprise-ready release.

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import DashboardClient, { type BioTab } from './components/DashboardClient';
+import type { CustomThemeData } from '@/lib/theme';
 
 export default async function BioDashboardPage({
   searchParams,
@@ -63,9 +64,7 @@ export default async function BioDashboardPage({
           profile={{
             ...profile,
             social_links: profile.social_links as Record<string, string>,
-            custom_theme: profile.custom_theme as
-              | import('@/lib/theme/theme.types').CustomThemeData
-              | null,
+            custom_theme: profile.custom_theme as CustomThemeData | null,
           }}
           publicUrl={publicUrl}
           totalViews={totalViews || 0}

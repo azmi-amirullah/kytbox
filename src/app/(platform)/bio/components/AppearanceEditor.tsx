@@ -14,7 +14,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { updateAppearance } from '../actions';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { THEME_LIST, type ButtonStyle, type ButtonShape } from '@/lib/theme';
+import {
+  THEME_LIST,
+  type ButtonStyle,
+  type ButtonShape,
+  validateButtonStyle,
+  validateButtonShape,
+  type CustomThemeData,
+} from '@/lib/theme';
 import type { ThemeCategory } from '@/lib/theme/theme.types';
 
 interface AppearanceEditorProps {
@@ -22,14 +29,14 @@ interface AppearanceEditorProps {
   initialButtonStyle: string;
   initialButtonShape: string;
   initialSocialLinks: Record<string, string>;
-  initialCustomTheme?: import('@/lib/theme/theme.types').CustomThemeData | null;
+  initialCustomTheme?: CustomThemeData | null;
   isLoading?: boolean;
   onPreviewUpdate: (
     theme: string,
     style: string,
     shape: string,
     social: Record<string, string>,
-    custom?: import('@/lib/theme/theme.types').CustomThemeData | null,
+    custom?: CustomThemeData | null,
   ) => void;
 }
 
@@ -40,12 +47,9 @@ function ColorPickerRow({
   onChange,
 }: {
   label: string;
-  colorKey: keyof import('@/lib/theme/theme.types').CustomThemeData;
-  customTheme: import('@/lib/theme/theme.types').CustomThemeData;
-  onChange: (
-    key: keyof import('@/lib/theme/theme.types').CustomThemeData,
-    value: string,
-  ) => void;
+  colorKey: keyof CustomThemeData;
+  customTheme: CustomThemeData;
+  onChange: (key: keyof CustomThemeData, value: string) => void;
 }) {
   const fullHex = customTheme[colorKey] || '#000000';
   const baseHex = fullHex.slice(0, 7).padEnd(7, '0');
@@ -215,17 +219,15 @@ export default function AppearanceEditor({
   const router = useRouter();
   const [themeName, setThemeName] = useState(initialTheme);
   const [buttonStyle, setButtonStyle] = useState<ButtonStyle>(
-    (initialButtonStyle as ButtonStyle) ?? 'default',
+    validateButtonStyle(initialButtonStyle),
   );
   const [buttonShape, setButtonShape] = useState<ButtonShape>(
-    (initialButtonShape as ButtonShape) ?? 'rounded',
+    validateButtonShape(initialButtonShape),
   );
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>(
     initialSocialLinks || {},
   );
-  const [customTheme, setCustomTheme] = useState<
-    import('@/lib/theme/theme.types').CustomThemeData
-  >(
+  const [customTheme, setCustomTheme] = useState<CustomThemeData>(
     initialCustomTheme || {
       background: '#ffffff',
       textPrimary: '#000000',
@@ -273,13 +275,13 @@ export default function AppearanceEditor({
 
     // Supabase JSONB reformats key order, so JSON.stringify is unreliable for equality checks.
     const isCustomThemeEqual = (
-      a: Record<string, string> | null | undefined,
-      b: Record<string, string> | null | undefined,
+      a: CustomThemeData | null | undefined,
+      b: CustomThemeData | null | undefined,
     ) => {
       if (!a && !b) return true;
       if (!a || !b) return false;
-      const keysA = Object.keys(a);
-      const keysB = Object.keys(b);
+      const keysA = Object.keys(a) as (keyof CustomThemeData)[];
+      const keysB = Object.keys(b) as (keyof CustomThemeData)[];
       if (keysA.length !== keysB.length) return false;
       for (const k of keysA) {
         if (a[k] !== b[k]) return false;
@@ -289,10 +291,7 @@ export default function AppearanceEditor({
 
     if (
       themeName === 'custom' &&
-      !isCustomThemeEqual(
-        customTheme as unknown as Record<string, string>,
-        (initialCustomTheme || {}) as Record<string, string>,
-      )
+      !isCustomThemeEqual(customTheme, initialCustomTheme || null)
     ) {
       isChanged = true;
     }
@@ -430,10 +429,10 @@ export default function AppearanceEditor({
   const handleUpdate = (
     type: 'theme' | 'style' | 'shape' | 'social',
     value: string | Record<string, string>,
-    overrideCustomTheme?: import('@/lib/theme/theme.types').CustomThemeData,
+    overrideCustomTheme?: CustomThemeData,
   ) => {
-    if (type === 'theme') {
-      const themeId = value as string;
+    if (type === 'theme' && typeof value === 'string') {
+      const themeId = value;
       setThemeName(themeId);
       setAppearanceStatus('idle');
       onPreviewUpdate(
@@ -443,18 +442,18 @@ export default function AppearanceEditor({
         socialLinks,
         overrideCustomTheme !== undefined ? overrideCustomTheme : customTheme,
       );
-    } else if (type === 'style') {
-      const style = value as ButtonStyle;
+    } else if (type === 'style' && typeof value === 'string') {
+      const style = validateButtonStyle(value);
       setButtonStyle(style);
       setAppearanceStatus('idle');
       onPreviewUpdate(themeName, style, buttonShape, socialLinks);
-    } else if (type === 'shape') {
-      const shape = value as ButtonShape;
+    } else if (type === 'shape' && typeof value === 'string') {
+      const shape = validateButtonShape(value);
       setButtonShape(shape);
       setAppearanceStatus('idle');
       onPreviewUpdate(themeName, buttonStyle, shape, socialLinks, customTheme);
-    } else if (type === 'social') {
-      const social = value as Record<string, string>;
+    } else if (type === 'social' && typeof value === 'object') {
+      const social = value;
       const newSocial = { ...socialLinks, ...social };
       setSocialLinks(newSocial);
       setSocialStatus('idle');
@@ -469,7 +468,7 @@ export default function AppearanceEditor({
   };
 
   const handleCustomColorChange = (
-    key: keyof import('@/lib/theme/theme.types').CustomThemeData,
+    key: keyof CustomThemeData,
     color: string,
   ) => {
     const newCustom = { ...customTheme, [key]: color };
@@ -657,28 +656,26 @@ export default function AppearanceEditor({
                         <Skeleton className='w-full h-8 rounded' />
                       </div>
                     ))
-                  : [
-                      {
-                        id: 'rounded' as ButtonShape,
-                        name: 'Rounded',
-                        radius: 'rounded-xl',
-                      },
-                      {
-                        id: 'pill' as ButtonShape,
-                        name: 'Pill',
-                        radius: 'rounded-full',
-                      },
-                      {
-                        id: 'leaf' as ButtonShape,
-                        name: 'Leaf',
-                        radius: 'rounded-tr-2xl rounded-bl-2xl',
-                      },
-                      {
-                        id: 'square' as ButtonShape,
-                        name: 'Square',
-                        radius: 'rounded-none',
-                      },
-                    ].map((shape) => (
+                  : (
+                      [
+                        {
+                          id: 'rounded',
+                          name: 'Rounded',
+                          radius: 'rounded-xl',
+                        },
+                        { id: 'pill', name: 'Pill', radius: 'rounded-full' },
+                        {
+                          id: 'leaf',
+                          name: 'Leaf',
+                          radius: 'rounded-tr-2xl rounded-bl-2xl',
+                        },
+                        {
+                          id: 'square',
+                          name: 'Square',
+                          radius: 'rounded-none',
+                        },
+                      ] as const
+                    ).map((shape) => (
                       <button
                         key={shape.id}
                         type='button'
@@ -723,18 +720,20 @@ export default function AppearanceEditor({
                         <Skeleton className='w-full h-8 rounded' />
                       </div>
                     ))
-                  : [
-                      {
-                        id: 'default' as ButtonStyle,
-                        name: 'Solid',
-                        class: 'bg-card border-border shadow-sm',
-                      },
-                      {
-                        id: 'transparent' as ButtonStyle,
-                        name: 'Transparent',
-                        class: 'bg-transparent border-2 border-foreground/20',
-                      },
-                    ].map((style) => (
+                  : (
+                      [
+                        {
+                          id: 'default',
+                          name: 'Solid',
+                          class: 'bg-card border-border shadow-sm',
+                        },
+                        {
+                          id: 'transparent',
+                          name: 'Transparent',
+                          class: 'bg-transparent border-2 border-foreground/20',
+                        },
+                      ] as const
+                    ).map((style) => (
                       <button
                         key={style.id}
                         type='button'
