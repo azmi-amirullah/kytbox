@@ -9,6 +9,7 @@ import { authRateLimit, usernameRateLimit, redis } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
 import { loginSchema, signupSchema, resetPasswordSchema } from '@/lib/schemas';
 import { z } from 'zod';
+import { getSafeOrigin } from '@/lib/origin';
 
 const COOLDOWN_PREFIX = '@kytbox/email-cooldown:';
 
@@ -179,12 +180,14 @@ export async function resetPassword(formData: FormData) {
   }
   const email = parsed.data.email;
 
-  // Get origin from request headers
+  // Get origin from request headers and validate it
   const headersList = await headers();
-  const origin =
+  const rawOrigin =
     headersList.get('origin') ||
     headersList.get('referer')?.split('/').slice(0, 3).join('/') ||
     '';
+
+  const origin = getSafeOrigin(rawOrigin);
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/update-password`,

@@ -102,13 +102,13 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Error Handling & Reliability
 
-| ID    | Severity    | File                                  | Issue                                                                                       | Fix                                       |
-| :---- | :---------- | :------------------------------------ | :------------------------------------------------------------------------------------------ | :---------------------------------------- |
-| ✅ E1 | 🚨 High     | `cashflow/`, `support-admin/`, `app/` | ~~**Missing `error.tsx` boundaries** — only bio, settings, [username] have them~~           | ✅ Fixed (Consolidated shared boundaries) |
-| ✅ E2 | 🚨 High     | `cashflow/[id]/page.tsx`              | ~~**Unsafe non-null assertion** — `user.email!.toLowerCase()` will crash if email missing~~ | ✅ Fixed                                  |
-| E3    | 💡 Low      | `(auth)/actions.ts` L106              | `resetPassword` builds redirect URL from `origin` header — could be manipulated             | Validate against allowed origins          |
-| ✅ E4 | ⚠️ Medium   | `(auth)/actions.ts` L142              | ~~`checkUsernameAvailable` has NO rate limiting — active username enumeration risk~~        | ✅ Fixed                                  |
-| ✅ E5 | 🚨 Critical | `(auth)/actions.ts`                   | ~~**Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`~~               | ✅ Fixed                                  |
+| ID    | Severity    | File                                  | Issue                                                                                       | Fix                                          |
+| :---- | :---------- | :------------------------------------ | :------------------------------------------------------------------------------------------ | :------------------------------------------- |
+| ✅ E1 | 🚨 High     | `cashflow/`, `support-admin/`, `app/` | ~~**Missing `error.tsx` boundaries** — only bio, settings, [username] have them~~           | ✅ Fixed (Consolidated shared boundaries)    |
+| ✅ E2 | 🚨 High     | `cashflow/[id]/page.tsx`              | ~~**Unsafe non-null assertion** — `user.email!.toLowerCase()` will crash if email missing~~ | ✅ Fixed                                     |
+| ✅ E3 | 💡 Low      | `(auth)/actions.ts` L106              | ~~`resetPassword` builds redirect URL from `origin` header — could be manipulated~~         | ✅ Fixed (Validated against allowed origins) |
+| ✅ E4 | ⚠️ Medium   | `(auth)/actions.ts` L142              | ~~`checkUsernameAvailable` has NO rate limiting — active username enumeration risk~~        | ✅ Fixed                                     |
+| ✅ E5 | 🚨 Critical | `(auth)/actions.ts`                   | ~~**Missing auth rate limiting** on `/login`, `/signup`, `/forgot-password`~~               | ✅ Fixed                                     |
 
 ### Accessibility & Configuration (A11y/Infra)
 
@@ -133,13 +133,13 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | **Q5** | Component Data Leaks (Map API/DB returns to strict DTOs) | 🚨 Critical | 🛠️ Hard Refactor       |
 | **A1** | Global ARIA/Accessibility Audit                          | ⚠️ Medium   | 🛠️ Hard Refactor       |
 | **P7** | Optimize `select(*)` over-fetching across 9 pages        | 💡 Low      | 🧰 Medium              |
-| **E3** | Sanitize `origin` header in `resetPassword` redirect     | 💡 Low      | 💡 Low / Quick Win     |
 | **A3** | Architecture: Refactor to Hybrid Atomic-FSD Design       | 💡 Low      | 🏗️ Enterprise Refactor |
 
 ### ✅ Resolved Actions
 
 | ID         | Issue                                                                    | Severity        | Status                 |
 | :--------- | :----------------------------------------------------------------------- | :-------------- | :--------------------- |
+| ~~**E3**~~ | ~~Sanitize `origin` header in `resetPassword` redirect~~                 | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**P3**~~ | ~~Parallelize `updateEntry` / `deleteEntry` queries~~                    | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                       | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
 | ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                      | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
