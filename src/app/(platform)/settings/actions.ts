@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { randomUUID } from 'crypto';
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { validateUsername } from '@/lib/username';
 import { z } from 'zod';
@@ -68,7 +68,7 @@ export async function updateProfile(formData: FormData) {
     return { error: error.message };
   }
 
-  revalidateTag(`profile-${username}`, 'max');
+  updateTag(`profile-${username}`);
   revalidatePath('/settings', 'page');
   revalidatePath('/bio', 'page');
   revalidatePath('/cashflow', 'page');
@@ -159,7 +159,7 @@ export async function uploadAvatar(formData: FormData) {
     await supabase.storage.from(AVATAR_BUCKET).remove([oldAvatarPath]);
   }
 
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   revalidatePath('/settings', 'page');
   revalidatePath('/bio', 'page');
   return { success: true, url: urlData.publicUrl };
@@ -202,7 +202,7 @@ export async function removeAvatar() {
     await supabase.storage.from(AVATAR_BUCKET).remove([oldAvatarPath]);
   }
 
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   revalidatePath('/settings', 'page');
   revalidatePath('/bio', 'page');
   return { success: true };

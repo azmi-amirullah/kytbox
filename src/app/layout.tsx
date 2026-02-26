@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
+import { Suspense } from 'react';
+import { LoadingSplash } from '@/components/loading-splash';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/toast-provider';
 import { Analytics } from '@vercel/analytics/next';
@@ -22,8 +24,6 @@ export const metadata: Metadata = {
   description: 'Your personal kit box',
 };
 
-import { Suspense } from 'react';
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,28 +34,26 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Suspense fallback={null}>
-          <ThemeProvider
-            attribute='class'
-            defaultTheme='light'
-            enableSystem={false}
-            disableTransitionOnChange
-          >
-            <NextTopLoader
-              color='var(--primary)'
-              initialPosition={0.08}
-              crawlSpeed={200}
-              height={3}
-              crawl={true}
-              showSpinner={false}
-              easing='ease'
-              speed={200}
-              shadow='0 0 10px var(--primary),0 0 5px var(--primary)'
-            />
-            {children}
-            <ToastProvider />
-          </ThemeProvider>
-        </Suspense>
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='light'
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <NextTopLoader
+            color='var(--primary)'
+            initialPosition={0.08}
+            crawlSpeed={200}
+            height={3}
+            crawl={true}
+            showSpinner={false}
+            easing='ease'
+            speed={200}
+            shadow='0 0 10px var(--primary),0 0 5px var(--primary)'
+          />
+          <Suspense fallback={<LoadingSplash />}>{children}</Suspense>
+          <ToastProvider />
+        </ThemeProvider>
 
         <Analytics />
         <SpeedInsights />
