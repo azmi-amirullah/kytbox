@@ -30,32 +30,12 @@ export default async function CashflowPage() {
     redirect('/onboarding');
   }
 
-  interface ShareWithInclusion {
-    cashflow_id: string;
-    is_included_in_totals: boolean;
-  }
-
-  interface CashflowSummaryRow {
-    id: string;
-    user_id: string;
-    title: string;
-    is_public: boolean;
-    created_at: string;
-    entry_count: number | string;
-    income: number | string;
-    expense: number | string;
-    balance: number | string;
-  }
-
   const includedShareIds = new Set(
-    (shares as unknown as ShareWithInclusion[])
-      ?.filter((s) => s.is_included_in_totals)
-      .map((s) => s.cashflow_id),
+    shares?.filter((s) => s.is_included_in_totals).map((s) => s.cashflow_id) ||
+      [],
   );
 
-  const allShareIds =
-    (shares as unknown as ShareWithInclusion[])?.map((s) => s.cashflow_id) ||
-    [];
+  const allShareIds = shares?.map((s) => s.cashflow_id) || [];
 
   // Get user's cashflow summaries from the view
   // Filter by owned OR shared (bookmarked)
@@ -72,17 +52,17 @@ export default async function CashflowPage() {
 
   const { data: cashflowSummariesData } = await query;
 
-  const cashflowSummaries = (
-    (cashflowSummariesData as unknown as CashflowSummaryRow[]) || []
-  ).map((c) => ({
-    ...c,
-    // Ensure numbers are actually numbers (Supabase returns numerics as numbers or strings depending on config)
+  const cashflowSummaries = (cashflowSummariesData || []).map((c) => ({
+    id: c.id || '',
+    user_id: c.user_id || '',
+    title: c.title || 'Untitled',
+    created_at: c.created_at || new Date().toISOString(),
     is_public: !!c.is_public,
     entryCount: Number(c.entry_count),
     income: Number(c.income),
     expense: Number(c.expense),
     balance: Number(c.balance),
-    isIncluded: c.user_id === user.id || includedShareIds.has(c.id), // Owned always included by default logic, shared depends on DB
+    isIncluded: c.user_id === user.id || (!!c.id && includedShareIds.has(c.id)),
   }));
 
   return (

@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'react-toastify';
 import { deleteCashflow } from '../actions';
-import type { Cashflow } from '@/types/supabase';
+// import type { Cashflow } from '@/types/supabase';
 import { formatCurrencyCompact } from '@/lib/currency';
 import CashflowModal from './CashflowModal';
 import ShareModal from './ShareModal';
@@ -39,7 +39,12 @@ import { toggleCashflowInclusion } from '../actions';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-interface CashflowWithSummary extends Cashflow {
+interface CashflowWithSummary {
+  id: string; // Keep as string, will provide fallback in mapping
+  user_id: string;
+  title: string;
+  is_public: boolean;
+  created_at: string;
   entryCount: number;
   income: number;
   expense: number;

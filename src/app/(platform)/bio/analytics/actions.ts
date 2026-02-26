@@ -121,7 +121,9 @@ export async function getAnalyticsData(
       // 3. Top Links Analytics
       getTopLinksData(
         supabase,
-        links.filter((l) => targetLinkIds.includes(l.id)),
+        links
+          .filter((l) => targetLinkIds.includes(l.id))
+          .map((l) => ({ ...l, clicks: l.clicks ?? 0 })),
         targetLinkIds,
         startDate,
       ),
@@ -188,7 +190,7 @@ async function getAggregatedChartData(
   try {
     const { data, error } = await supabase.rpc('get_analytics_chart_data', {
       p_link_ids: linkIds,
-      p_start_date: startDate?.toISOString() ?? null,
+      p_start_date: (startDate?.toISOString() ?? null) as string,
       p_bucket_interval: bucketInterval,
     });
 
@@ -314,7 +316,7 @@ async function getTopRefererData(
   try {
     const { data, error } = await supabase.rpc('get_top_referers', {
       p_link_ids: linkIds,
-      p_start_date: startDate?.toISOString() ?? null,
+      p_start_date: (startDate?.toISOString() ?? null) as string,
       p_limit: 1,
     });
 

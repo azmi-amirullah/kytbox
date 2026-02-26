@@ -21,9 +21,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import MoveToFolderModal from './MoveToFolderModal';
 import SortableLink from './SortableLink';
-import type { Database } from '@/types/supabase';
-
-type Link = Database['public']['Tables']['links']['Row'];
+import type { Link } from '@/types/database';
 
 interface LinkListProps {
   links: Link[];

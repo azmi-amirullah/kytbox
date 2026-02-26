@@ -86,7 +86,7 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | P3    | ⚠️ Medium | `cashflow/actions.ts`    | `updateEntry` / `deleteEntry`: 3 sequential queries (entry → cashflow → share)                     | Join or RPC                              |
 | ✅ P4 | ⚠️ Medium | `[username]/page.tsx`    | ~~**Profile queried twice** — once in `page()`, once in `generateMetadata()`~~                     | ✅ Fixed                                 |
 | ✅ P5 | ⚠️ Medium | `cashflow/[id]/page.tsx` | ~~**Sequential queries** — fetches cashflow inside `Promise.all`, then awaits `share` separately~~ | ✅ Fixed                                 |
-| P6    | 💡 Low    | `src/lib/data-cache.ts`  | **Dead code** — `unstable_cache` helpers are defined but never used                                | Implement in static pages or remove      |
+| ✅ P6 | 💡 Low    | `src/lib/data-cache.ts`  | ~~**Dead code** — `unstable_cache` helpers are defined but never used~~                            | ✅ Fixed                                 |
 | P7    | 💡 Low    | 9 pages                  | `select('*')` over-fetches columns (profiles, links, cashflows, tickets)                           | Select only needed columns               |
 | P8    | 🚨 High   | `cashflow_shares` (DB)   | **Missing `email` index** on `cashflow_shares` causes full sequential table scans for users        | `CREATE INDEX idx_cashflow_shares_email` |
 
@@ -96,7 +96,7 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | :---- | :---------- | :-------------------- | :------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------- |
 | ✅ Q1 | ⚠️ Medium   | `cashflow/actions.ts` | ~~**Edit-permission logic duplicated 3x** across `addEntry`, `updateEntry`, `deleteEntry`~~ | ✅ Fixed                                                                 |
 | ✅ Q2 | 💡 Low      | `share-actions.ts`    | ~~`updateShareRole` lacks App-level ownership check (DB trigger already protects this)~~    | ✅ Fixed                                                                 |
-| Q3    | 💡 Low      | `cashflow/page.tsx`   | Triple `as unknown as` casts — Supabase types mismatch                                      | Fix types or use `.returns<T>()`                                         |
+| ✅ Q3 | 💡 Low      | `cashflow/page.tsx`   | ~~Triple `as unknown as` casts — Supabase types mismatch~~                                  | ✅ Fixed                                                                 |
 | Q4    | 🚨 Critical | Server Actions        | **No schema validation** on `FormData` processing, relying blindly on type casting          | Implement strict parsing (Valibot for Edge, or Zod 4)                    |
 | Q5    | 🚨 Critical | `components/`         | **Component Data Leaks** — Risk of passing entire DB rows from Server to Client props       | Map strictly to DTOs in Client layers. NEVER pass raw DB rows to client. |
 
@@ -132,33 +132,33 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | :----- | :------------------------------------------------------- | :---------- | :--------------------- |
 | **Q5** | Component Data Leaks (Map API/DB returns to strict DTOs) | 🚨 Critical | 🛠️ Hard Refactor       |
 | **A1** | Global ARIA/Accessibility Audit                          | ⚠️ Medium   | 🛠️ Hard Refactor       |
-| **P6** | Remove dead code in `data-cache.ts`                      | 💡 Low      | 💡 Low / Quick Win     |
 | **P7** | Optimize `select(*)` over-fetching across 9 pages        | 💡 Low      | 🧰 Medium              |
-| **Q3** | Fix triple `as unknown as` casts in `cashflow/page.tsx`  | 💡 Low      | 💡 Low / Quick Win     |
 | **E3** | Sanitize `origin` header in `resetPassword` redirect     | 💡 Low      | 💡 Low / Quick Win     |
 | **A3** | Architecture: Refactor to Hybrid Atomic-FSD Design       | 💡 Low      | 🏗️ Enterprise Refactor |
 
 ### ✅ Resolved Actions
 
-| ID         | Issue                                                              | Severity        | Status                 |
-| :--------- | :----------------------------------------------------------------- | :-------------- | :--------------------- |
-| ~~**P3**~~ | ~~Parallelize `updateEntry` / `deleteEntry` queries~~              | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                 | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
-| ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
-| ~~**Q4**~~ | ~~Install and enforce **Zod 4** validation for ALL actions~~       | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
-| ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~ | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~  | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**E1**~~ | ~~Smart Error Boundaries (Auth-Aware Recovery)~~                   | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                       | ~~🚨 High~~     | ~~✅ Fixed~~           |
-| ~~**E4**~~ | ~~Rate limit `checkUsernameAvailable` endpoint~~                   | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                  | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~           | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
-| ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**Q1**~~ | ~~Extract edit-permission helper logic~~                           | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                   | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                          | ~~💡 Low~~      | ~~✅ Fixed~~           |
-| ~~**T3**~~ | ~~Fix unsafe TS casts in `AppearanceEditor`~~                      | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ID         | Issue                                                                    | Severity        | Status                 |
+| :--------- | :----------------------------------------------------------------------- | :-------------- | :--------------------- |
+| ~~**P3**~~ | ~~Parallelize `updateEntry` / `deleteEntry` queries~~                    | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                       | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |
+| ~~**E5**~~ | ~~Implement Upstash Rate Limiting on auth actions~~                      | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
+| ~~**Q4**~~ | ~~Install and enforce **Zod 4** validation for ALL actions~~             | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
+| ~~**T1**~~ | ~~Fix blind `as string` casts in `formData` (add `?.toString()`)~~       | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**E2**~~ | ~~Fix unsafe non-null assertion `user.email!` in cashflow route~~        | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**E1**~~ | ~~Smart Error Boundaries (Auth-Aware Recovery)~~                         | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**P1**~~ | ~~Optimize Analytics queries (Promise.all)~~                             | ~~🚨 High~~     | ~~✅ Fixed~~           |
+| ~~**E4**~~ | ~~Rate limit `checkUsernameAvailable` endpoint~~                         | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P2**~~ | ~~Parallelize `addLink` queries~~                                        | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P6**~~ | ~~Modernize caching strategy ('use cache') & optimize static rendering~~ | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~                 | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                      | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                      | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**Q1**~~ | ~~Extract edit-permission helper logic~~                                 | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                         | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**T2**~~ | ~~Fix TS lie: `profile={{} as Profile}`~~                                | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**T3**~~ | ~~Fix unsafe TS casts in `AppearanceEditor`~~                            | ~~💡 Low~~      | ~~✅ Fixed~~           |
+| ~~**Q3**~~ | ~~Decouple generated types from manual helpers (CLI-Safe architecture)~~ | ~~💡 Low~~      | ~~✅ Fixed~~           |
 
 ### ⚠️ Missing Pillars (Unaudited, Tracked for March)
 

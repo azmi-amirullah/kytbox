@@ -40,7 +40,7 @@ import {
   LuCheck,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import type { Cashflow, CashflowEntry } from '@/types/supabase';
+import type { Cashflow, CashflowEntry } from '@/types/database';
 import { formatCurrencyCompact } from '@/lib/currency';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';

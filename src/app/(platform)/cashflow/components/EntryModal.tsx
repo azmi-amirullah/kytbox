@@ -23,7 +23,7 @@ import {
 import { LuLoader, LuFileText, LuCalendar } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { addEntry, updateEntry } from '../actions';
-import type { CashflowEntry } from '@/types/supabase';
+import type { CashflowEntry } from '@/types/database';
 import { getCurrencySymbol } from '@/lib/currency';
 
 interface EntryModalProps {
@@ -52,7 +52,7 @@ export default function EntryModal({
   const [description, setDescription] = useState(entry?.description || '');
   const [amount, setAmount] = useState(entry?.amount?.toString() || '');
   const [type, setType] = useState<'income' | 'expense'>(
-    entry?.type || 'expense',
+    (entry?.type as 'income' | 'expense') || 'expense',
   );
   const [date, setDate] = useState(entry?.date || today);
 
@@ -64,7 +64,7 @@ export default function EntryModal({
       queueMicrotask(() => {
         setDescription(entry?.description || '');
         setAmount(entry?.amount?.toString() || '');
-        setType(entry?.type || 'expense');
+        setType((entry?.type as 'income' | 'expense') || 'expense');
         setDate(entry?.date || today);
         setError(null);
         setIsLoading(false);

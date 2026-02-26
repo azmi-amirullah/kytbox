@@ -34,9 +34,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import LinkModal from './LinkModal';
-import type { Database } from '@/types/supabase';
-
-type Link = Database['public']['Tables']['links']['Row'];
+import type { Link } from '@/types/database';
 
 interface SortableLinkProps {
   link: Link;
@@ -95,7 +93,7 @@ const LinkItemContent = memo(function LinkItemContent({
       {/* Toggle */}
       <div className='flex items-center' onClick={(e) => e.stopPropagation()}>
         <Switch
-          checked={link.is_active}
+          checked={!!link.is_active}
           onCheckedChange={(checked) => onToggle(link.id, checked)}
           className='data-[state=checked]:bg-green-500'
         />
@@ -138,7 +136,7 @@ const LinkItemContent = memo(function LinkItemContent({
       {!link.is_folder && (
         <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
           <LuActivity className='w-3.5 h-3.5' />
-          {link.clicks}
+          {link.clicks ?? 0}
           <span className='opacity-70'>clicks</span>
         </div>
       )}

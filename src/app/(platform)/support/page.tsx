@@ -71,6 +71,18 @@ export default async function SupportPage() {
 
   const ticketsWithSignals = (tickets || []).map((ticket) => ({
     ...ticket,
+    category:
+      (ticket.category as
+        | 'general'
+        | 'bug'
+        | 'billing'
+        | 'feature_request'
+        | 'account') || 'general',
+    status:
+      (ticket.status as 'open' | 'in_progress' | 'resolved' | 'closed') ||
+      'open',
+    urgency_score: ticket.urgency_score ?? 0,
+    created_at: ticket.created_at || new Date().toISOString(),
     unread_count: unreadByTicket.get(ticket.id) || 0,
     awaiting_user_reply: awaitingReplyByTicket.get(ticket.id) || false,
     user_seen_no_reply: seenNoReplyByTicket.get(ticket.id) || false,

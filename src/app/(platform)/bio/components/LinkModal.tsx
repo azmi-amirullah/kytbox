@@ -24,7 +24,7 @@ interface Link {
   id: string;
   title: string;
   url: string;
-  is_folder: boolean;
+  is_folder: boolean | null;
 }
 
 interface LinkModalProps {

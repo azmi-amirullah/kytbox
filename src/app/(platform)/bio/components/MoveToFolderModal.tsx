@@ -26,9 +26,7 @@ import {
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { moveToFolder } from '../actions';
-import type { Database } from '@/types/supabase';
-
-type LinkType = Database['public']['Tables']['links']['Row'];
+import type { Link as LinkType } from '@/types/database';
 
 interface MoveToFolderModalProps {
   link: LinkType;

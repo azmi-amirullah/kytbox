@@ -83,7 +83,7 @@ export default async function CashflowDetailPage({
       initialUserRole = 'owner';
     } else {
       if (share) {
-        initialUserRole = share.role || 'read';
+        initialUserRole = (share.role as 'edit' | 'read') || 'read';
         initialShareId = share.id;
         // The bookmark button should show "Saved" ONLY if it is pinned to the dashboard
         hasShare = !!share.is_pinned;

@@ -8,15 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LinksTabContent from './LinksTabContent';
 import PhonePreview from './PhonePreview';
 import AppearanceEditor from './AppearanceEditor';
-import type { Database } from '@/types/supabase';
+import type { Profile as DbProfile, Link as LinkType } from '@/types/database';
 import type { CustomThemeData } from '@/lib/theme/theme.types';
 import { cn } from '@/lib/utils';
 
-type LinkType = Database['public']['Tables']['links']['Row'];
-export type Profile = Omit<
-  Database['public']['Tables']['profiles']['Row'],
-  'social_links' | 'custom_theme'
-> & {
+export type Profile = Omit<DbProfile, 'social_links' | 'custom_theme'> & {
   social_links?: Record<string, string> | null;
   custom_theme?: CustomThemeData | null;
 };
@@ -198,7 +194,11 @@ export default function DashboardClient({
               button_shape: buttonShape,
               social_links: socialLinks,
             }}
-            links={links}
+            links={links.map((l) => ({
+              ...l,
+              is_active: !!l.is_active,
+              sort_order: l.sort_order ?? 0,
+            }))}
             isLoading={isLoading}
           />
         </div>

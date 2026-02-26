@@ -16,7 +16,7 @@ import {
 import { LuLoader, LuWallet } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { createCashflow, updateCashflow } from '../actions';
-import type { Cashflow } from '@/types/supabase';
+import type { Cashflow } from '@/types/database';
 
 interface CashflowModalProps {
   mode: 'create' | 'edit';

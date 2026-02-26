@@ -22,7 +22,7 @@ interface UserNavProps {
     email?: string;
     avatar_url?: string | null;
     display_name?: string | null;
-    role?: string;
+    role?: string | null;
   };
 }
 

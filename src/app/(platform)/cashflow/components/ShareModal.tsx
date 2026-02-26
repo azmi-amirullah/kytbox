@@ -35,13 +35,13 @@ import {
   updateShareRole,
   getShares,
 } from '../share-actions';
-import type { Cashflow } from '@/types/supabase';
+import type { Cashflow } from '@/types/database';
 
 interface Share {
   id: string;
   cashflow_id: string;
   email: string;
-  role: 'read' | 'edit';
+  role: 'read' | 'edit' | string;
   created_at: string;
 }
 
@@ -70,7 +70,7 @@ export default function ShareModal({
     setIsLoadingShares(true);
     const result = await getShares(cashflow.id);
     if (result.data) {
-      setShares(result.data);
+      setShares(result.data as Share[]);
     }
     setIsLoadingShares(false);
   }, [cashflow.id]);
@@ -165,7 +165,10 @@ export default function ShareModal({
                   </p>
                 </div>
               </div>
-              <Switch checked={isPublic} onCheckedChange={handleTogglePublic} />
+              <Switch
+                checked={!!isPublic}
+                onCheckedChange={handleTogglePublic}
+              />
             </div>
 
             {/* Share URL (Visible if public) */}

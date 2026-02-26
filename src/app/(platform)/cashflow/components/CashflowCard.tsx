@@ -37,7 +37,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'react-toastify';
-import type { Cashflow, CashflowEntry } from '@/types/supabase';
+import type { Cashflow, CashflowEntry } from '@/types/database';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';

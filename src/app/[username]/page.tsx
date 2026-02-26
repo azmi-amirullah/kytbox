@@ -37,7 +37,7 @@ export default async function PublicProfilePage({
     id: link.id,
     title: link.title,
     url: link.url,
-    is_active: link.is_active,
+    is_active: !!link.is_active,
     short_id: link.short_id,
     is_folder: link.is_folder,
     parent_id: link.parent_id,

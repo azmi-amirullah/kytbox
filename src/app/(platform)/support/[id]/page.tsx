@@ -57,10 +57,12 @@ export default async function TicketDetailPage({
               <h1 className='text-2xl font-bold tracking-tight'>
                 {ticket.subject}
               </h1>
-              <StatusBadge status={ticket.status} />
+              <StatusBadge status={ticket.status || 'open'} />
             </div>
             <div className='flex items-center gap-4 text-sm text-muted-foreground'>
-              <p>Category: {ticket.category.replace('_', ' ')}</p>
+              <p>
+                Category: {(ticket.category || 'general').replace('_', ' ')}
+              </p>
               <span>•</span>
               <p>ID: {ticket.id}</p>
             </div>
@@ -68,16 +70,28 @@ export default async function TicketDetailPage({
 
           <UrgencyControl
             ticketId={ticket.id}
-            score={ticket.urgency_score}
+            score={ticket.urgency_score ?? 0}
             lastBumpedAt={ticket.last_bumped_at}
-            status={ticket.status}
+            status={ticket.status || 'open'}
           />
         </div>
       </div>
 
       <div className='bg-card border rounded-lg p-6 mb-6 min-h-[400px] max-h-[70vh] overflow-hidden flex flex-col'>
         <div className='flex-1 min-h-0 overflow-y-auto pr-2'>
-          <MessageList messages={messages || []} currentUserId={user.id} />
+          <MessageList
+            messages={
+              (messages || []).map((m) => ({
+                ...m,
+                created_at: m.created_at || new Date().toISOString(),
+                profiles: {
+                  ...m.profiles,
+                  role: (m.profiles?.role as 'user' | 'admin') || 'user',
+                },
+              })) || []
+            }
+            currentUserId={user.id}
+          />
         </div>
 
         <div className='shrink-0'>

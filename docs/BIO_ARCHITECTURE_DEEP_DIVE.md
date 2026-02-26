@@ -124,3 +124,31 @@ As identified by the architectural review (`@[/code-reviewer]`), two areas requi
 
 1.  **Analytics Ambiguity**: Folders are currently recorded in the `links` table. Analytics queries (e.g., `get_analytics_chart_data`) must explicitly filter out `is_folder = true` to prevent false "clicks" being registered when a user simply opens a folder.
 2.  **Schema Recursion**: The UI strictly enforces a 1-level limit (folders cannot contain folders). However, the underlying Postgres schema technically allows infinite recursion. If the API is ever exposed publicly, a Postgres trigger should be implemented to reject `parent_id` updates where the target parent is itself a child.
+
+## 8. Caching & Dynamic IO (Next.js 16 Modern)
+
+In late February 2026, we revolutionized the data layer by enabling `cacheComponents: true` and adopting the most cutting-edge Next.js 16 caching APIs.
+
+### 8.1 The `'use cache'` Directive
+
+We implemented a centralized, high-performance data cache in [data-cache.ts](file:///src/lib/data-cache.ts) using the modern `'use cache'` directive.
+
+- **Granular Tagging**: We use `cacheTag(profile-${username})` to ensure that cache invalidation is laser-targeted to the specific user being updated, preventing global cache thrashing.
+- **Static First**: By using `createStaticClient()`, we decouple data fetching from request-level cookies, allowing public profiles to be served with the performance of static assets while maintaining a dynamic backend.
+
+### 8.2 Instant Revalidation with `updateTag`
+
+To provide "Read-Your-Own-Writes" semantics without the latency of traditional revalidation, all mutation actions now use the **Server Action-only** `updateTag` API:
+
+```typescript
+updateTag(`profile-${username}`);
+```
+
+Unlike `revalidateTag`, which can be lazy, `updateTag` immediately expires the cache in the current request's context, ensuring the user sees their changes the moment the page refreshes.
+
+### 8.3 Handling Dynamic IO with `connection()`
+
+With `cacheComponents` enabled, Next.js 16 enforces strict rules on dynamic IO (cookies, headers, non-deterministic values). To maintain consistency in authenticated or dynamic segments without breaking the build, we use the `connection()` API:
+
+- **Usage**: Awaited at the top of layouts or pages (e.g., [PlatformLayout](<file:///src/app/(platform)/layout.tsx>), [CurrentYear](file:///src/components/ui/current-year.tsx)).
+- **Purpose**: It signals to the Next.js compiler that a specific component or layout is intentionally dynamic, allowing it to bypass the static-rendering requirement of `cacheComponents` mode while still optimizing the rest of the tree.

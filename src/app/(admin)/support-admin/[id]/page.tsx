@@ -43,15 +43,29 @@ export default async function AdminTicketDetailPage({
 
   const { data: queueRows } = await supabase.rpc('get_support_ticket_queue');
   const queueTicket = queueRows?.find((queueRow) => queueRow.id === ticket.id);
-  const totalUrgency = queueTicket?.total_urgency ?? ticket.urgency_score;
+  const totalUrgency = queueTicket?.total_urgency ?? ticket.urgency_score ?? 0;
   const ageDays = queueTicket?.age_days ?? 0;
 
   // Fetch messages
-  const { data: messages } = await supabase
+  const { data: messagesData } = await supabase
     .from('support_messages')
     .select('*, profiles(username, avatar_url, role)')
     .eq('ticket_id', id)
     .order('created_at', { ascending: true });
+
+  const messages = (messagesData || []).map((m) => ({
+    id: m.id,
+    ticket_id: m.ticket_id,
+    sender_id: m.sender_id,
+    message: m.message,
+    read_at: m.read_at,
+    created_at: m.created_at || new Date().toISOString(),
+    profiles: {
+      username: m.profiles?.username || 'Unknown',
+      avatar_url: m.profiles?.avatar_url || null,
+      role: (m.profiles?.role as 'user' | 'admin') || 'user',
+    },
+  }));
 
   return (
     <div className='max-w-4xl mx-auto py-8 px-4'>
@@ -80,7 +94,8 @@ export default async function AdminTicketDetailPage({
                 Urgency: {totalUrgency}
               </Badge>
               <span className='text-xs text-muted-foreground'>
-                {ageDays}d + {ticket.urgency_score}
+                {ageDays}d • Category:{' '}
+                {(ticket.category || 'general').replace('_', ' ')}
               </span>
             </div>
 
@@ -108,7 +123,10 @@ export default async function AdminTicketDetailPage({
             </div>
           </div>
 
-          <StatusSelector ticketId={ticket.id} currentStatus={ticket.status} />
+          <StatusSelector
+            ticketId={ticket.id}
+            currentStatus={ticket.status || 'open'}
+          />
         </div>
       </div>
 

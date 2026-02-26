@@ -14,9 +14,7 @@ import LinkModal from './LinkModal';
 import StatsCard from './StatsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Database } from '@/types/supabase';
-
-type LinkType = Database['public']['Tables']['links']['Row'];
+import type { Link as LinkType } from '@/types/database';
 
 interface LinksTabContentProps {
   links: LinkType[];
@@ -33,8 +31,8 @@ export default function LinksTabContent({
 }: LinksTabContentProps) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
-  const totalClicks = links.reduce((sum, link) => sum + link.clicks, 0);
-  const activeLinksCount = links.filter((l) => l.is_active).length;
+  const totalClicks = links.reduce((sum, link) => sum + (link.clicks ?? 0), 0);
+  const activeLinksCount = links.filter((l) => !!l.is_active).length;
 
   return (
     <div className='space-y-4 min-w-0'>
