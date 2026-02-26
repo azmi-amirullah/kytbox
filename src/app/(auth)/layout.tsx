@@ -26,7 +26,7 @@ export default function AuthLayout({
         <div className='relative z-10 w-full max-w-md'>
           {children}
           <div className='mt-8 text-center text-xs text-muted-foreground'>
-            <p>© {new Date().getFullYear()} Kytbox. All rights reserved.</p>
+            <p>© 2026 Kytbox. All rights reserved.</p>
           </div>
         </div>
       </div>

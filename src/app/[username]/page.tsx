@@ -1,19 +1,9 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createStaticClient } from '@/lib/supabase/server';
 import { trackProfileView } from '@/lib/tracking';
 import ProfileView from './components/ProfileView';
-import { cache } from 'react';
+import { getProfileByUsername } from '@/lib/data-cache';
 import type { CustomThemeData } from '@/lib/theme';
-
-const getProfile = cache(async (username: string) => {
-  const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('username', username)
-    .single();
-  return profile;
-});
 
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>;
@@ -23,10 +13,10 @@ export default async function PublicProfilePage({
   params,
 }: PublicProfilePageProps) {
   const { username } = await params;
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   // Get profile first (required for links query)
-  const profile = await getProfile(username);
+  const profile = await getProfileByUsername(username);
 
   if (!profile) {
     notFound();
@@ -69,7 +59,7 @@ export default async function PublicProfilePage({
 
 export async function generateMetadata({ params }: PublicProfilePageProps) {
   const { username } = await params;
-  const profile = await getProfile(username);
+  const profile = await getProfileByUsername(username);
 
   return {
     title: profile?.display_name || `@${username}`,

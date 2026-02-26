@@ -2,46 +2,27 @@ import { unstable_cache } from 'next/cache';
 import { createStaticClient } from '@/lib/supabase/server';
 
 /**
- * Get user profile by username.
- * Cached and tagged for surgical revalidation.
+ * Get Public Profile by Username
+ * Uses stable Next.js 16 nested caching (unstable_cache)
  */
-export const getProfileByUsername = (username: string) =>
-  unstable_cache(
-    async (username: string) => {
+export async function getProfileByUsername(username: string) {
+  return unstable_cache(
+    async (uname: string) => {
       const supabase = createStaticClient();
-      const { data: profile } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('username', username)
+        .select(
+          'id, username, display_name, bio, avatar_url, theme_name, button_style, button_shape, social_links, custom_theme, default_currency',
+        )
+        .eq('username', uname)
         .single();
 
-      return profile;
+      if (error) return null;
+      return data;
     },
-    ['profile-by-username', username],
+    [`profile-${username}`],
     {
       tags: [`profile-${username}`],
-      revalidate: 3600, // 1 hour secondary cache
     },
   )(username);
-
-/**
- * Get user profile by ID.
- */
-export const getProfileById = (userId: string) =>
-  unstable_cache(
-    async (userId: string) => {
-      const supabase = createStaticClient();
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      return profile;
-    },
-    ['profile-by-id', userId],
-    {
-      tags: [`profile-id-${userId}`],
-      revalidate: 3600,
-    },
-  )(userId);
+}
