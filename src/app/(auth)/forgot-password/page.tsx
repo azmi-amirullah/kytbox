@@ -22,9 +22,9 @@ import {
 import { resetPassword } from '../actions';
 
 export default function ForgotPasswordPage() {
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -81,7 +81,13 @@ export default function ForgotPasswordPage() {
                 Sign up here
               </Link>
             </p>
-            <Link href='/login'>
+            <Link
+              href='/login'
+              onClick={() => {
+                setIsSuccess(false);
+                setError(null);
+              }}
+            >
               <Button variant='outline' className='w-full'>
                 <LuArrowLeft className='mr-2 h-4 w-4' />
                 Back to login
