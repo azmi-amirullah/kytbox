@@ -3,12 +3,14 @@ import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 
 export default async function PlatformLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },

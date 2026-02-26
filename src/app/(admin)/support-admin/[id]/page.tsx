@@ -10,12 +10,14 @@ import { cn } from '@/lib/utils';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 
 export default async function AdminTicketDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
   await requireAdmin();
   const supabase = await createClient();
@@ -70,7 +72,10 @@ export default async function AdminTicketDetailPage({
               </h1>
               <Badge
                 variant='outline'
-                className={cn('font-medium', getUrgencyBadgeClass(totalUrgency))}
+                className={cn(
+                  'font-medium',
+                  getUrgencyBadgeClass(totalUrgency),
+                )}
               >
                 Urgency: {totalUrgency}
               </Badge>

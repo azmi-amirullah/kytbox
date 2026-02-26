@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 
 export async function getAuthenticatedUserAndProfile() {
+  await connection();
   const supabase = await createClient();
 
   const {

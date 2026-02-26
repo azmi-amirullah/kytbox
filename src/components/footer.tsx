@@ -10,7 +10,7 @@ export function Footer({ variant = 'dashboard' }: FooterProps) {
   return (
     <footer className='py-6 border-t border-border text-center text-xs text-muted-foreground relative z-10 bg-background/50 backdrop-blur-sm'>
       <p>
-        © {new Date().getFullYear()} Kytbox.{' '}
+        © 2026 Kytbox.{' '}
         {isLanding ? (
           'All rights reserved.'
         ) : (

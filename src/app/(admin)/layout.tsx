@@ -2,6 +2,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import { createClient } from '@/lib/supabase/server';
+import { connection } from 'next/server';
 import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { LuShieldAlert } from 'react-icons/lu';
@@ -11,6 +12,7 @@ export default async function AdminLayout({
 }: {
   children: ReactNode;
 }) {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },

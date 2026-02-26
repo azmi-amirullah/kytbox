@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import {
   addLinkSchema,
@@ -73,7 +73,7 @@ export async function addLink(formData: FormData) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   return { success: true };
 }
 
@@ -127,7 +127,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   return { success: true };
 }
 
@@ -145,7 +145,7 @@ export async function deleteLink(linkId: string) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   return { success: true };
 }
 
@@ -163,7 +163,7 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   return { success: true };
 }
 
@@ -181,7 +181,7 @@ export async function reorderLinks(linkIds: string[]) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   return { success: true };
 }
 export async function updateAppearance(formData: FormData) {
@@ -237,7 +237,7 @@ export async function updateAppearance(formData: FormData) {
 
   revalidatePath('/bio', 'page');
   if (profile) {
-    revalidateTag(`profile-${profile.username}`, 'max');
+    updateTag(`profile-${profile.username}`);
     revalidatePath(`/${profile.username}`, 'page');
   }
   return { success: true };
@@ -276,7 +276,7 @@ export async function createFolder(formData: FormData) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   return { success: true };
 }
 
@@ -299,6 +299,6 @@ export async function moveToFolder(formData: FormData) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) revalidateTag(`profile-${profile.username}`, 'max');
+  if (profile) updateTag(`profile-${profile.username}`);
   return { success: true };
 }
