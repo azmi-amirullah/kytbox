@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 import { Suspense } from 'react';
-import { LoadingSplash } from '@/components/loading-splash';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/toast-provider';
 import { Analytics } from '@vercel/analytics/next';
@@ -51,7 +50,7 @@ export default function RootLayout({
             speed={200}
             shadow='0 0 10px var(--primary),0 0 5px var(--primary)'
           />
-          <Suspense fallback={<LoadingSplash />}>{children}</Suspense>
+          <Suspense fallback={null}>{children}</Suspense>
           <ToastProvider />
         </ThemeProvider>
 

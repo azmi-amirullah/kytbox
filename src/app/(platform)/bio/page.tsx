@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import DashboardClient, { type BioTab } from './components/DashboardClient';
@@ -46,38 +45,23 @@ export default async function BioDashboardPage({
 
   const publicUrl = `/${profile.username}`;
 
-  const skeletonFallback = (
-    <DashboardClient
-      initialLinks={[]}
-      profile={{
-        social_links: {} as Record<string, string>,
-        custom_theme: null as CustomThemeData | null,
-      }}
-      publicUrl=''
-      totalViews={0}
-      isLoading={true}
-    />
-  );
-
   return (
     <div className='max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-8 w-full'>
-      <Suspense fallback={skeletonFallback}>
-        <DashboardClient
-          initialLinks={(links ?? []).map((l) => ({
-            ...l,
-            is_active: !!l.is_active,
-            sort_order: l.sort_order ?? 0,
-          }))}
-          profile={{
-            ...profile,
-            social_links: profile.social_links as Record<string, string>,
-            custom_theme: profile.custom_theme as CustomThemeData | null,
-          }}
-          publicUrl={publicUrl}
-          totalViews={totalViews || 0}
-          activeTab={activeTab}
-        />
-      </Suspense>
+      <DashboardClient
+        initialLinks={(links ?? []).map((l) => ({
+          ...l,
+          is_active: !!l.is_active,
+          sort_order: l.sort_order ?? 0,
+        }))}
+        profile={{
+          ...profile,
+          social_links: profile.social_links as Record<string, string>,
+          custom_theme: profile.custom_theme as CustomThemeData | null,
+        }}
+        publicUrl={publicUrl}
+        totalViews={totalViews || 0}
+        activeTab={activeTab}
+      />
     </div>
   );
 }

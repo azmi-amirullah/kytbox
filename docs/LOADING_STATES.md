@@ -2,6 +2,35 @@
 
 This document tracks the technical implementation of streaming SSR and unified skeleton states across the Kytbox platform.
 
+## 🚀 2026 Loading Manifesto (Strategic Conventions)
+
+As of Next.js 16, Kytbox follows a **Performance-First Strategy** to balance speed with stability.
+
+1.  **Shell Integrity**: The Root Layout [layout.tsx](file:///src/app/layout.tsx) wraps children in a `<Suspense fallback={null}>`. This keeps the static shell stable and ensures that `NextTopLoader` is the primary indicator during navigation.
+2.  **Segment-Level Skeletons**: To prevent "blank flashes" caused by the null root fallback, **every dynamic segment should have a `loading.tsx`**. This is a project convention to ensure that while the page streams, the user sees a stable skeleton instead of a blank space.
+3.  **Elite Coverage**: We have implemented `loading.tsx` skeletons for **all application URLs** (Platform, Admin, Account, Public) to guarantee that every transition feels branded and stable.
+4.  **Granular Streaming**: Use `<Suspense>` within components for non-critical sections (like charts) to allow the main shell to hydrate instantly.
+
+## 🧭 Route Coverage Matrix
+
+This table summarizes our strategic choice for each route to ensure total transparency.
+
+| Route Area                      | Strategy            | Status            | Reason                                                                 |
+| :------------------------------ | :------------------ | :---------------- | :--------------------------------------------------------------------- |
+| **Root Shell**                  | Silent Boundary     | `fallback={null}` | `NextTopLoader` is the primary indicator; prevents header duplication. |
+| **(platform) / Bio**            | Unified Skeleton    | ✅ Active         | High-complexity page; matches `DashboardClient` perfectly.             |
+| **(platform) / Analytics**      | Standalone Skeleton | ✅ Active         | Prevents blank areas during heavy data streaming.                      |
+| **(platform) / App & Settings** | Standalone Skeleton | ✅ Active         | Stable layouts; provides immediate branded frame.                      |
+| **(platform) / Support (all)**  | Standalone Skeleton | ✅ Active         | Dynamic ticket data requires streaming UI for premium feel.            |
+| **(admin) / Support Admin**     | Standalone Skeleton | ✅ Active         | Ensures admin queue feels responsive during data fetch.                |
+| **(marketing) / Landing**       | Standalone Skeleton | ✅ Active         | Provides instant hero/footer frame while content hydrates.             |
+| **(auth) / Login, Signup**      | No Skeleton         | 🚫 None           | **Static Routes**. They load instantly; skeletons would never fire.    |
+| **Onboarding / Pw Update**      | No Skeleton         | 🚫 None           | **Static Routes**. Instant cache hit; no streaming required.           |
+| **Legal (Privacy, Terms)**      | No Skeleton         | 🚫 None           | **Static Routes**. Content is fully prerendered for SEO.               |
+
+> [!NOTE]
+> Static routes do not need `loading.tsx` because they are served as complete HTML from the cache. Dynamic routes (`◐` or `ƒ`) **must** have a skeleton to prevent the user from seeing a "blank spot" caused by the root null fallback.
+
 ## Architecture: Unified Skeleton Pattern
 
 Kytbox uses a **Unified Skeleton Architecture**. Instead of maintaining separate skeleton components for `loading.tsx`, we pass an `isLoading` prop directly to the primary Client Components.
@@ -81,12 +110,6 @@ On public-facing pages that are server-rendered with a theme (like the Bio profi
 - **Action**: Render the themed HTML immediately. The client will hydrate in the background without switching back to a skeleton.
 - [ProfileView.tsx](file:///src/app/[username]/components/ProfileView.tsx) follows this pattern.
 
-### 3. Disable Growth Animations
-
-Default animations (e.g., bar charts growing from bottom) can look like "blank space" for the first 1.5 seconds.
-
-- **Action**: Set `isAnimationActive={false}` on charts to enable instant data appearance as soon as the skeleton disappears.
-
 ## Reusable Components
 
 ### `StatsCard`
@@ -99,7 +122,7 @@ The [StatsCard](<file:///src/app/(platform)/bio/components/StatsCard.tsx>) is th
 
 ## Best Practices Checklist
 
-1. **Match Container Hierarchy**: Ensure `loading.tsx` uses the same `max-w-*` and `px-*` wrappers as the main `page.tsx`.
-2. **Prop-Driven Skeletons**: Pass `isLoading` down the tree. Avoid `if (loading) return <Skeleton />` at the top level to keep the layout shell intact.
-3. **No Spinning Icons**: Use defined skeletons that hint at the final component structure.
-4. **Instant Interactivity**: Disable entrance animations on data-heavy elements to improve perceived speed.
+1.  **Match Container Hierarchy**: Ensure `loading.tsx` uses the same `max-w-*` and `px-*` wrappers as the main `page.tsx`.
+2.  **Prop-Driven Skeletons**: Pass `isLoading` down the tree. Avoid `if (loading) return <Skeleton />` at the top level to keep the layout shell intact.
+3.  **No Spinning Icons**: Use defined skeletons that hint at the final component structure.
+4.  **Clean Transitions**: Prioritize `NextTopLoader` and `Skeleton` for all states.

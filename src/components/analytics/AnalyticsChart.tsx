@@ -128,7 +128,6 @@ export function AnalyticsChart({
                 radius={[4, 4, 0, 0]}
                 className='fill-primary'
                 maxBarSize={50}
-                isAnimationActive={false}
               />
             </BarChart>
           </ResponsiveContainer>

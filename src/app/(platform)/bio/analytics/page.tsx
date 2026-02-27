@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import AnalyticsClient from './components/AnalyticsClient';
@@ -28,26 +27,9 @@ export default async function AnalyticsPage() {
   // Prefetch initial analytics data with default filters
   const initialData = await getAnalyticsData('24h', 'all');
 
-  const skeletonFallback = (
-    <AnalyticsClient
-      initialData={{
-        chartData: [],
-        totalClicks: 0,
-        totalViews: 0,
-        ctr: 0,
-        topLinks: [],
-        topReferer: null,
-        userLinks: [],
-      }}
-      isLoading={true}
-    />
-  );
-
   return (
     <div className='max-w-7xl mx-auto px-4 py-4 md:py-8 w-full'>
-      <Suspense fallback={skeletonFallback}>
-        <AnalyticsClient initialData={initialData} />
-      </Suspense>
+      <AnalyticsClient initialData={initialData} />
     </div>
   );
 }

@@ -16,16 +16,49 @@ import { Textarea } from '@/components/ui/textarea';
 import { LuLoader } from 'react-icons/lu';
 import { useActionState } from 'react';
 
+import { Skeleton } from '@/components/ui/skeleton';
+
 const initialState = {
   error: '',
   issues: [],
 };
 
-export function CreateTicketForm() {
+interface CreateTicketFormProps {
+  isLoading?: boolean;
+}
+
+export function CreateTicketForm({ isLoading }: CreateTicketFormProps) {
   const [state, formAction, isPending] = useActionState(
     createTicket,
     initialState,
   );
+
+  if (isLoading) {
+    return (
+      <Card className='max-w-2xl mx-auto'>
+        <CardHeader>
+          <Skeleton className='h-8 w-48' />
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          <div className='grid gap-2'>
+            <Skeleton className='h-4 w-20' />
+            <Skeleton className='h-10 w-full' />
+          </div>
+          <div className='grid gap-2'>
+            <Skeleton className='h-4 w-16' />
+            <Skeleton className='h-10 w-full' />
+          </div>
+          <div className='grid gap-2'>
+            <Skeleton className='h-4 w-24' />
+            <Skeleton className='h-40 w-full' />
+          </div>
+          <div className='flex justify-end'>
+            <Skeleton className='h-10 w-32' />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className='max-w-2xl mx-auto'>
