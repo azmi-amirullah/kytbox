@@ -286,6 +286,7 @@ export default function ShareModal({
                           size='icon'
                           className='h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10'
                           onClick={() => handleRemoveShare(share.id)}
+                          aria-label='Remove user access'
                         >
                           <LuTrash2 className='w-4 h-4' />
                         </Button>

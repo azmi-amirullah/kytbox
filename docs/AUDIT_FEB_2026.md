@@ -114,7 +114,7 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 | ID    | Severity  | File           | Issue                                                                                    | Fix                                                       |
 | :---- | :-------- | :------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| A1    | ⚠️ Medium | All Components | **Missing ARIA attributes** — only 1 `aria-expanded` found in entire UI layer            | Add standard radix/aria tags                              |
+| ✅ A1 | ⚠️ Medium | All Components | ~~**Missing ARIA attributes** — only 1 `aria-expanded` found in entire UI layer~~        | ✅ Fixed                                                  |
 | ✅ A2 | 💡 Low    | `package.json` | ~~**Phantom dependency** — `@types/crypto-js` in devDeps but no `crypto-js` in deps~~    | ✅ Fixed                                                  |
 | A3    | 💡 Low    | `components/`  | **Architectural Soup** — Relying purely on Atomic Design for _logic_ separation is weak. | Implement Hybrid: FSD for logic, Atomic for UI components |
 
@@ -128,16 +128,16 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### 🛠️ Pending Actions
 
-| ID     | Issue                                              | Severity  | Effort Target          |
-| :----- | :------------------------------------------------- | :-------- | :--------------------- |
-| **A1** | Global ARIA/Accessibility Audit                    | ⚠️ Medium | 🛠️ Hard Refactor       |
-| **P7** | Optimize `select(*)` over-fetching across 9 pages  | 💡 Low    | 🧰 Medium              |
-| **A3** | Architecture: Refactor to Hybrid Atomic-FSD Design | 💡 Low    | 🏗️ Enterprise Refactor |
+| ID     | Issue                                              | Severity | Effort Target          |
+| :----- | :------------------------------------------------- | :------- | :--------------------- |
+| **P7** | Optimize `select(*)` over-fetching across 9 pages  | 💡 Low   | 🧰 Medium              |
+| **A3** | Architecture: Refactor to Hybrid Atomic-FSD Design | 💡 Low   | 🏗️ Enterprise Refactor |
 
 ### ✅ Resolved Actions
 
 | ID         | Issue                                                                    | Severity        | Status                 |
 | :--------- | :----------------------------------------------------------------------- | :-------------- | :--------------------- |
+| ~~**A1**~~ | ~~Global ARIA/Accessibility Audit~~                                      | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**Q5**~~ | ~~Component Data Leaks (Map API/DB returns to strict DTOs)~~             | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
 | ~~**E3**~~ | ~~Sanitize `origin` header in `resetPassword` redirect~~                 | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**P3**~~ | ~~Parallelize `updateEntry` / `deleteEntry` queries~~                    | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |

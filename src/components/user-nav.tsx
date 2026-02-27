@@ -32,7 +32,11 @@ export function UserNav({ user }: UserNavProps) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
+        <Button
+          variant='ghost'
+          className='relative h-8 w-8 rounded-full'
+          aria-label='User menu'
+        >
           <Avatar className='h-8 w-8 ring-2 ring-border'>
             {avatarUrl && (
               <AvatarImage

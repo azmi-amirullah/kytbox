@@ -241,6 +241,7 @@ export default function SignupPage() {
                   type='button'
                   onClick={() => setShowPassword(!showPassword)}
                   className='absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors focus:outline-none'
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
                     <LuEyeOff className='h-4 w-4' />

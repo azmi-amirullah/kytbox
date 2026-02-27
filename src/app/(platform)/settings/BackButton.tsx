@@ -13,6 +13,7 @@ export function BackButton() {
       size='icon'
       className='-ml-2'
       onClick={() => router.back()}
+      aria-label='Go back'
     >
       <LuArrowLeft className='w-5 h-5' />
     </Button>

@@ -107,6 +107,9 @@ export default function UpdatePasswordPage() {
                     type='button'
                     onClick={() => setShowPassword(!showPassword)}
                     className='absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors focus:outline-none'
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
                   >
                     {showPassword ? (
                       <LuEyeOff className='h-4 w-4' />
@@ -133,6 +136,9 @@ export default function UpdatePasswordPage() {
                     type='button'
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className='absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors focus:outline-none'
+                    aria-label={
+                      showConfirmPassword ? 'Hide password' : 'Show password'
+                    }
                   >
                     {showConfirmPassword ? (
                       <LuEyeOff className='h-4 w-4' />

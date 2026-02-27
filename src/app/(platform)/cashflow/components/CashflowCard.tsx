@@ -156,7 +156,12 @@ export default function CashflowCard({
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='ghost' size='icon' className='h-8 w-8'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8'
+                aria-label='More options'
+              >
                 <LuEllipsisVertical className='w-4 h-4' />
               </Button>
             </DropdownMenuTrigger>
@@ -238,6 +243,7 @@ export default function CashflowCard({
                         size='icon'
                         className='h-7 w-7'
                         onClick={() => openEditEntry(entry)}
+                        aria-label='Edit entry'
                       >
                         <LuPencil className='w-3.5 h-3.5' />
                       </Button>
@@ -249,6 +255,7 @@ export default function CashflowCard({
                           setIsDeletingEntryId(null);
                           setDeletingEntryId(entry.id);
                         }}
+                        aria-label='Delete entry'
                       >
                         {isDeletingEntryId === entry.id ? (
                           <LuLoader className='w-3.5 h-3.5 animate-spin' />

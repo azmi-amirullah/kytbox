@@ -86,6 +86,7 @@ const LinkItemContent = memo(function LinkItemContent({
         {...listeners}
         onClick={(e) => e.stopPropagation()}
         className='p-2 cursor-move text-muted-foreground/50 hover:text-foreground touch-none select-none transition-colors'
+        aria-label='Drag to reorder'
       >
         <LuGripVertical className='w-5 h-5' />
       </button>

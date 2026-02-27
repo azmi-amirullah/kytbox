@@ -34,6 +34,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           <Link
             href={isDashboard ? '/app' : '/'}
             className='hover:opacity-80 transition-opacity'
+            aria-label={isDashboard ? 'Dashboard' : 'Home'}
           >
             <BrandLogo />
           </Link>
