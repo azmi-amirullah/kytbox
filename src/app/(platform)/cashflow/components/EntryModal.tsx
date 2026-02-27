@@ -23,12 +23,12 @@ import {
 import { LuLoader, LuFileText, LuCalendar } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { addEntry, updateEntry } from '../actions';
-import type { CashflowEntry } from '@/types/database';
+import type { CashflowEntryDTO } from '@/types/dto';
 import { getCurrencySymbol } from '@/lib/currency';
 
 interface EntryModalProps {
   cashflowId: string;
-  entry?: CashflowEntry | null;
+  entry?: CashflowEntryDTO | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currency: string | null;

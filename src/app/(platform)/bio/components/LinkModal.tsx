@@ -20,16 +20,11 @@ import { addLink, updateLink, createFolder } from '../actions';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LuFolderOpen } from 'react-icons/lu';
 
-interface Link {
-  id: string;
-  title: string;
-  url: string;
-  is_folder: boolean | null;
-}
+import type { LinkDTO } from '@/types/dto';
 
 interface LinkModalProps {
   mode: 'create' | 'edit';
-  link?: Link | null;
+  link?: LinkDTO | null;
   parentId?: string | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;

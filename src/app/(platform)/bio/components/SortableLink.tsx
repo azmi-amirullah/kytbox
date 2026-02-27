@@ -34,10 +34,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import LinkModal from './LinkModal';
-import type { Link } from '@/types/database';
+import type { LinkDTO } from '@/types/dto';
 
 interface SortableLinkProps {
-  link: Link;
+  link: LinkDTO;
   onToggle: (linkId: string, isActive: boolean) => void;
   onDelete: (linkId: string) => void;
   onMove: (linkId: string) => void;
@@ -52,7 +52,7 @@ const LinkItemContent = memo(function LinkItemContent({
   onDelete,
   onMove,
 }: {
-  link: Link;
+  link: LinkDTO;
   attributes?: ReturnType<typeof useSortable>['attributes'];
   listeners?: ReturnType<typeof useSortable>['listeners'];
   onToggle: (linkId: string, isActive: boolean) => void;

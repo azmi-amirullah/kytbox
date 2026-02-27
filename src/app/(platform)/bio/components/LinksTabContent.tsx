@@ -14,11 +14,11 @@ import LinkModal from './LinkModal';
 import StatsCard from './StatsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Link as LinkType } from '@/types/database';
+import type { LinkDTO } from '@/types/dto';
 
 interface LinksTabContentProps {
-  links: LinkType[];
-  setLinks: React.Dispatch<React.SetStateAction<LinkType[]>>;
+  links: LinkDTO[];
+  setLinks: React.Dispatch<React.SetStateAction<LinkDTO[]>>;
   totalViews: number;
   isLoading?: boolean;
 }

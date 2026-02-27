@@ -16,11 +16,11 @@ import {
 import { LuLoader, LuWallet } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { createCashflow, updateCashflow } from '../actions';
-import type { Cashflow } from '@/types/database';
+import type { CashflowDTO } from '@/types/dto';
 
 interface CashflowModalProps {
   mode: 'create' | 'edit';
-  cashflow?: Cashflow | null;
+  cashflow?: CashflowDTO | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

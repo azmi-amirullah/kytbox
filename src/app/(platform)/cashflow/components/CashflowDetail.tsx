@@ -40,7 +40,7 @@ import {
   LuCheck,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import type { Cashflow, CashflowEntry } from '@/types/database';
+import type { CashflowDTO, CashflowEntryDTO } from '@/types/dto';
 import { formatCurrencyCompact } from '@/lib/currency';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
@@ -49,8 +49,8 @@ import ShareModal from './ShareModal';
 import { subscribeToPublicCashflow, removeShare } from '../share-actions';
 
 interface CashflowDetailProps {
-  cashflow: Cashflow;
-  entries: CashflowEntry[];
+  cashflow: CashflowDTO;
+  entries: CashflowEntryDTO[];
   currency: string | null;
   currentUserId?: string;
   initialUserRole?: 'owner' | 'edit' | 'read' | 'public';
@@ -73,7 +73,9 @@ export default function CashflowDetail({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<CashflowEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
+    null,
+  );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
@@ -166,7 +168,7 @@ export default function CashflowDetail({
     });
   }
 
-  function openEditEntry(entry: CashflowEntry) {
+  function openEditEntry(entry: CashflowEntryDTO) {
     setEditingEntry(entry);
     setIsEntryModalOpen(true);
   }

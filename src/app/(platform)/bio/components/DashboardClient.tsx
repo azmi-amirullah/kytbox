@@ -8,13 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LinksTabContent from './LinksTabContent';
 import PhonePreview from './PhonePreview';
 import AppearanceEditor from './AppearanceEditor';
-import type { Profile as DbProfile, Link as LinkType } from '@/types/database';
+import type { ProfileDTO, LinkDTO } from '@/types/dto';
 import type { CustomThemeData } from '@/lib/theme/theme.types';
 import { cn } from '@/lib/utils';
 
-export type Profile = Omit<DbProfile, 'social_links' | 'custom_theme'> & {
+export type ProfileWithTheme = Omit<
+  ProfileDTO,
+  'social_links' | 'custom_theme'
+> & {
   social_links?: Record<string, string> | null;
   custom_theme?: CustomThemeData | null;
+  theme_name?: string | null;
+  button_style?: string | null;
+  button_shape?: string | null;
+  display_name?: string | null;
 };
 
 export type BioTab = 'links' | 'appearance';
@@ -22,8 +29,8 @@ export const VALID_TABS: BioTab[] = ['links', 'appearance'];
 export const DEFAULT_TAB: BioTab = 'links';
 
 interface DashboardClientProps {
-  initialLinks: LinkType[];
-  profile: Partial<Profile>;
+  initialLinks: LinkDTO[];
+  profile: Partial<ProfileWithTheme>;
   publicUrl: string;
   totalViews: number;
   isLoading?: boolean;
@@ -49,7 +56,7 @@ export default function DashboardClient({
     urlTab && VALID_TABS.includes(urlTab) ? urlTab : activeTab;
   const [currentTab, setCurrentTab] = useState<BioTab>(resolvedTab);
 
-  const [links, setLinks] = useState<LinkType[]>(initialLinks);
+  const [links, setLinks] = useState<LinkDTO[]>(initialLinks);
   const [themeName, setThemeName] = useState(profile?.theme_name || 'default');
   const [customTheme, setCustomTheme] = useState<CustomThemeData | null>(
     profile?.custom_theme || null,

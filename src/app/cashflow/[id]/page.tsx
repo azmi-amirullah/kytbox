@@ -4,6 +4,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import CashflowDetail from '../../(platform)/cashflow/components/CashflowDetail';
+import { mapCashflowToDTO, mapCashflowEntryToDTO } from '@/lib/mappers';
 
 interface CashflowDetailPageProps {
   params: Promise<{ id: string }>;
@@ -104,8 +105,8 @@ export default async function CashflowDetailPage({
       <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8 flex-1 w-full'>
         <CashflowDetail
           key={cashflow.id}
-          cashflow={cashflow}
-          entries={entries ?? []}
+          cashflow={mapCashflowToDTO(cashflow)}
+          entries={(entries ?? []).map(mapCashflowEntryToDTO)}
           currency={profile?.default_currency ?? null}
           currentUserId={user?.id}
           initialUserRole={initialUserRole}

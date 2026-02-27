@@ -63,6 +63,7 @@ export default async function CashflowPage() {
     expense: Number(c.expense),
     balance: Number(c.balance),
     isIncluded: c.user_id === user.id || (!!c.id && includedShareIds.has(c.id)),
+    entries: [],
   }));
 
   return (

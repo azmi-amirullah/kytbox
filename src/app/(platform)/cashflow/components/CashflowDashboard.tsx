@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LuPlus, LuWallet } from 'react-icons/lu';
-import type { Cashflow, CashflowEntry } from '@/types/database';
+import type { CashflowDTO, CashflowEntryDTO } from '@/types/dto';
 import CashflowModal from './CashflowModal';
 import CashflowCard from './CashflowCard';
 
 interface CashflowDashboardProps {
-  initialCashflows: Cashflow[];
-  initialEntries: CashflowEntry[];
+  initialCashflows: CashflowDTO[];
+  initialEntries: CashflowEntryDTO[];
   currentUserId?: string;
   currency: string | null;
 }

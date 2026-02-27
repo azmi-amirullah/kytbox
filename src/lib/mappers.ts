@@ -1,0 +1,87 @@
+import type {
+  Profile,
+  Link,
+  Cashflow,
+  CashflowEntry,
+  CashflowShare,
+  CashflowWithSummary,
+} from '@/types/database';
+import type {
+  ProfileDTO,
+  LinkDTO,
+  CashflowDTO,
+  CashflowEntryDTO,
+  CashflowShareDTO,
+  CashflowWithSummaryDTO,
+} from '@/types/dto';
+
+export function mapProfileToDTO(row: Profile): ProfileDTO {
+  return {
+    id: row.id,
+    username: row.username,
+    full_name: row.display_name ?? null,
+    bio: row.bio,
+    avatar_url: row.avatar_url,
+  };
+}
+
+export function mapLinkToDTO(row: Link): LinkDTO {
+  return {
+    id: row.id,
+    url: row.url,
+    title: row.title,
+    is_active: !!row.is_active,
+    sort_order: row.sort_order ?? 0,
+    is_folder: !!row.is_folder,
+    parent_id: row.parent_id,
+    clicks: row.clicks,
+  };
+}
+
+export function mapCashflowToDTO(row: Cashflow): CashflowDTO {
+  return {
+    id: row.id,
+    title: row.title,
+    is_public: !!row.is_public,
+    user_id: row.user_id,
+    created_at: row.created_at,
+  };
+}
+
+export function mapCashflowEntryToDTO(row: CashflowEntry): CashflowEntryDTO {
+  return {
+    id: row.id,
+    cashflow_id: row.cashflow_id,
+    description: row.description,
+    amount: row.amount,
+    type: row.type,
+    date: row.date,
+    created_at: row.created_at,
+  };
+}
+
+export function mapCashflowShareToDTO(row: CashflowShare): CashflowShareDTO {
+  return {
+    id: row.id,
+    cashflow_id: row.cashflow_id,
+    role: row.role as 'viewer' | 'editor',
+    email: row.email,
+  };
+}
+
+export function mapCashflowWithSummaryToDTO(
+  row: CashflowWithSummary,
+): CashflowWithSummaryDTO {
+  return {
+    id: row.id!,
+    title: row.title!,
+    is_public: !!row.is_public,
+    user_id: row.user_id!,
+    created_at: row.created_at,
+    entryCount: Number(row.entry_count ?? 0),
+    income: Number(row.income ?? 0),
+    expense: Number(row.expense ?? 0),
+    balance: Number(row.balance ?? 0),
+    entries: row.entries?.map(mapCashflowEntryToDTO) ?? [],
+  };
+}

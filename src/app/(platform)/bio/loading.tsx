@@ -1,11 +1,13 @@
-import DashboardClient, { Profile } from './components/DashboardClient';
+import DashboardClient, {
+  type ProfileWithTheme,
+} from './components/DashboardClient';
 
 export default function Loading() {
   return (
     <div className='max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-8 w-full'>
       <DashboardClient
         initialLinks={[]}
-        profile={{} as Profile}
+        profile={{} as ProfileWithTheme}
         publicUrl=''
         totalViews={0}
         isLoading={true}

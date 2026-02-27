@@ -37,15 +37,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'react-toastify';
-import type { Cashflow, CashflowEntry } from '@/types/database';
+import type { CashflowDTO, CashflowEntryDTO } from '@/types/dto';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
 import ShareModal from './ShareModal';
 
 interface CashflowCardProps {
-  cashflow: Cashflow;
-  entries: CashflowEntry[];
+  cashflow: CashflowDTO;
+  entries: CashflowEntryDTO[];
   currentUserId?: string;
   currency: string | null;
 }
@@ -62,7 +62,9 @@ export default function CashflowCard({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<CashflowEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
+    null,
+  );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
@@ -115,7 +117,7 @@ export default function CashflowCard({
     });
   }
 
-  function openEditEntry(entry: CashflowEntry) {
+  function openEditEntry(entry: CashflowEntryDTO) {
     setEditingEntry(entry);
     setIsEntryModalOpen(true);
   }

@@ -26,11 +26,11 @@ import {
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { moveToFolder } from '../actions';
-import type { Link as LinkType } from '@/types/database';
+import type { LinkDTO } from '@/types/dto';
 
 interface MoveToFolderModalProps {
-  link: LinkType;
-  folders: LinkType[];
+  link: LinkDTO;
+  folders: LinkDTO[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

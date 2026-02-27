@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import DashboardClient, { type BioTab } from './components/DashboardClient';
+import { mapProfileToDTO, mapLinkToDTO } from '@/lib/mappers';
 import type { CustomThemeData } from '@/lib/theme';
 
 export default async function BioDashboardPage({
@@ -48,13 +49,13 @@ export default async function BioDashboardPage({
   return (
     <div className='max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-8 w-full'>
       <DashboardClient
-        initialLinks={(links ?? []).map((l) => ({
-          ...l,
-          is_active: !!l.is_active,
-          sort_order: l.sort_order ?? 0,
-        }))}
+        initialLinks={(links ?? []).map(mapLinkToDTO)}
         profile={{
-          ...profile,
+          ...mapProfileToDTO(profile),
+          theme_name: profile.theme_name,
+          button_style: profile.button_style,
+          button_shape: profile.button_shape,
+          display_name: profile.display_name,
           social_links: profile.social_links as Record<string, string>,
           custom_theme: profile.custom_theme as CustomThemeData | null,
         }}

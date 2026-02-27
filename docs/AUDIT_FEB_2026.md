@@ -128,17 +128,17 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### 🛠️ Pending Actions
 
-| ID     | Issue                                                    | Severity    | Effort Target          |
-| :----- | :------------------------------------------------------- | :---------- | :--------------------- |
-| **Q5** | Component Data Leaks (Map API/DB returns to strict DTOs) | 🚨 Critical | 🛠️ Hard Refactor       |
-| **A1** | Global ARIA/Accessibility Audit                          | ⚠️ Medium   | 🛠️ Hard Refactor       |
-| **P7** | Optimize `select(*)` over-fetching across 9 pages        | 💡 Low      | 🧰 Medium              |
-| **A3** | Architecture: Refactor to Hybrid Atomic-FSD Design       | 💡 Low      | 🏗️ Enterprise Refactor |
+| ID     | Issue                                              | Severity  | Effort Target          |
+| :----- | :------------------------------------------------- | :-------- | :--------------------- |
+| **A1** | Global ARIA/Accessibility Audit                    | ⚠️ Medium | 🛠️ Hard Refactor       |
+| **P7** | Optimize `select(*)` over-fetching across 9 pages  | 💡 Low    | 🧰 Medium              |
+| **A3** | Architecture: Refactor to Hybrid Atomic-FSD Design | 💡 Low    | 🏗️ Enterprise Refactor |
 
 ### ✅ Resolved Actions
 
 | ID         | Issue                                                                    | Severity        | Status                 |
 | :--------- | :----------------------------------------------------------------------- | :-------------- | :--------------------- |
+| ~~**Q5**~~ | ~~Component Data Leaks (Map API/DB returns to strict DTOs)~~             | ~~🚨 Critical~~ | ~~✅ Fixed~~           |
 | ~~**E3**~~ | ~~Sanitize `origin` header in `resetPassword` redirect~~                 | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**P3**~~ | ~~Parallelize `updateEntry` / `deleteEntry` queries~~                    | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P8**~~ | ~~Add missing `email` index to `cashflow_shares`~~                       | ~~🚨 Critical~~ | ~~✅ Fixed (DB Only)~~ |

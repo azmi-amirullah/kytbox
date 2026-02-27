@@ -21,11 +21,11 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import MoveToFolderModal from './MoveToFolderModal';
 import SortableLink from './SortableLink';
-import type { Link } from '@/types/database';
+import type { LinkDTO } from '@/types/dto';
 
 interface LinkListProps {
-  links: Link[];
-  setLinks: React.Dispatch<React.SetStateAction<Link[]>>;
+  links: LinkDTO[];
+  setLinks: React.Dispatch<React.SetStateAction<LinkDTO[]>>;
   isLoading?: boolean;
   currentFolderId: string | null;
   onDrillDown: (folderId: string | null) => void;
@@ -40,7 +40,7 @@ export default function LinkList({
 }: LinkListProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [linkToMove, setLinkToMove] = useState<Link | null>(null);
+  const [linkToMove, setLinkToMove] = useState<LinkDTO | null>(null);
 
   // Delay DndContext render to avoid hydration mismatch
   useEffect(() => {

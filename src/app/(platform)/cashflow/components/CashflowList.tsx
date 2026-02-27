@@ -39,21 +39,10 @@ import { toggleCashflowInclusion } from '../actions';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-interface CashflowWithSummary {
-  id: string; // Keep as string, will provide fallback in mapping
-  user_id: string;
-  title: string;
-  is_public: boolean;
-  created_at: string;
-  entryCount: number;
-  income: number;
-  expense: number;
-  balance: number;
-  isIncluded?: boolean;
-}
+import type { CashflowWithSummaryDTO } from '@/types/dto';
 
 interface CashflowListProps {
-  cashflows: CashflowWithSummary[];
+  cashflows: CashflowWithSummaryDTO[];
   currency: string | null;
   currentUserId?: string;
 }
@@ -68,7 +57,7 @@ export default function CashflowList({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [activeCashflow, setActiveCashflow] =
-    useState<CashflowWithSummary | null>(null);
+    useState<CashflowWithSummaryDTO | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   // Initialize from props
@@ -145,19 +134,19 @@ export default function CashflowList({
     }
   }
 
-  function openShare(e: React.MouseEvent, cashflow: CashflowWithSummary) {
+  function openShare(e: React.MouseEvent, cashflow: CashflowWithSummaryDTO) {
     e.stopPropagation();
     setActiveCashflow(cashflow);
     setIsShareModalOpen(true);
   }
 
-  function openEdit(e: React.MouseEvent, cashflow: CashflowWithSummary) {
+  function openEdit(e: React.MouseEvent, cashflow: CashflowWithSummaryDTO) {
     e.stopPropagation();
     setActiveCashflow(cashflow);
     setIsEditModalOpen(true);
   }
 
-  function openDelete(e: React.MouseEvent, cashflow: CashflowWithSummary) {
+  function openDelete(e: React.MouseEvent, cashflow: CashflowWithSummaryDTO) {
     e.stopPropagation();
     setActiveCashflow(cashflow);
     setIsDeleting(false);
@@ -207,7 +196,7 @@ export default function CashflowList({
 
       {/* Cashflow Sections */}
       {(() => {
-        const renderCashflowItem = (cashflow: CashflowWithSummary) => (
+        const renderCashflowItem = (cashflow: CashflowWithSummaryDTO) => (
           <div
             key={cashflow.id}
             onClick={() => router.push(`/cashflow/${cashflow.id}`)}

@@ -35,7 +35,7 @@ import {
   updateShareRole,
   getShares,
 } from '../share-actions';
-import type { Cashflow } from '@/types/database';
+import type { CashflowDTO } from '@/types/dto';
 
 interface Share {
   id: string;
@@ -46,7 +46,7 @@ interface Share {
 }
 
 interface ShareModalProps {
-  cashflow: Cashflow;
+  cashflow: CashflowDTO;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
