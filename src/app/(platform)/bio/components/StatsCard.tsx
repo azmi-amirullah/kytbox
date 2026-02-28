@@ -3,6 +3,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { IconType } from 'react-icons';
+import Link from 'next/link';
 
 interface StatsCardProps {
   label: string;
@@ -108,7 +109,7 @@ export default function StatsCard({
 
   if (href) {
     return (
-      <a
+      <Link
         href={href}
         className='block group h-full'
         onClick={(e) => {
@@ -116,7 +117,7 @@ export default function StatsCard({
         }}
       >
         {CardContent}
-      </a>
+      </Link>
     );
   }
 
