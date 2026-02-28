@@ -7,6 +7,7 @@ import { requireAdmin } from '@/lib/admin';
 import { getUrgencyBadgeClass } from '@/lib/support-urgency';
 import { createClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
+import { userRoleSchema } from '@/lib/validation.schemas';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -53,19 +54,22 @@ export default async function AdminTicketDetailPage({
     .eq('ticket_id', id)
     .order('created_at', { ascending: true });
 
-  const messages = (messagesData || []).map((m) => ({
-    id: m.id,
-    ticket_id: m.ticket_id,
-    sender_id: m.sender_id,
-    message: m.message,
-    read_at: m.read_at,
-    created_at: m.created_at || new Date().toISOString(),
-    profiles: {
-      username: m.profiles?.username || 'Unknown',
-      avatar_url: m.profiles?.avatar_url || null,
-      role: (m.profiles?.role as 'user' | 'admin') || 'user',
-    },
-  }));
+  const messages = (messagesData || []).map((m) => {
+    const role = userRoleSchema.parse(m.profiles?.role);
+    return {
+      id: m.id,
+      ticket_id: m.ticket_id,
+      sender_id: m.sender_id,
+      message: m.message,
+      read_at: m.read_at,
+      created_at: m.created_at || new Date().toISOString(),
+      profiles: {
+        username: m.profiles?.username || 'Unknown',
+        avatar_url: m.profiles?.avatar_url || null,
+        role,
+      },
+    };
+  });
 
   return (
     <div className='max-w-4xl mx-auto py-8 px-4'>

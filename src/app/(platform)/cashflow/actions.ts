@@ -7,6 +7,12 @@ import { cashflowEntrySchema, updateCashflowEntrySchema } from '@/lib/schemas';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 
+// Extracts user_id from Supabase joined relation (e.g. cashflows(user_id))
+const joinedOwnerSchema = z
+  .object({ user_id: z.string() })
+  .nullish()
+  .transform((v) => v?.user_id);
+
 export async function createCashflow(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
 
@@ -197,7 +203,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
     supabase,
     entry.cashflow_id,
     user,
-    (entry.cashflows as { user_id: string } | null)?.user_id,
+    joinedOwnerSchema.parse(entry.cashflows),
   );
   if (!permission.canEdit) {
     return { error: permission.error || 'Access denied' };
@@ -241,7 +247,7 @@ export async function deleteEntry(entryId: string) {
     supabase,
     entry.cashflow_id,
     user,
-    (entry.cashflows as { user_id: string } | null)?.user_id,
+    joinedOwnerSchema.parse(entry.cashflows),
   );
   if (!permission.canEdit) {
     return { error: permission.error || 'Access denied' };

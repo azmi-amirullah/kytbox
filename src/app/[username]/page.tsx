@@ -4,9 +4,19 @@ import { trackProfileView } from '@/lib/tracking';
 import ProfileView from './components/ProfileView';
 import { getProfileByUsername } from '@/lib/data-cache';
 import type { CustomThemeData } from '@/lib/theme';
+import { socialLinksSchema } from '@/lib/validation.schemas';
 
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>;
+}
+
+function isCustomThemeData(data: unknown): data is CustomThemeData {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    !Array.isArray(data) &&
+    'background' in data
+  );
 }
 
 export default async function PublicProfilePage({
@@ -48,8 +58,10 @@ export default async function PublicProfilePage({
       <ProfileView
         profile={{
           ...profile,
-          social_links: profile.social_links as Record<string, string>,
-          custom_theme: profile.custom_theme as CustomThemeData | null,
+          social_links: socialLinksSchema.parse(profile.social_links),
+          custom_theme: isCustomThemeData(profile.custom_theme)
+            ? profile.custom_theme
+            : null,
         }}
         links={typedLinks}
       />

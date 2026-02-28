@@ -25,6 +25,7 @@ import { toast } from 'react-toastify';
 import { addEntry, updateEntry } from '../actions';
 import type { CashflowEntryDTO } from '@/types/dto';
 import { getCurrencySymbol } from '@/lib/currency';
+import { entryTypeSchema } from '@/lib/validation.schemas.client';
 
 interface EntryModalProps {
   cashflowId: string;
@@ -52,7 +53,7 @@ export default function EntryModal({
   const [description, setDescription] = useState(entry?.description || '');
   const [amount, setAmount] = useState(entry?.amount?.toString() || '');
   const [type, setType] = useState<'income' | 'expense'>(
-    (entry?.type as 'income' | 'expense') || 'expense',
+    entryTypeSchema.parse(entry?.type),
   );
   const [date, setDate] = useState(entry?.date || today);
 
@@ -64,7 +65,7 @@ export default function EntryModal({
       queueMicrotask(() => {
         setDescription(entry?.description || '');
         setAmount(entry?.amount?.toString() || '');
-        setType((entry?.type as 'income' | 'expense') || 'expense');
+        setType(entryTypeSchema.parse(entry?.type));
         setDate(entry?.date || today);
         setError(null);
         setIsLoading(false);
@@ -187,7 +188,7 @@ export default function EntryModal({
                 </Label>
                 <Select
                   value={type}
-                  onValueChange={(v) => setType(v as 'income' | 'expense')}
+                  onValueChange={(v) => setType(entryTypeSchema.parse(v))}
                 >
                   <SelectTrigger className='bg-background/50 border-input/60'>
                     <SelectValue />

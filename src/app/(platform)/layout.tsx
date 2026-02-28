@@ -2,6 +2,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import { createClient } from '@/lib/supabase/server';
+import { userRoleSchema } from '@/lib/validation.schemas';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
@@ -35,7 +36,7 @@ export default async function PlatformLayout({
     email: user.email,
     avatar_url: profile.avatar_url,
     display_name: profile.display_name,
-    role: profile.role,
+    role: userRoleSchema.parse(profile.role),
   };
 
   return (

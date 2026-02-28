@@ -3,13 +3,20 @@ import { requireAdmin } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
 import { SupportTicket } from '@/types/support';
+import {
+  ticketCategorySchema,
+  ticketStatusSchema,
+} from '@/lib/validation.schemas';
 import Link from 'next/link';
 
 export const metadata = {
   title: 'Admin Support | Kytbox',
 };
 
-const ACTIVE_TICKET_STATUSES: SupportTicket['status'][] = ['open', 'in_progress'];
+const ACTIVE_TICKET_STATUSES: SupportTicket['status'][] = [
+  'open',
+  'in_progress',
+];
 const RESOLVED_TICKET_STATUSES: SupportTicket['status'][] = [
   'resolved',
   'closed',
@@ -44,8 +51,8 @@ export default async function AdminSupportPage({
     id: ticket.id,
     user_id: ticket.user_id,
     subject: ticket.subject,
-    category: ticket.category as SupportTicket['category'],
-    status: ticket.status as SupportTicket['status'],
+    category: ticketCategorySchema.parse(ticket.category),
+    status: ticketStatusSchema.parse(ticket.status),
     urgency_score: ticket.urgency_score ?? 0,
     last_bumped_at: ticket.last_bumped_at,
     created_at: ticket.created_at,

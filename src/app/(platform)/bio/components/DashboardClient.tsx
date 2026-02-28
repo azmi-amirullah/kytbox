@@ -3,6 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import {
+  bioTabSchema,
+  socialLinksSchema,
+} from '@/lib/validation.schemas.client';
 import { LuEye, LuLink, LuPalette } from 'react-icons/lu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LinksTabContent from './LinksTabContent';
@@ -51,7 +55,7 @@ export default function DashboardClient({
   activeTab = DEFAULT_TAB,
 }: DashboardClientProps) {
   const searchParams = useSearchParams();
-  const urlTab = searchParams.get('tab') as BioTab | null;
+  const urlTab = bioTabSchema.parse(searchParams.get('tab'));
   const resolvedTab =
     urlTab && VALID_TABS.includes(urlTab) ? urlTab : activeTab;
   const [currentTab, setCurrentTab] = useState<BioTab>(resolvedTab);
@@ -67,9 +71,10 @@ export default function DashboardClient({
   const [buttonShape, setButtonShape] = useState(
     profile?.button_shape || 'rounded',
   );
-  const [socialLinks, setSocialLinks] = useState<Record<string, string>>(
-    (profile?.social_links as Record<string, string>) || {},
-  );
+  const initialSocials = socialLinksSchema.parse(profile?.social_links);
+
+  const [socialLinks, setSocialLinks] =
+    useState<Record<string, string>>(initialSocials);
 
   useEffect(() => {
     setLinks(initialLinks);
@@ -80,7 +85,7 @@ export default function DashboardClient({
   }, [resolvedTab]);
 
   const handleTabChange = useCallback((value: string) => {
-    const newTab = value as BioTab;
+    const newTab = bioTabSchema.parse(value);
     setCurrentTab(newTab);
     const params = new URLSearchParams(window.location.search);
     params.set('tab', value);
@@ -151,11 +156,7 @@ export default function DashboardClient({
               initialButtonShape={
                 isLoading ? '' : profile?.button_shape || 'rounded'
               }
-              initialSocialLinks={
-                isLoading
-                  ? {}
-                  : (profile?.social_links as Record<string, string>) || {}
-              }
+              initialSocialLinks={isLoading ? {} : initialSocials}
               initialCustomTheme={
                 isLoading ? null : profile?.custom_theme || null
               }

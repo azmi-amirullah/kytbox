@@ -120,11 +120,11 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 ### Type Safety
 
-| ID    | Severity | File                                                         | Issue                                                                    | Fix                              |
-| :---- | :------- | :----------------------------------------------------------- | :----------------------------------------------------------------------- | :------------------------------- |
-| ✅ T1 | 🚨 High  | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | ~~**Unsafe casting** — `formData.get() as string` without null checks~~  | ✅ Fixed                         |
-| ✅ T2 | 💡 Low   | `bio/page.tsx`                                               | ~~`profile={{} as Profile}` for loading states lies to the type system~~ | ✅ Fixed                         |
-| T3    | 💡 Low   | `AppearanceEditor.tsx`                                       | 14 `as` casts, 2 unsafe `as unknown as Record`                           | Fix types to remove unsafe casts |
+| ID    | Severity | File                                                         | Issue                                                                    | Fix                    |
+| :---- | :------- | :----------------------------------------------------------- | :----------------------------------------------------------------------- | :--------------------- |
+| ✅ T1 | 🚨 High  | `bio/actions.ts`, `cashflow/actions.ts`, `(auth)/actions.ts` | ~~**Unsafe casting** — `formData.get() as string` without null checks~~  | ✅ Fixed               |
+| ✅ T2 | 💡 Low   | `bio/page.tsx`                                               | ~~`profile={{} as Profile}` for loading states lies to the type system~~ | ✅ Fixed               |
+| ✅ T3 | 💡 Low   | `AppearanceEditor.tsx`                                       | ~~14 `as` casts, 2 unsafe `as unknown as Record`~~                       | ✅ Fixed (Zod schemas) |
 
 ### 🛠️ Pending Actions
 
@@ -153,6 +153,7 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 | ~~**P6**~~ | ~~Modernize caching strategy ('use cache') & optimize static rendering~~ | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**P4**~~ | ~~Cache public profile query (prevent db double-fetch)~~                 | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
 | ~~**P5**~~ | ~~Parallelize cashflow share query in Promise.all~~                      | ~~⚠️ Medium~~   | ~~✅ Fixed~~           |
+| ~~**T3**~~ | ~~Fix 14 `as` casts in `AppearanceEditor.tsx` + type narrowing cleanup~~ | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**A2**~~ | ~~Uninstall phantom dependency `@types/crypto-js`~~                      | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**Q1**~~ | ~~Extract edit-permission helper logic~~                                 | ~~💡 Low~~      | ~~✅ Fixed~~           |
 | ~~**Q2**~~ | ~~Add redundant ownership check to share roles~~                         | ~~💡 Low~~      | ~~✅ Fixed~~           |

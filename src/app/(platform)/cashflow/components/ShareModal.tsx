@@ -36,14 +36,9 @@ import {
   getShares,
 } from '../share-actions';
 import type { CashflowDTO } from '@/types/dto';
+import { shareSchema } from '@/lib/validation.schemas.client';
 
-interface Share {
-  id: string;
-  cashflow_id: string;
-  email: string;
-  role: 'read' | 'edit' | string;
-  created_at: string;
-}
+type Share = ReturnType<typeof shareSchema.parse>[number];
 
 interface ShareModalProps {
   cashflow: CashflowDTO;
@@ -69,9 +64,7 @@ export default function ShareModal({
   const loadShares = useCallback(async () => {
     setIsLoadingShares(true);
     const result = await getShares(cashflow.id);
-    if (result.data) {
-      setShares(result.data as Share[]);
-    }
+    setShares(shareSchema.parse(result.data));
     setIsLoadingShares(false);
   }, [cashflow.id]);
 

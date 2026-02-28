@@ -280,10 +280,21 @@ export default function AppearanceEditor({
     ) => {
       if (!a && !b) return true;
       if (!a || !b) return false;
-      const keysA = Object.keys(a) as (keyof CustomThemeData)[];
-      const keysB = Object.keys(b) as (keyof CustomThemeData)[];
-      if (keysA.length !== keysB.length) return false;
-      for (const k of keysA) {
+      const THEME_KEYS: Array<keyof CustomThemeData> = [
+        'background',
+        'textPrimary',
+        'textSecondary',
+        'elementBg',
+        'elementBorder',
+        'elementRing',
+        'buttonBg',
+        'buttonBorder',
+        'buttonText',
+        'footerBg',
+        'footerBorder',
+        'footerText',
+      ];
+      for (const k of THEME_KEYS) {
         if (a[k] !== b[k]) return false;
       }
       return true;

@@ -3,6 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 import DashboardClient, { type BioTab } from './components/DashboardClient';
 import { mapProfileToDTO, mapLinkToDTO } from '@/lib/mappers';
 import type { CustomThemeData } from '@/lib/theme';
+import { bioTabSchema, socialLinksSchema } from '@/lib/validation.schemas';
+
+function isCustomThemeData(obj: unknown): obj is CustomThemeData {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
 
 export default async function BioDashboardPage({
   searchParams,
@@ -10,7 +15,7 @@ export default async function BioDashboardPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const params = await searchParams;
-  const activeTab = (params.tab as BioTab) || 'links';
+  const activeTab: BioTab = bioTabSchema.parse(params.tab);
   const supabase = await createClient();
 
   const {
@@ -56,8 +61,10 @@ export default async function BioDashboardPage({
           button_style: profile.button_style,
           button_shape: profile.button_shape,
           display_name: profile.display_name,
-          social_links: profile.social_links as Record<string, string>,
-          custom_theme: profile.custom_theme as CustomThemeData | null,
+          social_links: socialLinksSchema.parse(profile.social_links),
+          custom_theme: isCustomThemeData(profile.custom_theme)
+            ? profile.custom_theme
+            : null,
         }}
         publicUrl={publicUrl}
         totalViews={totalViews || 0}

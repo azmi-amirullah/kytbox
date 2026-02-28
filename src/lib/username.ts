@@ -97,11 +97,10 @@ export function validateUsername(username: string): UsernameValidationResult {
   }
 
   // Reserved username check
-  if (
-    RESERVED_USERNAMES.includes(
-      normalized as (typeof RESERVED_USERNAMES)[number],
-    )
-  ) {
+  const isReserved = RESERVED_USERNAMES.some(
+    (reserved) => reserved === normalized,
+  );
+  if (isReserved) {
     return { valid: false, error: 'This username is reserved' };
   }
 

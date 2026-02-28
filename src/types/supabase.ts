@@ -452,9 +452,9 @@ export type Database = {
       };
       get_analytics_chart_data: {
         Args: {
-          p_bucket_interval: string;
+          p_bucket_interval?: string;
           p_link_ids: string[];
-          p_start_date: string;
+          p_start_date?: string;
         };
         Returns: {
           bucket: string;
@@ -480,11 +480,7 @@ export type Database = {
         }[];
       };
       get_top_referers: {
-        Args: {
-          p_limit?: number;
-          p_link_ids: string[];
-          p_start_date: string;
-        };
+        Args: { p_limit?: number; p_link_ids: string[]; p_start_date?: string };
         Returns: {
           click_count: number;
           referer_domain: string;

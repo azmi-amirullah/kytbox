@@ -190,7 +190,7 @@ async function getAggregatedChartData(
   try {
     const { data, error } = await supabase.rpc('get_analytics_chart_data', {
       p_link_ids: linkIds,
-      p_start_date: (startDate?.toISOString() ?? null) as string,
+      p_start_date: startDate?.toISOString(),
       p_bucket_interval: bucketInterval,
     });
 
@@ -316,7 +316,7 @@ async function getTopRefererData(
   try {
     const { data, error } = await supabase.rpc('get_top_referers', {
       p_link_ids: linkIds,
-      p_start_date: (startDate?.toISOString() ?? null) as string,
+      p_start_date: startDate?.toISOString(),
       p_limit: 1,
     });
 

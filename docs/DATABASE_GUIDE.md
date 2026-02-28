@@ -54,15 +54,16 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 
 ### 3.2 Reference Migration History
 
-| Order | Migration                                       | Purpose                                                           |
-| :---- | :---------------------------------------------- | :---------------------------------------------------------------- |
-| 1     | `001_initial_schema.sql`                        | Basic profiles and auth triggers.                                 |
-| 2     | `20260202_create_cashflow_tables.sql`           | Multi-tenant cashflow logic.                                      |
-| 3     | `20260210190000_create_support_system.sql`      | `profiles.role`, support tables, and support RPC functions.       |
-| 4     | `20260220_add_custom_theme_column.sql`          | `custom_theme` JSONB, `button_style`, and `button_shape`.         |
-| 5     | `20260220104943_add_nested_folders.sql`         | `is_folder` and `parent_id` to `links` table.                     |
-| 6     | `20260221061001_enforce_folder_depth_limit.sql` | Postgres Trigger on `links` to prevent infinite folder recursion. |
-| 7     | `20260221133300_fix_privilege_escalation.sql`   | Trigger on `cashflow_shares` to prevent self-role escalation.     |
+| Order | Migration                                            | Purpose                                                             |
+| :---- | :--------------------------------------------------- | :------------------------------------------------------------------ |
+| 1     | `001_initial_schema.sql`                             | Basic profiles and auth triggers.                                   |
+| 2     | `20260202_create_cashflow_tables.sql`                | Multi-tenant cashflow logic.                                        |
+| 3     | `20260210190000_create_support_system.sql`           | `profiles.role`, support tables, and support RPC functions.         |
+| 4     | `20260220_add_custom_theme_column.sql`               | `custom_theme` JSONB, `button_style`, and `button_shape`.           |
+| 5     | `20260220104943_add_nested_folders.sql`              | `is_folder` and `parent_id` to `links` table.                       |
+| 6     | `20260221061001_enforce_folder_depth_limit.sql`      | Postgres Trigger on `links` to prevent infinite folder recursion.   |
+| 7     | `20260221133300_fix_privilege_escalation.sql`        | Trigger on `cashflow_shares` to prevent self-role escalation.       |
+| 8     | `20260228_fix_analytics_rpc_nullable_start_date.sql` | `DEFAULT NULL` on analytics RPC params for correct optional typing. |
 
 ---
 
@@ -71,8 +72,9 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 - **Never Hardcode Secrets:** Always use Supabase `service_role` only in restricted background worker scripts.
 - **RLS First:** Always enable RLS before inserting data into a new table.
 - **Server Actions:** All database mutations must happen via Server Actions with manual `auth.getUser()` validation to supplement RLS.
+- **Type Narrowing:** Use Zod schemas (`src/lib/validation.schemas.ts` for server, `src/lib/validation.schemas.client.ts` for client) to parse all DB/API values. Never use manual ternary chains or inline type guards.
 - **Trigger Guards:** Use `BEFORE UPDATE` triggers to restrict which columns non-owners can modify, preventing privilege escalation even with permissive RLS UPDATE policies.
 
 ---
 
-_Last Updated: February 21, 2026_
+_Last Updated: February 28, 2026_

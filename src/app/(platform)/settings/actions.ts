@@ -109,21 +109,19 @@ export async function uploadAvatar(formData: FormData) {
   }
 
   // Validate file type & size
-  const isValidType = ALLOWED_AVATAR_TYPES.includes(
-    file.type as (typeof ALLOWED_AVATAR_TYPES)[number],
-  );
+  const isValidType = ALLOWED_AVATAR_TYPES.some((t) => t === file.type);
   const isValidSize = file.size <= 2 * 1024 * 1024; // 2MB
 
   if (!isValidType)
     return { error: 'Invalid file type. JPG, PNG or WebP only.' };
   if (!isValidSize) return { error: 'File too large. Max 2MB.' };
 
-  const extByType: Record<(typeof ALLOWED_AVATAR_TYPES)[number], string> = {
+  const extByType: Record<string, string> = {
     'image/jpeg': 'jpg',
     'image/png': 'png',
     'image/webp': 'webp',
   };
-  const fileExt = extByType[file.type as (typeof ALLOWED_AVATAR_TYPES)[number]];
+  const fileExt = extByType[file.type] || 'jpg';
   const filePath = `${user.id}/${randomUUID()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage

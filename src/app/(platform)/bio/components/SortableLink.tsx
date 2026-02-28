@@ -92,7 +92,18 @@ const LinkItemContent = memo(function LinkItemContent({
       </button>
 
       {/* Toggle */}
-      <div className='flex items-center' onClick={(e) => e.stopPropagation()}>
+      <div
+        className='flex items-center'
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.stopPropagation();
+            onToggle(link.id, !link.is_active);
+          }
+        }}
+        role='button'
+        tabIndex={0}
+      >
         <Switch
           checked={!!link.is_active}
           onCheckedChange={(checked) => onToggle(link.id, checked)}
@@ -146,6 +157,11 @@ const LinkItemContent = memo(function LinkItemContent({
       <div
         className='flex items-center gap-1 sm:gap-2'
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+        }}
+        role='toolbar'
+        aria-label='Link actions'
       >
         {!link.is_folder && (
           <TooltipProvider>
@@ -322,8 +338,10 @@ export default function SortableLink({
       style={style}
       onClick={(e) => {
         if (!link.is_folder) return;
-        const target = e.target as HTMLElement;
-        const currentTarget = e.currentTarget as HTMLElement;
+        if (!(e.target instanceof HTMLElement)) return;
+        if (!(e.currentTarget instanceof HTMLElement)) return;
+        const target = e.target;
+        const currentTarget = e.currentTarget;
         if (
           target.closest('button') ||
           target.closest('a') ||
@@ -333,7 +351,23 @@ export default function SortableLink({
         if (!currentTarget.contains(target)) return;
         onDrillDown(link.id);
       }}
+      onKeyDown={(e) => {
+        if (!link.is_folder) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (!(e.target instanceof HTMLElement)) return;
+          const target = e.target;
+          if (
+            target.closest('button') ||
+            target.closest('a') ||
+            target.closest('input')
+          )
+            return;
+          e.preventDefault();
+          onDrillDown(link.id);
+        }
+      }}
       role={link.is_folder ? 'button' : undefined}
+      tabIndex={link.is_folder ? 0 : undefined}
       className={`
         group flex items-center gap-3 p-3 rounded-xl border
         bg-secondary/50 border-border transition-all duration-200

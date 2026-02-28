@@ -45,7 +45,7 @@ export default function GlobalError({
   );
 
   return (
-    <html>
+    <html lang='en'>
       <body>
         <div className='flex items-center justify-center min-h-screen w-full bg-background p-6'>
           <ErrorState

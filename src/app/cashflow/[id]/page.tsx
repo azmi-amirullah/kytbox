@@ -5,6 +5,7 @@ import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import CashflowDetail from '../../(platform)/cashflow/components/CashflowDetail';
 import { mapCashflowToDTO, mapCashflowEntryToDTO } from '@/lib/mappers';
+import { shareRoleSchema } from '@/lib/validation.schemas';
 
 interface CashflowDetailPageProps {
   params: Promise<{ id: string }>;
@@ -84,7 +85,7 @@ export default async function CashflowDetailPage({
       initialUserRole = 'owner';
     } else {
       if (share) {
-        initialUserRole = (share.role as 'edit' | 'read') || 'read';
+        initialUserRole = shareRoleSchema.parse(share.role);
         initialShareId = share.id;
         // The bookmark button should show "Saved" ONLY if it is pinned to the dashboard
         hasShare = !!share.is_pinned;

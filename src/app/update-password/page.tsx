@@ -33,8 +33,17 @@ export default function UpdatePasswordPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const password = formData.get('password') as string;
-    const confirmPassword = formData.get('confirmPassword') as string;
+    const pwd = formData.get('password');
+    const confirm = formData.get('confirmPassword');
+
+    if (typeof pwd !== 'string' || typeof confirm !== 'string') {
+      setError('Invalid input format');
+      setIsLoading(false);
+      return;
+    }
+
+    const password = pwd;
+    const confirmPassword = confirm;
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');

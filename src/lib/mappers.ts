@@ -6,6 +6,7 @@ import type {
   CashflowShare,
   CashflowWithSummary,
 } from '@/types/database';
+import { dtoShareRoleSchema } from '@/lib/validation.schemas';
 import type {
   ProfileDTO,
   LinkDTO,
@@ -64,7 +65,7 @@ export function mapCashflowShareToDTO(row: CashflowShare): CashflowShareDTO {
   return {
     id: row.id,
     cashflow_id: row.cashflow_id,
-    role: row.role as 'viewer' | 'editor',
+    role: dtoShareRoleSchema.parse(row.role),
     email: row.email,
   };
 }

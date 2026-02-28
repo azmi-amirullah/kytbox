@@ -501,7 +501,10 @@ async function compressImage(
           quality,
         );
       };
-      img.src = e.target?.result as string;
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        img.src = result;
+      }
     };
     reader.readAsDataURL(file);
   });

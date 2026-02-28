@@ -16,7 +16,16 @@ export function getTheme(
   themeId: string | null | undefined,
   customTheme?: CustomThemeData | null,
 ): ThemeConfig {
-  const id = (themeId || DEFAULT_THEME_ID) as ThemeId;
+  let id: ThemeId = DEFAULT_THEME_ID;
+
+  // Best enterprise-grade workaround without assertions:
+  // We define a type guard to validate the string as a ThemeId
+  const isThemeId = (val: string): val is ThemeId =>
+    val === 'custom' || val in THEMES;
+
+  if (typeof themeId === 'string' && isThemeId(themeId)) {
+    id = themeId;
+  }
 
   if (id === 'custom' && customTheme) {
     // Generate valid tailwind arbitrary classes for arbitrary hex values
@@ -51,7 +60,11 @@ export function getTheme(
     };
   }
 
-  return THEMES[id as Exclude<ThemeId, 'custom'>] || THEMES[DEFAULT_THEME_ID];
+  if (id === 'custom') {
+    return THEMES[DEFAULT_THEME_ID]; // fallback if custom is requested but no data provided
+  }
+
+  return THEMES[id] || THEMES[DEFAULT_THEME_ID];
 }
 
 /**

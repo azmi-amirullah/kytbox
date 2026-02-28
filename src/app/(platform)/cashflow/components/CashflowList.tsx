@@ -200,6 +200,14 @@ export default function CashflowList({
           <div
             key={cashflow.id}
             onClick={() => router.push(`/cashflow/${cashflow.id}`)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                router.push(`/cashflow/${cashflow.id}`);
+              }
+            }}
+            role='button'
+            tabIndex={0}
             className='group relative bg-card border rounded-2xl p-4 sm:p-5 hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer'
           >
             <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
@@ -300,6 +308,12 @@ export default function CashflowList({
                       <div
                         className='flex items-center gap-2 mr-2'
                         onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation();
+                          }
+                        }}
+                        role='presentation'
                       >
                         <Switch
                           id={`include-${cashflow.id}`}

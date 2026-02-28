@@ -4,6 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 import { LuPlus } from 'react-icons/lu';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import {
+  ticketCategorySchema,
+  ticketStatusSchema,
+} from '@/lib/validation.schemas';
 
 export const metadata = {
   title: 'Support | Kytbox',
@@ -69,24 +73,21 @@ export default async function SupportPage() {
     });
   }
 
-  const ticketsWithSignals = (tickets || []).map((ticket) => ({
-    ...ticket,
-    category:
-      (ticket.category as
-        | 'general'
-        | 'bug'
-        | 'billing'
-        | 'feature_request'
-        | 'account') || 'general',
-    status:
-      (ticket.status as 'open' | 'in_progress' | 'resolved' | 'closed') ||
-      'open',
-    urgency_score: ticket.urgency_score ?? 0,
-    created_at: ticket.created_at || new Date().toISOString(),
-    unread_count: unreadByTicket.get(ticket.id) || 0,
-    awaiting_user_reply: awaitingReplyByTicket.get(ticket.id) || false,
-    user_seen_no_reply: seenNoReplyByTicket.get(ticket.id) || false,
-  }));
+  const ticketsWithSignals = (tickets || []).map((ticket) => {
+    const category = ticketCategorySchema.parse(ticket.category);
+    const status = ticketStatusSchema.parse(ticket.status);
+
+    return {
+      ...ticket,
+      category,
+      status,
+      urgency_score: ticket.urgency_score ?? 0,
+      created_at: ticket.created_at || new Date().toISOString(),
+      unread_count: unreadByTicket.get(ticket.id) || 0,
+      awaiting_user_reply: awaitingReplyByTicket.get(ticket.id) || false,
+      user_seen_no_reply: seenNoReplyByTicket.get(ticket.id) || false,
+    };
+  });
 
   return (
     <div className='max-w-4xl mx-auto py-8 px-4'>

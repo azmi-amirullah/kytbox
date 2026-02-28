@@ -10,7 +10,7 @@ export function isAllowedOrigin(origin: string): boolean {
     process.env.NEXT_PUBLIC_SITE_URL,
     !isProd && 'http://localhost:3000',
     !isProd && 'http://127.0.0.1:3000',
-  ].filter(Boolean) as string[];
+  ].filter((url): url is string => typeof url === 'string');
 
   // Normalize origin (remove trailing slash)
   const normalizedOrigin = origin.replace(/\/$/, '');

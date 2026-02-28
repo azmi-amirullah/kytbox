@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { linkTypeSchema } from '@/lib/validation.schemas.client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -145,7 +146,7 @@ export default function LinkModal({
           {!isEdit && (
             <Tabs
               value={type}
-              onValueChange={(val) => setType(val as 'link' | 'folder')}
+              onValueChange={(val) => setType(linkTypeSchema.parse(val))}
               className='w-full'
             >
               <TabsList className='w-full grid grid-cols-2 bg-secondary'>

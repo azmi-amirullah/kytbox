@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import { LuLoader } from 'react-icons/lu';
 import { useEffect, useState } from 'react';
+import { ticketStatusSchema } from '@/lib/validation.schemas.client';
 
 interface StatusSelectorProps {
   ticketId: string;
@@ -30,8 +31,7 @@ const statusSelectColorMap: Record<TicketStatus, string> = {
 };
 
 const statusItemColorMap: Record<TicketStatus, string> = {
-  open:
-    'text-green-700 focus:text-green-800 focus:bg-green-100/70 dark:text-green-300 dark:focus:text-green-200 dark:focus:bg-green-950/50',
+  open: 'text-green-700 focus:text-green-800 focus:bg-green-100/70 dark:text-green-300 dark:focus:text-green-200 dark:focus:bg-green-950/50',
   in_progress:
     'text-blue-700 focus:text-blue-800 focus:bg-blue-100/70 dark:text-blue-300 dark:focus:text-blue-200 dark:focus:bg-blue-950/50',
   resolved:
@@ -41,9 +41,8 @@ const statusItemColorMap: Record<TicketStatus, string> = {
 };
 
 function getStatusColorClass(status: string) {
-  return (
-    statusSelectColorMap[status as TicketStatus] || statusSelectColorMap.closed
-  );
+  const parsed = ticketStatusSchema.parse(status);
+  return statusSelectColorMap[parsed];
 }
 
 export function StatusSelector({
@@ -59,12 +58,10 @@ export function StatusSelector({
 
   const handleStatusChange = async (value: string) => {
     const previousStatus = selectedStatus;
-    setSelectedStatus(value);
+    const parsed = ticketStatusSchema.parse(value);
+    setSelectedStatus(parsed);
     setIsPending(true);
-    const result = await updateTicketStatus(
-      ticketId,
-      value as 'open' | 'in_progress' | 'resolved' | 'closed',
-    );
+    const result = await updateTicketStatus(ticketId, parsed);
     if (result?.error) {
       setSelectedStatus(previousStatus);
     }
@@ -79,7 +76,10 @@ export function StatusSelector({
         disabled={isPending}
       >
         <SelectTrigger
-          className={cn('w-[160px] font-medium', getStatusColorClass(selectedStatus))}
+          className={cn(
+            'w-[160px] font-medium',
+            getStatusColorClass(selectedStatus),
+          )}
         >
           {isPending ? (
             <LuLoader className='w-4 h-4 animate-spin mr-2' />

@@ -11,6 +11,7 @@ import {
   normalizeHex,
 } from '@/lib/theme';
 import type { CustomThemeData } from '@/lib/theme/theme.types';
+import { socialLinksSchema } from '@/lib/validation.schemas.client';
 import SocialGrid from '@/app/(platform)/bio/components/SocialGrid';
 import ProfileHeader from './ProfileHeader';
 import ProfileLinks from './ProfileLinks';
@@ -53,48 +54,47 @@ export default function ProfileView({
   // We keep it for safety but remove it as a source of truth for the profile skeleton to prevent "Double Flashes".
   const showSkeleton = isLoading;
 
+  const validSocialLinks = socialLinksSchema.parse(profile.social_links);
+
+  const customStyles:
+    | (React.CSSProperties & Record<string, string>)
+    | undefined =
+    theme.id === 'custom' && profile.custom_theme
+      ? {
+          '--custom-bg': normalizeHex(profile.custom_theme.background),
+          '--custom-text-primary': normalizeHex(
+            profile.custom_theme.textPrimary,
+          ),
+          '--custom-text-secondary': normalizeHex(
+            profile.custom_theme.textSecondary,
+          ),
+          '--custom-element-bg': normalizeHex(profile.custom_theme.elementBg),
+          '--custom-element-border': normalizeHex(
+            profile.custom_theme.elementBorder,
+          ),
+          '--custom-element-ring': normalizeHex(
+            profile.custom_theme.elementRing,
+          ),
+          '--custom-button-bg': normalizeHex(profile.custom_theme.buttonBg),
+          '--custom-button-border': normalizeHex(
+            profile.custom_theme.buttonBorder,
+          ),
+          '--custom-button-text': normalizeHex(profile.custom_theme.buttonText),
+          '--custom-footer-bg': normalizeHex(profile.custom_theme.footerBg),
+          '--custom-footer-border': normalizeHex(
+            profile.custom_theme.footerBorder,
+          ),
+          '--custom-footer-text': normalizeHex(profile.custom_theme.footerText),
+        }
+      : undefined;
+
   return (
     <div
       className={cn(
         'flex-1 min-h-full w-full selection:bg-primary/10 selection:text-primary transition-colors duration-500',
         getContainerClasses(theme),
       )}
-      style={
-        theme.id === 'custom' && profile.custom_theme
-          ? ({
-              '--custom-bg': normalizeHex(profile.custom_theme.background),
-              '--custom-text-primary': normalizeHex(
-                profile.custom_theme.textPrimary,
-              ),
-              '--custom-text-secondary': normalizeHex(
-                profile.custom_theme.textSecondary,
-              ),
-              '--custom-element-bg': normalizeHex(
-                profile.custom_theme.elementBg,
-              ),
-              '--custom-element-border': normalizeHex(
-                profile.custom_theme.elementBorder,
-              ),
-              '--custom-element-ring': normalizeHex(
-                profile.custom_theme.elementRing,
-              ),
-              '--custom-button-bg': normalizeHex(profile.custom_theme.buttonBg),
-              '--custom-button-border': normalizeHex(
-                profile.custom_theme.buttonBorder,
-              ),
-              '--custom-button-text': normalizeHex(
-                profile.custom_theme.buttonText,
-              ),
-              '--custom-footer-bg': normalizeHex(profile.custom_theme.footerBg),
-              '--custom-footer-border': normalizeHex(
-                profile.custom_theme.footerBorder,
-              ),
-              '--custom-footer-text': normalizeHex(
-                profile.custom_theme.footerText,
-              ),
-            } as React.CSSProperties)
-          : undefined
-      }
+      style={customStyles}
     >
       <div className='flex flex-col items-center min-h-full w-full max-w-[680px] mx-auto px-8 pt-16 pb-12 '>
         {/* Header (Avatar, Name, Bio) */}
@@ -107,7 +107,7 @@ export default function ProfileView({
         {/* Social Grid */}
         <div className='flex justify-center w-full mb-12'>
           <SocialGrid
-            socialLinks={(profile.social_links as Record<string, string>) || {}}
+            socialLinks={validSocialLinks}
             theme={theme}
             className='justify-center'
             isLoading={showSkeleton}
