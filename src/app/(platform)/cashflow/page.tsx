@@ -15,7 +15,11 @@ export default async function CashflowPage() {
 
   // Parallelize profile and shares queries for better performance
   const [profileResult, sharesResult] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase
+      .from('profiles')
+      .select('default_currency')
+      .eq('id', user.id)
+      .single(),
     supabase
       .from('cashflow_shares')
       .select('cashflow_id, is_included_in_totals')
@@ -41,7 +45,9 @@ export default async function CashflowPage() {
   // Filter by owned OR shared (bookmarked)
   let query = supabase
     .from('cashflow_summaries')
-    .select('*')
+    .select(
+      'id, user_id, title, created_at, is_public, entry_count, income, expense, balance',
+    )
     .order('created_at', { ascending: false });
 
   if (allShareIds.length > 0) {

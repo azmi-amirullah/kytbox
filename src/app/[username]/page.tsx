@@ -38,7 +38,9 @@ export default async function PublicProfilePage({
   // Get links for this specific user (filtered at DB level)
   const { data: links } = await supabase
     .from('links')
-    .select('*')
+    .select(
+      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order',
+    )
     .eq('user_id', profile.id)
     .eq('is_active', true)
     .order('sort_order', { ascending: true });

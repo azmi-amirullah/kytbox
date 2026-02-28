@@ -24,7 +24,9 @@ export default async function TicketDetailPage({
   // Fetch ticket details
   const { data: ticket } = await supabase
     .from('support_tickets')
-    .select('*')
+    .select(
+      'id, user_id, subject, status, category, urgency_score, last_bumped_at',
+    )
     .eq('id', id)
     .single();
 

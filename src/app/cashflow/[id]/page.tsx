@@ -26,7 +26,13 @@ export default async function CashflowDetailPage({
   const [profileResult, cashflowResult, entriesResult, shareResult] =
     await Promise.all([
       user
-        ? supabase.from('profiles').select('*').eq('id', user.id).single()
+        ? supabase
+            .from('profiles')
+            .select(
+              'username, avatar_url, display_name, role, default_currency',
+            )
+            .eq('id', user.id)
+            .single()
         : Promise.resolve({ data: null }),
       supabase.from('cashflows').select('*').eq('id', id).single(),
       supabase

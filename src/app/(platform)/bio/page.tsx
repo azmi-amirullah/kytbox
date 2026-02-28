@@ -28,7 +28,13 @@ export default async function BioDashboardPage({
 
   // Parallelize all queries for better performance
   const [profileResult, linksResult] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase
+      .from('profiles')
+      .select(
+        'id, username, display_name, avatar_url, bio, role, created_at, theme_name, button_style, button_shape, social_links, custom_theme, default_currency, tier',
+      )
+      .eq('id', user.id)
+      .single(),
     supabase
       .from('links')
       .select('*')
