@@ -29,8 +29,13 @@ Systematic security + code quality review of every commit day in February 2026.
 | Feb 21 |  ✅   | Saturday  |   ✅    | Clean — nested folders (DB trigger depth guard), security patches (our audit)              |
 | Feb 22 |  ❌   | Sunday    |   N/A   | No push                                                                                    |
 | Feb 23 |  ✅   | Monday    |   ✅    | 11 fixes: Query parallelizations, type safety fixes, ownership auth, missing index         |
+| Feb 24 |  ✅   | Tuesday   |   ✅    | Clean — Zod 4 hardening (Q4 resolved), rate limit alignment, email cooldowns, UI fixes     |
+| Feb 25 |  ✅   | Wednesday |   ✅    | Clean — Error boundaries (E1), cashflow permission refactor (Q1/P3), TS cast fixes (T3)    |
+| Feb 26 |  ✅   | Thursday  |   ✅    | Clean — Origin validation (E3), `use cache` migration (P6), type decentralization (Q3)     |
+| Feb 27 |  ✅   | Friday    |   ✅    | Clean — DTO mapping (Q5), ARIA attributes (A1), ESLint enterprise, loading architecture    |
+| Feb 28 |  ✅   | Saturday  |   ✅    | Clean — Zod type narrowing (T2), `select(*)` optimization (P7), analytics RPC migration    |
 
-**✅ Audit complete — all relevant push days reviewed.**
+**✅ Audit complete — all February push days (Feb 1–28) reviewed and clean.**
 
 ## Audit Details
 
@@ -50,6 +55,100 @@ Systematic security + code quality review of every commit day in February 2026.
 | 🚨 Critical | Ghost share RLS bypass on private cashflows  | `share-actions.ts` | Context-aware `is_public` check           |
 | 🚨 Critical | Self-role escalation via unrestricted UPDATE | RLS policy         | DB trigger on restricted columns          |
 | ⚠️ Medium   | Guest privilege retention on removal         | `share-actions.ts` | Full delete for guests, unpin for invites |
+
+### Feb 24
+
+**4 commits** — Security hardening (rate limits + Zod validation), cashflow UI fix, label refactoring.
+
+| Severity | Category   | Issue                                                                             | File(s)                                                    | Verdict                     |
+| :------- | :--------- | :-------------------------------------------------------------------------------- | :--------------------------------------------------------- | :-------------------------- |
+| ✅ Clean | Security   | IP extraction centralized into `getIp()` (eliminates duplicate code)              | `src/lib/ip.ts` [NEW]                                      | Correct Vercel header order |
+| ✅ Clean | Security   | Auth rate limits: 5 req/min on login/signup/reset, 30 req/min on username check   | `src/lib/upstash/redis.ts`, `(auth)/actions.ts`            | Proper sliding window       |
+| ✅ Clean | Security   | Email cooldown (62s) prevents Supabase email spam on signup/reset                 | `(auth)/actions.ts`                                        | Redis TTL-based lock        |
+| ✅ Clean | Validation | **Zod 4 schemas** for ALL server actions (auth, bio, cashflow, settings, support) | `src/lib/schemas.ts` [NEW], 5 action files                 | **Resolves audit Q4**       |
+| ✅ Clean | Validation | `Object.fromEntries(formData)` + `.safeParse()` replaces blind `as string` casts  | All action files                                           | Proper type narrowing       |
+| ✅ Clean | Validation | `z.coerce.number().positive()` for cashflow amounts (replaces `parseFloat`)       | `cashflow/actions.ts`                                      | No more NaN edge cases      |
+| ✅ Clean | Validation | `z.instanceof(File)` for avatar upload validation                                 | `settings/actions.ts`                                      | Runtime type safety         |
+| ✅ Clean | API Compat | `createFolder` / `moveToFolder` refactored from args to `FormData` intake         | `bio/actions.ts`, `LinkModal.tsx`, `MoveToFolderModal.tsx` | Consistent with Zod pattern |
+| ✅ Clean | UX         | Rate limit errors now show countdown seconds (`Wait Xs`)                          | `(auth)/actions.ts`                                        | Better user feedback        |
+| ✅ Clean | UX         | Cashflow modal close simplified (removed `shouldClose` state + microtask hack)    | `CashflowModal.tsx`                                        | Cleaner lifecycle           |
+| ✅ Clean | UX         | Removed unnecessary `e.preventDefault()` on dropdown menu actions                 | `CashflowList.tsx`                                         | Fixed dropdown close bug    |
+| ✅ Clean | UX         | Labels updated from "Add Link" → "Add Item" / "Add Folder" for folder support     | `LinkList.tsx`, `LinkModal.tsx`, `LinksTabContent.tsx`     | Correct taxonomy            |
+
+> **@code-reviewer verdict:** This is the strongest day of February. The Zod 4 migration is comprehensive — every server action now validates at the boundary. The rate limiting architecture with separate sliding windows per action type and the email cooldown mechanism are production-grade. The `getIp()` centralization eliminates a class of IP-spoofing bugs. No findings. **Resolves audit items Q4, E5, E4, T1.**
+
+### Feb 25
+
+**7 commits** — Error boundaries, auth-aware recovery, proxy fix, cashflow refactor, TS cast cleanup, parallelization.
+
+| Severity | Category     | Issue                                                                                                                 | File(s)                                                | Verdict                   |
+| :------- | :----------- | :-------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------- | :------------------------ |
+| ✅ Clean | Stability    | **Consolidated error boundaries** — `app/error.tsx`, `(platform)/error.tsx`, `(admin)/error.tsx`, `support/error.tsx` | 4 new `error.tsx` files, deleted 2 per-page duplicates | **Resolves audit E1**     |
+| ✅ Clean | Stability    | Auth-aware recovery boundaries for auth, marketing, onboarding, public profile, public cashflow                       | 6 new `error.tsx` files                                | Full route coverage       |
+| ✅ Clean | UX           | `ErrorState` upgraded — context path display, responsive sizing, pill buttons, backdrop blur                          | `error-state.tsx`                                      | Premium error UX          |
+| ⚠️ Note  | Security     | Proxy refined: `/cashflow` exact match protected, sub-paths `/cashflow/[id]` public                                   | `src/proxy.ts`                                         | Correct — page-level auth |
+| ✅ Clean | Code Quality | **Permission helper extracted** — `checkEditPermission()` replaces 3x duplicated logic blocks                         | `cashflow/actions.ts`                                  | **Resolves audit Q1**     |
+| ✅ Clean | Performance  | Permission checks parallelized with `Promise.all` (owner + share queries)                                             | `cashflow/actions.ts`                                  | **Resolves audit P3**     |
+| ✅ Clean | Performance  | Joined queries (`cashflows(user_id)`) in `updateEntry`/`deleteEntry` to skip extra fetch                              | `cashflow/actions.ts`                                  | Eliminates waterfall      |
+| ✅ Clean | Type Safety  | 14 `as` casts removed from `AppearanceEditor` — replaced with `as const`, type narrowing, Zod                         | `AppearanceEditor.tsx`                                 | **Resolves audit T3**     |
+| ✅ Clean | Type Safety  | Inline `import()` types replaced with proper top-level `CustomThemeData` import                                       | `bio/page.tsx`, `[username]/page.tsx`                  | Cleaner module boundaries |
+| ✅ Clean | Docs         | Updated audit docs, Kytbox spec, support system spec, cashflow docs                                                   | 5 doc files                                            | Housekeeping              |
+
+> **@code-reviewer verdict:** Solid structural day. The error boundary architecture is now comprehensive — every route group has context-aware recovery with structured telemetry. The `checkEditPermission` extraction with the `cachedOwnerId` optimization is elegant: it uses joined queries to avoid the extra fetch when possible, and falls back to parallel queries otherwise. The `as` cast cleanup in `AppearanceEditor` is thorough. One note: the proxy change for `/cashflow` exact-match protection is correct but relies on page-level auth for sub-paths — verified that `cashflow/[id]/page.tsx` properly checks `is_public` before rendering. **Resolves audit items E1, Q1, P3, T3.**
+
+### Feb 26
+
+**6 commits** — Caching modernization, origin validation, type decentralization, loading splash, forgot password fix.
+
+| Severity | Category     | Issue                                                                                        | File(s)                                         | Verdict                  |
+| :------- | :----------- | :------------------------------------------------------------------------------------------- | :---------------------------------------------- | :----------------------- |
+| ✅ Clean | Security     | **Origin validation** — `getSafeOrigin()` whitelists allowed origins for password reset      | `src/lib/origin.ts` [NEW], `(auth)/actions.ts`  | **Resolves audit E3**    |
+| ✅ Clean | Performance  | **`use cache` migration** — `getProfileByUsername` uses Next.js 16 `cacheTag()` directive    | `src/lib/data-cache.ts`                         | **Resolves audit P6**    |
+| ✅ Clean | Performance  | `cacheComponents: true` enabled in `next.config.ts`                                          | `next.config.ts`                                | Next.js 16 standard      |
+| ✅ Clean | Code Quality | **Type decentralization** — `src/types/database.ts` extracts row types from generated schema | `src/types/database.ts` [NEW], 28 files updated | **Resolves audit Q3**    |
+| ✅ Clean | Code Quality | Eliminated `as unknown as` triple-casts in cashflow page via proper view types               | `cashflow/page.tsx`                             | Direct type consumption  |
+| ✅ Clean | UX           | Premium loading splash with animated rings, backdrop blur, ARIA `role="status"`              | `loading-splash.tsx` [NEW]                      | Accessible loading state |
+| ✅ Clean | UX           | `CurrentYear` server component uses `connection()` for hydration-safe rendering              | `current-year.tsx` [NEW]                        | No hydration mismatch    |
+| ✅ Clean | UX           | Forgot password flow resets success/error state on back navigation                           | `forgot-password/page.tsx`                      | Prevents stale UI state  |
+| ✅ Clean | Arch         | Public profile page switched from `createClient` to `createStaticClient` + centralized cache | `[username]/page.tsx`                           | Single source of truth   |
+| ✅ Clean | Docs         | Updated audit docs, added Bio Architecture Deep Dive doc                                     | 2 doc files                                     | Housekeeping             |
+
+> **@code-reviewer verdict:** Architecturally significant day. The `use cache` + `cacheTag()` migration is the correct Next.js 16 pattern — replacing the closure-heavy `unstable_cache` wrapper. The origin validation in `getSafeOrigin()` properly whitelists against `NEXT_PUBLIC_SITE_URL` and dev origins. The type decentralization via `src/types/database.ts` decouples business code from the generated Supabase schema, making the codebase CLI-safe for future `supabase gen types` runs. No findings. **Resolves audit items E3, P6, Q3.**
+
+### Feb 27
+
+**4 commits** — DTO mapping, ARIA attributes, ESLint enterprise enforcement, loading architecture modernization.
+
+| Severity | Category    | Issue                                                                                             | File(s)                                                       | Verdict                        |
+| :------- | :---------- | :------------------------------------------------------------------------------------------------ | :------------------------------------------------------------ | :----------------------------- |
+| ✅ Clean | Security    | **DTO mapping** — `src/types/dto.ts` + `src/lib/mappers.ts` prevent raw DB rows flowing to client | `dto.ts` [NEW], `mappers.ts` [NEW], 18 component files        | **Resolves audit Q5**          |
+| ✅ Clean | Security    | All Server→Client boundaries now use `mapProfileToDTO`, `mapLinkToDTO`, `mapCashflowToDTO`, etc   | `bio/page.tsx`, `cashflow/[id]/page.tsx`, cashflow components | Strict field whitelisting      |
+| ✅ Clean | A11y        | **ARIA attributes added** — `aria-label` on password toggles, icon buttons, header logo, user nav | 10 files updated                                              | **Resolves audit A1**          |
+| ✅ Clean | Enforcement | **ESLint enterprise rules** — `no-explicit-any: error`, `consistent-type-assertions: never`       | `eslint.config.mjs`                                           | Blocks `as` casts at lint time |
+| ✅ Clean | Enforcement | **jsx-a11y plugin** integrated — recommended ruleset enforced                                     | `eslint.config.mjs`, `package.json`                           | Automated ARIA enforcement     |
+| ✅ Clean | UX          | **Loading architecture modernized** — route-level skeletons for support, support-admin routes     | 5 new `loading.tsx` files                                     | Instant perceived load         |
+| ✅ Clean | UX          | Global `LoadingSplash` deleted — replaced with silent `Suspense fallback={null}`                  | `loading-splash.tsx` [DELETED], `layout.tsx`                  | No more flash on navigation    |
+| ✅ Clean | UX          | Bio page `Suspense` removed — relies on route-level `loading.tsx` skeleton instead                | `bio/page.tsx`                                                | Cleaner page component         |
+
+> **@code-reviewer verdict:** This day closes the two most critical remaining audit items. The DTO layer is well-designed — explicit field whitelisting via mapper functions ensures no accidental sensitive data leakage to the client bundle. The ESLint config with `assertionStyle: 'never'` is aggressive but correct — it will block any future `as` casts at lint time, forcing proper type narrowing. The `jsx-a11y` integration automates ARIA enforcement going forward. The loading architecture cleanup (deleting `LoadingSplash`, using route-level skeletons) is the correct Next.js App Router pattern. **Resolves audit items Q5, A1.**
+
+### Feb 28
+
+**3 commits** — Zod type narrowing enforcement, select over-fetching optimization, analytics RPC migration.
+
+| Severity | Category    | Issue                                                                                                         | File(s)                                                       | Verdict                       |
+| :------- | :---------- | :------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------ | :---------------------------- |
+| ✅ Clean | Type Safety | **Zod type narrowing** — `validation.schemas.ts` (server) + `validation.schemas.client.ts` (client)           | 2 new schema files, 36 files updated                          | **Resolves audit T2**         |
+| ✅ Clean | Type Safety | All remaining `as` casts replaced: `bioTabSchema.parse()`, `socialLinksSchema.parse()`, `joinedOwnerSchema`   | `bio/page.tsx`, `[username]/page.tsx`, `cashflow/actions.ts`  | Zero `as` casts remaining     |
+| ✅ Clean | Type Safety | `isCustomThemeData()` type guard replaces `as CustomThemeData \| null` casts                                  | `bio/page.tsx`, `[username]/page.tsx`                         | Runtime validation            |
+| ✅ Clean | Type Safety | `getTheme()` uses `isThemeId()` type guard instead of `as ThemeId` cast                                       | `theme.utils.ts`                                              | Validated theme lookup        |
+| ✅ Clean | Type Safety | Reserved username check uses `.some()` instead of `.includes()` with cast                                     | `username.ts`                                                 | No cast needed                |
+| ✅ Clean | Performance | **`select(*)` replaced with specific columns** across 9 pages                                                 | `bio/page.tsx`, `cashflow/page.tsx`, `settings/page.tsx`, etc | **Resolves audit P7**         |
+| ✅ Clean | DB          | Analytics RPC `DEFAULT NULL` fix — `p_start_date` nullable in `get_analytics_chart_data` + `get_top_referers` | Migration file [NEW]                                          | Fixes generated TS types      |
+| ✅ Clean | DB          | Both RPCs retain `SECURITY DEFINER` + `auth.uid()` ownership checks                                           | Migration SQL                                                 | Authorization preserved       |
+| ✅ Clean | UX          | `StatsCard` uses Next.js `Link` instead of `<a>` for proper loading state integration                         | `StatsCard.tsx`                                               | Top loader triggers correctly |
+
+> **@code-reviewer verdict:** This is the capstone day. The Zod schema split (`zod` for server, `zod/mini` for client) is the correct bundle-conscious approach. The `joinedOwnerSchema` pattern (`z.object().nullish().transform()`) for Supabase joined relations is particularly elegant — it replaces the last `as { user_id: string }` patterns. The `select(*)` cleanup across 9 pages eliminates unnecessary data transfer and reduces exposure surface. The analytics RPC migration is clean — `DEFAULT NULL` fixes the generated types while preserving the existing `IS NULL OR` guard logic. **Resolves audit items T2, P7.**
 
 ---
 
