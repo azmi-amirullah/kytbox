@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { after } from 'next/server';
 import { redirectRateLimit } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
+import { env } from '@/env';
 
 export async function trackProfileView(profileId: string) {
   // Capture headers immediately (synchronously available in Server Components)
@@ -28,8 +29,8 @@ export async function trackProfileView(profileId: string) {
     // This allows us to remove the "Allow anonymous inserts" policy from the database,
     // preventing public spam/fake analytics data.
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SECRET_KEY!,
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.SUPABASE_SECRET_KEY,
       {
         auth: {
           persistSession: false,

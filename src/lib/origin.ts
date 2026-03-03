@@ -1,3 +1,5 @@
+import { env } from '@/env';
+
 /**
  * Origin validation utility for security-critical redirects.
  * Whitelists the canonical site URL and localhost for development.
@@ -5,9 +7,9 @@
 export function isAllowedOrigin(origin: string): boolean {
   if (!origin) return false;
 
-  const isProd = process.env.NODE_ENV === 'production';
+  const isProd = env.NODE_ENV === 'production';
   const allowedOrigins = [
-    process.env.NEXT_PUBLIC_SITE_URL,
+    env.NEXT_PUBLIC_SITE_URL,
     !isProd && 'http://localhost:3000',
     !isProd && 'http://127.0.0.1:3000',
   ].filter((url): url is string => typeof url === 'string');
@@ -27,7 +29,7 @@ export function isAllowedOrigin(origin: string): boolean {
  * Ensures the result is always an absolute URL prefix to prevent relative redirect issues.
  */
 export function getSafeOrigin(origin: string | null): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
 
   if (origin && isAllowedOrigin(origin)) {
     return origin.replace(/\/$/, '');
