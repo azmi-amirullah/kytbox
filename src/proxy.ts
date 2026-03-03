@@ -1,10 +1,19 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { buildCspHeader } from '@/lib/csp';
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const matchesRoute = (route: string) =>
     pathname === route || pathname.startsWith(`${route}/`);
+
+  // CSP nonce — generated per-request, applied to ALL routes
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const cspHeaderValue = buildCspHeader(nonce);
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', cspHeaderValue);
 
   // Protected routes - require authentication
   const protectedPaths = [
@@ -25,13 +34,20 @@ export async function proxy(request: NextRequest) {
   const authPaths = ['/login', '/signup'];
   const isAuthRoute = authPaths.some(matchesRoute);
 
-  // Skip auth check for public routes (landing, public profiles, etc.)
+  // Public routes — still get CSP headers
   if (!isProtectedRoute && !isAuthRoute) {
-    return NextResponse.next({ request });
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    response.headers.set('Content-Security-Policy', cspHeaderValue);
+    return response;
   }
 
   // Only create Supabase client when needed
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+  supabaseResponse.headers.set('Content-Security-Policy', cspHeaderValue);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,7 +61,13 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
+          supabaseResponse.headers.set(
+            'Content-Security-Policy',
+            cspHeaderValue,
+          );
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );

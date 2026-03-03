@@ -262,20 +262,20 @@ Full codebase scan: 8 server action files, 2 API routes, auth helpers, admin cli
 
 The following enterprise categories are completely missing from the codebase and therefore could not be audited. They must be implemented to reach production-grade maturity:
 
-| Pillar                 | Verified 2026 Issue                                         | Enterprise Impact                                                            |
-| :--------------------- | :---------------------------------------------------------- | :--------------------------------------------------------------------------- |
-| **Security Hardening** | Missing CSP (Content Security Policy) and HSTS headers      | Vulnerable to XSS, clickjacking, and protocol downgrade attacks              |
-| **Linguistic Scale**   | Zero Internationalization (i18n) infrastructure             | Hard-coded strings prevent growth into non-English markets                   |
-| **Env Integrity**      | No runtime validation of Environment Variables (Zod/T3-Env) | Potential runtime crashes or silent misconfigs due to missing/invalid `.env` |
-| **Accessibility**      | Missing ARIA roles and keyboard navigation (WCAG 2.2)       | Legal risk and reduced user reach (Mandatory by April 2026)                  |
-| **Modern Styling**     | Reliance on Media Queries over Container Queries & Subgrid  | Rigid components that don't scale well in complex FSD slices                 |
-| **Runtime Perf**       | Server Actions not yet optimized for Edge Runtime           | Higher latency for global users vs. Edge-first architectures                 |
-| **Automated Testing**  | Zero testing frameworks installed (Jest/Vitest, Playwright) | Regressions in business logic cannot be caught automatically                 |
-| **CI/CD Pipelines**    | No automated deployment workflows (GitHub Actions)          | Code is deployed without pre-flight linting or type-checking                 |
-| **Observability**      | No application-layer error tracking (Sentry/LogRocket)      | Server crashes and client exceptions fail silently in production             |
-| **PWA Readiness**      | Missing `manifest.json` and service worker infrastructure   | No "Add to Home Screen" support—unacceptable for mobile-first apps           |
-| **Asset Optimization** | No AVIF support in `next.config.ts`                         | Missing 20-30% bandwidth savings vs. standard WebP                           |
-| **SEO & OpenGraph**    | Missing `generateMetadata` on core marketing/legal pages    | Search engine visibility and social shareability are bottlenecked            |
+| Pillar                     | Verified 2026 Issue                                         | Enterprise Impact                                                            |
+| :------------------------- | :---------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| ~~**Security Hardening**~~ | ~~Missing CSP (Content Security Policy) and HSTS headers~~  | ~~✅ Fixed (Mar 02) — `src/lib/csp.ts`, `proxy.ts`, `next.config.ts`~~       |
+| **Linguistic Scale**       | Zero Internationalization (i18n) infrastructure             | Hard-coded strings prevent growth into non-English markets                   |
+| **Env Integrity**          | No runtime validation of Environment Variables (Zod/T3-Env) | Potential runtime crashes or silent misconfigs due to missing/invalid `.env` |
+| **Accessibility**          | Missing ARIA roles and keyboard navigation (WCAG 2.2)       | Legal risk and reduced user reach (Mandatory by April 2026)                  |
+| **Modern Styling**         | Reliance on Media Queries over Container Queries & Subgrid  | Rigid components that don't scale well in complex FSD slices                 |
+| **Runtime Perf**           | Server Actions not yet optimized for Edge Runtime           | Higher latency for global users vs. Edge-first architectures                 |
+| **Automated Testing**      | Zero testing frameworks installed (Jest/Vitest, Playwright) | Regressions in business logic cannot be caught automatically                 |
+| **CI/CD Pipelines**        | No automated deployment workflows (GitHub Actions)          | Code is deployed without pre-flight linting or type-checking                 |
+| **Observability**          | No application-layer error tracking (Sentry/LogRocket)      | Server crashes and client exceptions fail silently in production             |
+| **PWA Readiness**          | Missing `manifest.json` and service worker infrastructure   | No "Add to Home Screen" support—unacceptable for mobile-first apps           |
+| ~~**Asset Optimization**~~ | ~~No AVIF support in `next.config.ts`~~                     | ~~✅ Fixed (Mar 02) — `formats: ['image/avif', 'image/webp']`~~              |
+| **SEO & OpenGraph**        | Missing `generateMetadata` on core marketing/legal pages    | Search engine visibility and social shareability are bottlenecked            |
 
 > [!NOTE]
 > **Edge Security**: `src/proxy.ts` usage was verified via **Context7** as the correct Next.js 16 standard (replacing `middleware.ts`). The architectural finding has been retracted.
