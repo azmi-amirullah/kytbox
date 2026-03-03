@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useActionState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -28,10 +28,21 @@ import { createClient } from '@/lib/supabase/client';
 
 function LoginContent() {
   const searchParams = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // useActionState: isPending auto-resets on navigation/redirect
+  const [formState, formAction, isPending] = useActionState(
+    async (_prev: { error: string | null }, formData: FormData) => {
+      const result = await login(formData);
+      if (result?.error) return { error: result.error };
+      return { error: null }; // redirect fires, this never returns
+    },
+    { error: null },
+  );
+
+  const isLoading = isPending || isGoogleLoading;
 
   // Get message from URL params and save to state, then clear URL
   useEffect(() => {
@@ -45,7 +56,7 @@ function LoginContent() {
   }, [searchParams]);
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -55,25 +66,9 @@ function LoginContent() {
     });
 
     if (error) {
-      setError(error.message);
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    const formData = new FormData(e.currentTarget);
-    const result = await login(formData);
-
-    if (result?.error) {
-      setError(result.error);
-      setIsLoading(false);
-    }
-    // Redirect happens in server action on success
-  }
 
   return (
     <motion.div
@@ -131,7 +126,7 @@ function LoginContent() {
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className='space-y-4'>
+          <form action={formAction} className='space-y-4'>
             <div className='space-y-2'>
               <div className='relative group'>
                 <LuMail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
@@ -179,13 +174,13 @@ function LoginContent() {
               </div>
             </div>
 
-            {error && (
+            {formState.error && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className='p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center'
               >
-                {error}
+                {formState.error}
               </motion.div>
             )}
 
