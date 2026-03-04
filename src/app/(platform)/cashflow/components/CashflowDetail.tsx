@@ -298,9 +298,6 @@ export default function CashflowDetail({
         </div>
       </div>
 
-      {/* Charts */}
-      <CashflowCharts entries={entries} currency={currency} />
-
       {/* Entries Table */}
       <div className='bg-card border rounded-xl overflow-hidden'>
         {entries.length === 0 ? (
@@ -384,6 +381,19 @@ export default function CashflowDetail({
             </Table>
           </div>
         )}
+      </div>
+
+      {/* Charts */}
+      <div className='space-y-4'>
+        <div>
+          <h2 className='text-lg font-bold tracking-tight'>
+            Financial Overview
+          </h2>
+          <p className='text-sm text-muted-foreground'>
+            Monthly breakdown of your transactions
+          </p>
+        </div>
+        <CashflowCharts entries={entries} currency={currency} />
       </div>
 
       {/* Edit Cashflow Modal */}

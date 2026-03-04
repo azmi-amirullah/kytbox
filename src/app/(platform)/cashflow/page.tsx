@@ -58,6 +58,38 @@ export default async function CashflowPage() {
 
   const { data: cashflowSummariesData } = await query;
 
+  const summaryIds: string[] = (cashflowSummariesData || [])
+    .map((c) => c.id)
+    .filter((id): id is string => Boolean(id));
+
+  // Fetch entries for charts
+  let entriesData: {
+    id: string;
+    cashflow_id: string;
+    amount: number;
+    type: string;
+    date: string;
+    description: string | null;
+    created_at: string | null;
+  }[] = [];
+
+  if (summaryIds.length > 0) {
+    const { data } = await supabase
+      .from('cashflow_entries')
+      .select('id, cashflow_id, amount, type, date, description, created_at')
+      .in('cashflow_id', summaryIds)
+      .order('date', { ascending: true });
+    entriesData = data || [];
+  }
+
+  // Group entries by cashflow_id
+  const entriesByCashflow = new Map<string, typeof entriesData>();
+  for (const entry of entriesData) {
+    const existing = entriesByCashflow.get(entry.cashflow_id) || [];
+    existing.push(entry);
+    entriesByCashflow.set(entry.cashflow_id, existing);
+  }
+
   const cashflowSummaries = (cashflowSummariesData || []).map((c) => ({
     id: c.id || '',
     user_id: c.user_id || '',
@@ -69,7 +101,15 @@ export default async function CashflowPage() {
     expense: Number(c.expense),
     balance: Number(c.balance),
     isIncluded: c.user_id === user.id || (!!c.id && includedShareIds.has(c.id)),
-    entries: [],
+    entries: (entriesByCashflow.get(c.id || '') || []).map((e) => ({
+      id: e.id,
+      cashflow_id: e.cashflow_id,
+      amount: Number(e.amount),
+      type: e.type,
+      date: e.date,
+      description: e.description || '',
+      created_at: e.created_at,
+    })),
   }));
 
   return (

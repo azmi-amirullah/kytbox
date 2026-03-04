@@ -30,12 +30,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'react-toastify';
 import { deleteCashflow } from '../actions';
+import { toggleCashflowInclusion } from '../actions';
 // import type { Cashflow } from '@/types/supabase';
 import { formatCurrencyCompact } from '@/lib/currency';
 import CashflowModal from './CashflowModal';
 import ShareModal from './ShareModal';
-
-import { toggleCashflowInclusion } from '../actions';
+import { DashboardCharts } from './DashboardCharts';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
@@ -389,6 +389,24 @@ export default function CashflowList({
           </div>
         );
       })()}
+
+      {/* Dashboard Charts */}
+      <div className='space-y-4'>
+        <div>
+          <h2 className='text-lg font-bold tracking-tight'>
+            Financial Overview
+          </h2>
+          <p className='text-sm text-muted-foreground'>
+            Monthly breakdown of your transactions
+          </p>
+        </div>
+        <DashboardCharts
+          cashflows={cashflows}
+          includedSharedIds={includedSharedIds}
+          currentUserId={currentUserId}
+          currency={currency}
+        />
+      </div>
 
       {/* Modals */}
       <CashflowModal
