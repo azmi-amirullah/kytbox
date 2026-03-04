@@ -10,24 +10,24 @@ Ranked by: **Security > Stability > Performance > Code Quality > Features**, com
 
 Every item — infrastructure AND features — scored and ranked together.
 
-| Rank  | Item                                  | Category  | Pillar          | Effort        | Status      |
-| :---: | :------------------------------------ | :-------- | :-------------- | :------------ | :---------- |
-| ~~1~~ | ~~Security Headers (CSP + HSTS)~~     | ~~Infra~~ | ~~Security~~    | ~~1 session~~ | ~~✅ Done~~ |
-| ~~2~~ | ~~AVIF Optimization~~                 | ~~Infra~~ | ~~Performance~~ | ~~5 min~~     | ~~✅ Done~~ |
-| ~~3~~ | ~~**Env Validation (Zod + T3-Env)**~~ | ~~Infra~~ | ~~Security~~    | ~~1 session~~ | ~~✅ Done~~ |
-| ~~4~~ | ~~**SEO `generateMetadata`**~~        | ~~Infra~~ | ~~Performance~~ | ~~1 session~~ | ~~✅ Done~~ |
-|   5   | **Cashflow: Charts**                  | Feature   | UX              | ~2 sessions   | 🔲 Pending  |
-|   6   | **Cashflow: Categories**              | Feature   | UX              | ~1-2 sessions | 🔲 Pending  |
-|   7   | **Automated Testing (Vitest)**        | Infra     | Stability       | 2-3 sessions  | 🔲 Pending  |
-|   8   | **CI/CD Pipeline (GitHub Actions)**   | Infra     | Stability       | ~1 session    | 🔲 Pending  |
-|   9   | **`canAccess` Feature Gate**          | Feature   | Architecture    | ~1 session    | 🔲 Pending  |
-|  10   | **Cashflow: Date Filtering**          | Feature   | UX              | ~1 session    | 🔲 Pending  |
-|  11   | **Cashflow: Export (CSV)**            | Feature   | UX              | ~1 session    | 🔲 Pending  |
-|  12   | **PWA Manifest + Service Worker**     | Infra     | UX              | ~1 session    | 🔲 Pending  |
-|  13   | **Observability (Sentry)**            | Infra     | Stability       | 1-2 sessions  | 🔲 Pending  |
-|  14   | **i18n Infrastructure**               | Infra     | Scale           | 2-3 sessions  | 🔲 Pending  |
-|  15   | **Container Queries Migration**       | Infra     | Code Quality    | 2-3 sessions  | 🔲 Pending  |
-|  16   | **Hybrid FSD Architecture (A3)**      | Infra     | Code Quality    | Multi-session | 🔲 Pending  |
+| Rank  | Item                                  | Category    | Pillar          | Effort         | Status      |
+| :---: | :------------------------------------ | :---------- | :-------------- | :------------- | :---------- |
+| ~~1~~ | ~~Security Headers (CSP + HSTS)~~     | ~~Infra~~   | ~~Security~~    | ~~1 session~~  | ~~✅ Done~~ |
+| ~~2~~ | ~~AVIF Optimization~~                 | ~~Infra~~   | ~~Performance~~ | ~~5 min~~      | ~~✅ Done~~ |
+| ~~3~~ | ~~**Env Validation (Zod + T3-Env)**~~ | ~~Infra~~   | ~~Security~~    | ~~1 session~~  | ~~✅ Done~~ |
+| ~~4~~ | ~~**SEO `generateMetadata`**~~        | ~~Infra~~   | ~~Performance~~ | ~~1 session~~  | ~~✅ Done~~ |
+| ~~5~~ | ~~**Cashflow: Charts**~~              | ~~Feature~~ | ~~UX~~          | ~~2 sessions~~ | ~~✅ Done~~ |
+|   6   | **Cashflow: Categories**              | Feature     | UX              | ~1-2 sessions  | 🔲 Pending  |
+|   7   | **Automated Testing (Vitest)**        | Infra       | Stability       | 2-3 sessions   | 🔲 Pending  |
+|   8   | **CI/CD Pipeline (GitHub Actions)**   | Infra       | Stability       | ~1 session     | 🔲 Pending  |
+|   9   | **`canAccess` Feature Gate**          | Feature     | Architecture    | ~1 session     | 🔲 Pending  |
+|  10   | **Cashflow: Date Filtering**          | Feature     | UX              | ~1 session     | 🔲 Pending  |
+|  11   | **Cashflow: Export (CSV)**            | Feature     | UX              | ~1 session     | 🔲 Pending  |
+|  12   | **PWA Manifest + Service Worker**     | Infra       | UX              | ~1 session     | 🔲 Pending  |
+|  13   | **Observability (Sentry)**            | Infra       | Stability       | 1-2 sessions   | 🔲 Pending  |
+|  14   | **i18n Infrastructure**               | Infra       | Scale           | 2-3 sessions   | 🔲 Pending  |
+|  15   | **Container Queries Migration**       | Infra       | Code Quality    | 2-3 sessions   | 🔲 Pending  |
+|  16   | **Hybrid FSD Architecture (A3)**      | Infra       | Code Quality    | Multi-session  | 🔲 Pending  |
 
 ---
 
@@ -79,4 +79,4 @@ Week 5:  #12 PWA → #13 Sentry
 | [PRE_MONETIZATION_IMPROVEMENTS.md](./PRE_MONETIZATION_IMPROVEMENTS.md) | Pre-payment checklist, `canAccess` spec            |
 | [AUDIT_FEB_2026.md](./AUDIT_FEB_2026.md)                               | February audit findings (all resolved)             |
 
-_Last Updated: March 03, 2026_
+_Last Updated: March 04, 2026_

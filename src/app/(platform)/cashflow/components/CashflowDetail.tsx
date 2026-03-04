@@ -46,6 +46,7 @@ import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
 import ShareModal from './ShareModal';
+import { CashflowCharts } from './CashflowCharts';
 import { subscribeToPublicCashflow, removeShare } from '../share-actions';
 
 interface CashflowDetailProps {
@@ -296,6 +297,9 @@ export default function CashflowDetail({
           </p>
         </div>
       </div>
+
+      {/* Charts */}
+      <CashflowCharts entries={entries} currency={currency} />
 
       {/* Entries Table */}
       <div className='bg-card border rounded-xl overflow-hidden'>
