@@ -2,8 +2,11 @@ import { Metadata } from 'next';
 import { LEGAL_LAST_UPDATED, SUPPORT_EMAIL, toSectionId } from '../constants';
 
 export const metadata: Metadata = {
-  title: 'Refund Policy - Kytbox',
+  title: 'Refund Policy',
   description: 'Refund policy for Kytbox subscriptions and purchases.',
+  alternates: {
+    canonical: '/refund',
+  },
 };
 
 const SECTIONS = [

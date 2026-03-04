@@ -8,6 +8,8 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
+import { siteConfig } from '@/config/site';
+
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -19,8 +21,54 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Kytbox',
-  description: 'Your personal kit box',
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  keywords: [
+    'Kytbox',
+    'Bio links',
+    'Cashflow tracking',
+    'Personal kit',
+    'Finance',
+  ],
+  authors: [
+    {
+      name: siteConfig.creator,
+      url: siteConfig.links.twitter,
+    },
+  ],
+  creator: siteConfig.creator,
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: siteConfig.url,
+    title: siteConfig.name,
+    description: siteConfig.description,
+    siteName: siteConfig.name,
+    images: [
+      {
+        url: siteConfig.ogImage,
+        width: 1200,
+        height: 630,
+        alt: siteConfig.name,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [siteConfig.ogImage],
+    creator: '@azmi_amirullah',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

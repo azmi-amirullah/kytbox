@@ -18,6 +18,13 @@ import { createClient } from '@/lib/supabase/server';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
+import { Metadata } from 'next';
+import { siteConfig } from '@/config/site';
+
+export const metadata: Metadata = {
+  title: `${siteConfig.name} - Your Personal Kit Box`,
+  description: siteConfig.description,
+};
 
 // Kytbox Apps for landing page
 const KYTBOX_APPS = [

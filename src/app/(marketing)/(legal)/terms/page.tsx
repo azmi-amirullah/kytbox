@@ -7,8 +7,11 @@ import {
 } from '../constants';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service - Kytbox',
+  title: 'Terms of Service',
   description: 'Terms of service and usage guidelines for Kytbox.',
+  alternates: {
+    canonical: '/terms',
+  },
 };
 
 const SECTIONS = [
@@ -51,7 +54,7 @@ const SECTIONS = [
       </>
     ),
   },
-  {
+  /* {
     title: 'Subscriptions and Payments',
     content: (
       <>
@@ -74,7 +77,7 @@ const SECTIONS = [
         </ul>
       </>
     ),
-  },
+  }, */
   {
     title: 'Acceptable Use',
     content: (

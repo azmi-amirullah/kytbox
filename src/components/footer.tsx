@@ -39,12 +39,12 @@ export function Footer({ variant = 'dashboard' }: FooterProps) {
         >
           Privacy
         </Link>
-        <Link
+        {/* <Link
           href='/refund'
           className='hover:text-foreground transition-colors'
         >
           Refund
-        </Link>
+        </Link> */}
       </div>
     </footer>
   );

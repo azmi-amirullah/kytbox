@@ -7,8 +7,11 @@ import {
 } from '../constants';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - Kytbox',
+  title: 'Privacy Policy',
   description: 'How Kytbox collects, uses, and protects your data.',
+  alternates: {
+    canonical: '/privacy',
+  },
 };
 
 const SECTIONS = [
@@ -38,10 +41,10 @@ const SECTIONS = [
           <li>Name and contact information (email address).</li>
           <li>Authentication data (managed securely by Supabase Auth).</li>
           <li>Content you upload to the Service (bio links, cashflow data).</li>
-          <li>
+          {/* <li>
             Payment information (securely processed by our Merchant of Record,
             Lemon Squeezy — we do not store your payment details).
-          </li>
+          </li> */}
         </ul>
         <p>
           We also automatically collect certain technical information when you
@@ -111,7 +114,7 @@ const SECTIONS = [
         </p>
         <ul>
           <li>Hosting and infrastructure (Vercel, Supabase).</li>
-          <li>Payment processing (Lemon Squeezy).</li>
+          {/* <li>Payment processing (Lemon Squeezy).</li> */}
           <li>Rate limiting and security (Upstash).</li>
           <li>Analytics (Vercel Web Analytics — privacy-friendly, no PII).</li>
           <li>Performance monitoring (Vercel Speed Insights — no PII).</li>
@@ -125,8 +128,9 @@ const SECTIONS = [
       <>
         <p>
           Your data may be transferred to and processed in countries other than
-          your own, including the United States (where Vercel and Lemon Squeezy
-          operate). We rely on the following safeguards for these transfers:
+          your own, including the United States (where Vercel
+          {/*  and Lemon Squeezy */} operates). We rely on the following
+          safeguards for these transfers:
         </p>
         <ul>
           <li>
