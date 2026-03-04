@@ -40,19 +40,19 @@ export default async function AdminTicketDetailPage({
     return notFound();
   }
 
-  await supabase.rpc('mark_support_messages_read', { p_ticket_id: id });
+  const [, { data: queueRows }, { data: messagesData }] = await Promise.all([
+    supabase.rpc('mark_support_messages_read', { p_ticket_id: id }),
+    supabase.rpc('get_support_ticket_queue'),
+    supabase
+      .from('support_messages')
+      .select('*, profiles(username, avatar_url, role)')
+      .eq('ticket_id', id)
+      .order('created_at', { ascending: true }),
+  ]);
 
-  const { data: queueRows } = await supabase.rpc('get_support_ticket_queue');
   const queueTicket = queueRows?.find((queueRow) => queueRow.id === ticket.id);
   const totalUrgency = queueTicket?.total_urgency ?? ticket.urgency_score ?? 0;
   const ageDays = queueTicket?.age_days ?? 0;
-
-  // Fetch messages
-  const { data: messagesData } = await supabase
-    .from('support_messages')
-    .select('*, profiles(username, avatar_url, role)')
-    .eq('ticket_id', id)
-    .order('created_at', { ascending: true });
 
   const messages = (messagesData || []).map((m) => {
     const role = userRoleSchema.parse(m.profiles?.role);

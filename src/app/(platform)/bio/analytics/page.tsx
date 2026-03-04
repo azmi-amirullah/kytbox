@@ -14,18 +14,14 @@ export default async function AnalyticsPage() {
     redirect('/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .single();
+  const [profileResult, initialData] = await Promise.all([
+    supabase.from('profiles').select('id').eq('id', user.id).single(),
+    getAnalyticsData('24h', 'all'),
+  ]);
 
-  if (!profile) {
+  if (!profileResult.data) {
     redirect('/onboarding');
   }
-
-  // Prefetch initial analytics data with default filters
-  const initialData = await getAnalyticsData('24h', 'all');
 
   return (
     <div className='max-w-7xl mx-auto px-4 py-4 md:py-8 w-full'>

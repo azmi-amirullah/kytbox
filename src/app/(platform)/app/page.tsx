@@ -75,7 +75,7 @@ export default async function AppHomePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select('username, display_name, avatar_url, role')
     .eq('id', user.id)
     .single();
 
@@ -90,7 +90,9 @@ export default async function AppHomePage() {
         <h1 className='text-3xl font-bold tracking-tight'>
           Welcome back, {profile.display_name || profile.username}!
         </h1>
-        <p className='text-muted-foreground mt-1'>Choose an app to get started</p>
+        <p className='text-muted-foreground mt-1'>
+          Choose an app to get started
+        </p>
       </div>
 
       {/* App Grid */}

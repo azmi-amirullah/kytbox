@@ -34,14 +34,14 @@ export default async function TicketDetailPage({
     return notFound();
   }
 
-  await supabase.rpc('mark_support_messages_read', { p_ticket_id: id });
-
-  // Fetch messages
-  const { data: messages } = await supabase
-    .from('support_messages')
-    .select('*, profiles(username, avatar_url, role)')
-    .eq('ticket_id', id)
-    .order('created_at', { ascending: true });
+  const [, { data: messages }] = await Promise.all([
+    supabase.rpc('mark_support_messages_read', { p_ticket_id: id }),
+    supabase
+      .from('support_messages')
+      .select('*, profiles(username, avatar_url, role)')
+      .eq('ticket_id', id)
+      .order('created_at', { ascending: true }),
+  ]);
 
   return (
     <div className='max-w-4xl mx-auto py-8 px-4'>
