@@ -102,8 +102,8 @@ export default function LinkModal({
     formData.append('title', title);
     if (type === 'link') {
       formData.append('url', url);
-      formData.append('animationType', animationType);
     }
+    formData.append('animationType', animationType);
     formData.append('isFolder', type === 'folder' ? 'true' : 'false');
     if (parentId) formData.append('parentId', parentId);
 
@@ -114,6 +114,7 @@ export default function LinkModal({
       const folderData = new FormData();
       folderData.append('title', title);
       folderData.append('isFolder', 'true');
+      folderData.append('animationType', animationType);
       if (parentId) folderData.append('parentId', parentId);
       result = await createFolder(folderData);
     } else {
@@ -227,31 +228,29 @@ export default function LinkModal({
               </div>
             )}
 
-            {type === 'link' && (
-              <div className='grid gap-2'>
-                <Label
-                  htmlFor='animationType'
-                  className='font-medium text-foreground/80 gap-0.5'
-                >
-                  Animation Style
-                </Label>
-                <Select value={animationType} onValueChange={setAnimationType}>
-                  <SelectTrigger className='bg-background/50 border-input/60 focus:border-primary/50 transition-colors'>
-                    <SelectValue placeholder='Select an animation' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='none'>None</SelectItem>
-                    <SelectItem value='pulse'>Pulse (Subtle Pulse)</SelectItem>
-                    <SelectItem value='bounce'>
-                      Bounce (Draws Attention)
-                    </SelectItem>
-                    <SelectItem value='glow'>
-                      Glow (Highlighted Border)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className='grid gap-2'>
+              <Label
+                htmlFor='animationType'
+                className='font-medium text-foreground/80 gap-0.5'
+              >
+                Animation Style
+              </Label>
+              <Select value={animationType} onValueChange={setAnimationType}>
+                <SelectTrigger className='bg-background/50 border-input/60 focus:border-primary/50 transition-colors'>
+                  <SelectValue placeholder='Select an animation' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='none'>None</SelectItem>
+                  <SelectItem value='pulse'>Pulse (Subtle Pulse)</SelectItem>
+                  <SelectItem value='bounce'>
+                    Bounce (Draws Attention)
+                  </SelectItem>
+                  <SelectItem value='glow'>
+                    Glow (Highlighted Border)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {error && (
               <p className='text-sm text-destructive text-center bg-destructive/10 p-2 rounded-md font-medium'>

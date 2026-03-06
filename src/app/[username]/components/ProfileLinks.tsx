@@ -181,11 +181,21 @@ export default function ProfileLinks({
                       onClick={() => setCurrentFolderId(link.id)}
                       className={cn(
                         buttonClasses,
-                        'w-full flex items-center justify-center gap-3 cursor-pointer',
+                        'block w-full cursor-pointer isolate overflow-hidden',
+                        link.animation_type === 'pulse' && 'animate-pulse',
+                        link.animation_type === 'bounce' &&
+                          'animate-subtle-bounce',
+                        link.animation_type === 'glow' && 'animate-glow',
                       )}
                     >
-                      <LuFolderOpen className='w-5 h-5 opacity-80' />
-                      <span>{link.title}</span>
+                      <div className='flex items-center justify-center gap-3 w-full h-full'>
+                        <LuFolderOpen className='w-5 h-5 shrink-0 opacity-80' />
+                        <div className='flex flex-col items-center justify-center overflow-hidden'>
+                          <span className='truncate text-center'>
+                            {link.title}
+                          </span>
+                        </div>
+                      </div>
                     </button>
                   ) : (
                     <LinkButton

@@ -67,7 +67,7 @@ export function LinkButton({
       href={finalHref}
       target='_blank'
       rel='noopener noreferrer'
-      className={cn(className, animationClass, 'block')}
+      className={cn(className, animationClass, 'block isolate overflow-hidden')}
       style={style}
     >
       <div

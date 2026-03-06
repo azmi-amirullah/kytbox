@@ -253,7 +253,7 @@ export async function createFolder(formData: FormData) {
   const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, parentId } = parsed.data;
+  const { title, parentId, animationType } = parsed.data;
 
   // Get the highest sort_order
   const { data: lastLink } = await supabase
@@ -273,6 +273,7 @@ export async function createFolder(formData: FormData) {
     sort_order: nextOrder,
     is_folder: true,
     parent_id: parentId || null,
+    animation_type: animationType || 'none',
   });
 
   if (error) {

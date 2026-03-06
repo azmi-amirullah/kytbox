@@ -116,7 +116,7 @@ export function getButtonClasses(
 
   // Base classes for the unified profile buttons (mobile-standard)
   const baseClasses =
-    'block w-full p-4 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5 backdrop-blur-sm shadow-sm';
+    'block w-full p-4 text-center text-lg font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5 backdrop-blur-sm shadow-sm overflow-hidden';
 
   if (buttonStyle === 'transparent') {
     return `${baseClasses} bg-transparent border-2 border-primary/20 hover:border-primary/40 text-primary ${shapeClass}`;
