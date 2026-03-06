@@ -337,8 +337,13 @@ export default function CashflowDetail({
                         });
                       })()}
                     </TableCell>
-                    <TableCell className='font-medium'>
-                      {entry.description}
+                    <TableCell>
+                      <div className='font-medium'>{entry.description}</div>
+                      {entry.category && (
+                        <span className='inline-flex items-center px-1.5 py-0.5 mt-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
+                          {entry.category}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell
                       className={`text-right font-medium ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}

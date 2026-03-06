@@ -25,7 +25,10 @@ import { toast } from 'react-toastify';
 import { addEntry, updateEntry } from '../actions';
 import type { CashflowEntryDTO } from '@/types/dto';
 import { getCurrencySymbol } from '@/lib/currency';
-import { entryTypeSchema } from '@/lib/validation.schemas.client';
+import {
+  entryTypeSchema,
+  entryCategorySchema,
+} from '@/lib/validation.schemas.client';
 
 interface EntryModalProps {
   cashflowId: string;
@@ -55,6 +58,9 @@ export default function EntryModal({
   const [type, setType] = useState<'income' | 'expense'>(
     entryTypeSchema.parse(entry?.type),
   );
+  const [category, setCategory] = useState<string | null>(
+    entryCategorySchema.parse(entry?.category),
+  );
   const [date, setDate] = useState(entry?.date || today);
 
   const isBusy = isLoading || isPending;
@@ -66,6 +72,7 @@ export default function EntryModal({
         setDescription(entry?.description || '');
         setAmount(entry?.amount?.toString() || '');
         setType(entryTypeSchema.parse(entry?.type));
+        setCategory(entryCategorySchema.parse(entry?.category));
         setDate(entry?.date || today);
         setError(null);
         setIsLoading(false);
@@ -92,6 +99,7 @@ export default function EntryModal({
     formData.append('description', description);
     formData.append('amount', amount);
     formData.append('type', type);
+    if (category) formData.append('category', category);
     formData.append('date', date);
 
     let result;
@@ -188,7 +196,17 @@ export default function EntryModal({
                 </Label>
                 <Select
                   value={type}
-                  onValueChange={(v) => setType(entryTypeSchema.parse(v))}
+                  onValueChange={(v) => {
+                    const newType = entryTypeSchema.parse(v);
+
+                    // If the user's changing the type, reset the category to uncategorized,
+                    // unless they're currently on 'other' or already uncategorized.
+                    if (newType !== type && category && category !== 'other') {
+                      setCategory(null);
+                    }
+
+                    setType(newType);
+                  }}
                 >
                   <SelectTrigger className='bg-background/50 border-input/60'>
                     <SelectValue />
@@ -206,6 +224,54 @@ export default function EntryModal({
                         Income
                       </span>
                     </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Category */}
+              <div className='grid gap-2'>
+                <Label className='font-medium text-foreground/80'>
+                  Category
+                </Label>
+                <Select
+                  value={category || 'uncategorized'}
+                  onValueChange={(v) =>
+                    setCategory(v === 'uncategorized' ? null : v)
+                  }
+                >
+                  <SelectTrigger className='bg-background/50 border-input/60'>
+                    <SelectValue placeholder='Select a category' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='uncategorized'>
+                      <span className='italic text-muted-foreground'>
+                        Uncategorized
+                      </span>
+                    </SelectItem>
+                    {type === 'income' ? (
+                      <>
+                        <SelectItem value='salary'>Salary</SelectItem>
+                        <SelectItem value='freelance'>Freelance</SelectItem>
+                        <SelectItem value='investment'>Investment</SelectItem>
+                        <SelectItem value='other'>Other Income</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value='food'>Food & Dining</SelectItem>
+                        <SelectItem value='transport'>
+                          Transportation
+                        </SelectItem>
+                        <SelectItem value='utilities'>
+                          Utilities & Bills
+                        </SelectItem>
+                        <SelectItem value='entertainment'>
+                          Entertainment
+                        </SelectItem>
+                        <SelectItem value='shopping'>Shopping</SelectItem>
+                        <SelectItem value='health'>Health & Fitness</SelectItem>
+                        <SelectItem value='other'>Other Expense</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

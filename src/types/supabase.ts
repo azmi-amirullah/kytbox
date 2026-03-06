@@ -22,6 +22,7 @@ export type Database = {
         Row: {
           amount: number;
           cashflow_id: string;
+          category: string | null;
           created_at: string | null;
           date: string;
           description: string;
@@ -31,6 +32,7 @@ export type Database = {
         Insert: {
           amount: number;
           cashflow_id: string;
+          category?: string | null;
           created_at?: string | null;
           date?: string;
           description: string;
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           amount?: number;
           cashflow_id?: string;
+          category?: string | null;
           created_at?: string | null;
           date?: string;
           description?: string;

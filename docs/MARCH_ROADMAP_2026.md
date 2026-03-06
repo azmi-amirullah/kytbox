@@ -17,7 +17,7 @@ Every item — infrastructure AND features — scored and ranked together.
 | ~~3~~ | ~~**Env Validation (Zod + T3-Env)**~~ | ~~Infra~~   | ~~Security~~    | ~~1 session~~  | ~~✅ Done~~ |
 | ~~4~~ | ~~**SEO `generateMetadata`**~~        | ~~Infra~~   | ~~Performance~~ | ~~1 session~~  | ~~✅ Done~~ |
 | ~~5~~ | ~~**Cashflow: Charts**~~              | ~~Feature~~ | ~~UX~~          | ~~2 sessions~~ | ~~✅ Done~~ |
-|   6   | **Cashflow: Categories**              | Feature     | UX              | ~1-2 sessions  | 🔲 Pending  |
+| ~~6~~ | ~~**Cashflow: Categories**~~          | ~~Feature~~ | ~~UX~~          | ~~1 session~~  | ~~✅ Done~~ |
 |   7   | **Automated Testing (Vitest)**        | Infra       | Stability       | 2-3 sessions   | 🔲 Pending  |
 |   8   | **CI/CD Pipeline (GitHub Actions)**   | Infra       | Stability       | ~1 session     | 🔲 Pending  |
 |   9   | **`canAccess` Feature Gate**          | Feature     | Architecture    | ~1 session     | 🔲 Pending  |

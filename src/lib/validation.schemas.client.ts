@@ -9,9 +9,10 @@ export const ticketStatusSchema = z.catch(
 // Bio (client components like DashboardClient, LinkModal)
 export const bioTabSchema = z.catch(z.enum(['links', 'appearance']), 'links');
 export const linkTypeSchema = z.catch(z.enum(['link', 'folder']), 'link');
-export const entryTypeSchema = z.catch(
-  z.enum(['income', 'expense']),
-  'expense',
+export const entryTypeSchema = z.catch(z.enum(['income', 'expense']), 'income');
+export const entryCategorySchema = z.catch(
+  z.union([z.string(), z.null()]),
+  null,
 );
 
 // Shared parsers for Supabase Json fields

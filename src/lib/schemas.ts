@@ -93,6 +93,7 @@ export const cashflowEntrySchema = z.object({
   description: z.string().min(1, 'Description is required'),
   amount: z.coerce.number().positive('Amount must be positive'),
   type: z.enum(['income', 'expense']),
+  category: z.string().nullable().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
 });
 

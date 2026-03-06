@@ -56,6 +56,7 @@ export function mapCashflowEntryToDTO(row: CashflowEntry): CashflowEntryDTO {
     description: row.description,
     amount: row.amount,
     type: row.type,
+    category: row.category,
     date: row.date,
     created_at: row.created_at,
   };

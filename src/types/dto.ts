@@ -40,6 +40,7 @@ export interface CashflowEntryDTO {
   description: string;
   amount: number;
   type: string;
+  category: string | null;
   date: string;
   created_at: string | null;
 }

@@ -39,7 +39,8 @@ export default async function CashflowDetailPage({
         .from('cashflow_entries')
         .select('*')
         .eq('cashflow_id', id)
-        .order('date', { ascending: false }),
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false }),
       user?.email
         ? supabase
             .from('cashflow_shares')

@@ -68,6 +68,7 @@ export default async function CashflowPage() {
     cashflow_id: string;
     amount: number;
     type: string;
+    category: string | null;
     date: string;
     description: string | null;
     created_at: string | null;
@@ -76,9 +77,12 @@ export default async function CashflowPage() {
   if (summaryIds.length > 0) {
     const { data } = await supabase
       .from('cashflow_entries')
-      .select('id, cashflow_id, amount, type, date, description, created_at')
+      .select(
+        'id, cashflow_id, amount, type, category, date, description, created_at',
+      )
       .in('cashflow_id', summaryIds)
-      .order('date', { ascending: true });
+      .order('date', { ascending: true })
+      .order('created_at', { ascending: true });
     entriesData = data || [];
   }
 
@@ -106,6 +110,7 @@ export default async function CashflowPage() {
       cashflow_id: e.cashflow_id,
       amount: Number(e.amount),
       type: e.type,
+      category: e.category,
       date: e.date,
       description: e.description || '',
       created_at: e.created_at,

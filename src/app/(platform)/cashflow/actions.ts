@@ -148,7 +148,7 @@ export async function addEntry(formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { cashflowId, description, type, date, amount } = parsed.data;
+  const { cashflowId, description, type, category, date, amount } = parsed.data;
 
   // Verify access (owner or editor)
   const permission = await checkEditPermission(supabase, cashflowId, user);
@@ -161,6 +161,7 @@ export async function addEntry(formData: FormData) {
     description: description.trim(),
     amount,
     type,
+    category: category ?? null,
     // Use provided date or fallback to UTC date string, but client should usually provide it.
     // Ideally we require date to ensure timezone accuracy.
     date: date || new Date().toISOString().split('T')[0],
@@ -185,7 +186,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { description, type, date, amount } = parsed.data;
+  const { description, type, category, date, amount } = parsed.data;
 
   // Verify entry exists
   const { data: entry } = await supabase
@@ -215,6 +216,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
       description: description.trim(),
       amount,
       type,
+      category: category ?? null,
       date,
     })
     .eq('id', entryId);
