@@ -36,9 +36,9 @@ export function DashboardCharts({
   currency,
 }: DashboardChartsProps) {
   const [activeTab, setActiveTab] = useState('income-expense');
-  const [cashflowType, setCashflowType] = useState<'income' | 'expense'>(
-    'income',
-  );
+  const [cashflowType, setCashflowType] = useState<
+    'income' | 'expense' | 'balance'
+  >('income');
 
   const activeCashflows = useMemo(() => {
     const owned = cashflows.filter((c) => c.user_id === currentUserId);
@@ -61,10 +61,15 @@ export function DashboardCharts({
     return activeCashflows
       .map((c, index) => ({
         name: c.title,
-        value: cashflowType === 'income' ? c.income : c.expense,
+        value:
+          cashflowType === 'income'
+            ? c.income
+            : cashflowType === 'expense'
+              ? c.expense
+              : c.income - c.expense,
         fill: DASHBOARD_COLORS[index % DASHBOARD_COLORS.length],
       }))
-      .filter((d) => d.value > 0)
+      .filter((d) => d.value >= 0)
       .sort((a, b) => b.value - a.value);
   }, [activeCashflows, cashflowType]);
 
@@ -105,7 +110,8 @@ export function DashboardCharts({
             <Tabs
               value={cashflowType}
               onValueChange={(val) => {
-                if (val === 'income' || val === 'expense') setCashflowType(val);
+                if (val === 'income' || val === 'expense' || val === 'balance')
+                  setCashflowType(val);
               }}
               className='w-auto'
             >
@@ -116,13 +122,16 @@ export function DashboardCharts({
                 <TabsTrigger value='expense' className='text-xs px-3'>
                   Expense
                 </TabsTrigger>
+                <TabsTrigger value='balance' className='text-xs px-3'>
+                  Balance
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
           <CategoryChart
             data={cashflowData}
             currency={currency}
-            title={`${cashflowType === 'income' ? 'Income' : 'Expense'} by Cashflow`}
+            title={`${cashflowType === 'income' ? 'Income' : cashflowType === 'expense' ? 'Expense' : 'Balance'} by Cashflow`}
           />
         </div>
       )}
