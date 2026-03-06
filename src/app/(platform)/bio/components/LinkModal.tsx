@@ -20,6 +20,13 @@ import { toast } from 'react-toastify';
 import { addLink, updateLink, createFolder } from '../actions';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LuFolderOpen } from 'react-icons/lu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import type { LinkDTO } from '@/types/dto';
 
@@ -51,6 +58,9 @@ export default function LinkModal({
   const [type, setType] = useState<'link' | 'folder'>('link');
   const [title, setTitle] = useState(link?.title || '');
   const [url, setUrl] = useState(link?.url || '');
+  const [animationType, setAnimationType] = useState(
+    link?.animation_type || 'none',
+  );
 
   // Determine if controlled or uncontrolled
   const isControlled = controlledOpen !== undefined;
@@ -67,6 +77,7 @@ export default function LinkModal({
         setType(link?.is_folder ? 'folder' : 'link');
         setTitle(link?.title || '');
         setUrl(link?.url || '');
+        setAnimationType(link?.animation_type || 'none');
         setError(null);
       });
     }
@@ -89,7 +100,10 @@ export default function LinkModal({
 
     const formData = new FormData();
     formData.append('title', title);
-    if (type === 'link') formData.append('url', url);
+    if (type === 'link') {
+      formData.append('url', url);
+      formData.append('animationType', animationType);
+    }
     formData.append('isFolder', type === 'folder' ? 'true' : 'false');
     if (parentId) formData.append('parentId', parentId);
 
@@ -210,6 +224,32 @@ export default function LinkModal({
                     className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
                   />
                 </div>
+              </div>
+            )}
+
+            {type === 'link' && (
+              <div className='grid gap-2'>
+                <Label
+                  htmlFor='animationType'
+                  className='font-medium text-foreground/80 gap-0.5'
+                >
+                  Animation Style
+                </Label>
+                <Select value={animationType} onValueChange={setAnimationType}>
+                  <SelectTrigger className='bg-background/50 border-input/60 focus:border-primary/50 transition-colors'>
+                    <SelectValue placeholder='Select an animation' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='none'>None</SelectItem>
+                    <SelectItem value='pulse'>Pulse (Subtle Pulse)</SelectItem>
+                    <SelectItem value='bounce'>
+                      Bounce (Draws Attention)
+                    </SelectItem>
+                    <SelectItem value='glow'>
+                      Glow (Highlighted Border)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

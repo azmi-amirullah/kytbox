@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { getSocialIcon } from '@/lib/social-icons';
+import { cn } from '@/lib/utils';
 
 interface LinkButtonProps {
   href: string;
@@ -10,6 +11,7 @@ interface LinkButtonProps {
   subtitle?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  animationType?: string | null;
 }
 
 /**
@@ -23,6 +25,7 @@ export function LinkButton({
   subtitle,
   className,
   style,
+  animationType,
 }: LinkButtonProps) {
   // useMemo ensures we capture referrer once on mount, not on every render
   const finalHref = useMemo(() => {
@@ -46,15 +49,30 @@ export function LinkButton({
     }
   }, [href]);
 
+  const animationClass = useMemo(() => {
+    switch (animationType) {
+      case 'pulse':
+        return 'animate-pulse';
+      case 'bounce':
+        return 'animate-subtle-bounce';
+      case 'glow':
+        return 'animate-glow';
+      default:
+        return '';
+    }
+  }, [animationType]);
+
   return (
     <a
       href={finalHref}
       target='_blank'
       rel='noopener noreferrer'
-      className={className}
+      className={cn(className, animationClass, 'block')}
       style={style}
     >
-      <div className='flex items-center justify-center gap-3'>
+      <div
+        className={cn('flex items-center justify-center gap-3 w-full h-full')}
+      >
         {getSocialIcon(url, 'w-5 h-5 shrink-0')}
         <div className='flex flex-col items-center justify-center overflow-hidden'>
           <span className='truncate text-center'>{title}</span>

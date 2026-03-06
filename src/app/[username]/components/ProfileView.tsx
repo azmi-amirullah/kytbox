@@ -34,6 +34,7 @@ interface ProfileViewProps {
     url: string;
     is_active: boolean;
     short_id?: string | number | null;
+    animation_type?: string | null;
   }[];
   isLoading?: boolean;
 }

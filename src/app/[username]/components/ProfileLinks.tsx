@@ -17,6 +17,7 @@ interface ProfileLinksProps {
     short_id?: string | number | null;
     is_folder?: boolean;
     parent_id?: string | null;
+    animation_type?: string | null;
   }[];
   username: string;
   theme: ThemeConfig;
@@ -169,44 +170,42 @@ export default function ProfileLinks({
 
           {activeLinks.length > 0 ? (
             visibleLinks.map((link, index) => {
-              if (link.is_folder) {
-                return (
-                  <button
-                    key={link.id}
-                    onClick={() => setCurrentFolderId(link.id)}
-                    className={cn(
-                      buttonClasses,
-                      'w-full flex items-center justify-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-250 transition-all fill-mode-both cursor-pointer',
-                    )}
-                    style={{ animationDelay: `${index * 25}ms` }}
-                  >
-                    <LuFolderOpen className='w-5 h-5 opacity-80' />
-                    <span>{link.title}</span>
-                  </button>
-                );
-              }
-
               return (
-                <LinkButton
+                <div
                   key={link.id}
-                  href={`/${username}/${link.short_id ?? link.id}`}
-                  title={link.title}
-                  url={link.url}
-                  subtitle={
-                    searchQuery && link.parent_id ? (
-                      <>
-                        <LuFolderOpen className='w-3 h-3' />
-                        {activeLinks.find((l) => l.id === link.parent_id)
-                          ?.title || 'Folder'}
-                      </>
-                    ) : undefined
-                  }
-                  className={cn(
-                    buttonClasses,
-                    'animate-in fade-in slide-in-from-bottom-4 duration-250 transition-all fill-mode-both',
-                  )}
+                  className='animate-in fade-in slide-in-from-bottom-4 duration-250 transition-all fill-mode-both'
                   style={{ animationDelay: `${index * 25}ms` }}
-                />
+                >
+                  {link.is_folder ? (
+                    <button
+                      onClick={() => setCurrentFolderId(link.id)}
+                      className={cn(
+                        buttonClasses,
+                        'w-full flex items-center justify-center gap-3 cursor-pointer',
+                      )}
+                    >
+                      <LuFolderOpen className='w-5 h-5 opacity-80' />
+                      <span>{link.title}</span>
+                    </button>
+                  ) : (
+                    <LinkButton
+                      href={`/${username}/${link.short_id ?? link.id}`}
+                      title={link.title}
+                      url={link.url}
+                      subtitle={
+                        searchQuery && link.parent_id ? (
+                          <>
+                            <LuFolderOpen className='w-3 h-3' />
+                            {activeLinks.find((l) => l.id === link.parent_id)
+                              ?.title || 'Folder'}
+                          </>
+                        ) : undefined
+                      }
+                      animationType={link.animation_type}
+                      className={cn(buttonClasses, 'w-full')}
+                    />
+                  )}
+                </div>
               );
             })
           ) : (

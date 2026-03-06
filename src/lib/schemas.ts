@@ -60,6 +60,7 @@ export const addLinkSchema = z.object({
     .optional()
     .or(z.literal('')),
   isFolder: z.preprocess((val) => val === 'true', z.boolean()).optional(),
+  animationType: z.string().optional().or(z.literal('')),
 });
 
 export const moveToFolderSchema = z.object({
@@ -75,6 +76,7 @@ export const updateLinkSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   url: z.string().optional().nullable().or(z.literal('')),
   isFolder: z.preprocess((val) => val === 'true', z.boolean()),
+  animationType: z.string().optional().or(z.literal('')),
 });
 
 export const updateAppearanceSchema = z.object({

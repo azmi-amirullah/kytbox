@@ -15,7 +15,7 @@ export async function addLink(formData: FormData) {
   const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, parentId } = parsed.data;
+  const { title, parentId, animationType } = parsed.data;
   let url = parsed.data.url || '';
 
   if (!/^https?:\/\//i.test(url)) {
@@ -66,6 +66,7 @@ export async function addLink(formData: FormData) {
     sort_order: nextOrder,
     short_id: nextShortId,
     parent_id: parentId || null,
+    animation_type: animationType || 'none',
   });
 
   if (error) {
@@ -87,10 +88,13 @@ export async function updateLink(linkId: string, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, isFolder } = parsed.data;
+  const { title, isFolder, animationType } = parsed.data;
   let url = parsed.data.url || null;
 
-  const updates: { title: string; url?: string } = { title };
+  const updates: { title: string; url?: string; animation_type?: string } = {
+    title,
+    animation_type: animationType || 'none',
+  };
 
   if (!isFolder && url) {
     if (!/^https?:\/\//i.test(url)) {

@@ -39,7 +39,7 @@ export default async function PublicProfilePage({
   const { data: links } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order',
+      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type',
     )
     .eq('user_id', profile.id)
     .eq('is_active', true)
@@ -53,6 +53,7 @@ export default async function PublicProfilePage({
     short_id: link.short_id,
     is_folder: link.is_folder,
     parent_id: link.parent_id,
+    animation_type: link.animation_type,
   }));
 
   return (

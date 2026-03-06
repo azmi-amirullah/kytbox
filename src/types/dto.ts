@@ -24,6 +24,7 @@ export interface LinkDTO {
   is_folder: boolean;
   parent_id: string | null;
   clicks: number | null;
+  animation_type: string | null;
 }
 
 export interface CashflowDTO {

@@ -186,6 +186,7 @@ export type Database = {
       };
       links: {
         Row: {
+          animation_type: string | null;
           clicks: number | null;
           created_at: string;
           id: string;
@@ -200,6 +201,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          animation_type?: string | null;
           clicks?: number | null;
           created_at?: string;
           id?: string;
@@ -214,6 +216,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          animation_type?: string | null;
           clicks?: number | null;
           created_at?: string;
           id?: string;

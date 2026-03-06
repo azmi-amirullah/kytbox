@@ -36,6 +36,7 @@ export function mapLinkToDTO(row: Link): LinkDTO {
     is_folder: !!row.is_folder,
     parent_id: row.parent_id,
     clicks: row.clicks,
+    animation_type: row.animation_type,
   };
 }
 
