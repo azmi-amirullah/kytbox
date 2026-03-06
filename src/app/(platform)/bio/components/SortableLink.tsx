@@ -267,19 +267,21 @@ const LinkItemContent = memo(function LinkItemContent({
             <AlertDialogTitle className='pb-2 border-b mb-2'>
               Delete {link.is_folder ? 'Folder' : 'Link'}
             </AlertDialogTitle>
-            <AlertDialogDescription className='space-y-3'>
-              <p>
-                Are you sure you want to delete &quot;{link.title}&quot;? This
-                action cannot be undone.
-              </p>
-              {link.is_folder && (
-                <div className='p-3 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-lg flex items-start gap-2 text-left mt-2 dark:text-amber-500'>
-                  <LuTriangleAlert className='w-4 h-4 shrink-0 mt-0.5' />
-                  <p className='text-sm font-medium'>
-                    This will permanently delete ALL links inside this folder.
-                  </p>
-                </div>
-              )}
+            <AlertDialogDescription className='space-y-3' asChild>
+              <div>
+                <p>
+                  Are you sure you want to delete &quot;{link.title}&quot;? This
+                  action cannot be undone.
+                </p>
+                {link.is_folder && (
+                  <div className='p-3 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-lg flex items-start gap-2 text-left mt-2 dark:text-amber-500'>
+                    <LuTriangleAlert className='w-4 h-4 shrink-0 mt-0.5' />
+                    <p className='text-sm font-medium'>
+                      This will permanently delete ALL links inside this folder.
+                    </p>
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

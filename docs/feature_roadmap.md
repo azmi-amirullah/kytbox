@@ -11,9 +11,9 @@ This document compiles all the high-impact feature recommendations discussed for
 2. **Search Bar (✅ Already Implemented)**
    - **Problem:** Users drop off if they have to scroll through dozens of Shopee/Tokopedia links or deep nested folders.
    - **Solution:** Added a sticky search bar directly on the bio page to get followers to the exact product link instantly with dynamic folder context. (Categories idea dropped as search effectively handles discovery).
-3. **Animated / Highlighted Links**
+3. **Animated / Highlighted Links (✅ Already Implemented)**
    - **Problem:** High-paying or newly launched referral links get lost in the list.
-   - **Solution:** Visually highlight specific links with CSS micro-animations (pulse, bounce) or distinct styling to draw attention and drive targeted traffic.
+   - **Solution:** Added visual highlights via CSS micro-animations (pulse, bounce, glow) to individual links and folders to draw attention and drive targeted traffic. Users can select the animation via the admin dashboard.
 
 ## 💸 Cashflow Engine Features
 
