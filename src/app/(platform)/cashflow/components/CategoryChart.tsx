@@ -1,15 +1,10 @@
 'use client';
 
 import { formatCurrencyCompact } from '@/lib/currency';
+import { useContainerSize } from '../lib/useContainerSize';
+import { Skeleton } from '@/components/ui/skeleton';
 
-import {
-  PieChart,
-  Pie,
-  Sector,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import { PieChart, Pie, Sector, Tooltip, Legend } from 'recharts';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface CategoryData {
@@ -37,6 +32,7 @@ interface CustomSectorProps {
 export function CategoryChart({ data, currency, title }: CategoryChartProps) {
   const total = data ? data.reduce((sum, item) => sum + item.value, 0) : 0;
   const hasData = data && data.length > 0 && total > 0;
+  const [containerRef, width, height] = useContainerSize();
 
   const renderCustomSector = (props: CustomSectorProps) => {
     const {
@@ -75,9 +71,14 @@ export function CategoryChart({ data, currency, title }: CategoryChartProps) {
             <p className='text-sm'>No category data available</p>
           </div>
         ) : (
-          <div className='h-[350px] w-full'>
-            <ResponsiveContainer width='100%' height='100%'>
-              <PieChart>
+          <div ref={containerRef} className='h-[350px] w-full'>
+            {width === 0 || height === 0 ? (
+              <div className='h-full w-full flex flex-col items-center justify-center gap-6'>
+                <Skeleton className='w-[180px] h-[180px] rounded-full' />
+                <Skeleton className='w-1/2 h-4 rounded' />
+              </div>
+            ) : (
+              <PieChart width={width} height={height}>
                 <Pie
                   data={data}
                   cx='50%'
@@ -123,7 +124,7 @@ export function CategoryChart({ data, currency, title }: CategoryChartProps) {
                   wrapperStyle={{ fontSize: '13px', paddingTop: '20px' }}
                 />
               </PieChart>
-            </ResponsiveContainer>
+            )}
           </div>
         )}
       </CardContent>
