@@ -209,7 +209,7 @@ export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
             </Badge>
           </div>
         </div>
-        <CardDescription className='flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground/80'>
+        <CardDescription className='flex items-center gap-1.5 text-[11px] text-muted-foreground/80'>
           <LuInfo className='w-3.5 h-3.5 shrink-0 opacity-70' />
           <span>
             Calculates your true available cash through the end of next month by
@@ -284,7 +284,7 @@ export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
         {/* Window Breakdown Section */}
         <div className='border-t border-border/50 pt-5 mt-2'>
           <div className='flex items-center justify-between mb-4'>
-            <p className='text-[10px] font-bold text-muted-foreground tracking-tight uppercase'>
+            <p className='text-sm font-semibold text-muted-foreground tracking-tight'>
               Top 4 Contributors (Recurring)
             </p>
           </div>
