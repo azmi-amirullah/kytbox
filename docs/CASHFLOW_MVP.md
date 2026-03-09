@@ -41,11 +41,11 @@ This document benchmarks Kytbox Cashflow against personal finance standards (YNA
 - [x] **Trend Charts**: Area charts showing running balance over time.
 - [x] **Category Donut**: Immediate visual insight into spending leaks.
 
-### 5. Recurring & Projections (The Current Edge)
+### 5. Recurring & Projections [✅ Implemented]
 
 - [x] **Smart Frequency**: Support for Monthly and Yearly billing.
-- [x] **Balance Projections**: Calculating "True Available" balance for the upcoming month.
-- [x] **Calculated Smoothing**: Prorated vs Exact logic for yearly fees.
+- [x] **Strategic Projections**: Calculating "Real Available" balance through the **end of next month**.
+- [x] **Per-Item Tuning**: Toggle between Prorated vs Exact logic for individual annual transactions.
 
 ---
 

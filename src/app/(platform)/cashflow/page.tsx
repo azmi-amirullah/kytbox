@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import CashflowList from './components/CashflowList';
+import { z } from 'zod';
+
+const recurrenceIntervalSchema = z.enum(['monthly', 'yearly']).nullable();
 
 export default async function CashflowPage() {
   const supabase = await createClient();
@@ -71,6 +74,9 @@ export default async function CashflowPage() {
     category: string | null;
     date: string;
     description: string | null;
+    is_recurring: boolean | null;
+    recurrence_interval: 'monthly' | 'yearly' | null;
+    yearly_calculation: 'prorated' | 'exact' | null;
     created_at: string | null;
   }[] = [];
 
@@ -78,12 +84,22 @@ export default async function CashflowPage() {
     const { data } = await supabase
       .from('cashflow_entries')
       .select(
-        'id, cashflow_id, amount, type, category, date, description, created_at',
+        'id, cashflow_id, amount, type, category, date, description, is_recurring, recurrence_interval, yearly_calculation, created_at',
       )
       .in('cashflow_id', summaryIds)
       .order('date', { ascending: true })
       .order('created_at', { ascending: true });
-    entriesData = data || [];
+    entriesData = (data || []).map((d) => ({
+      ...d,
+      recurrence_interval: recurrenceIntervalSchema
+        .catch(null)
+        .parse(d.recurrence_interval),
+      yearly_calculation: z
+        .enum(['prorated', 'exact'])
+        .nullable()
+        .catch(null)
+        .parse(d.yearly_calculation),
+    }));
   }
 
   // Group entries by cashflow_id
@@ -113,6 +129,15 @@ export default async function CashflowPage() {
       category: e.category,
       date: e.date,
       description: e.description || '',
+      is_recurring: e.is_recurring ?? false,
+      recurrence_interval: recurrenceIntervalSchema
+        .catch(null)
+        .parse(e.recurrence_interval),
+      yearly_calculation: z
+        .enum(['prorated', 'exact'])
+        .nullable()
+        .catch(null)
+        .parse(e.yearly_calculation),
       created_at: e.created_at,
     })),
   }));

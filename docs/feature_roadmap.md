@@ -19,15 +19,23 @@ This document compiles all the high-impact feature recommendations discussed for
 
 ### Affiliate-Focused Priorities
 
-1. **Income Source vs. Expense True ROI**
-   - **Problem:** Affiliate income fluctuates wildly based on the platform.
-   - **Solution:** Tag earnings by specific source (TikTok, Shopee, IG) and compare it directly against the specific costs incurred for that platform (samples, ads, software tools) to calculate true return on investment per channel.
+~~1. **Income Source vs. Expense True ROI**~~
+~~- **Problem:** Affiliate income fluctuates wildly based on the platform.~~
+~~- **Solution:** Tag earnings by specific source (TikTok, Shopee, IG) and compare it directly against the specific costs incurred for that platform (samples, ads, software tools) to calculate true return on investment per channel.~~
+_(Scratched for now)_
 
 ### Personal Finance / Business Management Priorities
 
-1. **Recurring Transactions & Projections**
+1. **Recurring Transactions & Projections (✅ Already Implemented)**
    - **Problem:** Subscriptions and recurring bills drain cashflow silently. Tracking past expenses doesn't help manage future obligations.
-   - **Solution:** Allow users to flag expenses/income as "Recurring" (Monthly/Yearly). Provide a dedicated projection view that calculates the _real_ available balance for the upcoming month before those bills hit.
+   - **Solution:** Integrated a dedicated **Projections Engine** that calculates the _real_ available balance through the end of the next month. Supports per-item calculation modes (Prorated vs Exact) for yearly transactions, allowing users to choose between budget smoothing or strict anniversary tracking.
 2. **Hard Budgets & Alerts**
    - **Problem:** Reviewing a chart showing $800 spent on food last month doesn't prevent spending $800 _this_ month.
    - **Solution:** Set hard currency limits per category. Provide a visual progress bar (Green -> Yellow -> Red) that warns the user when they cross 80% and 90% of their allocated budget.
+
+## 🚀 Global Infrastructure (Future)
+
+1. **Data Portability (CSV Export)**
+   - Allow users to export full transaction histories for tax reporting or external analysis.
+2. **Receipt Storage**
+   - Direct integration with Supabase Storage to attach photos of receipts to specific entries.

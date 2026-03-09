@@ -20,11 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { LuLoader, LuFileText, LuCalendar } from 'react-icons/lu';
+import { Switch } from '@/components/ui/switch';
+import { LuLoader, LuFileText, LuCalendar, LuRepeat } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { addEntry, updateEntry } from '../actions';
 import type { CashflowEntryDTO } from '@/types/dto';
 import { getCurrencySymbol } from '@/lib/currency';
+import { z } from 'zod';
 import {
   entryTypeSchema,
   entryCategorySchema,
@@ -62,6 +64,13 @@ export default function EntryModal({
     entryCategorySchema.parse(entry?.category),
   );
   const [date, setDate] = useState(entry?.date || today);
+  const [isRecurring, setIsRecurring] = useState(entry?.is_recurring || false);
+  const [recurrenceInterval, setRecurrenceInterval] = useState<
+    'monthly' | 'yearly'
+  >(entry?.recurrence_interval || 'monthly');
+  const [yearlyCalculation, setYearlyCalculation] = useState<
+    'prorated' | 'exact'
+  >(entry?.yearly_calculation || 'prorated');
 
   const isBusy = isLoading || isPending;
   const isEdit = !!entry;
@@ -74,6 +83,9 @@ export default function EntryModal({
         setType(entryTypeSchema.parse(entry?.type));
         setCategory(entryCategorySchema.parse(entry?.category));
         setDate(entry?.date || today);
+        setIsRecurring(entry?.is_recurring || false);
+        setRecurrenceInterval(entry?.recurrence_interval || 'monthly');
+        setYearlyCalculation(entry?.yearly_calculation || 'prorated');
         setError(null);
         setIsLoading(false);
       });
@@ -101,6 +113,11 @@ export default function EntryModal({
     formData.append('type', type);
     if (category) formData.append('category', category);
     formData.append('date', date);
+    formData.append('is_recurring', isRecurring.toString());
+    if (isRecurring) formData.append('recurrence_interval', recurrenceInterval);
+    if (isRecurring && recurrenceInterval === 'yearly') {
+      formData.append('yearly_calculation', yearlyCalculation);
+    }
 
     let result;
     if (isEdit && entry) {
@@ -297,6 +314,86 @@ export default function EntryModal({
                   />
                 </div>
               </div>
+
+              {/* Recurring Switch */}
+              <div className='flex items-center justify-between mt-2 p-3 bg-secondary/50 rounded-lg'>
+                <div className='space-y-0.5'>
+                  <Label className='font-medium text-foreground gap-1.5 flex items-center'>
+                    <LuRepeat className='text-muted-foreground w-4 h-4' />{' '}
+                    Recurring Transaction
+                  </Label>
+                  <p className='text-xs text-muted-foreground'>
+                    Repeat this transaction automatically in forecasts
+                  </p>
+                </div>
+                <Switch
+                  checked={isRecurring}
+                  onCheckedChange={setIsRecurring}
+                />
+              </div>
+
+              {/* Recurrence Interval (Conditional) */}
+              {isRecurring && (
+                <div className='grid gap-4 animate-in fade-in slide-in-from-top-2 duration-300 border border-border p-4 rounded-xl bg-muted/20 dark:bg-muted/10'>
+                  <div className='grid gap-2'>
+                    <Label className='font-medium text-foreground/80'>
+                      Recurrence Interval
+                      <span className='text-destructive'>*</span>
+                    </Label>
+                    <Select
+                      value={recurrenceInterval}
+                      onValueChange={(v) =>
+                        setRecurrenceInterval(
+                          z.enum(['monthly', 'yearly']).parse(v),
+                        )
+                      }
+                    >
+                      <SelectTrigger className='bg-background/50 border-input/60'>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='monthly'>Monthly</SelectItem>
+                        <SelectItem value='yearly'>Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Yearly Calculation Method (Conditional) */}
+                  {recurrenceInterval === 'yearly' && (
+                    <div className='grid gap-2 pt-2 border-t border-border/50'>
+                      <Label className='font-medium text-foreground/80'>
+                        Projection Calculation
+                        <span className='text-destructive'>*</span>
+                      </Label>
+                      <Select
+                        value={yearlyCalculation}
+                        onValueChange={(v) =>
+                          setYearlyCalculation(
+                            z.enum(['prorated', 'exact']).parse(v),
+                          )
+                        }
+                      >
+                        <SelectTrigger className='bg-background/50 border-input/60'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='prorated'>
+                            Prorated (1/12th per month)
+                          </SelectItem>
+                          <SelectItem value='exact'>
+                            Exact Anniversary Date
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className='text-[10px] text-muted-foreground mt-1'>
+                        {yearlyCalculation === 'prorated'
+                          ? "Smooths out massive annual charges so they don't destroy a single month's budget projection."
+                          : 'Only deducts this from your projected balance if the anniversary falls within the next month.'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {error && (
                 <p className='text-sm text-destructive text-center bg-destructive/10 p-2 rounded-md font-medium'>

@@ -38,6 +38,7 @@ import {
   LuShare2,
   LuBookmark,
   LuCheck,
+  LuRepeat,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import type { CashflowDTO, CashflowEntryDTO } from '@/types/dto';
@@ -47,6 +48,7 @@ import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
 import ShareModal from './ShareModal';
 import { CashflowCharts } from './CashflowCharts';
+import { ProjectionsView } from './ProjectionsView';
 import { subscribeToPublicCashflow, removeShare } from '../share-actions';
 
 interface CashflowDetailProps {
@@ -298,6 +300,9 @@ export default function CashflowDetail({
         </div>
       </div>
 
+      {/* Projections View */}
+      <ProjectionsView entries={entries} currency={currency} />
+
       {/* Entries Table */}
       <div className='bg-card border rounded-xl overflow-hidden'>
         {entries.length === 0 ? (
@@ -315,7 +320,12 @@ export default function CashflowDetail({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className='w-[100px]'>Date</TableHead>
+                  <TableHead className='w-[80px] border-r border-border/40'>
+                    Date
+                  </TableHead>
+                  <TableHead className='w-[100px] border-r border-border/40'>
+                    Type
+                  </TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className='text-right'>Amount</TableHead>
                   <TableHead className='w-[80px]'></TableHead>
@@ -324,7 +334,7 @@ export default function CashflowDetail({
               <TableBody>
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
-                    <TableCell className='text-muted-foreground text-sm'>
+                    <TableCell className='text-muted-foreground text-sm border-r border-border/30'>
                       {(() => {
                         // Parse YYYY-MM-DD directly to avoid UTC timezone shifts
                         const [year, month, day] = entry.date
@@ -336,6 +346,23 @@ export default function CashflowDetail({
                           day: 'numeric',
                         });
                       })()}
+                    </TableCell>
+                    <TableCell className='border-r border-border/30'>
+                      {entry.is_recurring && (
+                        <div className='flex items-center gap-1.5'>
+                          <LuRepeat className='w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400' />
+                          <div className='flex flex-col items-start'>
+                            <div className='text-[10px] font-bold capitalize leading-none text-emerald-600 dark:text-emerald-400'>
+                              {entry.recurrence_interval}
+                              {entry.recurrence_interval === 'yearly' && (
+                                <div>
+                                  - {entry.yearly_calculation || 'Prorated'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className='font-medium'>{entry.description}</div>

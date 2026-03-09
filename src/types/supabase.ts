@@ -27,7 +27,11 @@ export type Database = {
           date: string;
           description: string;
           id: string;
+          is_recurring: boolean | null;
+          recurrence_interval: string | null;
           type: string;
+          yearly_calc_type: string | null;
+          yearly_calculation: string | null;
         };
         Insert: {
           amount: number;
@@ -37,7 +41,11 @@ export type Database = {
           date?: string;
           description: string;
           id?: string;
+          is_recurring?: boolean | null;
+          recurrence_interval?: string | null;
           type: string;
+          yearly_calc_type?: string | null;
+          yearly_calculation?: string | null;
         };
         Update: {
           amount?: number;
@@ -47,7 +55,11 @@ export type Database = {
           date?: string;
           description?: string;
           id?: string;
+          is_recurring?: boolean | null;
+          recurrence_interval?: string | null;
           type?: string;
+          yearly_calc_type?: string | null;
+          yearly_calculation?: string | null;
         };
         Relationships: [
           {

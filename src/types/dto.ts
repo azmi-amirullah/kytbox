@@ -44,6 +44,9 @@ export interface CashflowEntryDTO {
   category: string | null;
   date: string;
   created_at: string | null;
+  is_recurring: boolean;
+  recurrence_interval: 'monthly' | 'yearly' | null;
+  yearly_calculation: 'prorated' | 'exact' | null;
 }
 
 export interface CashflowShareDTO {

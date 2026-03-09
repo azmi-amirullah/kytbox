@@ -148,7 +148,17 @@ export async function addEntry(formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { cashflowId, description, type, category, date, amount } = parsed.data;
+  const {
+    cashflowId,
+    description,
+    type,
+    category,
+    date,
+    amount,
+    is_recurring,
+    recurrence_interval,
+    yearly_calculation,
+  } = parsed.data;
 
   // Verify access (owner or editor)
   const permission = await checkEditPermission(supabase, cashflowId, user);
@@ -165,6 +175,12 @@ export async function addEntry(formData: FormData) {
     // Use provided date or fallback to UTC date string, but client should usually provide it.
     // Ideally we require date to ensure timezone accuracy.
     date: date || new Date().toISOString().split('T')[0],
+    is_recurring: is_recurring,
+    recurrence_interval: is_recurring ? recurrence_interval : null,
+    yearly_calculation:
+      is_recurring && recurrence_interval === 'yearly'
+        ? yearly_calculation
+        : null,
   });
 
   if (error) {
@@ -186,7 +202,16 @@ export async function updateEntry(entryId: string, formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { description, type, category, date, amount } = parsed.data;
+  const {
+    description,
+    type,
+    category,
+    date,
+    amount,
+    is_recurring,
+    recurrence_interval,
+    yearly_calculation,
+  } = parsed.data;
 
   // Verify entry exists
   const { data: entry } = await supabase
@@ -218,6 +243,12 @@ export async function updateEntry(entryId: string, formData: FormData) {
       type,
       category: category ?? null,
       date,
+      is_recurring: is_recurring,
+      recurrence_interval: is_recurring ? recurrence_interval : null,
+      yearly_calculation:
+        is_recurring && recurrence_interval === 'yearly'
+          ? yearly_calculation
+          : null,
     })
     .eq('id', entryId);
 

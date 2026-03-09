@@ -97,6 +97,12 @@ export const cashflowEntrySchema = z.object({
   type: z.enum(['income', 'expense']),
   category: z.string().nullable().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  is_recurring: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
+  recurrence_interval: z.enum(['monthly', 'yearly']).nullable().optional(),
+  yearly_calculation: z.enum(['prorated', 'exact']).nullable().optional(),
 });
 
 export const updateCashflowEntrySchema = cashflowEntrySchema.extend({
