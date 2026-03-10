@@ -7,7 +7,11 @@ import { createClient } from '@/lib/supabase/server';
 import { validateUsername } from '@/lib/username';
 import { authRateLimit, usernameRateLimit, redis } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
-import { loginSchema, signupSchema, resetPasswordSchema } from '@/lib/schemas';
+import {
+  loginSchema,
+  signupSchema,
+  resetPasswordSchema,
+} from '@/lib/validation.schemas';
 import { z } from 'zod';
 import { getSafeOrigin } from '@/lib/origin';
 

@@ -3,7 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { z } from 'zod';
-import { cashflowEntrySchema, updateCashflowEntrySchema } from '@/lib/schemas';
+import {
+  cashflowEntrySchema,
+  updateCashflowEntrySchema,
+} from '@/lib/validation.schemas';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 

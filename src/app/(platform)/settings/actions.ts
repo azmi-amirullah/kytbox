@@ -6,7 +6,7 @@ import { revalidatePath, updateTag } from 'next/cache';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { validateUsername } from '@/lib/username';
 import { z } from 'zod';
-import { updateProfileSchema } from '@/lib/schemas';
+import { updateProfileSchema } from '@/lib/validation.schemas';
 
 const AVATAR_BUCKET = 'avatars';
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;

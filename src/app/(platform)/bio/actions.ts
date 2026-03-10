@@ -7,7 +7,7 @@ import {
   updateLinkSchema,
   updateAppearanceSchema,
   moveToFolderSchema,
-} from '@/lib/schemas';
+} from '@/lib/validation.schemas';
 
 export async function addLink(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
