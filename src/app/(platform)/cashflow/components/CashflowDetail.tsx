@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,11 @@ import { CashflowCharts } from './CashflowCharts';
 import { ProjectionsView } from './ProjectionsView';
 import { subscribeToPublicCashflow, removeShare } from '../share-actions';
 import BudgetManager from './BudgetManager';
+import {
+  DateFilter,
+  resolveFilterRange,
+  type DateFilterState,
+} from './DateFilter';
 
 interface CashflowDetailProps {
   cashflow: CashflowDTO;
@@ -98,15 +103,30 @@ export default function CashflowDetail({
     isOwner ? 'owner' : initialUserRole,
   );
 
-  // State initialized via props, no effect needed
+  // ── Date filter ──────────────────────────────────────────────────────────────
+  const [filterState, setFilterState] = useState<DateFilterState>({
+    preset: 'all-time',
+    custom: { from: null, to: null },
+  });
+
+  const filteredEntries = useMemo(() => {
+    const { from, to } = resolveFilterRange(filterState);
+    if (!from && !to) return entries;
+    return entries.filter((e) => {
+      if (from && e.date < from) return false;
+      if (to && e.date > to) return false;
+      return true;
+    });
+  }, [entries, filterState]);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const canEdit = isOwner || userRole === 'edit';
 
-  // Calculate stats
-  const income = entries
+  // Calculate stats from filtered entries
+  const income = filteredEntries
     .filter((e) => e.type === 'income')
     .reduce((sum, e) => sum + Number(e.amount), 0);
-  const expense = entries
+  const expense = filteredEntries
     .filter((e) => e.type === 'expense')
     .reduce((sum, e) => sum + Number(e.amount), 0);
   const balance = income - expense;
@@ -246,7 +266,9 @@ export default function CashflowDetail({
             )}
           </div>
           <p className='text-muted-foreground text-sm'>
-            {entries.length} entries
+            {filterState.preset !== 'all-time'
+              ? `${filteredEntries.length} of ${entries.length} entries`
+              : `${entries.length} entries`}
           </p>
         </div>
 
@@ -303,20 +325,34 @@ export default function CashflowDetail({
         </div>
       </div>
 
-      {/* Projections View */}
+      {/* Date Filter */}
+      {entries.length > 0 && (
+        <DateFilter
+          state={filterState}
+          onChange={setFilterState}
+          filteredCount={filteredEntries.length}
+          totalCount={entries.length}
+        />
+      )}
+
+      {/* Projections View — always uses unfiltered entries (recurring logic is time-aware) */}
       <ProjectionsView entries={entries} currency={currency} />
 
       {/* Entries Table */}
       <div className='bg-card border rounded-xl overflow-hidden'>
-        {entries.length === 0 ? (
+        {filteredEntries.length === 0 ? (
           <div className='p-12 text-center text-muted-foreground'>
             <p className='text-sm mb-4'>
-              No entries yet. Add your first transaction.
+              {entries.length === 0
+                ? 'No entries yet. Add your first transaction.'
+                : 'No entries match the selected date range.'}
             </p>
-            <Button onClick={openAddEntry} variant='outline' className='gap-2'>
-              <LuPlus className='w-4 h-4' />
-              Add Entry
-            </Button>
+            {entries.length === 0 && (
+              <Button onClick={openAddEntry} variant='outline' className='gap-2'>
+                <LuPlus className='w-4 h-4' />
+                Add Entry
+              </Button>
+            )}
           </div>
         ) : (
           <div className='overflow-x-auto'>
@@ -335,7 +371,7 @@ export default function CashflowDetail({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map((entry) => (
+                {filteredEntries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className='text-muted-foreground text-sm border-r border-border/30'>
                       {(() => {
@@ -428,7 +464,7 @@ export default function CashflowDetail({
             Monthly breakdown of your transactions
           </p>
         </div>
-        <CashflowCharts entries={entries} currency={currency} />
+        <CashflowCharts entries={filteredEntries} currency={currency} />
       </div>
 
       {/* Budget Tracker */}

@@ -81,21 +81,26 @@ Add a `category` field to `cashflow_entries` for spending breakdown.
 
 ---
 
-### Phase 3: Date Filtering (~1 session)
+### ~~Phase 3: Date Filtering~~ ✅ Done
 
-Add date range controls to filter entries.
+Date range controls to filter entries.
 
-**Scope:**
+**Delivered:**
 
-- Filter bar with presets: "This Month", "Last Month", "Last 3 Months", "All Time"
-- Custom date range picker (Shadcn date picker)
-- Client-side filtering (entries already in memory)
-- Charts update with filtered data
+- Preset pills: "All Time", "This Month", "Last Month", "Last 3 Months", "Custom"
+- Custom date range via native `<input type="date">` (no extra dep — `react-day-picker` not installed)
+- Client-side `useMemo` filtering against ISO `YYYY-MM-DD` strings — zero timezone drift
+- Summary stats (Income / Expense / Balance) react to filter
+- Entry table and charts receive `filteredEntries`
+- Projections and BudgetManager intentionally kept on unfiltered entries (time-aware logic)
+- `dateFilterPresetSchema` added to `validation.schemas.client.ts` (Zod/mini)
+- WCAG 2.2: `role="radiogroup"` / `aria-checked` on preset pills; labelled date inputs
 
-**Files to create/modify:**
+**Files created/modified:**
 
 - `[NEW]` `cashflow/components/DateFilter.tsx`
-- `[MODIFY]` `CashflowDetail.tsx` — wire filter state to entries + charts
+- `[MODIFY]` `CashflowDetail.tsx` — filter state, filteredEntries, wired to table + charts + stats
+- `[MODIFY]` `src/lib/validation.schemas.client.ts` — `dateFilterPresetSchema`
 
 ---
 
@@ -119,14 +124,14 @@ Allow users to download their cashflow data.
 ## Execution Order
 
 ```
-Tier 1 (Security/SEO)     →  Env Validation → SEO Metadata
-Cashflow Phase 1 (Charts) →  Bar + Line charts in CashflowDetail
-Cashflow Phase 2 (Categories) →  DB migration + category picker + donut chart
-Cashflow Phase 3 (Filtering)  →  Date range filter bar
-Cashflow Phase 4 (Export)     →  CSV download
+Tier 1 (Security/SEO)         ✅  Env Validation → SEO Metadata
+Cashflow Phase 1 (Charts)     ✅  Bar + Line + Category charts
+Cashflow Phase 2 (Categories) ✅  DB migration + category picker + donut chart
+Cashflow Phase 3 (Filtering)  ✅  Date range filter bar
+Cashflow Phase 4 (Export)     🔲  CSV download (next)
 ```
 
 > [!TIP]
 > Phases 1-2 deliver the most visual impact. Phases 3-4 are quality-of-life. Prioritize accordingly based on user feedback after Phase 1.
 
-_Last Updated: March 03, 2026_
+_Last Updated: March 11, 2026_

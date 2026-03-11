@@ -28,11 +28,12 @@ The root identity for all Kytbox users.
 - **`links`**: Individual links and folders on a user's bio page. Uses `is_folder` (boolean) and `parent_id` (uuid, self-referencing) to support nested directory structures.
 - **`link_events`**: Analytics for link clicks (UA, Country, Referer).
 
-### 2.2 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`)
+### 2.2 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`, `cashflow_budgets`)
 
 - **`cashflows`**: Virtual wallets/accounts.
 - **`cashflow_entries`**: Immutable transaction log.
 - **`cashflow_shares`**: ACL for sharing cashflows with other users by email.
+- **`cashflow_budgets`**: Monthly spending limits per category per cashflow. Unique on `(cashflow_id, category)`. Cascade-deletes with the parent cashflow. RLS: owners manage all; editors read via `auth.jwt() ->> 'email'` match on `cashflow_shares`.
 
 ### 2.3 Support System (`support_tickets`, `support_messages`)
 
@@ -64,6 +65,10 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 | 6     | `20260221061001_enforce_folder_depth_limit.sql`      | Postgres Trigger on `links` to prevent infinite folder recursion.   |
 | 7     | `20260221133300_fix_privilege_escalation.sql`        | Trigger on `cashflow_shares` to prevent self-role escalation.       |
 | 8     | `20260228_fix_analytics_rpc_nullable_start_date.sql` | `DEFAULT NULL` on analytics RPC params for correct optional typing. |
+| 9     | `20260305173319_add_cashflow_categories.sql`         | `category` column on `cashflow_entries`.                            |
+| 10    | `20260307061641_add_link_animations.sql`             | `animation_type` column on `links`.                                 |
+| 11    | `20260307153700_update_yearly_calc.sql`              | `yearly_calculation` column on `cashflow_entries`.                  |
+| 12    | `20260311_create_cashflow_budgets.sql`               | `cashflow_budgets` table with RLS (owner: all, editor: read).       |
 
 ---
 
@@ -73,8 +78,9 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 - **RLS First:** Always enable RLS before inserting data into a new table.
 - **Server Actions:** All database mutations must happen via Server Actions with manual `auth.getUser()` validation to supplement RLS.
 - **Type Narrowing:** Use Zod schemas (`src/lib/validation.schemas.ts` for server, `src/lib/validation.schemas.client.ts` for client) to parse all DB/API values. Never use manual ternary chains or inline type guards.
+- **Email in RLS:** Never query `auth.users` in RLS policies — it is inaccessible from the public schema context. Use `auth.jwt() ->> 'email'` (or `lower(auth.jwt() ->> 'email')` for case-insensitive matching) to read the user's email from their JWT token directly.
 - **Trigger Guards:** Use `BEFORE UPDATE` triggers to restrict which columns non-owners can modify, preventing privilege escalation even with permissive RLS UPDATE policies.
 
 ---
 
-_Last Updated: February 28, 2026_
+_Last Updated: March 11, 2026_

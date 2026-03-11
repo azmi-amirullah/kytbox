@@ -33,9 +33,9 @@ _(Scratched for now)_
 1. **Recurring Transactions & Projections (✅ Already Implemented)**
    - **Problem:** Subscriptions and recurring bills drain cashflow silently. Tracking past expenses doesn't help manage future obligations.
    - **Solution:** Integrated a dedicated **Projections Engine** that calculates the _real_ available balance through the end of the next month. Supports per-item calculation modes (Prorated vs Exact) for yearly transactions, allowing users to choose between budget smoothing or strict anniversary tracking.
-2. **Hard Budgets & Alerts**
+2. **Hard Budgets & Alerts (✅ Already Implemented)**
    - **Problem:** Reviewing a chart showing $800 spent on food last month doesn't prevent spending $800 _this_ month.
-   - **Solution:** Set hard currency limits per category. Provide a visual progress bar (Green -> Yellow -> Red) that warns the user when they cross 80% and 90% of their allocated budget.
+   - **Solution:** Set hard currency limits per category. Color-coded progress bars (Green → Amber → Red → Dark Red) warn at 80%, alert at 100%, and clearly flag when the limit is exceeded. Budgets are sorted by risk level (highest spend % first). Owner-only management with RLS enforcement.
 
 ## 🚀 Global Infrastructure (Future)
 

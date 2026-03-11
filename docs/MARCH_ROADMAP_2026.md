@@ -26,7 +26,7 @@ Ranked by: **Security > Stability > Performance > Code Quality > Features**, com
 | ~~7~~ | ~~**Cashflow: Recurring + Projections**~~ | ~~Feature~~ | ~~UX~~ | ~~2 sessions~~ | ~~✅ Done~~ |
 | ~~8~~ | ~~**Container Queries Migration**~~ | ~~Infra~~ | ~~Code Quality~~ | ~~2 sessions~~ | ~~✅ Done~~ |
 | ~~9~~ | ~~**Hard Budgets & Alerts**~~ | ~~Feature~~ | ~~UX~~ | ~~2 sessions~~ | ~~✅ Done~~ |
-| 10 | **Cashflow: Date Filtering** | Feature | UX | ~1 session | 🔲 Pending |
+| ~~10~~ | ~~**Cashflow: Date Filtering**~~ | ~~Feature~~ | ~~UX~~ | ~~1 session~~ | ~~✅ Done~~ |
 | 11 | **Cashflow: Export (CSV)** | Feature | UX | ~1 session | 🔲 Pending |
 | 12 | **Bio: Link List Pagination** | Feature | Stability | ~1 session | 🔲 Pending |
 | 13 | **Automated Testing (Vitest)** | Infra | Stability | 2-3 sessions | 🔲 Pending |
@@ -65,9 +65,8 @@ No monetization planned until there are actual users. Building a feature gate fo
 ## 📌 Execution Plan
 
 ```
-Done:      #9  Hard Budgets & Alerts ✅
-Now:       #10 Cashflow Date Filtering
-Next:      #11 Cashflow CSV Export
+Done:      #10 Cashflow Date Filtering ✅
+Now:       #11 Cashflow CSV Export
 Then:      #12 Bio Link Pagination
 Stability: #13 Vitest → #14 Sentry
 Polish:    #15 PWA

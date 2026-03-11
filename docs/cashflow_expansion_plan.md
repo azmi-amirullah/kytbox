@@ -1,6 +1,6 @@
 # Cashflow Expansion: Recurring Transactions & Hard Budgets
 
-This document outlines the database schema updates and UI component additions required to implement the Recurring Transactions and Hard Budgets features.
+> **Status: ✅ Both features are fully implemented.** This document preserves the original design spec for reference.
 
 ## Proposed Changes
 
@@ -71,11 +71,13 @@ We need to create a new migration file to apply these changes cleanly.
 
 - Visual component for a single category budget.
 - Calculates current month's spend for the category vs. the budget amount.
-- Uses Shadcn `Progress` UI.
-- Color coding logic:
-  - `< 80%` spend: Green/Default
-  - `80% - 95%` spend: Yellow/Warning
-  - `> 95%` spend: Red/Destructive
+- Uses an inline CSS progress bar (no external Progress component dependency).
+- Color coding logic (implemented):
+  - `< 80%` spend: Green
+  - `80% – 99%` spend: Amber
+  - `= limit` (100%): Red — **"Maxed Out"** badge
+  - `> limit`: Dark Red — **"Over Budget"** badge
+- Comparisons use raw amounts (`spent > budget.amount`) to avoid floating-point imprecision from percentage math.
 
 #### [MODIFY] [cashflow/page.tsx](<file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/app/(platform)/cashflow/page.tsx>) & [actions.ts]
 

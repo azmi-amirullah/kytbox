@@ -79,6 +79,11 @@ export const budgetExpenseCategorySchema = z.catch(
   'other',
 );
 
+export const dateFilterPresetSchema = z.catch(
+  z.enum(['all-time', 'this-month', 'last-month', 'last-3-months', 'custom']),
+  'all-time',
+);
+
 // ==========================================
 // SHARED / JSON FIELDS
 // ==========================================
