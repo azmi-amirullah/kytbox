@@ -7,6 +7,8 @@ export type CashflowEntry =
   Database['public']['Tables']['cashflow_entries']['Row'];
 export type CashflowShare =
   Database['public']['Tables']['cashflow_shares']['Row'];
+export type CashflowBudget =
+  Database['public']['Tables']['cashflow_budgets']['Row'];
 export type SupportTicket =
   Database['public']['Tables']['support_tickets']['Row'];
 export type SupportMessage =

@@ -137,6 +137,16 @@ export const updateCashflowEntrySchema = cashflowEntrySchema.extend({
   cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
 });
 
+export const cashflowBudgetSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  category: z.string().min(1, 'Category is required'),
+  amount: z.coerce.number().positive('Amount must be positive'),
+});
+
+export const deleteCashflowBudgetSchema = z.object({
+  budgetId: z.uuid({ message: 'Invalid budget ID' }),
+});
+
 // ==========================================
 // SUPPORT SCHEMAS
 // ==========================================

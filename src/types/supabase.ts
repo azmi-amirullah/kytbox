@@ -18,6 +18,51 @@ export type Database = {
   };
   public: {
     Tables: {
+      cashflow_budgets: {
+        Row: {
+          amount: number;
+          cashflow_id: string;
+          category: string;
+          created_at: string | null;
+          id: string;
+          period: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          amount: number;
+          cashflow_id: string;
+          category: string;
+          created_at?: string | null;
+          id?: string;
+          period?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          amount?: number;
+          cashflow_id?: string;
+          category?: string;
+          created_at?: string | null;
+          id?: string;
+          period?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cashflow_budgets_cashflow_id_fkey';
+            columns: ['cashflow_id'];
+            isOneToOne: false;
+            referencedRelation: 'cashflow_summaries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'cashflow_budgets_cashflow_id_fkey';
+            columns: ['cashflow_id'];
+            isOneToOne: false;
+            referencedRelation: 'cashflows';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       cashflow_entries: {
         Row: {
           amount: number;

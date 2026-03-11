@@ -33,3 +33,7 @@ The Bio feature is a high-performance, premium branding engine designed for crea
 - **Visual Trends**: Recharts-powered graphs show lifetime view trends, 24h peaks, and 30-day performance.
 - **Top Referrers**: Detailed traffic source breakdown (e.g., "instagram.com" vs "Direct") to identify where the audience originates.
 - **Zero-Jank Hydration**: Unified skeletons ensure that the analytics dashboard loads without layout flashes.
+
+## 6. Known Gaps & Pending Work
+
+- **Link List Pagination** 🔲: Both the Bio dashboard and the public profile page do an unbounded `select` on `links` with no `limit` applied. The folder architecture mitigates this for most users, but power users with 50+ root-level items will experience degraded performance. A `limit`/`range`-based pagination or "Load More" pattern is planned. See [MARCH_ROADMAP_2026.md](./MARCH_ROADMAP_2026.md) for priority order.

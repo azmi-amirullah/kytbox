@@ -15,6 +15,10 @@ This document compiles all the high-impact feature recommendations discussed for
    - **Problem:** High-paying or newly launched referral links get lost in the list.
    - **Solution:** Added visual highlights via CSS micro-animations (pulse, bounce, glow) to individual links and folders to draw attention and drive targeted traffic. Users can select the animation via the admin dashboard.
 
+4. **Link List Pagination** 🔲
+   - **Problem:** Both the dashboard and the public bio page fetch all links with no limit. A user with 50+ root-level items (ignoring folders) will experience slow loads and an overwhelming UI.
+   - **Solution:** Implement `limit`/`range`-based pagination or a "Load More" approach on the dashboard. The public page can use the same pattern or rely on a hard cap since the folder architecture discourages flat list sprawl.
+
 ## 💸 Cashflow Engine Features
 
 ### Affiliate-Focused Priorities

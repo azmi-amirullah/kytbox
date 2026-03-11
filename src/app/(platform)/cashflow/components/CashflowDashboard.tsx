@@ -97,6 +97,7 @@ export default function CashflowDashboard({
               entries={initialEntries.filter(
                 (e) => e.cashflow_id === cashflow.id,
               )}
+              budgets={[]}
               currency={currency}
             />
           ))}

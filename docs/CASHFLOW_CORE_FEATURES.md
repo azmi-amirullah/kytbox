@@ -42,3 +42,17 @@ The Cashflow feature is a collaborative, visual-first financial tracker built to
 - **SQL View Summaries**: O(N) aggregation is offloaded to the database (`cashflow_summaries`) for instant loading regardless of entry count.
 - **DTO Safety Layer**: Zero raw database rows are leaked to the client; all data is mapped through strictly typed Data Transfer Objects.
 - **Currency Normalization**: Centralized currency formatting and symbol handling based on user settings.
+
+## 6. Hard Budgets & Alerts [✅ Implemented]
+
+- **Per-Category Monthly Limits**: Set a spending cap on any expense category (Food, Transport, Utilities, Entertainment, Shopping, Health, Other).
+- **Real-Time Progress Tracking**: Progress bars calculate current-month spend against the budget limit on the client, with no extra server round-trips.
+- **Color-Coded Status System**:
+  - 🟢 **Green** (`< 80%`): On track.
+  - 🟡 **Amber** (`80–99%`): Warning — approaching limit.
+  - 🔴 **Maxed Out** (`= limit`): Budget exhausted — red bar, amber badge.
+  - 🔴🔴 **Over Budget** (`> limit`): Limit exceeded — dark red bar and badge.
+- **Risk-Sorted Display**: Budget cards are sorted by spend percentage descending so the most urgent categories surface first.
+- **Owner-Only Management**: Create, edit, and delete budgets. Editors can read budgets; public viewers cannot see any budget data.
+- **Unique Category Enforcement**: One budget per category per cashflow — ensured at the database level via a `UNIQUE(cashflow_id, category)` constraint and `UPSERT` logic.
+- **Security**: Dedicated `cashflow_budgets` table with Row Level Security. Owner policy covers all operations; editor policy uses `auth.jwt() ->> 'email'` for safe email comparison without touching `auth.users`.

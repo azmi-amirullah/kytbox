@@ -66,6 +66,19 @@ export const shareRoleSchema = z.catch(
   'read',
 );
 
+export const budgetExpenseCategorySchema = z.catch(
+  z.enum([
+    'food',
+    'transport',
+    'utilities',
+    'entertainment',
+    'shopping',
+    'health',
+    'other',
+  ]),
+  'other',
+);
+
 // ==========================================
 // SHARED / JSON FIELDS
 // ==========================================

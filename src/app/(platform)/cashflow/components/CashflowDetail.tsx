@@ -41,7 +41,7 @@ import {
   LuRepeat,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import type { CashflowDTO, CashflowEntryDTO } from '@/types/dto';
+import type { CashflowDTO, CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
 import { formatCurrencyCompact } from '@/lib/currency';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
@@ -50,10 +50,12 @@ import ShareModal from './ShareModal';
 import { CashflowCharts } from './CashflowCharts';
 import { ProjectionsView } from './ProjectionsView';
 import { subscribeToPublicCashflow, removeShare } from '../share-actions';
+import BudgetManager from './BudgetManager';
 
 interface CashflowDetailProps {
   cashflow: CashflowDTO;
   entries: CashflowEntryDTO[];
+  budgets: CashflowBudgetDTO[];
   currency: string | null;
   currentUserId?: string;
   initialUserRole?: 'owner' | 'edit' | 'read' | 'public';
@@ -64,6 +66,7 @@ interface CashflowDetailProps {
 export default function CashflowDetail({
   cashflow,
   entries,
+  budgets,
   currency,
   currentUserId,
   initialUserRole = 'public',
@@ -427,6 +430,15 @@ export default function CashflowDetail({
         </div>
         <CashflowCharts entries={entries} currency={currency} />
       </div>
+
+      {/* Budget Tracker */}
+      <BudgetManager
+        cashflowId={cashflow.id}
+        budgets={budgets}
+        entries={entries}
+        currency={currency}
+        canEdit={canEdit}
+      />
 
       {/* Edit Cashflow Modal */}
       <CashflowModal

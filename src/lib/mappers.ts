@@ -5,6 +5,7 @@ import type {
   CashflowEntry,
   CashflowShare,
   CashflowWithSummary,
+  CashflowBudget,
 } from '@/types/database';
 import { dtoShareRoleSchema } from '@/lib/validation.schemas';
 import { z } from 'zod';
@@ -16,6 +17,7 @@ import type {
   CashflowDTO,
   CashflowEntryDTO,
   CashflowShareDTO,
+  CashflowBudgetDTO,
   CashflowWithSummaryDTO,
 } from '@/types/dto';
 
@@ -98,5 +100,15 @@ export function mapCashflowWithSummaryToDTO(
     expense: Number(row.expense ?? 0),
     balance: Number(row.balance ?? 0),
     entries: row.entries?.map(mapCashflowEntryToDTO) ?? [],
+  };
+}
+
+export function mapBudgetToDTO(row: CashflowBudget): CashflowBudgetDTO {
+  return {
+    id: row.id,
+    cashflow_id: row.cashflow_id,
+    category: row.category,
+    amount: Number(row.amount),
+    period: 'monthly',
   };
 }

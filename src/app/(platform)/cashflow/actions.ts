@@ -6,6 +6,8 @@ import { z } from 'zod';
 import {
   cashflowEntrySchema,
   updateCashflowEntrySchema,
+  cashflowBudgetSchema,
+  deleteCashflowBudgetSchema,
 } from '@/lib/validation.schemas';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
@@ -361,4 +363,114 @@ export async function toggleCashflowInclusion(
 
   revalidatePath('/cashflow');
   return { success: true };
+}
+
+export async function upsertBudget(formData: FormData) {
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
+
+  const parsed = cashflowBudgetSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const { cashflowId, category, amount } = parsed.data;
+
+  // Verify ownership — budgets are owner-only
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow || cashflow.user_id !== user.id) {
+    return { error: 'Access denied' };
+  }
+
+  const { error } = await supabase.from('cashflow_budgets').upsert(
+    {
+      cashflow_id: cashflowId,
+      category,
+      amount,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'cashflow_id,category' },
+  );
+
+  if (error) {
+    console.error('Failed to upsert budget:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/cashflow');
+  return { success: true };
+}
+
+export async function deleteBudget(budgetId: string) {
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
+
+  const parsed = deleteCashflowBudgetSchema.safeParse({ budgetId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  // Verify ownership via join
+  const { data: budget } = await supabase
+    .from('cashflow_budgets')
+    .select('id, cashflows(user_id)')
+    .eq('id', budgetId)
+    .single();
+
+  if (!budget) {
+    return { error: 'Budget not found' };
+  }
+
+  const ownerId = joinedOwnerSchema.parse(budget.cashflows);
+  if (ownerId !== user.id) {
+    return { error: 'Access denied' };
+  }
+
+  const { error } = await supabase
+    .from('cashflow_budgets')
+    .delete()
+    .eq('id', budgetId);
+
+  if (error) {
+    console.error('Failed to delete budget:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/cashflow');
+  return { success: true };
+}
+
+export async function getBudgets(cashflowId: string) {
+  const { user, supabase } = await getAuthenticatedUserAndProfile();
+
+  // Owners can always see budgets; editors can read via RLS
+  const { data: ownerCheck } = await supabase
+    .from('cashflows')
+    .select('user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  const isOwner = ownerCheck?.user_id === user.id;
+  if (!isOwner) {
+    const perm = await checkEditPermission(supabase, cashflowId, user);
+    if (!perm.canEdit) {
+      return { error: 'Access denied', data: null };
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('cashflow_budgets')
+    .select('*')
+    .eq('cashflow_id', cashflowId)
+    .order('category', { ascending: true });
+
+  if (error) {
+    console.error('Failed to fetch budgets:', error);
+    return { error: error.message, data: null };
+  }
+
+  return { data: data ?? [], error: null };
 }

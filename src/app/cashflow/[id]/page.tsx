@@ -4,7 +4,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import CashflowDetail from '../../(platform)/cashflow/components/CashflowDetail';
-import { mapCashflowToDTO, mapCashflowEntryToDTO } from '@/lib/mappers';
+import { mapCashflowToDTO, mapCashflowEntryToDTO, mapBudgetToDTO } from '@/lib/mappers';
 import { shareRoleSchema } from '@/lib/validation.schemas';
 
 interface CashflowDetailPageProps {
@@ -104,6 +104,18 @@ export default async function CashflowDetailPage({
     initialUserRole = 'read';
   }
 
+  // Fetch budgets — only for the owner
+  const isOwner = user?.id === cashflow.user_id;
+  const budgetsResult = isOwner
+    ? await supabase
+        .from('cashflow_budgets')
+        .select('*')
+        .eq('cashflow_id', id)
+        .order('category', { ascending: true })
+    : { data: null };
+
+  const budgets = (budgetsResult.data ?? []).map(mapBudgetToDTO);
+
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>
       <BackgroundBlobs />
@@ -115,6 +127,7 @@ export default async function CashflowDetailPage({
           key={cashflow.id}
           cashflow={mapCashflowToDTO(cashflow)}
           entries={(entries ?? []).map(mapCashflowEntryToDTO)}
+          budgets={budgets}
           currency={profile?.default_currency ?? null}
           currentUserId={user?.id}
           initialUserRole={initialUserRole}

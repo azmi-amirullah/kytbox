@@ -37,15 +37,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'react-toastify';
-import type { CashflowDTO, CashflowEntryDTO } from '@/types/dto';
+import type { CashflowDTO, CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
 import ShareModal from './ShareModal';
+import BudgetManager from './BudgetManager';
 
 interface CashflowCardProps {
   cashflow: CashflowDTO;
   entries: CashflowEntryDTO[];
+  budgets: CashflowBudgetDTO[];
   currentUserId?: string;
   currency: string | null;
 }
@@ -53,6 +55,7 @@ interface CashflowCardProps {
 export default function CashflowCard({
   cashflow,
   entries,
+  budgets,
   currentUserId,
   currency,
 }: CashflowCardProps) {
@@ -295,6 +298,17 @@ export default function CashflowCard({
         open={isShareModalOpen}
         onOpenChange={setIsShareModalOpen}
       />
+
+      {/* Budget Tracker */}
+      <div className='p-4 border-t'>
+        <BudgetManager
+          cashflowId={cashflow.id}
+          budgets={budgets}
+          entries={entries}
+          currency={currency}
+          canEdit={isOwner}
+        />
+      </div>
 
       {/* Delete Cashflow Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

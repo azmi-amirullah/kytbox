@@ -56,6 +56,14 @@ export interface CashflowShareDTO {
   email: string;
 }
 
+export interface CashflowBudgetDTO {
+  id: string;
+  cashflow_id: string;
+  category: string;
+  amount: number;
+  period: 'monthly';
+}
+
 export interface CashflowWithSummaryDTO extends CashflowDTO {
   entries: CashflowEntryDTO[];
   entryCount: number;
