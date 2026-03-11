@@ -10,6 +10,9 @@ Focus: **Scalable branding and high-performance UX.**
 - **Tracking**: Server-side click counting via Supabase RPC
 - **Settings**: Profile management (username, display name, bio, avatar upload/removal)
 - **Dashboard**: Tab-based management (Links vs Appearance), live phone preview, real-time stats, and mobile-first responsive architecture.
+- **Sticky Search Bar**: Persistent search on the public bio page for instant link discovery across deep folder structures, with dynamic folder context.
+- **Link Animations**: Strategic visual highlights (Pulse, Bounce, Glow) for individual links and folders to draw attention to high-priority referral links. Configurable per-item from the admin dashboard.
+- **Nested Folders**: Recursive single-table PostgreSQL design. Native iOS-style slide transitions via Framer Motion for drill-down navigation.
 
 ## 2. Tech Stack
 
@@ -272,25 +275,26 @@ See `src/lib/username.ts` for full list.
 ## 7. Current Status
 
 ✅ Auth (Login, Signup with username picker, Forgot Password, Update Password)  
-✅ Bio Dashboard at `/app/bio` with Add/Edit/Delete links  
+✅ Bio Dashboard at `/bio` with Add/Edit/Delete links  
 ✅ Drag-and-drop reordering  
 ✅ Toggle link visibility  
 ✅ Public profile at `/{username}` with click tracking  
-✅ Account settings at `/app/settings`  
+✅ Account settings at `/settings`  
 ✅ Avatar upload/removal with compression  
-✅ Live phone preview  
+✅ Live phone preview (1:1 parity with public page)  
 ✅ Real-time username availability check  
 ✅ Platform shell with app switcher  
 ✅ Dark/Light theme support  
-✅ Analytics dashboard at `/app/bio/analytics` (link clicks, date filtering, chart)
-✅ Bio Page View Tracking (Server-side via Supabase)
-✅ Social Link Icons (Auto-detection with 20+ platforms)
-✅ Unified skeleton architecture for Bio & Analytics (zero-jank loading)
-✅ Visual parity between Bio and Analytics stats cards
-✅ Unified Profile Component Architecture (100% parity via mobile-first CSS scaling)
-✅ Zero-Flash Hydration & Unified Skeleton Architecture
-✅ High-Performance Custom Theme Engine (Debounced + CSS Variables)
-✅ Nested Folders (Drill-Down UI & Native iOS-style slide transitions)
+✅ Analytics dashboard at `/bio/analytics` (link clicks, date filtering, chart)  
+✅ Bio Page View Tracking (Server-side via Supabase)  
+✅ Social Link Icons (Auto-detection with 20+ platforms)  
+✅ Unified skeleton architecture for Bio & Analytics (zero-jank loading)  
+✅ Unified Profile Component Architecture (100% parity via mobile-first CSS scaling)  
+✅ High-Performance Custom Theme Engine (Debounced + CSS Variables)  
+✅ Nested Folders (Drill-Down UI & Native iOS-style slide transitions)  
+✅ Sticky Search Bar (Public page, dynamic folder context)  
+✅ Link & Folder Animations (Pulse, Bounce, Glow — configurable per-item)  
+🔲 Link List Pagination (unbounded `select` on `links` — tolerated by folder architecture, tracked in roadmap)
 
 ## 8. Social Link Icons (Implemented)
 
@@ -378,6 +382,9 @@ See `src/lib/username.ts` for full list.
 
 ## 11. Planned Features
 
-- Username change cooldown (§7 Kytbox.md)
-- Custom Domain support
-- Advanced SEO metadata editor
+- **Link List Pagination**: Unbounded `select` on `links` with no `limit`. The folder architecture mitigates this for most users but degrades for power users with 50+ root-level items. A `limit`/`range`-based "Load More" pattern is planned. See [MARCH_ROADMAP_2026.md](./MARCH_ROADMAP_2026.md) for priority order.
+- **Username change cooldown** (§7 Kytbox.md) — deferred to post-launch scale.
+- **Custom Domain support** — deferred.
+- **Advanced SEO metadata editor** — Pro feature, deferred.
+
+_Last Updated: March 11, 2026_

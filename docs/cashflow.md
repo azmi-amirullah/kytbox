@@ -192,15 +192,64 @@ stateDiagram-v2
 - `subscribeToPublicCashflow(id)`: Implementation of the "Add to Dashboard" logic.
 - `toggleCashflowInclusion(id, toggle)`: Saves user preference for dashboard stats.
 
-## 7. Current Implementation Status
+## 7. Recurring Transactions & Projections [✅ Implemented]
 
-✅ **Architecture**: Scalable sharing model with RLS audit.  
-✅ **Features**: Dashboard, CRUD, Sharing, Bookmarking, Persistence.  
-✅ **Mobile**: Fluid table layouts and action accessibility.  
-✅ **Security**: Robust permission hierarchy (Owner > Editor > Viewer).
+- **Smart Recurrence**: Support for Monthly and Yearly transactions.
+- **Granular Calculation Logic (Per-Item)**:
+  - **Prorated**: Automatically sets aside `1/12th` per month to smooth out large annual fees.
+  - **Exact**: Only impacts the projection if the specific anniversary date falls within the window.
+- **Dynamic Future Projections**: Calculates a "Real Available Balance" through the **end of the next month** (~2-month window).
+  - **Baseline (Settled Cash)**: Ground-truth cash based strictly on transactions dated _today or earlier_.
+  - **Projection Flow**: `Settled Cash + Upcoming Inflows - Upcoming Outflows = Estimated Result`. Visual operator badges (`-`, `+`, `=`) make the math manually verifiable.
+  - **Standardized Time-Cutoff**: All dates are parsed as **Local Midnight** (ignoring UTC offsets) to prevent "vanishing transactions" on the current date. An entry dated "Today" is treated as Settled and excluded from Upcoming to prevent double-counting.
+  - 🔴 **Deficit Risk** indicator triggered if the result drops below zero.
+
+---
+
+## 8. Date Filtering [✅ Implemented]
+
+- **Preset Pills**: "All Time", "This Month", "Last Month", "Last 3 Months", "Custom".
+- **Custom Range**: Native `<input type="date">` — no extra dependency.
+- **Client-Side Filtering**: `useMemo` against ISO `YYYY-MM-DD` strings — zero timezone drift.
+- **Scope**: Summary stats (Income / Expense / Balance) and the entries table + charts all react to the filter.
+- **Intentionally Unfiltered**: Projections and BudgetManager stay on unfiltered entries — their logic is time-aware by design.
+- **Validation**: `dateFilterPresetSchema` in `validation.schemas.client.ts` (Zod/mini).
+- **A11y**: `role="radiogroup"` / `aria-checked` on preset pills; labelled date inputs. WCAG 2.2 compliant.
+
+---
+
+## 9. Hard Budgets & Alerts [✅ Implemented]
+
+- **Per-Category Monthly Limits**: Set a spending cap on any expense category (Food, Transport, Utilities, Entertainment, Shopping, Health, Other).
+- **Real-Time Progress Tracking**: Progress bars calculate current-month spend vs. the budget limit on the client — no extra server round-trips.
+- **Color-Coded Status System**:
+  - 🟢 **Green** (`< 80%`): On track.
+  - 🟡 **Amber** (`80–99%`): Warning — approaching limit.
+  - 🔴 **Maxed Out** (`= limit`): Budget exhausted — red bar, amber badge.
+  - 🔴🔴 **Over Budget** (`> limit`): Limit exceeded — dark red bar and badge.
+  - Comparisons use raw amounts (`spent > budget.amount`) to avoid floating-point imprecision from percentage math.
+- **Risk-Sorted Display**: Budget cards sorted by spend percentage descending — highest risk surfaces first.
+- **Owner-Only Management**: Create, edit, and delete budgets. Editors can read; public viewers cannot see any budget data.
+- **Unique Category Enforcement**: One budget per category per cashflow — enforced at DB level via `UNIQUE(cashflow_id, category)` constraint and `UPSERT` logic.
+- **Security**: Dedicated `cashflow_budgets` table with RLS. Owner policy covers all operations; editor policy uses `auth.jwt() ->> 'email'` for safe email comparison without touching `auth.users`.
+
+---
+
+## 10. Current Implementation Status
+
+✅ Dashboard, CRUD, Sharing, Bookmarking, Persistence  
+✅ Visual Charts (Bar, Area, Category Donut)  
+✅ Entry Categories  
+✅ Recurring Transactions & Smart Projections  
+✅ Date Filtering (Presets + Custom Range)  
+✅ Hard Budgets & Alerts  
+✅ DTO Safety Layer — zero raw DB rows leaked to client  
+✅ SQL View aggregation (`cashflow_summaries`) — O(N) offloaded to DB  
+✅ Scalable sharing model with full RLS audit  
+🔲 CSV Export (respects date filter, next up)
 
 ---
 
 _For loading state details, see [LOADING_STATES.md](./LOADING_STATES.md)_
 
-_Last Updated: February 25, 2026_
+_Last Updated: March 11, 2026_

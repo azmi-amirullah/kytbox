@@ -315,6 +315,49 @@ Note: If Bio fails, the platform can pivot to other apps (List, Track, etc.).
 
 ---
 
+## 12. Market Positioning
+
+### 12.1 Kytbox Bio vs. Competitors
+
+| Feature Pillar    | Standard (Linktree) | Creator (Beacons) | **Kytbox**                             |
+| :---------------- | :------------------ | :---------------- | :------------------------------------- |
+| **Organization**  | Flat List           | Flat List         | **Nested Folders** (Differentiator)    |
+| **Discovery**     | Scrolling           | Scrolling         | **Sticky Search Bar** (Differentiator) |
+| **Customization** | Presets Only        | Full Control      | **Hybrid** (Presets + CSS Variables)   |
+| **Analytics**     | Clicks/Views        | Clicks/Sales      | Clicks/Referrers                       |
+| **Monetization**  | Redirection         | Tip Jar / Store   | Redirection (Planned: Feature Gate)    |
+
+**V1 Status: ~90% Launch Ready.** Technically superior to Linktree via Folders + Search. Gaps vs. Beacons:
+
+| Gap | Impact |
+| :-- | :----- |
+| **Lead Capture / Email Newsletter** | High — creators prioritize owned lists over social followers |
+| **Content Embedding** (YouTube/Spotify) | Medium — keeps users on page longer |
+| **Advanced SEO Metadata Editor** | High (Pro Feature) — critical for affiliate SEO |
+| **QR Code Generator** | Low/Medium — useful for offline marketing |
+
+---
+
+### 12.2 Kytbox Cashflow vs. Competitors
+
+| Feature Pillar    | Standard (YNAB/Mint) | Simple (Splitwise) | **Kytbox**                             |
+| :---------------- | :------------------- | :----------------- | :------------------------------------- |
+| **Logic**         | Zero-Based Budgeting | Debt Tracking Only | **Multi-Book Tracking**                |
+| **Collaboration** | Household Sharing    | Group Expenses     | **Granular ACL** (Owner/Editor/Reader) |
+| **Recurrence**    | Manual / Auto        | Basic Recurring    | **Prorated vs Exact** (Advanced)       |
+| **Portability**   | Full Export          | Basic CSV          | 🔲 CSV Export (next up)               |
+| **Visuals**       | Complexity First     | List First         | **Dashboard First**                    |
+
+**V1 Status: ~90% Launch Ready.** Strongest differentiator is collaborative tracking with granular ACL. Remaining gap:
+
+| Gap | Impact |
+| :-- | :----- |
+| **CSV Export** | Critical — users won't commit financial data to a black box |
+| **Receipt/Attachment Support** | High for business/freelance tax records |
+| **Bulk Transaction Editing** | Medium — power-user quality of life |
+
+---
+
 ## App Dashboards (Platform Shell + App Scope)
 
 Kytbox uses a **single platform shell** with **app-scoped dashboards**.
