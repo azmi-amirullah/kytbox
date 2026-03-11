@@ -39,6 +39,7 @@ import {
   LuBookmark,
   LuCheck,
   LuRepeat,
+  LuDownload,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import type { CashflowDTO, CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
@@ -204,6 +205,67 @@ export default function CashflowDetail({
     setIsEntryModalOpen(true);
   }
 
+  function handleExportCSV() {
+    if (filteredEntries.length === 0) {
+      toast.info('No entries to export');
+      return;
+    }
+
+    const headers = [
+      'Date',
+      'Type',
+      'Category',
+      'Description',
+      'Amount',
+      'Currency',
+      'Recurring',
+      'Frequency',
+    ];
+    const rows = filteredEntries.map((e) => [
+      e.date,
+      e.type,
+      e.category || '',
+      `"${e.description.replace(/"/g, '""')}"`, // escape quotes
+      e.amount.toString(),
+      currency || '',
+      e.is_recurring ? 'Yes' : 'No',
+      e.recurrence_interval || '',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    let dateSuffix = 'all-time';
+    if (filterState.preset !== 'all-time' && filterState.preset !== 'custom') {
+      dateSuffix = filterState.preset;
+    } else if (filterState.preset === 'custom') {
+      if (filterState.custom.from && filterState.custom.to) {
+        dateSuffix = `${filterState.custom.from}_to_${filterState.custom.to}`;
+      } else if (filterState.custom.from) {
+        dateSuffix = `from_${filterState.custom.from}`;
+      } else if (filterState.custom.to) {
+        dateSuffix = `to_${filterState.custom.to}`;
+      }
+    }
+
+    const safeTitle = cashflow.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const filename = `export-${safeTitle}-${dateSuffix}.csv`;
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className='space-y-6'>
       {/* Back Link */}
@@ -273,6 +335,11 @@ export default function CashflowDetail({
         </div>
 
         <div className='flex items-center gap-2'>
+          <Button variant='outline' onClick={handleExportCSV} className='gap-2'>
+            <LuDownload className='w-4 h-4' />
+            <span className='hidden sm:inline'>Export CSV</span>
+          </Button>
+
           {!isOwner && currentUserId && (cashflow.is_public || !!shareId) && (
             <Button
               onClick={handleBookmark}

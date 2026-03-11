@@ -27,7 +27,7 @@ Ranked by: **Security > Stability > Performance > Code Quality > Features**, com
 | ~~8~~ | ~~**Container Queries Migration**~~ | ~~Infra~~ | ~~Code Quality~~ | ~~2 sessions~~ | ~~✅ Done~~ |
 | ~~9~~ | ~~**Hard Budgets & Alerts**~~ | ~~Feature~~ | ~~UX~~ | ~~2 sessions~~ | ~~✅ Done~~ |
 | ~~10~~ | ~~**Cashflow: Date Filtering**~~ | ~~Feature~~ | ~~UX~~ | ~~1 session~~ | ~~✅ Done~~ |
-| 11 | **Cashflow: Export (CSV)** | Feature | UX | ~1 session | 🔲 Pending |
+| ~~11~~ | ~~**Cashflow: Export (CSV)**~~ | ~~Feature~~ | ~~UX~~ | ~~~1 session~~ | ~~✅ Done~~ |
 | 12 | **Bio: Link List Pagination** | Feature | Stability | ~1 session | 🔲 Pending |
 | 13 | **Automated Testing (Vitest)** | Infra | Stability | 2-3 sessions | 🔲 Pending |
 | 14 | **Observability (Sentry)** | Infra | Stability | 1-2 sessions | 🔲 Pending |
@@ -66,8 +66,8 @@ No monetization planned until there are actual users. Building a feature gate fo
 
 ```
 Done:      #10 Cashflow Date Filtering ✅
-Now:       #11 Cashflow CSV Export
-Then:      #12 Bio Link Pagination
+Done:      #11 Cashflow CSV Export ✅
+Now:       #12 Bio Link Pagination
 Stability: #13 Vitest → #14 Sentry
 Polish:    #15 PWA
 Later:     #16 canAccess (when monetization is planned)
@@ -81,7 +81,6 @@ Later:     #16 canAccess (when monetization is planned)
 | :-- | :------------ | :------- | :---- |
 | **No link list pagination** | Bio dashboard + public profile | Medium | Both pages do unbounded `select` on `links`. No limit applied. Tolerated by folder architecture but will degrade for power users with 50+ items. |
 | **No date range filtering** | Cashflow entries table | Medium | All entries render at once. Unusable at scale. |
-| **No data export** | Cashflow | High | Users won't commit serious financial data to a "black box". Trust risk. |
 
 ---
 
