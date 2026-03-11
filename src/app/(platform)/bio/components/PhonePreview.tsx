@@ -5,6 +5,7 @@ import type { CustomThemeData } from '@/lib/theme/theme.types';
 
 interface PhonePreviewProps {
   profile: {
+    id: string;
     username: string;
     display_name: string | null;
     avatar_url: string | null;
@@ -20,13 +21,20 @@ interface PhonePreviewProps {
     title: string;
     url: string;
     is_active: boolean;
+    short_id?: string | number | null;
+    is_folder?: boolean;
+    parent_id?: string | null;
+    child_count?: number;
+    animation_type?: string | null;
   }[];
+  totalLinks?: number;
   isLoading?: boolean;
 }
 
 export default function PhonePreview({
   profile,
   links,
+  totalLinks,
   isLoading,
 }: PhonePreviewProps) {
   // Use 85% scale as requested
@@ -58,6 +66,7 @@ export default function PhonePreview({
             <ProfileView
               profile={profile}
               links={links}
+              totalLinks={totalLinks}
               isLoading={isLoading}
             />
 

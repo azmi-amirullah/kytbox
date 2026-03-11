@@ -33,6 +33,7 @@ interface MoveToFolderModalProps {
   folders: LinkDTO[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: (newParentId: string | null) => void;
 }
 
 export default function MoveToFolderModal({
@@ -40,6 +41,7 @@ export default function MoveToFolderModal({
   folders,
   open,
   onOpenChange,
+  onSuccess,
 }: MoveToFolderModalProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -70,6 +72,9 @@ export default function MoveToFolderModal({
       toast.error('Failed to move link');
     } else {
       toast.success(folderId ? 'Moved to folder!' : 'Moved to main list!');
+      if (onSuccess) {
+        onSuccess(folderId);
+      }
       startTransition(() => {
         router.refresh();
       });

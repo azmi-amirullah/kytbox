@@ -2,7 +2,16 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { linkTypeSchema } from '@/lib/validation.schemas.client';
+import { LuLoader, LuType, LuGlobe, LuFolderOpen } from 'react-icons/lu';
+import { toast } from 'react-toastify';
+import { addLink, updateLink, createFolder } from '../actions';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  rawLinkSchema,
+  linkActionResponseSchema,
+  linkTypeSchema,
+} from '@/lib/validation.schemas.client';
+import type { LinkDTO } from '@/types/dto';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,11 +24,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { LuLoader, LuType, LuGlobe } from 'react-icons/lu';
-import { toast } from 'react-toastify';
-import { addLink, updateLink, createFolder } from '../actions';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LuFolderOpen } from 'react-icons/lu';
 import {
   Select,
   SelectContent,
@@ -28,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-import type { LinkDTO } from '@/types/dto';
+
 
 interface LinkModalProps {
   mode: 'create' | 'edit';
@@ -37,6 +41,7 @@ interface LinkModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
+  onSuccess?: (newLink: LinkDTO, newCount?: number) => void;
 }
 
 export default function LinkModal({
@@ -46,6 +51,7 @@ export default function LinkModal({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   trigger,
+  onSuccess,
 }: LinkModalProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -133,6 +139,23 @@ export default function LinkModal({
           ? `${type === 'folder' ? 'Folder' : 'Link'} updated!`
           : `${type === 'folder' ? 'Folder' : 'Link'} added!`,
       );
+      const validated = linkActionResponseSchema.parse(result);
+      if (validated.link && onSuccess) {
+        const l = rawLinkSchema.parse(validated.link);
+        const mappedLink: LinkDTO = {
+          id: l.id,
+          title: l.title,
+          url: l.url || '',
+          sort_order: l.sort_order,
+          is_active: l.is_active,
+          clicks: l.clicks,
+          is_folder: l.is_folder,
+          parent_id: l.parent_id,
+          animation_type: l.animation_type,
+          child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
+        };
+        onSuccess(mappedLink, validated.newCount ?? undefined);
+      }
       setIsLoading(false);
       startTransition(() => {
         router.refresh();

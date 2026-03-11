@@ -27,7 +27,7 @@ export default async function BioDashboardPage({
   }
 
   // Parallelize all queries for better performance
-  const [profileResult, linksResult] = await Promise.all([
+  const [profileResult, rootLinksResult] = await Promise.all([
     supabase
       .from('profiles')
       .select(
@@ -37,13 +37,17 @@ export default async function BioDashboardPage({
       .single(),
     supabase
       .from('links')
-      .select('*')
+      .select('*, children:links(count)', { count: 'exact' })
       .eq('user_id', user.id)
-      .order('sort_order', { ascending: true }),
+      .is('parent_id', null)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+      .range(0, 1),
   ]);
 
   const profile = profileResult.data;
-  const links = linksResult.data;
+  const rawRootLinks = rootLinksResult.data || [];
+  
 
   if (!profile) {
     redirect('/onboarding');
@@ -57,10 +61,13 @@ export default async function BioDashboardPage({
 
   const publicUrl = `/${profile.username}`;
 
+  // Dashboard content
+  const mappedLinks = rawRootLinks.map(mapLinkToDTO);
+
   return (
     <div className='max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-8 w-full'>
       <DashboardClient
-        initialLinks={(links ?? []).map(mapLinkToDTO)}
+        initialLinks={mappedLinks}
         profile={{
           ...mapProfileToDTO(profile),
           theme_name: profile.theme_name,
@@ -73,6 +80,7 @@ export default async function BioDashboardPage({
             : null,
         }}
         publicUrl={publicUrl}
+        totalLinks={rootLinksResult.count || 0}
         totalViews={totalViews || 0}
         activeTab={activeTab}
       />

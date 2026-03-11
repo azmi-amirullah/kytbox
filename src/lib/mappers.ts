@@ -31,10 +31,12 @@ export function mapProfileToDTO(row: Profile): ProfileDTO {
   };
 }
 
-export function mapLinkToDTO(row: Link): LinkDTO {
+export function mapLinkToDTO(
+  row: Link & { children?: { count: number }[]; child_count?: number },
+): LinkDTO {
   return {
     id: row.id,
-    url: row.url,
+    url: row.url || '#',
     title: row.title,
     is_active: !!row.is_active,
     sort_order: row.sort_order ?? 0,
@@ -42,6 +44,7 @@ export function mapLinkToDTO(row: Link): LinkDTO {
     parent_id: row.parent_id,
     clicks: row.clicks,
     animation_type: row.animation_type,
+    child_count: row.children?.[0]?.count ?? row.child_count,
   };
 }
 

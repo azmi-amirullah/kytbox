@@ -28,7 +28,7 @@ Ranked by: **Security > Stability > Performance > Code Quality > Features**, com
 | ~~9~~ | ~~**Hard Budgets & Alerts**~~ | ~~Feature~~ | ~~UX~~ | ~~2 sessions~~ | ~~✅ Done~~ |
 | ~~10~~ | ~~**Cashflow: Date Filtering**~~ | ~~Feature~~ | ~~UX~~ | ~~1 session~~ | ~~✅ Done~~ |
 | ~~11~~ | ~~**Cashflow: Export (CSV)**~~ | ~~Feature~~ | ~~UX~~ | ~~~1 session~~ | ~~✅ Done~~ |
-| 12 | **Bio: Link List Pagination** | Feature | Stability | ~1 session | 🔲 Pending |
+| ~~12~~ | ~~**Bio: Link List Pagination**~~ | ~~Feature~~ | ~~Stability~~ | ~~1 session~~ | ~~✅ Done~~ |
 | 13 | **Automated Testing (Vitest)** | Infra | Stability | 2-3 sessions | 🔲 Pending |
 | 14 | **Observability (Sentry)** | Infra | Stability | 1-2 sessions | 🔲 Pending |
 | 15 | **PWA Manifest + Service Worker** | Infra | UX | ~1 session | 🔲 Pending |
@@ -65,9 +65,7 @@ No monetization planned until there are actual users. Building a feature gate fo
 ## 📌 Execution Plan
 
 ```
-Done:      #10 Cashflow Date Filtering ✅
-Done:      #11 Cashflow CSV Export ✅
-Now:       #12 Bio Link Pagination
+Done:      #12 Bio Link Pagination ✅ & Dashboard Synchronization Refactor ✅
 Stability: #13 Vitest → #14 Sentry
 Polish:    #15 PWA
 Later:     #16 canAccess (when monetization is planned)
@@ -79,7 +77,6 @@ Later:     #16 canAccess (when monetization is planned)
 
 | Gap | Affected Area | Severity | Notes |
 | :-- | :------------ | :------- | :---- |
-| **No link list pagination** | Bio dashboard + public profile | Medium | Both pages do unbounded `select` on `links`. No limit applied. Tolerated by folder architecture but will degrade for power users with 50+ items. |
 | **No date range filtering** | Cashflow entries table | Medium | All entries render at once. Unusable at scale. |
 
 ---

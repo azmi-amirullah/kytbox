@@ -13,6 +13,8 @@ Focus: **Scalable branding and high-performance UX.**
 - **Sticky Search Bar**: Persistent search on the public bio page for instant link discovery across deep folder structures, with dynamic folder context.
 - **Link Animations**: Strategic visual highlights (Pulse, Bounce, Glow) for individual links and folders to draw attention to high-priority referral links. Configurable per-item from the admin dashboard.
 - **Nested Folders**: Recursive single-table PostgreSQL design. Native iOS-style slide transitions via Framer Motion for drill-down navigation.
+- **High-Performance Pagination**: Native "Load More" pattern for both root-level links and nested folder contents on the public profile and dashboard preview.
+- **Hybrid Sync Engine**: 1:1 state synchronization between the dashboard editor and phone preview using a 'Server-as-Truth' Refresh API for structural changes (Add/Move) and local patching for micro-interactions (Toggles/Drag).
 
 ## 2. Tech Stack
 
@@ -294,7 +296,10 @@ See `src/lib/username.ts` for full list.
 ✅ Nested Folders (Drill-Down UI & Native iOS-style slide transitions)  
 ✅ Sticky Search Bar (Public page, dynamic folder context)  
 ✅ Link & Folder Animations (Pulse, Bounce, Glow — configurable per-item)  
-🔲 Link List Pagination (unbounded `select` on `links` — tolerated by folder architecture, tracked in roadmap)
+✅ Link List Pagination (High-performance "Load More" for 100+ items)
+✅ Phone Preview State Synchronization (Hybrid Refresh API with parallel segment updates)
+✅ Resilient Data Mapping (Safe handling of database nulls and type mismatches)
+✅ Atomic Folder-to-Root Navigation (Synchronized list and badge updates)
 
 ## 8. Social Link Icons (Implemented)
 
@@ -382,7 +387,7 @@ See `src/lib/username.ts` for full list.
 
 ## 11. Planned Features
 
-- **Link List Pagination**: Unbounded `select` on `links` with no `limit`. The folder architecture mitigates this for most users but degrades for power users with 50+ root-level items. A `limit`/`range`-based "Load More" pattern is planned. See [MARCH_ROADMAP_2026.md](./MARCH_ROADMAP_2026.md) for priority order.
+- **Analytics Ambiguity Resolution**: Current implementation filters folders from click charts; future phase will add specific "Folder Open" event tracking.
 - **Username change cooldown** (§7 Kytbox.md) — deferred to post-launch scale.
 - **Custom Domain support** — deferred.
 - **Advanced SEO metadata editor** — Pro feature, deferred.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -37,6 +37,7 @@ interface DashboardClientProps {
   profile: Partial<ProfileWithTheme>;
   publicUrl: string;
   totalViews: number;
+  totalLinks?: number;
   isLoading?: boolean;
   activeTab?: BioTab;
 }
@@ -51,6 +52,7 @@ export default function DashboardClient({
   profile,
   publicUrl,
   totalViews,
+  totalLinks = 0,
   isLoading,
   activeTab = DEFAULT_TAB,
 }: DashboardClientProps) {
@@ -61,6 +63,7 @@ export default function DashboardClient({
   const [currentTab, setCurrentTab] = useState<BioTab>(resolvedTab);
 
   const [links, setLinks] = useState<LinkDTO[]>(initialLinks);
+  const [localTotalLinks, setLocalTotalLinks] = useState(totalLinks);
   const [themeName, setThemeName] = useState(profile?.theme_name || 'default');
   const [customTheme, setCustomTheme] = useState<CustomThemeData | null>(
     profile?.custom_theme || null,
@@ -76,9 +79,20 @@ export default function DashboardClient({
   const [socialLinks, setSocialLinks] =
     useState<Record<string, string>>(initialSocials);
 
+  // Merge initialLinks from props whenever they change (Single source of truth for the first batch)
   useEffect(() => {
-    setLinks(initialLinks);
-  }, [initialLinks]);
+    setLocalTotalLinks(totalLinks);
+    if (initialLinks.length > 0) {
+      setLinks((prev) => {
+        const serverIds = new Set(initialLinks.map((l) => l.id));
+        // Keep local items that are NOT in the current server batch (e.g. pagination or other folders)
+        const otherItems = prev.filter((p) => !serverIds.has(p.id));
+        return [...otherItems, ...initialLinks].sort(
+          (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+        );
+      });
+    }
+  }, [initialLinks, totalLinks]);
 
   useEffect(() => {
     setCurrentTab(resolvedTab);
@@ -135,6 +149,8 @@ export default function DashboardClient({
             <LinksTabContent
               links={links}
               setLinks={setLinks}
+              localTotalLinks={localTotalLinks}
+              setLocalTotalLinks={setLocalTotalLinks}
               totalViews={totalViews}
               isLoading={isLoading}
             />
@@ -192,6 +208,7 @@ export default function DashboardClient({
           </div>
           <PhonePreview
             profile={{
+              id: profile?.id || '',
               username: profile?.username || '',
               display_name: profile?.display_name || '',
               avatar_url: profile?.avatar_url || null,
@@ -202,11 +219,16 @@ export default function DashboardClient({
               button_shape: buttonShape,
               social_links: socialLinks,
             }}
-            links={links.map((l) => ({
-              ...l,
-              is_active: !!l.is_active,
-              sort_order: l.sort_order ?? 0,
-            }))}
+            links={useMemo(
+              () =>
+                links.map((l) => ({
+                  ...l,
+                  is_active: !!l.is_active,
+                  sort_order: l.sort_order ?? 0,
+                })),
+              [links],
+            )}
+            totalLinks={totalLinks}
             isLoading={isLoading}
           />
         </div>

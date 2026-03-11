@@ -6,6 +6,7 @@ export default function Loading() {
       <ProfileView
         isLoading={true}
         profile={{
+          id: '',
           username: '',
           display_name: null,
           avatar_url: null,

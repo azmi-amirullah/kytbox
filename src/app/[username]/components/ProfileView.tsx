@@ -18,6 +18,7 @@ import ProfileLinks from './ProfileLinks';
 
 interface ProfileViewProps {
   profile: {
+    id: string;
     username: string;
     display_name: string | null;
     avatar_url: string | null;
@@ -34,14 +35,19 @@ interface ProfileViewProps {
     url: string;
     is_active: boolean;
     short_id?: string | number | null;
+    is_folder?: boolean;
+    parent_id?: string | null;
+    child_count?: number;
     animation_type?: string | null;
   }[];
+  totalLinks?: number;
   isLoading?: boolean;
 }
 
 export default function ProfileView({
   profile,
   links,
+  totalLinks = 0,
   isLoading,
 }: ProfileViewProps) {
   const theme = getTheme(profile?.theme_name, profile?.custom_theme);
@@ -119,8 +125,10 @@ export default function ProfileView({
         <ProfileLinks
           links={links}
           username={profile.username}
+          profileId={profile.id}
           theme={theme}
           buttonClasses={buttonClasses}
+          totalLinks={totalLinks}
           isLoading={showSkeleton}
         />
 

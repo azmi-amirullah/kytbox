@@ -38,26 +38,32 @@ import type { LinkDTO } from '@/types/dto';
 
 interface SortableLinkProps {
   link: LinkDTO;
+  childCount?: number;
   onToggle: (linkId: string, isActive: boolean) => void;
   onDelete: (linkId: string) => void;
   onMove: (linkId: string) => void;
   onDrillDown: (folderId: string) => void;
+  onUpdate?: (link: LinkDTO) => void;
 }
 
 const LinkItemContent = memo(function LinkItemContent({
   link,
+  childCount,
   attributes,
   listeners,
   onToggle,
   onDelete,
   onMove,
+  onUpdate,
 }: {
   link: LinkDTO;
+  childCount?: number;
   attributes?: ReturnType<typeof useSortable>['attributes'];
   listeners?: ReturnType<typeof useSortable>['listeners'];
   onToggle: (linkId: string, isActive: boolean) => void;
   onDelete: (linkId: string) => void;
   onMove: (linkId: string) => void;
+  onUpdate?: (link: LinkDTO) => void;
 }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -145,7 +151,15 @@ const LinkItemContent = memo(function LinkItemContent({
       </div>
 
       {/* Stats */}
-      {!link.is_folder && (
+      {link.is_folder ? (
+        typeof childCount === 'number' && (
+          <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
+            <LuFolderOpen className='w-3.5 h-3.5' />
+            {childCount}
+            <span className='opacity-70'>items</span>
+          </div>
+        )
+      ) : (
         <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
           <LuActivity className='w-3.5 h-3.5' />
           {link.clicks ?? 0}
@@ -300,6 +314,7 @@ const LinkItemContent = memo(function LinkItemContent({
         link={link}
         open={showEditModal}
         onOpenChange={setShowEditModal}
+        onSuccess={onUpdate}
       />
     </>
   );
@@ -307,10 +322,12 @@ const LinkItemContent = memo(function LinkItemContent({
 
 export default function SortableLink({
   link,
+  childCount,
   onToggle,
   onDelete,
   onMove,
   onDrillDown,
+  onUpdate,
 }: SortableLinkProps) {
   const {
     attributes,
@@ -383,11 +400,13 @@ export default function SortableLink({
     >
       <LinkItemContent
         link={link}
+        childCount={childCount}
         attributes={attributes}
         listeners={listeners}
         onToggle={onToggle}
         onDelete={onDelete}
         onMove={onMove}
+        onUpdate={onUpdate}
       />
     </div>
   );

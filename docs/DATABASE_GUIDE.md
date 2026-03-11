@@ -23,19 +23,48 @@ The root identity for all Kytbox users.
 
 ## 2. App-Specific Tables
 
-### 2.1 Bio App (`links`, `link_events`)
+### 2.1 Bio App
 
-- **`links`**: Individual links and folders on a user's bio page. Uses `is_folder` (boolean) and `parent_id` (uuid, self-referencing) to support nested directory structures.
-- **`link_events`**: Analytics for link clicks (UA, Country, Referer).
+The Bio app uses a recursive structure to support both simple lists and nested folders.
 
-### 2.2 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`, `cashflow_budgets`)
+#### `public.links`
+
+| Column            | Type          | Description                                               |
+| :---------------- | :------------ | :-------------------------------------------------------- |
+| `id`              | `uuid`        | Primary Key.                                              |
+| `user_id`         | `uuid`        | FK -> `profiles.id`.                                      |
+| `title`           | `text`        | Display name for the link or folder.                      |
+| `url`             | `text`        | Destination URL (null for folders).                       |
+| `sort_order`      | `int`         | Manual sorting order within the current level.            |
+| `is_active`       | `bool`        | visibility toggle.                                        |
+| `is_folder`       | `bool`        | If true, this item acts as a container.                   |
+| `parent_id`       | `uuid`        | Self-referencing FK for nested folders.                   |
+| `animation_type`  | `text`        | Visual highlight (e.g., `'pulse'`, `'glow'`, `'bounce'`). |
+| `short_id`        | `int`         | Secure sequential ID for public redirect URLs.             |
+| `clicks`          | `int`         | Total lifetime click count.                               |
+| `last_clicked_at` | `timestamptz` | timestamp of the most recent interaction.                 |
+
+- **Security:** RLS allows standard users to `INSERT/UPDATE/DELETE` only where `user_id = auth.uid()`.
+- **Public Access:** The public profile can only `SELECT` links where `is_active = true`.
+
+#### `public.link_events`
+
+Analytics for link clicks (UA, Country, Referer). Used to populate the Bio analytics dashboard via server-side RPCs.
+
+### 2.2 Supabase RPC Functions
+
+- **`increment_link_click(link_id uuid)`**: Increments `clicks` and updates `last_clicked_at`.
+- **`reorder_links(p_link_ids uuid[])`**: Bulk updates `sort_order` for an array of links.
+- **`get_analytics_chart_data(...)`**: Aggregates clicks for Bio analytics charts.
+
+### 2.3 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`, `cashflow_budgets`)
 
 - **`cashflows`**: Virtual wallets/accounts.
 - **`cashflow_entries`**: Immutable transaction log.
 - **`cashflow_shares`**: ACL for sharing cashflows with other users by email.
 - **`cashflow_budgets`**: Monthly spending limits per category per cashflow. Unique on `(cashflow_id, category)`. Cascade-deletes with the parent cashflow. RLS: owners manage all; editors read via `auth.jwt() ->> 'email'` match on `cashflow_shares`.
 
-### 2.3 Support System (`support_tickets`, `support_messages`)
+### 2.4 Support System (`support_tickets`, `support_messages`)
 
 - **`support_tickets`**: High-level support requests.
 - **`support_messages`**: Conversations within a ticket.

@@ -152,3 +152,33 @@ With `cacheComponents` enabled, Next.js 16 enforces strict rules on dynamic IO (
 
 - **Usage**: Awaited at the top of layouts or pages (e.g., [PlatformLayout](<file:///src/app/(platform)/layout.tsx>), [CurrentYear](file:///src/components/ui/current-year.tsx)).
 - **Purpose**: It signals to the Next.js compiler that a specific component or layout is intentionally dynamic, allowing it to bypass the static-rendering requirement of `cacheComponents` mode while still optimizing the rest of the tree.
+
+### 9.1 The Problem: "Tug-of-War" & Structural Drift
+
+Previously, the dashboard attempted manually patched local state for link additions, deletions, and moves. This led to "Drift" where local counts or folder badges would desync from the server, causing confusing UI bugs like link counts reverting or items getting "stuck" in folders.
+
+### 9.2 The Solution: Hybrid Refresh API
+
+We moved to a **Server-as-Truth** architecture for all structural changes:
+
+1. **Strategic Refreshes**: Mutations like Add, Delete, move, and Edit now trigger an `onRefreshView` callback.
+2. **Parallel Atomic Updates**: `onRefreshView` uses `Promise.all` to fetch the current folder, root list, and total counts simultaneously. This ensures the entire UI (list content + folder badges) is updated in a single atomic render pass.
+3. **Hybrid Snappiness**: To keep the editor feeling fast, we retain **Pure Local State** for:
+   - **Toggles**: Instant visual feedback on link activation.
+   - **Drag-and-Drop**: Segment-isolated reordering that updates local indices instantly while syncing via RPC in the background.
+
+### 9.3 Cross-Component Data Passing
+
+To maintain parity, pagination data (`localTotalLinks`) must flow down through the dashboard hierarchy:
+`DashboardClient` → `LinksTabContent` → `PhonePreview/LinkList`
+
+This ensures that the "Load More" button appears in the phone preview if—and only if—it would appear on the real public site.
+
+### 9.4 Resilient Data Mapping
+
+To prevent "No links found" bugs when the database returns slightly unexpected data types (e.g., `null` for a new folder's `is_active` state), we abandoned strict Zod parsing on the public edge in favor of **Safe Mapping**:
+- Use `!!` coercion for booleans.
+- Use `?? ''` or `|| ''` for strings.
+- Explicitly map mixed types like `short_id` (which can be `string` or `number` based on the query range).
+
+_Last Updated: March 11, 2026_

@@ -110,3 +110,27 @@ export const shareSchema = z.catch(
   ),
   [],
 );
+
+export const rawLinkSchema = z.object({
+  id: z.string(),
+  title: z.catch(z.string(), ''),
+  url: z.catch(z.union([z.string(), z.null()]), null),
+  is_active: z.catch(z.boolean(), true),
+  sort_order: z.catch(z.number(), 0),
+  is_folder: z.catch(z.boolean(), false),
+  parent_id: z.catch(z.union([z.string(), z.null()]), null),
+  animation_type: z.catch(z.union([z.string(), z.null()]), null),
+  clicks: z.catch(z.number(), 0),
+  short_id: z.catch(z.union([z.string(), z.null()]), null),
+  child_count: z.catch(z.union([z.number(), z.null()]), null),
+  children: z.catch(z.array(z.object({ count: z.number() })), []),
+});
+
+export const rawLinkListSchema = z.catch(z.array(rawLinkSchema), []);
+
+export const linkActionResponseSchema = z.object({
+  success: z.boolean(),
+  link: z.union([rawLinkSchema, z.null()]),
+  newCount: z.catch(z.union([z.number(), z.null()]), null),
+  error: z.catch(z.union([z.string(), z.null()]), null),
+});

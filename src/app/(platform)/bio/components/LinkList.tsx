@@ -16,12 +16,15 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { reorderLinks, toggleLinkActive, deleteLink } from '../actions';
+import { reorderLinks, toggleLinkActive, deleteLink, loadFolderLinks } from '../actions';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { Button } from '@/components/ui/button';
+import { LuFolderOpen, LuLoader } from 'react-icons/lu';
 import MoveToFolderModal from './MoveToFolderModal';
 import SortableLink from './SortableLink';
 import type { LinkDTO } from '@/types/dto';
+import { rawLinkListSchema } from '@/lib/validation.schemas.client';
 
 interface LinkListProps {
   links: LinkDTO[];
@@ -29,6 +32,9 @@ interface LinkListProps {
   isLoading?: boolean;
   currentFolderId: string | null;
   onDrillDown: (folderId: string | null) => void;
+  folderCounts: Record<string, number>;
+  setFolderCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  onRefreshView: (refreshRoot?: boolean) => Promise<void>;
 }
 
 export default function LinkList({
@@ -37,12 +43,114 @@ export default function LinkList({
   isLoading,
   currentFolderId,
   onDrillDown,
+  folderCounts,
+  setFolderCounts,
+  onRefreshView,
 }: LinkListProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [linkToMove, setLinkToMove] = useState<LinkDTO | null>(null);
+  const [folderLimit, setFolderLimit] = useState(2);
+  const [loadingFolder, setLoadingFolder] = useState<string | null>(null);
 
-  // Delay DndContext render to avoid hydration mismatch
+  // Expand limit logic: if user adds a link locally, we should show it
+  useEffect(() => {
+    if (currentFolderId) {
+      const itemsInFolder = links.filter((l) => l.parent_id === currentFolderId);
+      setFolderLimit((prev) => Math.max(prev, itemsInFolder.length, 2));
+    }
+  }, [links, currentFolderId]);
+
+  const handleDrillDown = async (id: string | null) => {
+    const existingItems = links.filter((l) => l.parent_id === id);
+    setFolderLimit(Math.max(2, existingItems.length));
+    onDrillDown(id);
+    if (id) {
+      const currentItems = links.filter((l) => l.parent_id === id);
+      if (currentItems.length === 0) {
+        setLoadingFolder(id);
+        const res = await loadFolderLinks(id, 0, 2);
+        if ('links' in res && res.links) {
+          const rawLinks = rawLinkListSchema.parse(res.links);
+          const mappedLinks: LinkDTO[] = rawLinks.map((l) => ({
+            id: l.id,
+            title: l.title,
+            url: l.url || '',
+            sort_order: l.sort_order,
+            is_active: l.is_active,
+            clicks: l.clicks,
+            is_folder: l.is_folder,
+            parent_id: l.parent_id,
+            animation_type: l.animation_type,
+            child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
+          }));
+          setLinks((prev) => {
+            const serverIds = new Set(mappedLinks.map((m) => m.id));
+            const filteredPrev = prev.filter((p) => !serverIds.has(p.id));
+            return [...filteredPrev, ...mappedLinks].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+          });
+          if ('totalCount' in res) {
+            setFolderCounts((prev) => ({ ...prev, [id]: res.totalCount ?? 0 }));
+          }
+        }
+        setLoadingFolder(null);
+      }
+    }
+  };
+
+  const handleLoadMoreFolder = async () => {
+    if (!currentFolderId || loadingFolder) return;
+    
+    // 1. Calculate new display window
+    const newLimit = folderLimit + 2;
+    setFolderLimit(newLimit);
+
+    // 2. Decide if we need to fetch more data from server
+    const folderLinks = links.filter((l) => l.parent_id === currentFolderId);
+    const existingRealItems = folderLinks.filter((l) => !l.is_local).length;
+    const totalServerExpected = folderCounts[currentFolderId] ?? 0;
+
+    if (existingRealItems >= totalServerExpected) {
+      return;
+    }
+
+    // 3. Perform fetch
+    setLoadingFolder(currentFolderId);
+    try {
+      const res = await loadFolderLinks(currentFolderId, existingRealItems, 2);
+      if ('links' in res && res.links) {
+        const rawLinks = rawLinkListSchema.parse(res.links);
+        const mappedLinks: LinkDTO[] = rawLinks.map((l) => ({
+          id: l.id,
+          title: l.title,
+          url: l.url || '',
+          sort_order: l.sort_order,
+          is_active: l.is_active,
+          clicks: l.clicks,
+          is_folder: l.is_folder,
+          parent_id: l.parent_id,
+          animation_type: l.animation_type,
+          child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
+        }));
+
+        if ('totalCount' in res && res.totalCount !== undefined) {
+          setFolderCounts((prev) => ({
+            ...prev,
+            [currentFolderId]: res.totalCount!,
+          }));
+        }
+
+        setLinks((prev) => {
+          const serverIds = new Set(mappedLinks.map((m) => m.id));
+          const filteredPrev = prev.filter((p) => !serverIds.has(p.id));
+          return [...filteredPrev, ...mappedLinks].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        });
+      }
+    } finally {
+      setLoadingFolder(null);
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
     return () => clearTimeout(timer);
@@ -59,23 +167,47 @@ export default function LinkList({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = links.findIndex((item) => item.id === active.id);
-      const newIndex = links.findIndex((item) => item.id === over.id);
-      const newItems = arrayMove(links, oldIndex, newIndex);
+      // 1. Identify all links belonging to the current parent (even those beyond the pagination limit)
+      const currentSegment = links.filter((l) =>
+        currentFolderId ? l.parent_id === currentFolderId : l.parent_id === null,
+      );
+      
+      const oldIndex = currentSegment.findIndex((item) => item.id === active.id);
+      const newIndex = currentSegment.findIndex((item) => item.id === over.id);
 
-      // Optimistic update for smooth DnD UX (acceptable trade-off)
-      setLinks(newItems);
-      reorderLinks(newItems.map((l) => l.id));
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // 2. Reorder only this segment
+        const reorderedSegment = arrayMove(currentSegment, oldIndex, newIndex).map((l, idx) => ({
+          ...l,
+          sort_order: idx, // Update local sort_order for consistent rendering
+        }));
+
+        // 3. Keep links from other parents/folders
+        const others = links.filter((l) =>
+          currentFolderId ? l.parent_id !== currentFolderId : l.parent_id !== null,
+        );
+
+        // 4. Update state with the merged list
+        const nextLinks = [...others, ...reorderedSegment].sort(
+          (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+        );
+        
+        setLinks(nextLinks);
+        
+        // 5. Sync with server
+        reorderLinks(reorderedSegment.map((l) => l.id));
+      }
     }
   }
 
   async function handleToggle(linkId: string, isActive: boolean) {
-    // Wait for DB success before updating UI
     const result = await toggleLinkActive(linkId, isActive);
     if (result?.error) {
       toast.error('Failed to update link status');
       return;
     }
+    
+    // Update locally for instant response
     setLinks((items) =>
       items.map((item) =>
         item.id === linkId ? { ...item, is_active: isActive } : item,
@@ -84,18 +216,24 @@ export default function LinkList({
   }
 
   async function handleDelete(linkId: string) {
-    // Wait for DB success before updating UI
     const result = await deleteLink(linkId);
     if (result?.error) {
       toast.error('Failed to delete link');
       return;
     }
     toast.success('Link deleted!');
-    setLinks((items) => items.filter((item) => item.id !== linkId));
+    
+    // Refresh ground-truth from server
+    await onRefreshView();
     router.refresh();
   }
 
-  // Show skeleton during loading or SSR to avoid hydration mismatch
+  async function handleUpdate() {
+    // Refresh ground-truth from server
+    await onRefreshView();
+    router.refresh();
+  }
+
   if (isLoading || !mounted) {
     return (
       <div className='space-y-3'>
@@ -115,10 +253,11 @@ export default function LinkList({
     );
   }
 
-  // Filter links based on folder view
-  const visibleLinks = links.filter((l) =>
+  const rawVisibleLinks = links.filter((l) =>
     currentFolderId ? l.parent_id === currentFolderId : l.parent_id === null,
   );
+  
+  const visibleLinks = currentFolderId ? rawVisibleLinks.slice(0, folderLimit) : rawVisibleLinks;
 
   const folders = links.filter((l) => l.is_folder);
   const currentFolder = currentFolderId
@@ -127,32 +266,35 @@ export default function LinkList({
 
   return (
     <>
-      {currentFolderId && currentFolder && (
+      {currentFolderId && (
         <div className='mb-4 pb-4 border-b border-border flex items-center gap-2 text-sm'>
           <button
-            onClick={() => onDrillDown(null)}
+            onClick={() => handleDrillDown(null)}
             className='text-muted-foreground hover:text-foreground transition-colors font-medium flex items-center gap-1 cursor-pointer'
           >
             ← Back to main list
           </button>
           <span className='text-muted-foreground'>/</span>
-          <span className='font-semibold'>{currentFolder.title}</span>
+          <span className='font-semibold'>{currentFolder?.title || 'Folder'}</span>
         </div>
       )}
 
-      {visibleLinks.length === 0 && (
-        <div className='text-center py-12 text-muted-foreground'>
-          <p>This folder is empty.</p>
-          <p className='text-sm'>Move or add links here.</p>
-        </div>
-      )}
-
-      {visibleLinks.length > 0 && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        {visibleLinks.length === 0 && !loadingFolder ? (
+          <div className='text-center py-12 px-6 rounded-xl border-2 border-dashed border-border/50 bg-muted/30 backdrop-blur-sm'>
+            <div className='bg-background w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-border'>
+              <LuFolderOpen className='w-6 h-6 text-muted-foreground' />
+            </div>
+            <p className='text-foreground font-medium'>This folder is empty</p>
+            <p className='text-sm text-muted-foreground max-w-[200px] mx-auto mt-1'>
+              Move or add links here to get started.
+            </p>
+          </div>
+        ) : (
           <SortableContext
             items={visibleLinks.map((l) => l.id)}
             strategy={verticalListSortingStrategy}
@@ -160,20 +302,22 @@ export default function LinkList({
             <div className='space-y-3'>
               {visibleLinks.map((link) => (
                 <SortableLink
-                  key={link.id}
-                  link={link}
-                  onToggle={handleToggle}
-                  onDelete={handleDelete}
-                  onMove={(id) =>
-                    setLinkToMove(links.find((l) => l.id === id) || null)
-                  }
-                  onDrillDown={onDrillDown}
+                   key={link.id}
+                   link={link}
+                   childCount={link.is_folder ? (folderCounts[link.id] ?? 0) : undefined}
+                   onToggle={handleToggle}
+                   onDelete={handleDelete}
+                   onMove={(id) =>
+                     setLinkToMove(links.find((l) => l.id === id) || null)
+                   }
+                   onDrillDown={handleDrillDown}
+                   onUpdate={handleUpdate}
                 />
               ))}
             </div>
           </SortableContext>
-        </DndContext>
-      )}
+        )}
+      </DndContext>
 
       {linkToMove && (
         <MoveToFolderModal
@@ -181,7 +325,32 @@ export default function LinkList({
           folders={folders}
           open={!!linkToMove}
           onOpenChange={(open) => !open && setLinkToMove(null)}
+          onSuccess={async (newParentId) => {
+             // If moved to root (parentId is null), refresh the root view
+             await onRefreshView(!newParentId);
+             router.refresh();
+          }}
         />
+       )}
+
+      {currentFolderId && folderCounts[currentFolderId] !== undefined && (visibleLinks.length < folderCounts[currentFolderId] || loadingFolder === currentFolderId) && (
+        <div className='mt-8 flex justify-center pb-6'>
+          <Button
+            variant='outline'
+            onClick={handleLoadMoreFolder}
+            disabled={loadingFolder === currentFolderId}
+            className='min-w-[140px] shadow-sm'
+          >
+            {loadingFolder === currentFolderId ? (
+              <>
+                <LuLoader className='w-4 h-4 mr-2 animate-spin' />
+                Loading...
+              </>
+            ) : (
+              'Load More'
+            )}
+          </Button>
+        </div>
       )}
     </>
   );
