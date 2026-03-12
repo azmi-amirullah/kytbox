@@ -29,7 +29,7 @@ Ranked by: **Security > Stability > Performance > Code Quality > Features**, com
 | ~~10~~ | ~~**Cashflow: Date Filtering**~~ | ~~Feature~~ | ~~UX~~ | ~~1 session~~ | ~~✅ Done~~ |
 | ~~11~~ | ~~**Cashflow: Export (CSV)**~~ | ~~Feature~~ | ~~UX~~ | ~~~1 session~~ | ~~✅ Done~~ |
 | ~~12~~ | ~~**Bio: Link List Pagination**~~ | ~~Feature~~ | ~~Stability~~ | ~~1 session~~ | ~~✅ Done~~ |
-| 13 | **Automated Testing (Vitest)** | Infra | Stability | 2-3 sessions | 🔲 Pending |
+| ~~13~~ | ~~**Automated Testing (Vitest + Playwright)**~~ | ~~Infra~~ | ~~Stability~~ | ~~1 session~~ | ~~✅ Done~~ |
 | 14 | **Observability (Sentry)** | Infra | Stability | 1-2 sessions | 🔲 Pending |
 | 15 | **PWA Manifest + Service Worker** | Infra | UX | ~1 session | 🔲 Pending |
 | 16 | **`canAccess` Feature Gate** | Feature | Architecture | ~1 session | ⏸️ Deferred |
