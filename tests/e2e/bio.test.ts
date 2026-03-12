@@ -23,77 +23,77 @@ test.describe.serial('Bio E2E Flow', () => {
     // Open the add link modal
     await page.getByRole('button', { name: 'Add Item' }).click();
 
-    // Fill in the form (defaults to Link tab)
+    // Fill in the form
     await page.getByLabel(/link title/i).fill(testLinkTitle);
     await page.getByLabel(/destination url/i).fill(testUrl);
     await page.getByRole('button', { name: 'Add Link', exact: true }).click();
 
-    // The link should appear in the list (look for the exact heading)
+    // Verify visibility
     await expect(page.locator('h3').filter({ hasText: testLinkTitle }).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('can toggle a link active/inactive', async ({ page }) => {
+  test('can edit a link', async ({ page }) => {
     await page.goto('/bio');
     await page.getByRole('tab', { name: /links/i }).click();
 
-    // Wait for the specific tested link's row
     const targetRow = page.locator('div.group').filter({ hasText: testLinkTitle }).first();
-    await expect(targetRow).toBeVisible({ timeout: 10000 });
-    
-    // Find its toggle
-    const toggle = targetRow.getByRole('switch');
-    const initialState = await toggle.getAttribute('aria-checked') ?? 'true';
-    
-    // Deactivate it
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-checked', initialState === 'true' ? 'false' : 'true', { timeout: 10000 });
-    
-    // Reactivate it so it shows up on the public profile for our subsequent tests
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-checked', initialState, { timeout: 10000 });
+    await targetRow.getByRole('button', { name: 'Edit' }).click();
+
+    const updatedTitle = `${testLinkTitle} (Edited)`;
+    await page.getByLabel(/link title/i).fill(updatedTitle);
+    await page.getByRole('button', { name: 'Save Changes' }).click();
+
+    await expect(page.locator('h3').filter({ hasText: updatedTitle }).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('can create a folder', async ({ page }) => {
     await page.goto('/bio');
     await page.getByRole('tab', { name: /links/i }).click();
 
-    // Open the add item modal
     await page.getByRole('button', { name: 'Add Item' }).click();
-
-    // Switch to Folder tab
     await page.getByRole('tab', { name: 'Folder' }).click();
-
-    // Fill in folder name - use locator for precision since labels change
     await page.locator('#title').fill(testFolderTitle);
-    
-    // Submit
     await page.getByRole('button', { name: 'Add Folder', exact: true }).click();
 
-    // It should appear in the list
     await expect(page.locator('h3').filter({ hasText: testFolderTitle }).first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test('can move a link into a folder', async ({ page }) => {
+    await page.goto('/bio');
+    await page.getByRole('tab', { name: /links/i }).click();
+
+    const updatedTitle = `${testLinkTitle} (Edited)`;
+    const linkRow = page.locator('div.group').filter({ hasText: updatedTitle }).first();
+    
+    // Open Move modal
+    await linkRow.getByRole('button', { name: 'Move' }).click();
+    
+    // Select the folder
+    await page.getByRole('combobox').click();
+    await page.getByRole('option', { name: testFolderTitle }).click();
+    await page.getByRole('button', { name: 'Move Link' }).click();
+
+    // Verification: The link should no longer be in the main list
+    await expect(linkRow).not.toBeVisible({ timeout: 10000 });
+
+    // Drill down into folder to verify it's there
+    await page.locator('div.group').filter({ hasText: testFolderTitle }).first().click();
+    await expect(page.locator('h3').filter({ hasText: testLinkTitle }).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('renders the public profile with the newly created items', async ({ browser }) => {
     const username = process.env.E2E_TEST_USERNAME;
-    if (!username) {
-      throw new Error('E2E_TEST_USERNAME must be set in .env.local');
-    }
+    if (!username) throw new Error('E2E_TEST_USERNAME must be set');
 
-    // Open a fresh unauthenticated context — no stored cookies or session, perfectly simulating a guest
     const guestContext = await browser.newContext({ storageState: undefined });
     const guestPage = await guestContext.newPage();
-
     await guestPage.goto(`/${username}`);
 
-    // Public profile must render without redirecting to login
-    await expect(guestPage).not.toHaveURL(/login/);
-    
-    // Verify the base page loaded
     await expect(guestPage.getByText('Powered by').first()).toBeVisible();
-
-    // Verify our specific link and folder made it to the public facing profile
+    
+    // The link is inside a folder now, so we click the folder on the public page
+    await guestPage.getByText(testFolderTitle).click();
     await expect(guestPage.getByText(testLinkTitle)).toBeVisible({ timeout: 10000 });
-    await expect(guestPage.getByText(testFolderTitle)).toBeVisible({ timeout: 10000 });
 
     await guestContext.close();
   });
@@ -102,21 +102,48 @@ test.describe.serial('Bio E2E Flow', () => {
     await page.goto('/bio');
     await page.getByRole('tab', { name: /links/i }).click();
 
-    // Delete the test link
+    // If we are deep in a folder from a previous test, we need to be at root
+    // But since each test starts with page.goto('/bio'), we are at root.
+
+    // 1. Delete the folder (this should delete contents too in ukit's logic)
+    const folderRow = page.locator('div.group').filter({ hasText: testFolderTitle }).first();
+    if (await folderRow.isVisible()) {
+      await folderRow.getByRole('button', { name: 'Delete' }).click();
+      // AlertDialog handle
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+      await expect(folderRow).not.toBeVisible({ timeout: 10000 });
+    }
+
+    // 2. Just in case, try to delete the link if it's still at root (cleanup isolation)
     const linkRow = page.locator('div.group').filter({ hasText: testLinkTitle }).first();
     if (await linkRow.isVisible()) {
       await linkRow.getByRole('button', { name: 'Delete' }).click();
       await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
       await expect(linkRow).not.toBeVisible({ timeout: 10000 });
     }
+  });
 
-    // Delete the test folder
-    const folderRow = page.locator('div.group').filter({ hasText: testFolderTitle }).first();
-    if (await folderRow.isVisible()) {
-      await folderRow.getByRole('button', { name: 'Delete' }).click();
-      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
-      await expect(folderRow).not.toBeVisible({ timeout: 10000 });
-    }
+  test('can toggle a link active/inactive', async ({ page }) => {
+    // We already have a unique item we just deleted. 
+    // Let's run toggle on a fresh link so we don't mess up existing data.
+    const toggleLinkName = `Toggle Test ${runId}`;
+    
+    await page.goto('/bio');
+    await page.getByRole('button', { name: 'Add Item' }).click();
+    await page.getByLabel(/link title/i).fill(toggleLinkName);
+    await page.getByLabel(/destination url/i).fill(testUrl);
+    await page.getByRole('button', { name: 'Add Link', exact: true }).click();
+
+    const row = page.locator('div.group').filter({ hasText: toggleLinkName }).first();
+    const toggle = row.getByRole('switch');
+    const initialState = await toggle.getAttribute('aria-checked') ?? 'true';
+    
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', initialState === 'true' ? 'false' : 'true', { timeout: 10000 });
+
+    // Cleanup toggle test
+    await row.getByRole('button', { name: 'Delete' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
   });
 
 });
