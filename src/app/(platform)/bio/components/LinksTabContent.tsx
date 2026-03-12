@@ -26,6 +26,10 @@ interface LinksTabContentProps {
   totalViews: number;
   localTotalLinks: number;
   setLocalTotalLinks: React.Dispatch<React.SetStateAction<number>>;
+  localActiveLinks: number;
+  setLocalActiveLinks: React.Dispatch<React.SetStateAction<number>>;
+  localRootTotalLinks: number;
+  setLocalRootTotalLinks: React.Dispatch<React.SetStateAction<number>>;
   isLoading?: boolean;
 }
 
@@ -35,6 +39,10 @@ export default function LinksTabContent({
   totalViews,
   localTotalLinks,
   setLocalTotalLinks,
+  localActiveLinks,
+  setLocalActiveLinks,
+  localRootTotalLinks,
+  setLocalRootTotalLinks,
   isLoading,
 }: LinksTabContentProps) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -100,8 +108,14 @@ export default function LinksTabContent({
           }));
           allMapped.push(...mapped);
 
+          if ('globalTotalCount' in res && res.globalTotalCount !== undefined) {
+            setLocalTotalLinks(res.globalTotalCount);
+          }
+          if ('globalActiveCount' in res && res.globalActiveCount !== undefined) {
+            setLocalActiveLinks(res.globalActiveCount);
+          }
           if ('totalCount' in res && res.totalCount !== undefined) {
-            if (parentId === null) setLocalTotalLinks(res.totalCount);
+            if (parentId === null) setLocalRootTotalLinks(res.totalCount);
             else setFolderCounts(prev => ({ ...prev, [parentId]: res.totalCount! }));
           }
         }
@@ -141,12 +155,16 @@ export default function LinksTabContent({
           child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
         }));
 
-        // Update total first to prevent flicker
-        if (mappedLinks.length < 2) {
-          const currentRootCount = links.filter(l => !l.parent_id).length + mappedLinks.length;
-          setLocalTotalLinks(currentRootCount);
-        } else if ('totalCount' in result && result.totalCount !== undefined) {
-          setLocalTotalLinks(result.totalCount);
+        // Update total and active counts from server
+        if ('globalTotalCount' in result && result.globalTotalCount !== undefined) {
+          setLocalTotalLinks(result.globalTotalCount);
+        }
+        if ('globalActiveCount' in result && result.globalActiveCount !== undefined) {
+          setLocalActiveLinks(result.globalActiveCount);
+        }
+
+        if ('totalCount' in result && result.totalCount !== undefined) {
+          setLocalRootTotalLinks(result.totalCount);
         }
 
         setLinks((prev) => {
@@ -164,7 +182,7 @@ export default function LinksTabContent({
   };
 
   const totalClicks = links.reduce((sum, link) => sum + (link.clicks ?? 0), 0);
-  const activeLinksCount = links.filter((l) => !!l.is_active).length;
+  // localActiveLinks is used for the display count
 
   return (
     <div className='space-y-4 min-w-0'>
@@ -190,7 +208,7 @@ export default function LinksTabContent({
         />
         <StatsCard
           label='Active'
-          value={activeLinksCount}
+          value={localActiveLinks}
           icon={LuLink}
           isLoading={isLoading}
           variant='green'
@@ -241,8 +259,9 @@ export default function LinksTabContent({
               folderCounts={folderCounts}
               setFolderCounts={setFolderCounts}
               onRefreshView={refreshCurrentView}
+              setLocalActiveLinks={setLocalActiveLinks}
             />
-            {!isLoading && !currentFolderId && !isRefreshing && (links.filter(l => !l.parent_id).length < localTotalLinks || isLoadingMore) && (
+            {!isLoading && !currentFolderId && !isRefreshing && (links.filter(l => !l.parent_id).length < localRootTotalLinks || isLoadingMore) && (
               <div className='mt-6 flex justify-center'>
                 <Button 
                   variant='outline' 

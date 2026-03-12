@@ -8,6 +8,31 @@ import {
   updateAppearanceSchema,
   moveToFolderSchema,
 } from '@/lib/validation.schemas';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+async function calculateGlobalCounts(userId: string, supabase: SupabaseClient) {
+  const { data: allLinks } = await supabase
+    .from('links')
+    .select('id, is_active, parent_id, is_folder')
+    .eq('user_id', userId);
+
+  if (!allLinks) return { globalTotalCount: 0, globalActiveCount: 0 };
+
+  const inactiveFolderIds = new Set(
+    allLinks.filter((l) => l.is_folder && !l.is_active).map((l) => l.id),
+  );
+
+  const reachableLinksCount = allLinks.filter((l) => {
+    if (!l.is_active) return false;
+    if (l.parent_id && inactiveFolderIds.has(l.parent_id)) return false;
+    return true;
+  }).length;
+
+  return {
+    globalTotalCount: allLinks.length,
+    globalActiveCount: reachableLinksCount,
+  };
+}
 
 export async function addLink(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
@@ -370,39 +395,55 @@ export async function moveToFolder(formData: FormData) {
 export async function loadMoreLinks(offset: number, limit: number = 50) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
   
-  const { data, error, count } = await supabase
-    .from('links')
-    .select('*, children:links(count)', { count: 'exact' })
-    .eq('user_id', user.id)
-    .is('parent_id', null)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true })
-    .range(offset, offset + limit - 1);
+  const [{ data, error, count }, { globalTotalCount, globalActiveCount }] = await Promise.all([
+    supabase
+      .from('links')
+      .select('*, children:links(count)', { count: 'exact' })
+      .eq('user_id', user.id)
+      .is('parent_id', null)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1),
+    calculateGlobalCounts(user.id, supabase),
+  ]);
     
   if (error) {
     return { error: error.message };
   }
   
-  return { links: data, totalCount: count || 0 };
+  return { 
+    links: data, 
+    totalCount: count || 0, // Root count for pagination
+    globalTotalCount: globalTotalCount || 0,
+    globalActiveCount: globalActiveCount || 0
+  };
 }
 
 export async function loadFolderLinks(folderId: string, offset: number, limit: number = 50) {
   const { user, supabase } = await getAuthenticatedUserAndProfile();
   
-  const { data, error, count } = await supabase
-    .from('links')
-    .select(
-      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, clicks, children:links(count)',
-      { count: 'exact' }
-    ).eq('user_id', user.id)
-    .eq('parent_id', folderId)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true })
-    .range(offset, offset + limit - 1);
+  const [{ data, error, count }, { globalTotalCount, globalActiveCount }] = await Promise.all([
+    supabase
+      .from('links')
+      .select(
+        'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, clicks, children:links(count)',
+        { count: 'exact' }
+      ).eq('user_id', user.id)
+      .eq('parent_id', folderId)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1),
+    calculateGlobalCounts(user.id, supabase),
+  ]);
     
   if (error) {
     return { error: error.message };
   }
   
-  return { links: data, totalCount: count || 0 };
+  return { 
+    links: data, 
+    totalCount: count || 0, // Folder count for pagination
+    globalTotalCount: globalTotalCount || 0,
+    globalActiveCount: globalActiveCount || 0
+  };
 }

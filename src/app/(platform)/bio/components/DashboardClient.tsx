@@ -38,6 +38,9 @@ interface DashboardClientProps {
   publicUrl: string;
   totalViews: number;
   totalLinks?: number;
+  activeLinksCount?: number;
+  rootTotalCount?: number;
+  activeRootTotalCount?: number;
   isLoading?: boolean;
   activeTab?: BioTab;
 }
@@ -53,6 +56,9 @@ export default function DashboardClient({
   publicUrl,
   totalViews,
   totalLinks = 0,
+  activeLinksCount = 0,
+  rootTotalCount = 0,
+  activeRootTotalCount = 0,
   isLoading,
   activeTab = DEFAULT_TAB,
 }: DashboardClientProps) {
@@ -64,6 +70,8 @@ export default function DashboardClient({
 
   const [links, setLinks] = useState<LinkDTO[]>(initialLinks);
   const [localTotalLinks, setLocalTotalLinks] = useState(totalLinks);
+  const [localActiveLinks, setLocalActiveLinks] = useState(activeLinksCount);
+  const [localRootTotalLinks, setLocalRootTotalLinks] = useState(rootTotalCount);
   const [themeName, setThemeName] = useState(profile?.theme_name || 'default');
   const [customTheme, setCustomTheme] = useState<CustomThemeData | null>(
     profile?.custom_theme || null,
@@ -82,6 +90,8 @@ export default function DashboardClient({
   // Merge initialLinks from props whenever they change (Single source of truth for the first batch)
   useEffect(() => {
     setLocalTotalLinks(totalLinks);
+    setLocalActiveLinks(activeLinksCount);
+    setLocalRootTotalLinks(rootTotalCount);
     if (initialLinks.length > 0) {
       setLinks((prev) => {
         const serverIds = new Set(initialLinks.map((l) => l.id));
@@ -92,7 +102,7 @@ export default function DashboardClient({
         );
       });
     }
-  }, [initialLinks, totalLinks]);
+  }, [initialLinks, totalLinks, activeLinksCount, rootTotalCount]);
 
   useEffect(() => {
     setCurrentTab(resolvedTab);
@@ -151,6 +161,10 @@ export default function DashboardClient({
               setLinks={setLinks}
               localTotalLinks={localTotalLinks}
               setLocalTotalLinks={setLocalTotalLinks}
+              localActiveLinks={localActiveLinks}
+              setLocalActiveLinks={setLocalActiveLinks}
+              localRootTotalLinks={localRootTotalLinks}
+              setLocalRootTotalLinks={setLocalRootTotalLinks}
               totalViews={totalViews}
               isLoading={isLoading}
             />
@@ -228,7 +242,7 @@ export default function DashboardClient({
                 })),
               [links],
             )}
-            totalLinks={totalLinks}
+            totalLinks={activeRootTotalCount}
             isLoading={isLoading}
           />
         </div>

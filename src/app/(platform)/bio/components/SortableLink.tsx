@@ -35,10 +35,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import LinkModal from './LinkModal';
 import type { LinkDTO } from '@/types/dto';
+import { cn } from '@/lib/utils';
 
 interface SortableLinkProps {
   link: LinkDTO;
   childCount?: number;
+  isParentHidden?: boolean;
   onToggle: (linkId: string, isActive: boolean) => void;
   onDelete: (linkId: string) => void;
   onMove: (linkId: string) => void;
@@ -49,6 +51,7 @@ interface SortableLinkProps {
 const LinkItemContent = memo(function LinkItemContent({
   link,
   childCount,
+  isParentHidden,
   attributes,
   listeners,
   onToggle,
@@ -58,6 +61,7 @@ const LinkItemContent = memo(function LinkItemContent({
 }: {
   link: LinkDTO;
   childCount?: number;
+  isParentHidden?: boolean;
   attributes?: ReturnType<typeof useSortable>['attributes'];
   listeners?: ReturnType<typeof useSortable>['listeners'];
   onToggle: (linkId: string, isActive: boolean) => void;
@@ -102,19 +106,36 @@ const LinkItemContent = memo(function LinkItemContent({
         className='flex items-center'
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+          if (e.key === 'Enter' || e.key === ' ' && !isParentHidden) {
             e.stopPropagation();
             onToggle(link.id, !link.is_active);
           }
         }}
         role='button'
-        tabIndex={0}
+        tabIndex={isParentHidden ? -1 : 0}
       >
-        <Switch
-          checked={!!link.is_active}
-          onCheckedChange={(checked) => onToggle(link.id, checked)}
-          className='data-[state=checked]:bg-green-500'
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={isParentHidden ? 'cursor-not-allowed' : ''}>
+                <Switch
+                  checked={isParentHidden ? false : !!link.is_active}
+                  onCheckedChange={(checked) => !isParentHidden && onToggle(link.id, checked)}
+                  disabled={isParentHidden}
+                  className={cn(
+                    'data-[state=checked]:bg-green-500',
+                    isParentHidden && 'opacity-50 grayscale'
+                  )}
+                />
+              </div>
+            </TooltipTrigger>
+            {isParentHidden && (
+              <TooltipContent side='bottom'>
+                <p>Cannot activate: Folder is hidden</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Link Info */}
@@ -131,7 +152,21 @@ const LinkItemContent = memo(function LinkItemContent({
             )}
             {link.title}
           </h3>
-          {!link.is_active && (
+          {isParentHidden ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className='text-[10px] uppercase tracking-wider font-bold bg-amber-500/10 text-amber-600 dark:text-amber-500 px-1.5 py-0.5 rounded-sm flex items-center gap-1 cursor-help'>
+                    <LuTriangleAlert className='w-3 h-3' />
+                    Folder Hidden
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>This item is hidden because its folder is inactive.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : !link.is_active && (
             <span className='text-[10px] uppercase tracking-wider font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded-sm'>
               Hidden
             </span>
@@ -328,6 +363,7 @@ export default function SortableLink({
   onMove,
   onDrillDown,
   onUpdate,
+  isParentHidden,
 }: SortableLinkProps) {
   const {
     attributes,
@@ -396,11 +432,13 @@ export default function SortableLink({
             : 'hover:border-primary/20 hover:shadow-sm hover:bg-secondary/80'
         }
         ${link.is_folder && !isDragging ? 'cursor-pointer hover:border-primary/50' : ''}
+        ${isParentHidden ? 'opacity-70 bg-secondary/30' : ''}
       `}
     >
       <LinkItemContent
         link={link}
         childCount={childCount}
+        isParentHidden={isParentHidden}
         attributes={attributes}
         listeners={listeners}
         onToggle={onToggle}

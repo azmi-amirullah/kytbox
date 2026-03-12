@@ -35,6 +35,7 @@ interface LinkListProps {
   folderCounts: Record<string, number>;
   setFolderCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   onRefreshView: (refreshRoot?: boolean) => Promise<void>;
+  setLocalActiveLinks: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export default function LinkList({
@@ -46,6 +47,7 @@ export default function LinkList({
   folderCounts,
   setFolderCounts,
   onRefreshView,
+  setLocalActiveLinks,
 }: LinkListProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -201,6 +203,9 @@ export default function LinkList({
   }
 
   async function handleToggle(linkId: string, isActive: boolean) {
+    const link = links.find(l => l.id === linkId);
+    if (!link) return;
+
     const result = await toggleLinkActive(linkId, isActive);
     if (result?.error) {
       toast.error('Failed to update link status');
@@ -213,6 +218,13 @@ export default function LinkList({
         item.id === linkId ? { ...item, is_active: isActive } : item,
       ),
     );
+
+    if (link.is_folder) {
+      // Re-fetch ground truth for hierarchical counts
+      await onRefreshView();
+    } else {
+      setLocalActiveLinks((prev) => (isActive ? prev + 1 : prev - 1));
+    }
   }
 
   async function handleDelete(linkId: string) {
@@ -305,6 +317,7 @@ export default function LinkList({
                    key={link.id}
                    link={link}
                    childCount={link.is_folder ? (folderCounts[link.id] ?? 0) : undefined}
+                   isParentHidden={currentFolder ? !currentFolder.is_active : false}
                    onToggle={handleToggle}
                    onDelete={handleDelete}
                    onMove={(id) =>
