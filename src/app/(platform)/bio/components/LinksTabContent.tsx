@@ -79,7 +79,7 @@ export default function LinksTabContent({
       // 2. Fetch segments in parallel
       const results = await Promise.all(jobs.map(async (job) => {
         const visibleCount = links.filter(l => job.parentId ? l.parent_id === job.parentId : !l.parent_id).length;
-        const limit = Math.max(2, visibleCount);
+        const limit = Math.max(50, visibleCount);
         const res = job.parentId 
           ? await loadFolderLinks(job.parentId, 0, limit)
           : await loadMoreLinks(0, limit);
@@ -137,7 +137,7 @@ export default function LinksTabContent({
     setIsLoadingMore(true);
     try {
       const rootCount = links.filter((l) => !l.parent_id).length;
-      const result = await loadMoreLinks(rootCount, 2);
+      const result = await loadMoreLinks(rootCount, 50);
       if ('error' in result && result.error) {
         toast.error('Failed to load more links: ' + result.error);
       } else if ('links' in result && result.links) {

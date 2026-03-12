@@ -52,26 +52,26 @@ export default function LinkList({
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [linkToMove, setLinkToMove] = useState<LinkDTO | null>(null);
-  const [folderLimit, setFolderLimit] = useState(2);
+  const [folderLimit, setFolderLimit] = useState(50);
   const [loadingFolder, setLoadingFolder] = useState<string | null>(null);
 
   // Expand limit logic: if user adds a link locally, we should show it
   useEffect(() => {
     if (currentFolderId) {
       const itemsInFolder = links.filter((l) => l.parent_id === currentFolderId);
-      setFolderLimit((prev) => Math.max(prev, itemsInFolder.length, 2));
+      setFolderLimit((prev) => Math.max(prev, itemsInFolder.length, 50));
     }
   }, [links, currentFolderId]);
 
   const handleDrillDown = async (id: string | null) => {
     const existingItems = links.filter((l) => l.parent_id === id);
-    setFolderLimit(Math.max(2, existingItems.length));
+    setFolderLimit(Math.max(50, existingItems.length));
     onDrillDown(id);
     if (id) {
       const currentItems = links.filter((l) => l.parent_id === id);
       if (currentItems.length === 0) {
         setLoadingFolder(id);
-        const res = await loadFolderLinks(id, 0, 2);
+        const res = await loadFolderLinks(id, 0, 50);
         if ('links' in res && res.links) {
           const rawLinks = rawLinkListSchema.parse(res.links);
           const mappedLinks: LinkDTO[] = rawLinks.map((l) => ({
@@ -104,7 +104,7 @@ export default function LinkList({
     if (!currentFolderId || loadingFolder) return;
     
     // 1. Calculate new display window
-    const newLimit = folderLimit + 2;
+    const newLimit = folderLimit + 50;
     setFolderLimit(newLimit);
 
     // 2. Decide if we need to fetch more data from server
@@ -119,7 +119,7 @@ export default function LinkList({
     // 3. Perform fetch
     setLoadingFolder(currentFolderId);
     try {
-      const res = await loadFolderLinks(currentFolderId, existingRealItems, 2);
+      const res = await loadFolderLinks(currentFolderId, existingRealItems, 50);
       if ('links' in res && res.links) {
         const rawLinks = rawLinkListSchema.parse(res.links);
         const mappedLinks: LinkDTO[] = rawLinks.map((l) => ({

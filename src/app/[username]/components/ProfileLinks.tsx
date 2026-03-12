@@ -54,7 +54,7 @@ export default function ProfileLinks({
   }, [initialLinks, totalLinks]);
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [folderLimit, setFolderLimit] = useState(2);
+  const [folderLimit, setFolderLimit] = useState(50);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [folderCounts, setFolderCounts] = useState<Record<string, number>>({});
@@ -63,14 +63,14 @@ export default function ProfileLinks({
 
   const handleDrillDown = async (id: string | null) => {
     const existingItems = links.filter((l) => l.parent_id === id);
-    setFolderLimit(Math.max(2, existingItems.length));
+    setFolderLimit(Math.max(50, existingItems.length));
     setCurrentFolderId(id);
 
     if (id) {
       const currentItems = links.filter((l) => l.parent_id === id);
       if (currentItems.length === 0) {
         setLoadingFolder(id);
-        const res = await loadMorePublicFolderLinks(profileId, id, 0, 2);
+        const res = await loadMorePublicFolderLinks(profileId, id, 0, 50);
         if (res.links) {
           const newLinks = res.links.map((l) => ({
             ...l,
@@ -98,7 +98,7 @@ export default function ProfileLinks({
     if (!currentFolderId) return;
     setLoadingFolder(currentFolderId);
 
-    const newLimit = folderLimit + 2;
+    const newLimit = folderLimit + 50;
     setFolderLimit(newLimit);
 
     const existingCount = links.filter(
@@ -112,7 +112,7 @@ export default function ProfileLinks({
         profileId,
         currentFolderId,
         existingCount,
-        2,
+        50,
       );
       if (res.links) {
         const newLinks = res.links.map((l) => ({
@@ -157,7 +157,7 @@ export default function ProfileLinks({
     setIsLoadingMore(true);
     try {
       const rootCount = links.filter((l) => !l.parent_id).length;
-      const result = await loadMorePublicLinks(profileId, rootCount, 2);
+      const result = await loadMorePublicLinks(profileId, rootCount, 50);
       if (result.error) {
         toast.error('Failed to load more links.');
       } else if (result.links) {

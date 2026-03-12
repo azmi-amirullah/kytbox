@@ -46,7 +46,7 @@ export default async function BioDashboardPage({
       .is('parent_id', null)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
-      .range(0, 1),
+      .range(0, 49),
     supabase
       .from('profile_events')
       .select('*', { count: 'exact', head: true })

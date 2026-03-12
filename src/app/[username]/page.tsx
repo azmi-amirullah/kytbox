@@ -61,7 +61,7 @@ export default async function PublicProfilePage({
       .is('parent_id', null)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
-      .range(0, 1),
+      .range(0, 49),
   ]);
 
   const rawRootLinks = rootLinksResult.data || [];
