@@ -49,20 +49,18 @@ export default async function PublicProfilePage({
   trackProfileView(profile.id);
 
   // Get links for this specific user (filtered at DB level)
-  const [rootLinksResult] = await Promise.all([
-    supabase
-      .from('links')
-      .select(
-        'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, children:links(count)',
-        { count: 'exact' }
-      )
-      .eq('user_id', profile.id)
-      .eq('is_active', true)
-      .is('parent_id', null)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: true })
-      .range(0, 49),
-  ]);
+  const rootLinksResult = await supabase
+    .from('links')
+    .select(
+      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, children:links(count)',
+      { count: 'exact' },
+    )
+    .eq('user_id', profile.id)
+    .eq('is_active', true)
+    .is('parent_id', null)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+    .range(0, 49);
 
   const rawRootLinks = rootLinksResult.data || [];
   const totalLinks = rootLinksResult.count ?? 0;
