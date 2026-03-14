@@ -18,12 +18,12 @@ Testing a moving target is a waste of time, but shipping a broken core is a wast
 ### 1. Security & Data Integrity (Critical)
 - [x] **Auth Setup**: Persist sessions between tests to avoid login spam.
 - [ ] **Protected Routes**: Verify `/bio` and `/cashflow` redirect to `/login` when unauthenticated.
-- [ ] **Data Leak Prevention (DTOs)**: Unit tests for DTO mappers to ensure sensitive DB fields (hashes, raw IDs) never leak to client.
+- [x] **Data Leak Prevention (DTOs)**: Unit tests for DTO mappers to ensure sensitive DB fields (hashes, raw IDs) never leak to client.
 - [ ] **Hierarchical Delete**: Verify that deleting a folder recursively cleans up links or orphan-checks them.
 
 ### 2. Cashflow Logic & Math (Critical)
-- [ ] **Math Engine**: Unit tests for projection logic (`calculateProjections`).
-- [ ] **Budget Engine**: Tests for "Over Budget" vs "Maxed Out" status logic.
+- [x] **Math Engine**: Unit tests for projection logic (`calculateProjections`).
+- [x] **Budget Engine**: Tests for "Over Budget" vs "Maxed Out" status logic.
 - [ ] **Date Filtering**: Verify edge cases for custom date ranges (leap years, month boundaries).
 
 ### 3. Core Product Lifecycles (High)

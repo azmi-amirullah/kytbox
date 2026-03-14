@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { getCurrency, formatCurrency, getCurrencySymbol } from '@/lib/currency';
 
 describe('getCurrency', () => {

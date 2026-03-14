@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { LuPencil, LuTrash2, LuLoader } from 'react-icons/lu';
+import { calculateBudgetStatus } from '@/lib/cashflow-math';
 import type { CashflowBudgetDTO, CashflowEntryDTO } from '@/types/dto';
 import { formatCurrencyCompact } from '@/lib/currency';
 
@@ -35,29 +36,10 @@ export default function BudgetProgress({
   onDelete,
   isDeleting,
 }: BudgetProgressProps) {
-  const { spent, pct } = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const spent = entries
-      .filter((e) => {
-        if (e.type !== 'expense') return false;
-        if (e.category !== budget.category) return false;
-        const [year, month] = e.date.split('-').map(Number);
-        return year === currentYear && month - 1 === currentMonth;
-      })
-      .reduce((sum, e) => sum + Number(e.amount), 0);
-
-    const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-    return { spent, pct };
-  }, [entries, budget]);
-
-  // Compare raw amounts to avoid floating-point imprecision from percentage math.
-  // Over budget = strictly exceeded. At limit = exactly used up.
-  const isOverBudget = spent > budget.amount;
-  const isAtLimit = !isOverBudget && pct >= 100;
-  const isWarning = pct >= 80 && pct < 100;
+  const { spent, pct, isOverBudget, isAtLimit, isWarning } = useMemo(
+    () => calculateBudgetStatus(budget, entries),
+    [entries, budget],
+  );
 
   const barColor = isOverBudget
     ? 'bg-red-700'
@@ -74,6 +56,7 @@ export default function BudgetProgress({
       : isWarning
         ? 'text-amber-600 dark:text-amber-400'
         : 'text-emerald-600 dark:text-emerald-400';
+
 
   return (
     <div className='bg-card border rounded-xl p-4 space-y-3'>
