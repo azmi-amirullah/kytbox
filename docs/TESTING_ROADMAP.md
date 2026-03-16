@@ -17,7 +17,7 @@ Testing a moving target is a waste of time, but shipping a broken core is a wast
 
 ### 1. Security & Data Integrity (Critical)
 - [x] **Auth Setup**: Persist sessions between tests to avoid login spam.
-- [ ] **Protected Routes**: Verify `/bio` and `/cashflow` redirect to `/login` when unauthenticated.
+- [x] **Protected Routes**: Verify `/bio` and `/cashflow` redirect to `/login` when unauthenticated.
 - [x] **Data Leak Prevention (DTOs)**: Unit tests for DTO mappers to ensure sensitive DB fields (hashes, raw IDs) never leak to client.
 - [ ] **Hierarchical Delete**: Verify that deleting a folder recursively cleans up links or orphan-checks them.
 
