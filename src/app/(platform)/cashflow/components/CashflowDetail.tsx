@@ -52,11 +52,12 @@ import { CashflowCharts } from './CashflowCharts';
 import { ProjectionsView } from './ProjectionsView';
 import { subscribeToPublicCashflow, removeShare } from '../share-actions';
 import BudgetManager from './BudgetManager';
-import {
-  DateFilter,
+import { DateFilter } from './DateFilter';
+import { 
+  filterEntriesByDate, 
   resolveFilterRange,
-  type DateFilterState,
-} from './DateFilter';
+  type DateFilterState
+} from '@/lib/cashflow-math';
 
 interface CashflowDetailProps {
   cashflow: CashflowDTO;
@@ -111,13 +112,8 @@ export default function CashflowDetail({
   });
 
   const filteredEntries = useMemo(() => {
-    const { from, to } = resolveFilterRange(filterState);
-    if (!from && !to) return entries;
-    return entries.filter((e) => {
-      if (from && e.date < from) return false;
-      if (to && e.date > to) return false;
-      return true;
-    });
+    const range = resolveFilterRange(filterState);
+    return filterEntriesByDate(entries, range);
   }, [entries, filterState]);
   // ─────────────────────────────────────────────────────────────────────────────
 

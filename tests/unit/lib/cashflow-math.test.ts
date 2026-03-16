@@ -1,4 +1,9 @@
-import { calculateProjections, calculateBudgetStatus } from '@/lib/cashflow-math';
+import { 
+  calculateProjections, 
+  calculateBudgetStatus,
+  resolveFilterRange,
+  filterEntriesByDate
+} from '@/lib/cashflow-math';
 import type { CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
 
 // Fix "Today" to March 15, 2026 for all tests to ensure deterministic results
@@ -190,5 +195,78 @@ describe('calculateBudgetStatus', () => {
     // Over Budget (> 100%)
     const s4 = calculateBudgetStatus(budget, [createEntry({ amount: 501, category: 'food', date: '2026-03-01' })], TODAY);
     expect(s4.isOverBudget).toBe(true);
+  });
+});
+
+describe('resolveFilterRange', () => {
+  it('resolves "this-month" correctly', () => {
+    const range = resolveFilterRange({ preset: 'this-month', custom: { from: null, to: null } }, TODAY);
+    expect(range.from).toBe('2026-03-01');
+    expect(range.to).toBe('2026-03-31');
+  });
+
+  it('resolves "last-month" correctly across year boundary', () => {
+    const JAN_2026 = new Date('2026-01-10T12:00:00Z');
+    const range = resolveFilterRange({ preset: 'last-month', custom: { from: null, to: null } }, JAN_2026);
+    expect(range.from).toBe('2025-12-01');
+    expect(range.to).toBe('2025-12-31');
+  });
+
+  it('resolves "last-month" correctly for leap years (Feb 29)', () => {
+    const MARCH_2024 = new Date('2024-03-15T12:00:00Z'); // 2024 is leap year
+    const range = resolveFilterRange({ preset: 'last-month', custom: { from: null, to: null } }, MARCH_2024);
+    expect(range.from).toBe('2024-02-01');
+    expect(range.to).toBe('2024-02-29');
+  });
+
+  it('resolves "last-3-months" correctly', () => {
+    const range = resolveFilterRange({ preset: 'last-3-months', custom: { from: null, to: null } }, TODAY);
+    // March, Feb, Jan
+    expect(range.from).toBe('2026-01-01');
+    expect(range.to).toBe('2026-03-31');
+  });
+
+  it('returns custom range when preset is "custom"', () => {
+    const custom = { from: '2026-06-01', to: '2026-06-30' };
+    const range = resolveFilterRange({ preset: 'custom', custom }, TODAY);
+    expect(range).toEqual(custom);
+  });
+
+  it('returns nulls for "all-time"', () => {
+    const range = resolveFilterRange({ preset: 'all-time', custom: { from: 'bad', to: 'data' } }, TODAY);
+    expect(range.from).toBeNull();
+    expect(range.to).toBeNull();
+  });
+});
+
+describe('filterEntriesByDate', () => {
+  const entries = [
+    createEntry({ id: '1', date: '2026-01-01' }),
+    createEntry({ id: '2', date: '2026-02-15' }),
+    createEntry({ id: '3', date: '2026-03-31' }),
+  ];
+
+  it('returns all entries if range has no boundaries', () => {
+    expect(filterEntriesByDate(entries, { from: null, to: null })).toHaveLength(3);
+  });
+
+  it('filters by "from" date (inclusive)', () => {
+    const filtered = filterEntriesByDate(entries, { from: '2026-02-15', to: null });
+    expect(filtered).toHaveLength(2);
+    expect(filtered[0].id).toBe('2');
+    expect(filtered[1].id).toBe('3');
+  });
+
+  it('filters by "to" date (inclusive)', () => {
+    const filtered = filterEntriesByDate(entries, { from: null, to: '2026-02-15' });
+    expect(filtered).toHaveLength(2);
+    expect(filtered[0].id).toBe('1');
+    expect(filtered[1].id).toBe('2');
+  });
+
+  it('filters by both boundaries', () => {
+    const filtered = filterEntriesByDate(entries, { from: '2026-02-01', to: '2026-03-01' });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe('2');
   });
 });

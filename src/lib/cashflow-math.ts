@@ -22,6 +22,32 @@ export interface ProjectionResult {
 }
 
 /**
+ * Supported date filter presets.
+ */
+export type DateFilterPreset =
+  | 'this-month'
+  | 'last-month'
+  | 'last-3-months'
+  | 'all-time'
+  | 'custom';
+
+/**
+ * ISO date range (YYYY-MM-DD).
+ */
+export interface DateRange {
+  from: string | null;
+  to: string | null;
+}
+
+/**
+ * State for the date filter.
+ */
+export interface DateFilterState {
+  preset: DateFilterPreset;
+  custom: DateRange;
+}
+
+/**
  * Result of the budget status calculation.
  */
 export interface BudgetStatus {
@@ -220,4 +246,71 @@ export function calculateBudgetStatus(
     isAtLimit,
     isWarning
   };
+}
+
+/**
+ * Returns the effective `from`/`to` ISO strings for a given preset.
+ * 
+ * @param state - The filter state
+ * @param today - Reference date (defaults to current system time)
+ */
+export function resolveFilterRange(
+  state: DateFilterState, 
+  today: Date = new Date()
+): DateRange {
+  const y = today.getFullYear();
+  const m = today.getMonth(); // 0-indexed
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const iso = (year: number, month: number, day: number) =>
+    `${year}-${pad(month + 1)}-${pad(day)}`;
+
+  switch (state.preset) {
+    case 'this-month':
+      return {
+        from: iso(y, m, 1),
+        to: iso(y, m, new Date(y, m + 1, 0).getDate()),
+      };
+    case 'last-month': {
+      const lm = m === 0 ? 11 : m - 1;
+      const ly = m === 0 ? y - 1 : y;
+      return {
+        from: iso(ly, lm, 1),
+        to: iso(ly, lm, new Date(ly, lm + 1, 0).getDate()),
+      };
+    }
+    case 'last-3-months': {
+      // First day 3 calendar months ago (including current month) -> last day of current month
+      const threeMonthsAgoDate = new Date(y, m - 2, 1);
+      return {
+        from: iso(threeMonthsAgoDate.getFullYear(), threeMonthsAgoDate.getMonth(), 1),
+        to: iso(y, m, new Date(y, m + 1, 0).getDate()),
+      };
+    }
+    case 'custom':
+      return state.custom;
+    case 'all-time':
+    default:
+      return { from: null, to: null };
+  }
+}
+
+/**
+ * Filters a list of entries by a date range.
+ * 
+ * @param entries - List of entries to filter
+ * @param range - The date range to apply
+ */
+export function filterEntriesByDate(
+  entries: CashflowEntryDTO[],
+  range: DateRange
+): CashflowEntryDTO[] {
+  const { from, to } = range;
+  if (!from && !to) return entries;
+
+  return entries.filter((e) => {
+    if (from && e.date < from) return false;
+    if (to && e.date > to) return false;
+    return true;
+  });
 }

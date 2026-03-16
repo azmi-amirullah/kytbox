@@ -24,7 +24,7 @@ Testing a moving target is a waste of time, but shipping a broken core is a wast
 ### 2. Cashflow Logic & Math (Critical)
 - [x] **Math Engine**: Unit tests for projection logic (`calculateProjections`).
 - [x] **Budget Engine**: Tests for "Over Budget" vs "Maxed Out" status logic.
-- [ ] **Date Filtering**: Verify edge cases for custom date ranges (leap years, month boundaries).
+- [x] **Date Filtering**: Verify edge cases for custom date ranges (leap years, month boundaries).
 
 ### 3. Core Product Lifecycles (High)
 - [x] **Bio CRUD**: Create link/folder -> Edit -> Move -> Delete -> Verify Public visibility.
