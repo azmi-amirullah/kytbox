@@ -19,7 +19,7 @@ Testing a moving target is a waste of time, but shipping a broken core is a wast
 - [x] **Auth Setup**: Persist sessions between tests to avoid login spam.
 - [x] **Protected Routes**: Verify `/bio` and `/cashflow` redirect to `/login` when unauthenticated.
 - [x] **Data Leak Prevention (DTOs)**: Unit tests for DTO mappers to ensure sensitive DB fields (hashes, raw IDs) never leak to client.
-- [ ] **Hierarchical Delete**: Verify that deleting a folder recursively cleans up links or orphan-checks them.
+- [x] **Hierarchical Delete**: Verify that deleting a folder recursively cleans up links or orphan-checks them.
 
 ### 2. Cashflow Logic & Math (Critical)
 - [x] **Math Engine**: Unit tests for projection logic (`calculateProjections`).
@@ -28,7 +28,7 @@ Testing a moving target is a waste of time, but shipping a broken core is a wast
 
 ### 3. Core Product Lifecycles (High)
 - [x] **Bio CRUD**: Create link/folder -> Edit -> Move -> Delete -> Verify Public visibility.
-- [ ] **Nested Management**: Add, edit, delete, move, and drag-sort links *inside* folders -> Verify Public visibility.
+- [x] **Nested Management**: Add, edit, delete, move, and drag-sort links *inside* folders -> Verify Public visibility.
 - [ ] **Support System**: Create support message -> Verify admin receives -> Reply -> User receives.
 - [ ] **Cashflow CRUD**: Create entry -> Edit -> Delete -> Verify Summary updates.
 
