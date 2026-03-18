@@ -27,6 +27,7 @@ const nextConfig: NextConfig = {
     ],
   },
   cacheComponents: true,
+  skipProxyUrlNormalize: true,
   async headers() {
     return [
       {
