@@ -11,6 +11,30 @@ import './globals.css';
 
 import { siteConfig } from '@/config/site';
 
+async function NoncedProviders() {
+  const headersList = await headers();
+  const nonce = headersList.get('x-nonce') || '';
+
+  return (
+    <>
+      <NextTopLoader
+        color='var(--primary)'
+        initialPosition={0.08}
+        crawlSpeed={200}
+        height={3}
+        crawl={true}
+        showSpinner={false}
+        easing='ease'
+        speed={200}
+        shadow='0 0 10px var(--primary),0 0 5px var(--primary)'
+        nonce={nonce}
+      />
+      <Analytics nonce={nonce} />
+      <SpeedInsights nonce={nonce} />
+    </>
+  );
+}
+
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -72,13 +96,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headersList = await headers();
-  const nonce = headersList.get('x-nonce') || '';
 
   return (
     <html lang='en' suppressHydrationWarning>
@@ -91,24 +113,12 @@ export default async function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <NextTopLoader
-            color='var(--primary)'
-            initialPosition={0.08}
-            crawlSpeed={200}
-            height={3}
-            crawl={true}
-            showSpinner={false}
-            easing='ease'
-            speed={200}
-            shadow='0 0 10px var(--primary),0 0 5px var(--primary)'
-            nonce={nonce}
-          />
+          <Suspense fallback={null}>
+            <NoncedProviders />
+          </Suspense>
           <Suspense fallback={null}>{children}</Suspense>
           <ToastProvider />
         </ThemeProvider>
-
-        <Analytics nonce={nonce} />
-        <SpeedInsights nonce={nonce} />
       </body>
     </html>
   );
