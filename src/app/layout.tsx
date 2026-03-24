@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/toast-provider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { headers } from 'next/headers';
 import './globals.css';
 
 import { siteConfig } from '@/config/site';
@@ -71,11 +72,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const nonce = headersList.get('x-nonce') || '';
+
   return (
     <html lang='en' suppressHydrationWarning>
       <body
@@ -97,13 +101,14 @@ export default function RootLayout({
             easing='ease'
             speed={200}
             shadow='0 0 10px var(--primary),0 0 5px var(--primary)'
+            nonce={nonce}
           />
           <Suspense fallback={null}>{children}</Suspense>
           <ToastProvider />
         </ThemeProvider>
 
-        <Analytics />
-        <SpeedInsights />
+        <Analytics nonce={nonce} />
+        <SpeedInsights nonce={nonce} />
       </body>
     </html>
   );
