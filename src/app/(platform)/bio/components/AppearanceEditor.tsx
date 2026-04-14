@@ -522,11 +522,11 @@ export default function AppearanceEditor({
         <CardContent className='space-y-6'>
           {/* Theme Selection with Categories */}
           <div className='space-y-4'>
-            <div className='flex items-center justify-between'>
+            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4'>
               <Label className='text-sm font-bold uppercase tracking-wider opacity-60'>
                 Background Theme
               </Label>
-              <div className='flex bg-muted p-1 rounded-lg gap-1'>
+              <div className='flex bg-muted p-1 rounded-xl gap-1 w-fit overflow-x-auto no-scrollbar scroll-smooth'>
                 {themeCategories.map((cat) => (
                   <button
                     key={cat}
