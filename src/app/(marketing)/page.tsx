@@ -220,18 +220,25 @@ export default async function LandingPage() {
         </section>
 
         {/* Creator Section */}
-        <section className='py-24 px-6 text-center'>
-          <div className='max-w-2xl mx-auto p-1 rounded-3xl bg-linear-to-b from-primary/20 to-transparent'>
-            <div className='bg-card rounded-[22px] p-8 md:p-12 border border-border/50 shadow-2xl'>
-              <div className='w-16 h-16 bg-primary/20 rounded-full mx-auto mb-6 flex items-center justify-center text-2xl'>
+        <section className='py-20 md:py-24 px-4 md:px-6 text-center relative'>
+          <div className='max-w-2xl mx-auto p-px md:p-0.5 rounded-4xl bg-linear-to-b from-primary/30 via-primary/5 to-transparent shadow-2xl'>
+            <div className='bg-card/70 backdrop-blur-2xl rounded-[1.95rem] p-8 sm:p-10 md:p-12 border border-white/10 relative overflow-hidden'>
+              {/* Subtle background glow */}
+              <div className='absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-3xl' />
+
+              <div className='w-16 h-16 bg-primary/20 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl shadow-inner relative z-10 rotate-3'>
                 👨‍💻
               </div>
-              <h2 className='text-3xl font-bold mb-4'>Built by Azmi</h2>
-              <p className='text-muted-foreground mb-8 text-lg'>
+
+              <h2 className='text-3xl sm:text-4xl font-bold mb-4 tracking-tight relative z-10'>
+                Built by <span className='text-primary'>Azmi</span>
+              </h2>
+
+              <p className='text-muted-foreground mb-10 text-base md:text-lg max-w-md mx-auto leading-relaxed relative z-10'>
                 I build high-quality, scalable web applications that solve
                 real-world problems.
               </p>
-              <div className='flex justify-center gap-3'>
+              <div className='flex flex-wrap justify-center gap-3 relative z-10'>
                 <Button variant='outline' size='sm' asChild>
                   <a
                     href='https://github.com/azmi-amirullah'

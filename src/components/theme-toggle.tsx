@@ -16,14 +16,14 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    return <Skeleton className='h-9 w-9 rounded-full' />;
+    return <Skeleton className='h-8 w-8 md:h-9 md:w-9 rounded-full' />;
   }
 
   return (
     <Button
       variant='outline'
       size='icon'
-      className='rounded-full'
+      className='h-8 w-8 md:h-9 md:w-9 rounded-full'
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
     >
       {theme === 'dark' ? (
