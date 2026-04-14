@@ -42,7 +42,11 @@ import {
   LuDownload,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import type { CashflowDTO, CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
+import type {
+  CashflowDTO,
+  CashflowEntryDTO,
+  CashflowBudgetDTO,
+} from '@/types/dto';
 import { formatCurrencyCompact } from '@/lib/currency';
 import { deleteCashflow, deleteEntry } from '../actions';
 import CashflowModal from './CashflowModal';
@@ -53,10 +57,10 @@ import { ProjectionsView } from './ProjectionsView';
 import { subscribeToPublicCashflow, removeShare } from '../share-actions';
 import BudgetManager from './BudgetManager';
 import { DateFilter } from './DateFilter';
-import { 
-  filterEntriesByDate, 
+import {
+  filterEntriesByDate,
   resolveFilterRange,
-  type DateFilterState
+  type DateFilterState,
 } from '@/lib/cashflow-math';
 
 interface CashflowDetailProps {
@@ -411,108 +415,207 @@ export default function CashflowDetail({
                 : 'No entries match the selected date range.'}
             </p>
             {entries.length === 0 && (
-              <Button onClick={openAddEntry} variant='outline' className='gap-2'>
+              <Button
+                onClick={openAddEntry}
+                variant='outline'
+                className='gap-2'
+              >
                 <LuPlus className='w-4 h-4' />
                 Add Entry
               </Button>
             )}
           </div>
         ) : (
-          <div className='overflow-x-auto'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className='w-[80px] border-r border-border/40'>
-                    Date
-                  </TableHead>
-                  <TableHead className='w-[100px] border-r border-border/40'>
-                    Type
-                  </TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className='text-right'>Amount</TableHead>
-                  <TableHead className='w-[80px]'></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEntries.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className='text-muted-foreground text-sm border-r border-border/30'>
-                      {(() => {
-                        // Parse YYYY-MM-DD directly to avoid UTC timezone shifts
-                        const [year, month, day] = entry.date
-                          .split('-')
-                          .map(Number);
-                        const date = new Date(year, month - 1, day);
-                        return date.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        });
-                      })()}
-                    </TableCell>
-                    <TableCell className='border-r border-border/30'>
-                      {entry.is_recurring && (
-                        <div className='flex items-center gap-1.5'>
-                          <LuRepeat className='w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400' />
-                          <div className='flex flex-col items-start'>
-                            <div className='text-[10px] font-bold capitalize leading-none text-emerald-600 dark:text-emerald-400'>
-                              {entry.recurrence_interval}
-                              {entry.recurrence_interval === 'yearly' && (
-                                <div>
-                                  - {entry.yearly_calculation || 'Prorated'}
-                                </div>
-                              )}
+          <div className='divide-y divide-border'>
+            {/* Desktop Table View */}
+            <div className='hidden md:block overflow-x-auto'>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className='w-[80px] border-r border-border/40'>
+                      Date
+                    </TableHead>
+                    <TableHead className='w-[100px] border-r border-border/40'>
+                      Type
+                    </TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className='text-right'>Amount</TableHead>
+                    <TableHead className='w-[80px]'></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEntries.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
+                        {(() => {
+                          const [year, month, day] = entry.date
+                            .split('-')
+                            .map(Number);
+                          const date = new Date(year, month - 1, day);
+                          return date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          });
+                        })()}
+                      </TableCell>
+                      <TableCell className='border-r border-border/30'>
+                        <div className='flex flex-col items-start gap-1'>
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                              entry.type === 'income'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                            }`}
+                          >
+                            {entry.type}
+                          </span>
+                          {entry.is_recurring && (
+                            <div className='flex items-center gap-0.5'>
+                              <LuRepeat className='w-3 h-3 text-emerald-600 dark:text-emerald-400' />
+                              <span className='text-[10px] font-medium capitalize text-emerald-600 dark:text-emerald-400'>
+                                {entry.recurrence_interval}
+                              </span>
                             </div>
-                          </div>
+                          )}
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className='font-medium'>{entry.description}</div>
-                      {entry.category && (
-                        <span className='inline-flex items-center px-1.5 py-0.5 mt-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
-                          {entry.category}
+                      </TableCell>
+                      <TableCell>
+                        <div className='font-medium'>{entry.description}</div>
+                        {entry.category && (
+                          <span className='inline-flex items-center px-1.5 py-0.5 mt-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
+                            {entry.category}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right font-medium text-nowrap ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {entry.type === 'income' ? '+' : '-'}
+                        {formatCurrencyCompact(Number(entry.amount), currency)}
+                      </TableCell>
+                      <TableCell>
+                        {canEdit && (
+                          <div className='flex justify-end gap-1'>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-7 w-7'
+                              onClick={() => openEditEntry(entry)}
+                            >
+                              <LuPencil className='w-3.5 h-3.5' />
+                            </Button>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-7 w-7 text-destructive hover:text-destructive'
+                              onClick={() => {
+                                setIsDeletingEntryId(null);
+                                setDeletingEntryId(entry.id);
+                              }}
+                            >
+                              {isDeletingEntryId === entry.id ? (
+                                <LuLoader className='w-3.5 h-3.5 animate-spin' />
+                              ) : (
+                                <LuTrash2 className='w-3.5 h-3.5' />
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className='md:hidden divide-y divide-border'>
+              {filteredEntries.map((entry) => (
+                <div key={entry.id} className='p-4 space-y-3'>
+                  <div className='flex items-start justify-between gap-4'>
+                    <div className='space-y-2 min-w-0 flex-1'>
+                      <div className='flex items-center gap-2'>
+                        <span className='text-xs text-muted-foreground font-medium'>
+                          {(() => {
+                            const [year, month, day] = entry.date
+                              .split('-')
+                              .map(Number);
+                            const date = new Date(year, month - 1, day);
+                            return date.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            });
+                          })()}
                         </span>
-                      )}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right font-medium ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
-                    >
-                      {entry.type === 'income' ? '+' : '-'}
-                      {formatCurrencyCompact(Number(entry.amount), currency)}
-                    </TableCell>
-                    <TableCell>
+                        <span
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
+                            entry.type === 'income'
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                              : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                          }`}
+                        >
+                          {entry.type}
+                        </span>
+                      </div>
+                      <div className='font-medium text-sm leading-tight overflow-wrap-anywhere'>
+                        {entry.description}
+                      </div>
+                      <div className='flex flex-wrap gap-1.5 items-center'>
+                        {entry.category && (
+                          <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
+                            {entry.category}
+                          </span>
+                        )}
+                        {entry.is_recurring && (
+                          <div className='flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400'>
+                            <LuRepeat className='w-3 h-3' />
+                            <span className='text-[10px] font-medium capitalize'>
+                              {entry.recurrence_interval}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className='text-right shrink-0'>
+                      <div
+                        className={`font-bold text-sm ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {entry.type === 'income' ? '+' : '-'}
+                        {formatCurrencyCompact(Number(entry.amount), currency)}
+                      </div>
                       {canEdit && (
-                        <div className='flex justify-end gap-1'>
+                        <div className='flex justify-end gap-1 mt-2'>
                           <Button
-                            variant='ghost'
+                            variant='outline'
                             size='icon'
-                            className='h-7 w-7'
+                            className='h-8 w-8'
                             onClick={() => openEditEntry(entry)}
                           >
-                            <LuPencil className='w-3.5 h-3.5' />
+                            <LuPencil className='w-4 h-4' />
                           </Button>
                           <Button
-                            variant='ghost'
+                            variant='outline'
                             size='icon'
-                            className='h-7 w-7 text-destructive hover:text-destructive'
+                            className='h-8 w-8 text-destructive hover:bg-destructive/10'
                             onClick={() => {
                               setIsDeletingEntryId(null);
                               setDeletingEntryId(entry.id);
                             }}
                           >
                             {isDeletingEntryId === entry.id ? (
-                              <LuLoader className='w-3.5 h-3.5 animate-spin' />
+                              <LuLoader className='w-4 h-4 animate-spin' />
                             ) : (
-                              <LuTrash2 className='w-3.5 h-3.5' />
+                              <LuTrash2 className='w-4 h-4' />
                             )}
                           </Button>
                         </div>
                       )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

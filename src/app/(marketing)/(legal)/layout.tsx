@@ -44,7 +44,7 @@ export default async function LegalLayout({
       <Header variant='legal' user={userData} />
 
       {/* Content */}
-      <main className='flex-1 relative z-10 container mx-auto px-4 py-12 md:py-20'>
+      <main className='flex-1 relative z-10 container mx-auto px-4 py-12 md:py-20 mt-16'>
         <div className='max-w-3xl mx-auto prose prose-slate dark:prose-invert prose-headings:font-bold prose-a:text-primary hover:prose-a:underline'>
           {children}
         </div>

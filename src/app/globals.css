@@ -182,7 +182,7 @@
     @apply border-border outline-ring/50;
   }
   html {
-    @apply overflow-x-hidden bg-background text-foreground;
+    @apply bg-background text-foreground;
   }
   body {
     @apply antialiased;
@@ -191,6 +191,12 @@
 }
 
 @layer utilities {
+  /* Match the header padding to the body's scroll-lock padding to keep centered content aligned */
+  body[data-scroll-locked] header {
+    padding-right: var(--removed-body-scroll-bar-size, 0px) !important;
+    transition: none !important;
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
