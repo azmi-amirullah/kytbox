@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IncomeExpenseChart } from './IncomeExpenseChart';
 import { BalanceTrendChart } from './BalanceTrendChart';
 import { CategoryChart } from './CategoryChart';
+import { ResponsiveTabsList } from './ResponsiveTabsList';
 
 interface DashboardChartsProps {
   cashflows: CashflowWithSummaryDTO[];
@@ -82,20 +83,13 @@ export function DashboardCharts({
         onValueChange={setActiveTab}
         aria-label='Dashboard charts'
       >
-        <TabsList className='mb-4 flex-wrap'>
-          <TabsTrigger value='income-expense' className='gap-1.5'>
-            <LuChartBarBig className='w-3.5 h-3.5' />
-            Income vs Expense
-          </TabsTrigger>
-          <TabsTrigger value='balance-trend' className='gap-1.5'>
-            <LuTrendingUp className='w-3.5 h-3.5' />
-            Balance Trend
-          </TabsTrigger>
-          <TabsTrigger value='cashflows' className='gap-1.5'>
-            <LuWallet className='w-3.5 h-3.5' />
-            Cashflows
-          </TabsTrigger>
-        </TabsList>
+        <ResponsiveTabsList
+          tabs={[
+            { value: 'income-expense', label: 'Income vs Expense', icon: LuChartBarBig },
+            { value: 'balance-trend', label: 'Balance Trend', icon: LuTrendingUp },
+            { value: 'cashflows', label: 'Cashflows', icon: LuWallet },
+          ]}
+        />
       </Tabs>
 
       {activeTab === 'income-expense' && (

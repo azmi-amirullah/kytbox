@@ -9,6 +9,7 @@ import { aggregateEntriesByCategory } from '../lib/aggregateCategories';
 import { IncomeExpenseChart } from './IncomeExpenseChart';
 import { BalanceTrendChart } from './BalanceTrendChart';
 import { CategoryChart } from './CategoryChart';
+import { ResponsiveTabsList } from './ResponsiveTabsList';
 
 interface CashflowChartsProps {
   entries: CashflowEntryDTO[];
@@ -38,20 +39,13 @@ export function CashflowCharts({ entries, currency }: CashflowChartsProps) {
         onValueChange={setActiveTab}
         aria-label='Cashflow charts'
       >
-        <TabsList className='mb-4 flex-wrap'>
-          <TabsTrigger value='income-expense' className='gap-1.5'>
-            <LuChartBarBig className='w-3.5 h-3.5' />
-            Income vs Expense
-          </TabsTrigger>
-          <TabsTrigger value='balance-trend' className='gap-1.5'>
-            <LuTrendingUp className='w-3.5 h-3.5' />
-            Balance Trend
-          </TabsTrigger>
-          <TabsTrigger value='categories' className='gap-1.5'>
-            <LuChartPie className='w-3.5 h-3.5' />
-            Categories
-          </TabsTrigger>
-        </TabsList>
+        <ResponsiveTabsList
+          tabs={[
+            { value: 'income-expense', label: 'Income vs Expense', icon: LuChartBarBig },
+            { value: 'balance-trend', label: 'Balance Trend', icon: LuTrendingUp },
+            { value: 'categories', label: 'Categories', icon: LuChartPie },
+          ]}
+        />
       </Tabs>
 
       {activeTab === 'income-expense' && (
