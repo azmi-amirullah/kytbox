@@ -4,7 +4,11 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import CashflowDetail from '../../(platform)/cashflow/components/CashflowDetail';
-import { mapCashflowToDTO, mapCashflowEntryToDTO, mapBudgetToDTO } from '@/lib/mappers';
+import {
+  mapCashflowToDTO,
+  mapCashflowEntryToDTO,
+  mapBudgetToDTO,
+} from '@/lib/mappers';
 import { shareRoleSchema } from '@/lib/validation.schemas';
 
 interface CashflowDetailPageProps {
@@ -122,7 +126,7 @@ export default async function CashflowDetailPage({
 
       <Header variant='dashboard' user={userData} publicUrl={publicUrl} />
 
-      <main className='relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-8 flex-1 w-full'>
+      <main className='relative z-10 max-w-7xl mx-auto px-4 mt-16 py-8 flex-1 w-full'>
         <CashflowDetail
           key={cashflow.id}
           cashflow={mapCashflowToDTO(cashflow)}

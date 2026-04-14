@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -155,18 +156,32 @@ export default function CashflowList({
 
   return (
     <div className='space-y-6'>
-      {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
-        <div>
-          <h1 className='text-2xl font-bold tracking-tight'>Cashflow</h1>
-          <p className='text-muted-foreground text-sm'>
-            Track your income and expenses
-          </p>
+      {/* Breadcrumbs */}
+      <div>
+        <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
+          <Link
+            href='/app'
+            className='hover:text-foreground transition-colors'
+          >
+            Kytbox
+          </Link>
+          <span className='text-muted-foreground'>/</span>
+          <span className='text-foreground font-medium'>Cashflow</span>
+        </nav>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+          <div>
+            <h1 className='text-3xl font-bold tracking-tight text-foreground'>
+              Cashflow
+            </h1>
+            <p className='text-muted-foreground mt-1'>
+              Track your income and expenses
+            </p>
+          </div>
+          <Button onClick={() => setIsCreateModalOpen(true)} className='gap-2'>
+            <LuPlus className='w-4 h-4' />
+            New Cashflow
+          </Button>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className='gap-2'>
-          <LuPlus className='w-4 h-4' />
-          New Cashflow
-        </Button>
       </div>
 
       {/* Summary Stats */}

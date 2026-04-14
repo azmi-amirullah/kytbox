@@ -34,7 +34,6 @@ import {
   LuTrash2,
   LuEllipsisVertical,
   LuLoader,
-  LuArrowLeft,
   LuShare2,
   LuBookmark,
   LuCheck,
@@ -268,24 +267,35 @@ export default function CashflowDetail({
 
   return (
     <div className='space-y-6'>
-      {/* Back Link */}
-      {currentUserId && (
-        <Link
-          href='/cashflow'
-          className='inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors'
-        >
-          <LuArrowLeft className='w-4 h-4' />
-          Back to Cashflows
-        </Link>
-      )}
+      {/* Breadcrumbs */}
+      <div>
+        <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
+          <Link
+            href='/app'
+            className='hover:text-foreground transition-colors'
+          >
+            Kytbox
+          </Link>
+          <span className='text-muted-foreground'>/</span>
+          <Link
+            href='/cashflow'
+            className='hover:text-foreground transition-colors'
+          >
+            Cashflow
+          </Link>
+          <span className='text-muted-foreground'>/</span>
+          <span className='text-foreground font-medium truncate max-w-[200px]'>
+            {cashflow.title}
+          </span>
+        </nav>
 
-      {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
-        <div>
-          <div className='flex items-center gap-3'>
-            <h1 className='text-2xl font-bold tracking-tight'>
-              {cashflow.title}
-            </h1>
+        {/* Header */}
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+          <div>
+            <div className='flex items-center gap-3'>
+              <h1 className='text-3xl font-bold tracking-tight text-foreground'>
+                {cashflow.title}
+              </h1>
             {isOwner && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -366,6 +376,7 @@ export default function CashflowDetail({
           )}
         </div>
       </div>
+    </div>
 
       {/* Summary Stats */}
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
