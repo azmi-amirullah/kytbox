@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import NextTopLoader from 'nextjs-toploader';
+import { ClientTopLoader } from '@/components/client-top-loader';
 import { Suspense } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider } from '@/components/toast-provider';
@@ -17,18 +17,7 @@ async function NoncedProviders() {
 
   return (
     <>
-      <NextTopLoader
-        color='var(--primary)'
-        initialPosition={0.08}
-        crawlSpeed={200}
-        height={3}
-        crawl={true}
-        showSpinner={false}
-        easing='ease'
-        speed={200}
-        shadow='0 0 10px var(--primary),0 0 5px var(--primary)'
-        nonce={nonce}
-      />
+      <ClientTopLoader nonce={nonce} />
       <Analytics nonce={nonce} />
       <SpeedInsights nonce={nonce} />
     </>
