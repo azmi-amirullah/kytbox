@@ -204,6 +204,12 @@ export default function CashflowDetail({
     setIsEntryModalOpen(true);
   }
 
+  function handleEntrySuccess() {
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
   function handleExportCSV() {
     if (filteredEntries.length === 0) {
       toast.info('No entries to export');
@@ -417,7 +423,15 @@ export default function CashflowDetail({
       <ProjectionsView entries={entries} currency={currency} />
 
       {/* Entries Table */}
-      <div className='bg-card border rounded-xl overflow-hidden'>
+      <div className='bg-card border rounded-xl overflow-hidden relative'>
+        {isPending && (
+          <div className='absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10 transition-all duration-200'>
+            <div className='flex items-center gap-2 bg-background border px-4 py-2 rounded-lg shadow-sm'>
+              <LuLoader className='w-4 h-4 animate-spin text-primary' />
+              <span className='text-sm font-medium'>Updating data...</span>
+            </div>
+          </div>
+        )}
         {filteredEntries.length === 0 ? (
           <div className='p-12 text-center text-muted-foreground'>
             <p className='text-sm mb-4'>
@@ -675,6 +689,7 @@ export default function CashflowDetail({
         open={isEntryModalOpen}
         onOpenChange={setIsEntryModalOpen}
         currency={currency}
+        onSuccess={handleEntrySuccess}
       />
 
       {/* Delete Cashflow Dialog */}

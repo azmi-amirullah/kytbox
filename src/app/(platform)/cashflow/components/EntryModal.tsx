@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +37,7 @@ interface EntryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currency: string | null;
+  onSuccess: () => void;
 }
 
 export default function EntryModal({
@@ -46,14 +46,15 @@ export default function EntryModal({
   open,
   onOpenChange,
   currency,
+  onSuccess,
 }: EntryModalProps) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [shouldClose, setShouldClose] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
+
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevEntry, setPrevEntry] = useState(entry);
 
   const [description, setDescription] = useState(entry?.description || '');
   const [amount, setAmount] = useState(entry?.amount?.toString() || '');
@@ -72,34 +73,25 @@ export default function EntryModal({
     'prorated' | 'exact'
   >(entry?.yearly_calculation || 'prorated');
 
-  const isBusy = isLoading || isPending;
-  const isEdit = !!entry;
-
-  useEffect(() => {
+  if (open !== prevOpen || entry !== prevEntry) {
+    setPrevOpen(open);
+    setPrevEntry(entry);
     if (open) {
-      queueMicrotask(() => {
-        setDescription(entry?.description || '');
-        setAmount(entry?.amount?.toString() || '');
-        setType(entryTypeSchema.parse(entry?.type));
-        setCategory(entryCategorySchema.parse(entry?.category));
-        setDate(entry?.date || today);
-        setIsRecurring(entry?.is_recurring || false);
-        setRecurrenceInterval(entry?.recurrence_interval || 'monthly');
-        setYearlyCalculation(entry?.yearly_calculation || 'prorated');
-        setError(null);
-        setIsLoading(false);
-      });
+      setDescription(entry?.description || '');
+      setAmount(entry?.amount?.toString() || '');
+      setType(entryTypeSchema.parse(entry?.type));
+      setCategory(entryCategorySchema.parse(entry?.category));
+      setDate(entry?.date || today);
+      setIsRecurring(entry?.is_recurring || false);
+      setRecurrenceInterval(entry?.recurrence_interval || 'monthly');
+      setYearlyCalculation(entry?.yearly_calculation || 'prorated');
+      setError(null);
+      setIsLoading(false);
     }
-  }, [open, entry, today]);
+  }
 
-  useEffect(() => {
-    if (shouldClose && !isPending) {
-      queueMicrotask(() => {
-        onOpenChange(false);
-        setShouldClose(false);
-      });
-    }
-  }, [shouldClose, isPending, onOpenChange]);
+  const isBusy = isLoading;
+  const isEdit = !!entry;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -132,11 +124,8 @@ export default function EntryModal({
       setIsLoading(false);
     } else {
       toast.success(isEdit ? 'Entry updated!' : 'Entry added!');
-      // Keep isLoading true to prevent button flicker before modal closes
-      startTransition(() => {
-        router.refresh();
-      });
-      setShouldClose(true);
+      onOpenChange(false);
+      onSuccess();
     }
   }
 

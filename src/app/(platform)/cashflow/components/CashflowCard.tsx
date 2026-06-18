@@ -130,6 +130,12 @@ export default function CashflowCard({
     setIsEntryModalOpen(true);
   }
 
+  function handleEntrySuccess() {
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
   return (
     <div className='bg-card border rounded-xl overflow-hidden'>
       {/* Card Header */}
@@ -206,74 +212,81 @@ export default function CashflowCard({
       </div>
 
       {/* Entries Table */}
-      {entries.length === 0 ? (
-        <div className='p-8 text-center text-muted-foreground'>
-          <p className='text-sm'>No entries yet. Add your first transaction.</p>
-        </div>
-      ) : (
-        <div className='overflow-x-auto'>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className='w-[100px]'>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className='text-right'>Amount</TableHead>
-                <TableHead className='w-[80px]'></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {entries.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell className='text-muted-foreground text-sm'>
-                    {new Date(entry.date).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </TableCell>
-                  <TableCell className='font-medium'>
-                    {entry.description}
-                  </TableCell>
-                  <TableCell
-                    className={`text-right font-medium ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
-                  >
-                    {entry.type === 'income' ? '+' : '-'}
-                    {Number(entry.amount).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className='flex justify-end gap-1'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-7 w-7'
-                        onClick={() => openEditEntry(entry)}
-                        aria-label='Edit entry'
-                      >
-                        <LuPencil className='w-3.5 h-3.5' />
-                      </Button>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-7 w-7 text-destructive hover:text-destructive'
-                        onClick={() => {
-                          setIsDeletingEntryId(null);
-                          setDeletingEntryId(entry.id);
-                        }}
-                        aria-label='Delete entry'
-                      >
-                        {isDeletingEntryId === entry.id ? (
-                          <LuLoader className='w-3.5 h-3.5 animate-spin' />
-                        ) : (
-                          <LuTrash2 className='w-3.5 h-3.5' />
-                        )}
-                      </Button>
-                    </div>
-                  </TableCell>
+      <div className='relative'>
+        {isPending && (
+          <div className='absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10 transition-all duration-200'>
+            <LuLoader className='w-5 h-5 animate-spin text-primary' />
+          </div>
+        )}
+        {entries.length === 0 ? (
+          <div className='p-8 text-center text-muted-foreground'>
+            <p className='text-sm'>No entries yet. Add your first transaction.</p>
+          </div>
+        ) : (
+          <div className='overflow-x-auto'>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className='w-[100px]'>Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className='text-right'>Amount</TableHead>
+                  <TableHead className='w-[80px]'></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+              </TableHeader>
+              <TableBody>
+                {entries.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell className='text-muted-foreground text-sm'>
+                      {new Date(entry.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </TableCell>
+                    <TableCell className='font-medium'>
+                      {entry.description}
+                    </TableCell>
+                    <TableCell
+                      className={`text-right font-medium ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                    >
+                      {entry.type === 'income' ? '+' : '-'}
+                      {Number(entry.amount).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex justify-end gap-1'>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-7 w-7'
+                          onClick={() => openEditEntry(entry)}
+                          aria-label='Edit entry'
+                        >
+                          <LuPencil className='w-3.5 h-3.5' />
+                        </Button>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-7 w-7 text-destructive hover:text-destructive'
+                          onClick={() => {
+                            setIsDeletingEntryId(null);
+                            setDeletingEntryId(entry.id);
+                          }}
+                          aria-label='Delete entry'
+                        >
+                          {isDeletingEntryId === entry.id ? (
+                            <LuLoader className='w-3.5 h-3.5 animate-spin' />
+                          ) : (
+                            <LuTrash2 className='w-3.5 h-3.5' />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
 
       {/* Edit Cashflow Modal */}
       <CashflowModal
@@ -290,6 +303,7 @@ export default function CashflowCard({
         open={isEntryModalOpen}
         onOpenChange={setIsEntryModalOpen}
         currency={currency}
+        onSuccess={handleEntrySuccess}
       />
 
       {/* Share Modal */}
