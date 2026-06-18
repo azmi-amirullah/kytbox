@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { CashflowEntryDTO } from '@/types/dto';
 import { calculateProjections } from '@/lib/cashflow-math';
 import { formatCurrencyCompact } from '@/lib/currency';
+import { cn } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -18,6 +19,8 @@ import {
   LuCalendarClock,
   LuInfo,
   LuArrowRight,
+  LuChevronDown,
+  LuChevronUp,
 } from 'react-icons/lu';
 
 interface ProjectionsViewProps {
@@ -26,6 +29,8 @@ interface ProjectionsViewProps {
 }
 
 export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   const {
     settledCash,
     upcomingMonthlyExpenses,
@@ -38,26 +43,59 @@ export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
   if (recurringItems.length === 0) return null;
 
   return (
-    <Card className='border-border/50 shadow-sm bg-linear-to-br from-muted/50 to-white dark:from-muted/20 dark:to-background overflow-hidden gap-0'>
-      <CardHeader className='pb-3'>
-        <div className='flex items-center justify-between'>
-          <CardTitle className='text-lg font-bold flex items-center gap-2'>
-            <div className='p-1.5 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg'>
+    <Card
+      className={cn(
+        'border-border/50 shadow-sm bg-linear-to-br from-muted/50 to-white dark:from-muted/20 dark:to-background overflow-hidden gap-0 py-6',
+        isOpen ? '' : 'md:py-6',
+      )}
+    >
+      <CardHeader
+        className={cn(
+          'cursor-pointer md:cursor-default select-none transition-colors duration-200 hover:bg-muted/10 md:hover:bg-transparent',
+          isOpen ? 'pb-3 gap-2' : 'pb-0 gap-0 md:pb-3 md:gap-2',
+        )}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className='flex items-center justify-between gap-4'>
+          <CardTitle className='text-sm sm:text-base md:text-lg font-bold flex items-center gap-2 min-w-0'>
+            <div className='p-1.5 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg shrink-0'>
               <LuCalendarClock className='text-emerald-600 dark:text-emerald-400 w-5 h-5' />
             </div>
-            Smart Cash Projection (End of {nextMonthName})
+            <span>Smart Cash Projection (End of {nextMonthName})</span>
           </CardTitle>
-          <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2 shrink-0'>
             <Badge
               variant='secondary'
-              className='bg-emerald-500/5 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-500/10 font-semibold'
+              className={cn(
+                'font-semibold border transition-colors',
+                projectedResult >= 0
+                  ? 'bg-emerald-500/5 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-500/10'
+                  : 'bg-red-500/5 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-500/10',
+              )}
             >
-              {recurringItems.length} Recurring Item
-              {recurringItems.length !== 1 && 's'}
+              <span className={isOpen ? 'hidden' : 'md:hidden'}>
+                {formatCurrencyCompact(projectedResult, currency)}
+              </span>
+              <span className={isOpen ? 'inline' : 'hidden md:inline'}>
+                {recurringItems.length} Recurring
+                {recurringItems.length !== 1 && 's'}
+              </span>
             </Badge>
+            <div className='text-muted-foreground md:hidden shrink-0'>
+              {isOpen ? (
+                <LuChevronUp className='w-5 h-5' />
+              ) : (
+                <LuChevronDown className='w-5 h-5' />
+              )}
+            </div>
           </div>
         </div>
-        <CardDescription className='flex items-center gap-1.5 text-[11px] text-muted-foreground/80'>
+        <CardDescription
+          className={cn(
+            'items-center gap-1.5 text-[11px] text-muted-foreground/80 hidden md:flex',
+            isOpen && 'flex',
+          )}
+        >
           <LuInfo className='w-3.5 h-3.5 shrink-0 opacity-70' />
           <span>
             Calculates your true available cash through the end of next month by
@@ -66,7 +104,7 @@ export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className={cn('hidden md:block', isOpen && 'block')}>
         {/* The Calculation Flow */}
         <div className='flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 mb-6 md:border md:border-border/50 md:bg-muted/20 md:dark:bg-muted/10 md:rounded-xl md:p-4'>
           {/* Baseline (Settled Cash) */}
