@@ -2,11 +2,11 @@
 
 import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
@@ -566,7 +566,14 @@ export default function CashflowDetail({
                     <TableHead className='w-[80px]'></TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <motion.tbody
+                  key={currentPage}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  data-slot='table-body'
+                  className='[&_tr:last-child]:border-0'
+                >
                   {paginatedEntries.map((entry) => (
                     <TableRow key={entry.id}>
                       <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
@@ -647,13 +654,20 @@ export default function CashflowDetail({
                       </TableCell>
                     </TableRow>
                   ))}
-                </TableBody>
+                </motion.tbody>
               </Table>
             </div>
 
             {/* Mobile Card View */}
-            <div className='md:hidden divide-y divide-border'>
-              {paginatedEntries.map((entry) => (
+            <div className='md:hidden'>
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className='divide-y divide-border'
+              >
+                {paginatedEntries.map((entry) => (
                 <div key={entry.id} className='p-4 space-y-3'>
                   <div className='flex items-start justify-between gap-4'>
                     <div className='space-y-2 min-w-0 flex-1'>
@@ -738,8 +752,9 @@ export default function CashflowDetail({
                   </div>
                 </div>
               ))}
-            </div>
+            </motion.div>
           </div>
+        </div>
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
