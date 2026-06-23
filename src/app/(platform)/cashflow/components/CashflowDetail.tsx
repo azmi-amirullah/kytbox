@@ -29,6 +29,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   LuPlus,
   LuPencil,
   LuTrash2,
@@ -125,32 +132,87 @@ export default function CashflowDetail({
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Client-side pagination ─────────────────────────────────────────────────────
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+  type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
 
-  // Store the filterState reference alongside the page so we can detect filter
-  // changes via pure object-reference equality during render — no refs, no effects.
-  const [pageInfo, setPageInfo] = useState<{ page: number; forFilter: DateFilterState }>({
-    page: 1,
-    forFilter: filterState,
-  });
+  // Store page, pageSize, and filterState reference together so filter changes
+  // reset the page to 1 in a single render pass — no refs, no effects.
+  const [pageInfo, setPageInfo] = useState<{
+    page: number;
+    pageSize: PageSizeOption;
+    forFilter: DateFilterState;
+  }>({ page: 1, pageSize: 10, forFilter: filterState });
 
-  // When filterState is a new object (user changed filters), derive page as 1.
   const currentPage = pageInfo.forFilter === filterState ? pageInfo.page : 1;
+  const pageSize = pageInfo.pageSize;
 
   function goToPage(next: number | ((p: number) => number)) {
-    setPageInfo({
+    setPageInfo((prev) => ({
       page: typeof next === 'function' ? next(currentPage) : next,
+      pageSize: prev.pageSize,
       forFilter: filterState,
-    });
+    }));
   }
 
-  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
-  const paginatedEntries = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredEntries.slice(start, start + PAGE_SIZE);
-  }, [filteredEntries, currentPage]);
-  // ────────────────────────────────────────────────────────────────────────────────
+  function changePageSize(size: PageSizeOption) {
+    setPageInfo({ page: 1, pageSize: size, forFilter: filterState });
+  }
 
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize));
+  const paginatedEntries = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredEntries.slice(start, start + pageSize);
+  }, [filteredEntries, currentPage, pageSize]);
+
+  // Stable 7-slot pagination: ALWAYS render exactly 7 <Button> elements (for
+  // totalPages > 7). Using the slot INDEX as the React key means React never
+  // destroys and recreates a DOM node when content changes — it only updates
+  // props on the same existing element. Ellipsis slots are disabled buttons
+  // showing '…' so the element type is always the same at every position.
+  type PaginationSlot = { kind: 'page'; page: number } | { kind: 'ellipsis' };
+
+  function getPaginationSlots(): PaginationSlot[] {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => ({
+        kind: 'page' as const,
+        page: i + 1,
+      }));
+    }
+
+    const e: PaginationSlot = { kind: 'ellipsis' };
+
+    // Left zone (cp ≤ 3): always [1, 2, 3, …, last] — stable within zone.
+    if (currentPage <= 3) {
+      return [
+        { kind: 'page', page: 1 },
+        { kind: 'page', page: 2 },
+        { kind: 'page', page: 3 },
+        e,
+        { kind: 'page', page: totalPages },
+      ];
+    }
+
+    // Right zone (cp ≥ last-2): mirror of left zone.
+    if (currentPage >= totalPages - 2) {
+      return [
+        { kind: 'page', page: 1 },
+        e,
+        { kind: 'page', page: totalPages - 2 },
+        { kind: 'page', page: totalPages - 1 },
+        { kind: 'page', page: totalPages },
+      ];
+    }
+
+    // Middle zone: [1, …, cp, …, last]
+    return [
+      { kind: 'page', page: 1 },
+      e,
+      { kind: 'page', page: currentPage },
+      e,
+      { kind: 'page', page: totalPages },
+    ];
+  }
+  // ────────────────────────────────────────────────────────────────────────────────
 
   const canEdit = isOwner || userRole === 'edit';
 
@@ -308,10 +370,7 @@ export default function CashflowDetail({
       {/* Breadcrumbs */}
       <div>
         <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
-          <Link
-            href='/app'
-            className='hover:text-foreground transition-colors'
-          >
+          <Link href='/app' className='hover:text-foreground transition-colors'>
             Kytbox
           </Link>
           <span className='text-muted-foreground'>/</span>
@@ -334,87 +393,91 @@ export default function CashflowDetail({
               <h1 className='text-3xl font-bold tracking-tight text-foreground'>
                 {cashflow.title}
               </h1>
-            {isOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant='ghost' size='icon' className='h-8 w-8'>
-                    <LuEllipsisVertical className='w-4 h-4' />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align='start'>
-                  <DropdownMenuItem
-                    className='cursor-pointer'
-                    onClick={() => setIsShareModalOpen(true)}
-                  >
-                    <LuShare2 className='w-4 h-4 mr-2' />
-                    Share
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className='cursor-pointer'
-                    onClick={() => setIsEditModalOpen(true)}
-                  >
-                    <LuPencil className='w-4 h-4 mr-2' />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setIsDeleting(false);
-                      setDeleteDialogOpen(true);
-                    }}
-                    className='text-destructive focus:text-destructive cursor-pointer'
-                  >
-                    <LuTrash2 className='w-4 h-4 mr-2' />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant='ghost' size='icon' className='h-8 w-8'>
+                      <LuEllipsisVertical className='w-4 h-4' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start'>
+                    <DropdownMenuItem
+                      className='cursor-pointer'
+                      onClick={() => setIsShareModalOpen(true)}
+                    >
+                      <LuShare2 className='w-4 h-4 mr-2' />
+                      Share
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className='cursor-pointer'
+                      onClick={() => setIsEditModalOpen(true)}
+                    >
+                      <LuPencil className='w-4 h-4 mr-2' />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setIsDeleting(false);
+                        setDeleteDialogOpen(true);
+                      }}
+                      className='text-destructive focus:text-destructive cursor-pointer'
+                    >
+                      <LuTrash2 className='w-4 h-4 mr-2' />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {!isOwner && (
+                <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full'>
+                  {userRole === 'edit' ? 'Editor Access' : 'View Only'}
+                </span>
+              )}
+            </div>
+            <p className='text-muted-foreground text-sm'>
+              {filterState.preset !== 'all-time'
+                ? `${filteredEntries.length} of ${entries.length} entries`
+                : `${entries.length} entries`}
+            </p>
+          </div>
+
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              onClick={handleExportCSV}
+              className='gap-2'
+            >
+              <LuDownload className='w-4 h-4' />
+              <span className='hidden sm:inline'>Export CSV</span>
+            </Button>
+
+            {!isOwner && currentUserId && (cashflow.is_public || !!shareId) && (
+              <Button
+                onClick={handleBookmark}
+                variant={hasShare ? 'secondary' : 'outline'}
+                className={`gap-2 ${hasShare ? 'text-green-600' : ''}`}
+                disabled={isPending}
+              >
+                {isPending ? (
+                  <LuLoader className='w-4 h-4 animate-spin' />
+                ) : hasShare ? (
+                  <LuCheck className='w-4 h-4' />
+                ) : (
+                  <LuBookmark className='w-4 h-4' />
+                )}
+                {hasShare ? 'Saved' : 'Add to Dashboard'}
+              </Button>
             )}
-            {!isOwner && (
-              <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full'>
-                {userRole === 'edit' ? 'Editor Access' : 'View Only'}
-              </span>
+
+            {canEdit && (
+              <Button onClick={openAddEntry} className='gap-2'>
+                <LuPlus className='w-4 h-4' />
+                Add Entry
+              </Button>
             )}
           </div>
-          <p className='text-muted-foreground text-sm'>
-            {filterState.preset !== 'all-time'
-              ? `${filteredEntries.length} of ${entries.length} entries`
-              : `${entries.length} entries`}
-          </p>
-        </div>
-
-        <div className='flex items-center gap-2'>
-          <Button variant='outline' onClick={handleExportCSV} className='gap-2'>
-            <LuDownload className='w-4 h-4' />
-            <span className='hidden sm:inline'>Export CSV</span>
-          </Button>
-
-          {!isOwner && currentUserId && (cashflow.is_public || !!shareId) && (
-            <Button
-              onClick={handleBookmark}
-              variant={hasShare ? 'secondary' : 'outline'}
-              className={`gap-2 ${hasShare ? 'text-green-600' : ''}`}
-              disabled={isPending}
-            >
-              {isPending ? (
-                <LuLoader className='w-4 h-4 animate-spin' />
-              ) : hasShare ? (
-                <LuCheck className='w-4 h-4' />
-              ) : (
-                <LuBookmark className='w-4 h-4' />
-              )}
-              {hasShare ? 'Saved' : 'Add to Dashboard'}
-            </Button>
-          )}
-
-          {canEdit && (
-            <Button onClick={openAddEntry} className='gap-2'>
-              <LuPlus className='w-4 h-4' />
-              Add Entry
-            </Button>
-          )}
         </div>
       </div>
-    </div>
 
       {/* Summary Stats */}
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
@@ -484,116 +547,27 @@ export default function CashflowDetail({
           </div>
         ) : (
           <>
-          <div className='divide-y divide-border'>
-            {/* Desktop Table View */}
-            <div className='hidden md:block overflow-x-auto'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className='w-[80px] border-r border-border/40'>
-                      Date
-                    </TableHead>
-                    <TableHead className='w-[100px] border-r border-border/40'>
-                      Type
-                    </TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className='text-right'>Amount</TableHead>
-                    <TableHead className='w-[80px]'></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedEntries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
-                        {(() => {
-                          const [year, month, day] = entry.date
-                            .split('-')
-                            .map(Number);
-                          const date = new Date(year, month - 1, day);
-                          return date.toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                          });
-                        })()}
-                      </TableCell>
-                      <TableCell className='border-r border-border/30'>
-                        <div className='flex flex-col items-start gap-1'>
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                              entry.type === 'income'
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-                            }`}
-                          >
-                            {entry.type}
-                          </span>
-                          {entry.is_recurring && (
-                            <div className='flex items-center gap-0.5'>
-                              <LuRepeat className='w-3 h-3 text-emerald-600 dark:text-emerald-400' />
-                              <span className='text-[10px] font-medium capitalize text-emerald-600 dark:text-emerald-400'>
-                                {entry.recurrence_interval}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className='font-medium'>{entry.description}</div>
-                        {entry.category && (
-                          <span className='inline-flex items-center px-1.5 py-0.5 mt-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
-                            {entry.category}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell
-                        className={`text-right font-medium text-nowrap ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
-                      >
-                        {entry.type === 'income' ? '+' : '-'}
-                        {formatCurrencyCompact(Number(entry.amount), currency)}
-                      </TableCell>
-                      <TableCell>
-                        {canEdit && (
-                          <div className='flex justify-end gap-1'>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-7 w-7'
-                              onClick={() => openEditEntry(entry)}
-                            >
-                              <LuPencil className='w-3.5 h-3.5' />
-                            </Button>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-7 w-7 text-destructive hover:text-destructive'
-                              onClick={() => {
-                                setIsDeletingEntryId(null);
-                                setDeletingEntryId(entry.id);
-                              }}
-                            >
-                              {isDeletingEntryId === entry.id ? (
-                                <LuLoader className='w-3.5 h-3.5 animate-spin' />
-                              ) : (
-                                <LuTrash2 className='w-3.5 h-3.5' />
-                              )}
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
+            <div className='divide-y divide-border'>
+              {/* Desktop Table View */}
+              <div className='hidden md:block overflow-x-auto'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className='w-[80px] border-r border-border/40'>
+                        Date
+                      </TableHead>
+                      <TableHead className='w-[100px] border-r border-border/40'>
+                        Type
+                      </TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className='text-right'>Amount</TableHead>
+                      <TableHead className='w-[80px]'></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className='md:hidden divide-y divide-border'>
-              {paginatedEntries.map((entry) => (
-                <div key={entry.id} className='p-4 space-y-3'>
-                  <div className='flex items-start justify-between gap-4'>
-                    <div className='space-y-2 min-w-0 flex-1'>
-                      <div className='flex items-center gap-2'>
-                        <span className='text-xs text-muted-foreground font-medium'>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedEntries.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
                           {(() => {
                             const [year, month, day] = entry.date
                               .split('-')
@@ -602,185 +576,305 @@ export default function CashflowDetail({
                             return date.toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
-                              year: 'numeric',
                             });
                           })()}
-                        </span>
-                        <span
-                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
-                            entry.type === 'income'
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                              : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-                          }`}
-                        >
-                          {entry.type}
-                        </span>
-                      </div>
-                      <div className='font-medium text-sm leading-tight overflow-wrap-anywhere'>
-                        {entry.description}
-                      </div>
-                      <div className='flex flex-wrap gap-1.5 items-center'>
-                        {entry.category && (
-                          <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
-                            {entry.category}
-                          </span>
-                        )}
-                        {entry.is_recurring && (
-                          <div className='flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400'>
-                            <LuRepeat className='w-3 h-3' />
-                            <span className='text-[10px] font-medium capitalize'>
-                              {entry.recurrence_interval}
+                        </TableCell>
+                        <TableCell className='border-r border-border/30'>
+                          <div className='flex flex-col items-start gap-1'>
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                                entry.type === 'income'
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                                  : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                              }`}
+                            >
+                              {entry.type}
                             </span>
+                            {entry.is_recurring && (
+                              <div className='flex items-center gap-0.5'>
+                                <LuRepeat className='w-3 h-3 text-emerald-600 dark:text-emerald-400' />
+                                <span className='text-[10px] font-medium capitalize text-emerald-600 dark:text-emerald-400'>
+                                  {entry.recurrence_interval}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className='font-medium'>{entry.description}</div>
+                          {entry.category && (
+                            <span className='inline-flex items-center px-1.5 py-0.5 mt-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
+                              {entry.category}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell
+                          className={`text-right font-medium text-nowrap ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                          {entry.type === 'income' ? '+' : '-'}
+                          {formatCurrencyCompact(
+                            Number(entry.amount),
+                            currency,
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {canEdit && (
+                            <div className='flex justify-end gap-1'>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-7 w-7'
+                                onClick={() => openEditEntry(entry)}
+                              >
+                                <LuPencil className='w-3.5 h-3.5' />
+                              </Button>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-7 w-7 text-destructive hover:text-destructive'
+                                onClick={() => {
+                                  setIsDeletingEntryId(null);
+                                  setDeletingEntryId(entry.id);
+                                }}
+                              >
+                                {isDeletingEntryId === entry.id ? (
+                                  <LuLoader className='w-3.5 h-3.5 animate-spin' />
+                                ) : (
+                                  <LuTrash2 className='w-3.5 h-3.5' />
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className='md:hidden divide-y divide-border'>
+                {paginatedEntries.map((entry) => (
+                  <div key={entry.id} className='p-4 space-y-3'>
+                    <div className='flex items-start justify-between gap-4'>
+                      <div className='space-y-2 min-w-0 flex-1'>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-xs text-muted-foreground font-medium'>
+                            {(() => {
+                              const [year, month, day] = entry.date
+                                .split('-')
+                                .map(Number);
+                              const date = new Date(year, month - 1, day);
+                              return date.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              });
+                            })()}
+                          </span>
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
+                              entry.type === 'income'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                            }`}
+                          >
+                            {entry.type}
+                          </span>
+                        </div>
+                        <div className='font-medium text-sm leading-tight overflow-wrap-anywhere'>
+                          {entry.description}
+                        </div>
+                        <div className='flex flex-wrap gap-1.5 items-center'>
+                          {entry.category && (
+                            <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
+                              {entry.category}
+                            </span>
+                          )}
+                          {entry.is_recurring && (
+                            <div className='flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400'>
+                              <LuRepeat className='w-3 h-3' />
+                              <span className='text-[10px] font-medium capitalize'>
+                                {entry.recurrence_interval}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className='text-right shrink-0'>
+                        <div
+                          className={`font-bold text-sm ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                          {entry.type === 'income' ? '+' : '-'}
+                          {formatCurrencyCompact(
+                            Number(entry.amount),
+                            currency,
+                          )}
+                        </div>
+                        {canEdit && (
+                          <div className='flex justify-end gap-1 mt-2'>
+                            <Button
+                              variant='outline'
+                              size='icon'
+                              className='h-8 w-8'
+                              onClick={() => openEditEntry(entry)}
+                            >
+                              <LuPencil className='w-4 h-4' />
+                            </Button>
+                            <Button
+                              variant='outline'
+                              size='icon'
+                              className='h-8 w-8 text-destructive hover:bg-destructive/10'
+                              onClick={() => {
+                                setIsDeletingEntryId(null);
+                                setDeletingEntryId(entry.id);
+                              }}
+                            >
+                              {isDeletingEntryId === entry.id ? (
+                                <LuLoader className='w-4 h-4 animate-spin' />
+                              ) : (
+                                <LuTrash2 className='w-4 h-4' />
+                              )}
+                            </Button>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className='text-right shrink-0'>
-                      <div
-                        className={`font-bold text-sm ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
-                      >
-                        {entry.type === 'income' ? '+' : '-'}
-                        {formatCurrencyCompact(Number(entry.amount), currency)}
-                      </div>
-                      {canEdit && (
-                        <div className='flex justify-end gap-1 mt-2'>
-                          <Button
-                            variant='outline'
-                            size='icon'
-                            className='h-8 w-8'
-                            onClick={() => openEditEntry(entry)}
-                          >
-                            <LuPencil className='w-4 h-4' />
-                          </Button>
-                          <Button
-                            variant='outline'
-                            size='icon'
-                            className='h-8 w-8 text-destructive hover:bg-destructive/10'
-                            onClick={() => {
-                              setIsDeletingEntryId(null);
-                              setDeletingEntryId(entry.id);
-                            }}
-                          >
-                            {isDeletingEntryId === entry.id ? (
-                              <LuLoader className='w-4 h-4 animate-spin' />
-                            ) : (
-                              <LuTrash2 className='w-4 h-4' />
-                            )}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className='flex items-center justify-between px-4 py-3 border-t border-border/60 bg-muted/20'>
-              <p className='text-xs text-muted-foreground'>
-                Showing{' '}
-                <span className='font-medium text-foreground'>
-                  {(currentPage - 1) * PAGE_SIZE + 1}–
-                  {Math.min(currentPage * PAGE_SIZE, filteredEntries.length)}
-                </span>{' '}
-                of{' '}
-                <span className='font-medium text-foreground'>
-                  {filteredEntries.length}
-                </span>{' '}
-                entries
-              </p>
-              <div className='flex items-center gap-1'>
-                {/* First page */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='h-7 w-7'
-                  onClick={() => goToPage(1)}
-                  disabled={currentPage === 1}
-                  aria-label='First page'
-                >
-                  <LuChevronsLeft className='w-3.5 h-3.5' />
-                </Button>
-                {/* Previous page */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='h-7 w-7'
-                  onClick={() => goToPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  aria-label='Previous page'
-                >
-                  <LuChevronLeft className='w-3.5 h-3.5' />
-                </Button>
-
-                {/* Page number buttons with ellipsis */}
-                {(() => {
-                  type PaginationItem = { type: 'page'; page: number } | { type: 'ellipsis'; key: string };
-                  const items: PaginationItem[] = [];
-                  const visible = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
-                    (page) =>
-                      page === 1 ||
-                      page === totalPages ||
-                      Math.abs(page - currentPage) <= 1,
-                  );
-                  visible.forEach((page, idx) => {
-                    const prev = visible[idx - 1];
-                    if (idx > 0 && prev !== undefined && page - prev > 1) {
-                      items.push({ type: 'ellipsis', key: `ellipsis-${idx}` });
-                    }
-                    items.push({ type: 'page', page });
-                  });
-                  return items.map((item) =>
-                    item.type === 'ellipsis' ? (
-                      <span
-                        key={item.key}
-                        className='px-1 text-xs text-muted-foreground'
-                      >
-                        …
-                      </span>
-                    ) : (
-                      <Button
-                        key={item.page}
-                        variant={currentPage === item.page ? 'default' : 'outline'}
-                        size='icon'
-                        className='h-7 w-7 text-xs'
-                        onClick={() => goToPage(item.page)}
-                        aria-label={`Page ${item.page}`}
-                        aria-current={currentPage === item.page ? 'page' : undefined}
-                      >
-                        {item.page}
-                      </Button>
-                    ),
-                  );
-                })()}
-
-                {/* Next page */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='h-7 w-7'
-                  onClick={() => goToPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  aria-label='Next page'
-                >
-                  <LuChevronRight className='w-3.5 h-3.5' />
-                </Button>
-                {/* Last page */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='h-7 w-7'
-                  onClick={() => goToPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  aria-label='Last page'
-                >
-                  <LuChevronsRight className='w-3.5 h-3.5' />
-                </Button>
+                ))}
               </div>
             </div>
-          )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className='flex items-center justify-between gap-3 px-4 py-3 border-t border-border/60 bg-muted/20 flex-wrap'>
+                {/* Left: entry count only */}
+                <p className='text-xs text-muted-foreground'>
+                  Showing{' '}
+                  <span className='font-medium text-foreground'>
+                    {(currentPage - 1) * pageSize + 1}–
+                    {Math.min(currentPage * pageSize, filteredEntries.length)}
+                  </span>{' '}
+                  of{' '}
+                  <span className='font-medium text-foreground'>
+                    {filteredEntries.length}
+                  </span>{' '}
+                  entries
+                </p>
+
+                {/* Right: navigation buttons + page size picker */}
+                <div className='flex items-center gap-1'>
+                  {/* First page */}
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-7 w-7'
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage === 1}
+                    aria-label='First page'
+                  >
+                    <LuChevronsLeft className='w-3.5 h-3.5' />
+                  </Button>
+                  {/* Previous page */}
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-7 w-7'
+                    onClick={() => goToPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    aria-label='Previous page'
+                  >
+                    <LuChevronLeft className='w-3.5 h-3.5' />
+                  </Button>
+
+                  {/* Slot-keyed buttons: same element type at every slot index,
+                    so React only updates props — never destroys/recreates nodes */}
+                  {getPaginationSlots().map((slot, slotIdx) => (
+                    <Button
+                      key={slotIdx}
+                      variant={
+                        slot.kind === 'page' && currentPage === slot.page
+                          ? 'default'
+                          : 'outline'
+                      }
+                      size='icon'
+                      className={
+                        slot.kind === 'ellipsis'
+                          ? 'h-7 w-7 text-xs border-0 shadow-none text-muted-foreground cursor-default pointer-events-none'
+                          : 'h-7 w-7 text-xs'
+                      }
+                      disabled={slot.kind === 'ellipsis'}
+                      onClick={
+                        slot.kind === 'page'
+                          ? () => goToPage(slot.page)
+                          : undefined
+                      }
+                      aria-label={
+                        slot.kind === 'page' ? `Page ${slot.page}` : undefined
+                      }
+                      aria-current={
+                        slot.kind === 'page' && currentPage === slot.page
+                          ? 'page'
+                          : undefined
+                      }
+                      tabIndex={slot.kind === 'ellipsis' ? -1 : undefined}
+                    >
+                      {slot.kind === 'ellipsis' ? '…' : slot.page}
+                    </Button>
+                  ))}
+
+                  {/* Next page */}
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-7 w-7'
+                    onClick={() => goToPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    aria-label='Next page'
+                  >
+                    <LuChevronRight className='w-3.5 h-3.5' />
+                  </Button>
+                  {/* Last page */}
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-7 w-7'
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    aria-label='Last page'
+                  >
+                    <LuChevronsRight className='w-3.5 h-3.5' />
+                  </Button>
+
+                  {/* Divider + page size picker */}
+                  <div className='w-px h-5 bg-border/60 mx-1' />
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(val) => {
+                      const size = PAGE_SIZE_OPTIONS.find(
+                        (n) => n === Number(val),
+                      );
+                      if (size !== undefined) changePageSize(size);
+                    }}
+                  >
+                    <SelectTrigger
+                      size='sm'
+                      className='h-7 text-xs '
+                      aria-label='Entries per page'
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent align='end'>
+                      {PAGE_SIZE_OPTIONS.map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n} / page
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
