@@ -632,7 +632,7 @@ export default function CashflowDetail({
                               <Button
                                 variant='ghost'
                                 size='icon'
-                                className='h-7 w-7'
+                                className='h-8 w-8'
                                 onClick={() => openEditEntry(entry)}
                               >
                                 <LuPencil className='w-4 h-4' />
@@ -640,7 +640,7 @@ export default function CashflowDetail({
                               <Button
                                 variant='ghost'
                                 size='icon'
-                                className='h-7 w-7 text-destructive hover:text-destructive'
+                                className='h-8 w-8 text-destructive hover:text-destructive'
                                 onClick={() => {
                                   setIsDeletingEntryId(null);
                                   setDeletingEntryId(entry.id);
