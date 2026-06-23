@@ -26,8 +26,8 @@ export default async function CashflowDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 2. Parallelize: profile (if user) AND cashflow + entries + share
-  const [profileResult, cashflowResult, entriesResult, shareResult] =
+  // 2. Parallelize: profile (if user) AND cashflow + entries + share + budgets
+  const [profileResult, cashflowResult, entriesResult, shareResult, budgetsResult] =
     await Promise.all([
       user
         ? supabase
@@ -52,6 +52,13 @@ export default async function CashflowDetailPage({
             .eq('cashflow_id', id)
             .eq('email', user.email.toLowerCase())
             .maybeSingle()
+        : Promise.resolve({ data: null }),
+      user
+        ? supabase
+            .from('cashflow_budgets')
+            .select('*')
+            .eq('cashflow_id', id)
+            .order('category', { ascending: true })
         : Promise.resolve({ data: null }),
     ]);
 
@@ -91,8 +98,10 @@ export default async function CashflowDetailPage({
   let initialShareId: string | null = null;
   let hasShare = false;
 
+  const isOwner = user?.id === cashflow.user_id;
+
   if (user) {
-    if (cashflow.user_id === user.id) {
+    if (isOwner) {
       initialUserRole = 'owner';
     } else {
       if (share) {
@@ -108,17 +117,10 @@ export default async function CashflowDetailPage({
     initialUserRole = 'read';
   }
 
-  // Fetch budgets — only for the owner
-  const isOwner = user?.id === cashflow.user_id;
-  const budgetsResult = isOwner
-    ? await supabase
-        .from('cashflow_budgets')
-        .select('*')
-        .eq('cashflow_id', id)
-        .order('category', { ascending: true })
-    : { data: null };
-
-  const budgets = (budgetsResult.data ?? []).map(mapBudgetToDTO);
+  // Only map budgets if the user is the owner (budgets are owner-only)
+  const budgets = isOwner && budgetsResult?.data
+    ? budgetsResult.data.map(mapBudgetToDTO)
+    : [];
 
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>

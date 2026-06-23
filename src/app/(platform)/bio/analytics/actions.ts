@@ -1,7 +1,7 @@
 'use server';
 
 import { subDays, subHours, startOfHour, startOfDay, format } from 'date-fns';
-import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import type {
   DateRange,
@@ -14,7 +14,7 @@ export async function getAnalyticsData(
   range: DateRange,
   linkId?: string | 'all',
 ): Promise<AnalyticsData> {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { data: links } = await supabase
     .from('links')

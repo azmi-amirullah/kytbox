@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath, updateTag } from 'next/cache';
-import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import { getAuthenticatedUserAndProfile, getAuthenticatedUser } from '@/lib/auth';
 import {
   addLinkSchema,
   updateLinkSchema,
@@ -393,7 +393,7 @@ export async function moveToFolder(formData: FormData) {
 }
 
 export async function loadMoreLinks(offset: number, limit: number = 50) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
   
   const [{ data, error, count }, { globalTotalCount, globalActiveCount }] = await Promise.all([
     supabase
@@ -420,7 +420,7 @@ export async function loadMoreLinks(offset: number, limit: number = 50) {
 }
 
 export async function loadFolderLinks(folderId: string, offset: number, limit: number = 50) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
   
   const [{ data, error, count }, { globalTotalCount, globalActiveCount }] = await Promise.all([
     supabase

@@ -1,10 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 
 export async function togglePublic(cashflowId: string, isPublic: boolean) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { error } = await supabase
     .from('cashflows')
@@ -27,7 +27,7 @@ export async function inviteUser(
   email: string,
   role: 'read' | 'edit' = 'read',
 ) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   // First verify ownership - only owner can invite
   const { data: cashflow, error: checkError } = await supabase
@@ -66,7 +66,7 @@ export async function inviteUser(
 }
 
 export async function removeShare(shareId: string) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   // Fetch share to check ownership/target and type
   const { data: share } = await supabase
@@ -123,7 +123,7 @@ export async function removeShare(shareId: string) {
 }
 
 export async function updateShareRole(shareId: string, role: 'read' | 'edit') {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   // First fetch the share to get its associated cashflow ID
   const { data: share } = await supabase
@@ -161,7 +161,7 @@ export async function updateShareRole(shareId: string, role: 'read' | 'edit') {
 }
 
 export async function getShares(cashflowId: string) {
-  const { supabase } = await getAuthenticatedUserAndProfile();
+  const { supabase } = await getAuthenticatedUser();
 
   const { data, error } = await supabase
     .from('cashflow_shares')
@@ -178,7 +178,7 @@ export async function getShares(cashflowId: string) {
 }
 
 export async function subscribeToPublicCashflow(cashflowId: string) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   if (!user.email) {
     return { error: 'You must be logged in to bookmark a cashflow' };

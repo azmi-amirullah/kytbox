@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { randomUUID } from 'crypto';
 import { revalidatePath, updateTag } from 'next/cache';
-import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { validateUsername } from '@/lib/username';
 import { z } from 'zod';
 import { updateProfileSchema } from '@/lib/validation.schemas';
@@ -26,7 +26,7 @@ function extractAvatarObjectPath(avatarUrl: string): string | null {
 }
 
 export async function updateProfile(formData: FormData) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const parsed = updateProfileSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -207,7 +207,7 @@ export async function removeAvatar() {
 }
 
 export async function checkUsername(username: string) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const safeUsername = username.toLowerCase().trim();
 

@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { z } from 'zod';
 import {
   cashflowEntrySchema,
@@ -19,7 +19,7 @@ const joinedOwnerSchema = z
   .transform((v) => v?.user_id);
 
 export async function createCashflow(formData: FormData) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const parsed = z
     .object({ title: z.string().min(1, 'Title is required') })
@@ -44,7 +44,7 @@ export async function createCashflow(formData: FormData) {
 }
 
 export async function updateCashflow(cashflowId: string, formData: FormData) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const parsed = z
     .object({ title: z.string().min(1, 'Title is required') })
@@ -71,7 +71,7 @@ export async function updateCashflow(cashflowId: string, formData: FormData) {
 }
 
 export async function deleteCashflow(cashflowId: string) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { error } = await supabase
     .from('cashflows')
@@ -119,32 +119,44 @@ async function checkEditPermission(
         };
   }
 
-  // 2. Fallback: Check owner and shares in parallel
-  const [ownerRes, shareRes] = await Promise.all([
-    supabase.from('cashflows').select('user_id').eq('id', cashflowId).single(),
-    supabase
-      .from('cashflow_shares')
-      .select('role')
-      .eq('cashflow_id', cashflowId)
-      .eq('email', user.email?.toLowerCase() || '')
-      .eq('role', 'edit')
-      .single(),
-  ]);
+  // 2. Fallback: Check owner first, then shares sequentially (optimizes the common owner path)
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('user_id')
+    .eq('id', cashflowId)
+    .single();
 
-  if (ownerRes.data?.user_id === user.id || shareRes.data) {
+  if (!cashflow) {
+    return {
+      canEdit: false,
+      error: 'Cashflow not found',
+    };
+  }
+
+  if (cashflow.user_id === user.id) {
+    return { canEdit: true };
+  }
+
+  const { data: share } = await supabase
+    .from('cashflow_shares')
+    .select('role')
+    .eq('cashflow_id', cashflowId)
+    .eq('email', user.email?.toLowerCase() || '')
+    .eq('role', 'edit')
+    .single();
+
+  if (share) {
     return { canEdit: true };
   }
 
   return {
     canEdit: false,
-    error: ownerRes.error
-      ? 'Cashflow not found'
-      : 'You do not have permission to edit this cashflow',
+    error: 'You do not have permission to edit this cashflow',
   };
 }
 
 export async function addEntry(formData: FormData) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const formDataObj = Object.fromEntries(formData);
   const parsed = updateCashflowEntrySchema.safeParse(formDataObj);
@@ -198,7 +210,7 @@ export async function addEntry(formData: FormData) {
 }
 
 export async function updateEntry(entryId: string, formData: FormData) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const formDataObj = Object.fromEntries(formData);
   const parsed = cashflowEntrySchema.safeParse(formDataObj);
@@ -267,7 +279,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
 }
 
 export async function deleteEntry(entryId: string) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   // Verify entry exists
   const { data: entry } = await supabase
@@ -309,7 +321,7 @@ export async function toggleCashflowInclusion(
   cashflowId: string,
   isIncluded: boolean,
 ) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   if (!user.email) {
     return { error: 'User email required' };
@@ -366,7 +378,7 @@ export async function toggleCashflowInclusion(
 }
 
 export async function upsertBudget(formData: FormData) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const parsed = cashflowBudgetSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -406,7 +418,7 @@ export async function upsertBudget(formData: FormData) {
 }
 
 export async function deleteBudget(budgetId: string) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   const parsed = deleteCashflowBudgetSchema.safeParse({ budgetId });
   if (!parsed.success) {
@@ -444,7 +456,7 @@ export async function deleteBudget(budgetId: string) {
 }
 
 export async function getBudgets(cashflowId: string) {
-  const { user, supabase } = await getAuthenticatedUserAndProfile();
+  const { user, supabase } = await getAuthenticatedUser();
 
   // Owners can always see budgets; editors can read via RLS
   const { data: ownerCheck } = await supabase

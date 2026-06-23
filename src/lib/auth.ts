@@ -29,3 +29,19 @@ export async function getAuthenticatedUserAndProfile() {
 
   return { user, profile, supabase };
 }
+
+export async function getAuthenticatedUser() {
+  await connection();
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  return { user, supabase };
+}
+
