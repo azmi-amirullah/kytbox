@@ -162,9 +162,7 @@ export default function CashflowDetail({
   // destroys and recreates a DOM node when content changes — it only updates
   // props on the same existing element. Ellipsis slots are disabled buttons
   // showing '…' so the element type is always the same at every position.
-  type PaginationSlot =
-    | { kind: 'page'; page: number }
-    | { kind: 'ellipsis' };
+  type PaginationSlot = { kind: 'page'; page: number } | { kind: 'ellipsis' };
 
   function getPaginationSlots(): PaginationSlot[] {
     if (totalPages <= 7) {
@@ -215,7 +213,6 @@ export default function CashflowDetail({
     ];
   }
   // ────────────────────────────────────────────────────────────────────────────────
-
 
   const canEdit = isOwner || userRole === 'edit';
 
@@ -373,10 +370,7 @@ export default function CashflowDetail({
       {/* Breadcrumbs */}
       <div>
         <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
-          <Link
-            href='/app'
-            className='hover:text-foreground transition-colors'
-          >
+          <Link href='/app' className='hover:text-foreground transition-colors'>
             Kytbox
           </Link>
           <span className='text-muted-foreground'>/</span>
@@ -399,87 +393,91 @@ export default function CashflowDetail({
               <h1 className='text-3xl font-bold tracking-tight text-foreground'>
                 {cashflow.title}
               </h1>
-            {isOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant='ghost' size='icon' className='h-8 w-8'>
-                    <LuEllipsisVertical className='w-4 h-4' />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align='start'>
-                  <DropdownMenuItem
-                    className='cursor-pointer'
-                    onClick={() => setIsShareModalOpen(true)}
-                  >
-                    <LuShare2 className='w-4 h-4 mr-2' />
-                    Share
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className='cursor-pointer'
-                    onClick={() => setIsEditModalOpen(true)}
-                  >
-                    <LuPencil className='w-4 h-4 mr-2' />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setIsDeleting(false);
-                      setDeleteDialogOpen(true);
-                    }}
-                    className='text-destructive focus:text-destructive cursor-pointer'
-                  >
-                    <LuTrash2 className='w-4 h-4 mr-2' />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant='ghost' size='icon' className='h-8 w-8'>
+                      <LuEllipsisVertical className='w-4 h-4' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start'>
+                    <DropdownMenuItem
+                      className='cursor-pointer'
+                      onClick={() => setIsShareModalOpen(true)}
+                    >
+                      <LuShare2 className='w-4 h-4 mr-2' />
+                      Share
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className='cursor-pointer'
+                      onClick={() => setIsEditModalOpen(true)}
+                    >
+                      <LuPencil className='w-4 h-4 mr-2' />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setIsDeleting(false);
+                        setDeleteDialogOpen(true);
+                      }}
+                      className='text-destructive focus:text-destructive cursor-pointer'
+                    >
+                      <LuTrash2 className='w-4 h-4 mr-2' />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {!isOwner && (
+                <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full'>
+                  {userRole === 'edit' ? 'Editor Access' : 'View Only'}
+                </span>
+              )}
+            </div>
+            <p className='text-muted-foreground text-sm'>
+              {filterState.preset !== 'all-time'
+                ? `${filteredEntries.length} of ${entries.length} entries`
+                : `${entries.length} entries`}
+            </p>
+          </div>
+
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              onClick={handleExportCSV}
+              className='gap-2'
+            >
+              <LuDownload className='w-4 h-4' />
+              <span className='hidden sm:inline'>Export CSV</span>
+            </Button>
+
+            {!isOwner && currentUserId && (cashflow.is_public || !!shareId) && (
+              <Button
+                onClick={handleBookmark}
+                variant={hasShare ? 'secondary' : 'outline'}
+                className={`gap-2 ${hasShare ? 'text-green-600' : ''}`}
+                disabled={isPending}
+              >
+                {isPending ? (
+                  <LuLoader className='w-4 h-4 animate-spin' />
+                ) : hasShare ? (
+                  <LuCheck className='w-4 h-4' />
+                ) : (
+                  <LuBookmark className='w-4 h-4' />
+                )}
+                {hasShare ? 'Saved' : 'Add to Dashboard'}
+              </Button>
             )}
-            {!isOwner && (
-              <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full'>
-                {userRole === 'edit' ? 'Editor Access' : 'View Only'}
-              </span>
+
+            {canEdit && (
+              <Button onClick={openAddEntry} className='gap-2'>
+                <LuPlus className='w-4 h-4' />
+                Add Entry
+              </Button>
             )}
           </div>
-          <p className='text-muted-foreground text-sm'>
-            {filterState.preset !== 'all-time'
-              ? `${filteredEntries.length} of ${entries.length} entries`
-              : `${entries.length} entries`}
-          </p>
-        </div>
-
-        <div className='flex items-center gap-2'>
-          <Button variant='outline' onClick={handleExportCSV} className='gap-2'>
-            <LuDownload className='w-4 h-4' />
-            <span className='hidden sm:inline'>Export CSV</span>
-          </Button>
-
-          {!isOwner && currentUserId && (cashflow.is_public || !!shareId) && (
-            <Button
-              onClick={handleBookmark}
-              variant={hasShare ? 'secondary' : 'outline'}
-              className={`gap-2 ${hasShare ? 'text-green-600' : ''}`}
-              disabled={isPending}
-            >
-              {isPending ? (
-                <LuLoader className='w-4 h-4 animate-spin' />
-              ) : hasShare ? (
-                <LuCheck className='w-4 h-4' />
-              ) : (
-                <LuBookmark className='w-4 h-4' />
-              )}
-              {hasShare ? 'Saved' : 'Add to Dashboard'}
-            </Button>
-          )}
-
-          {canEdit && (
-            <Button onClick={openAddEntry} className='gap-2'>
-              <LuPlus className='w-4 h-4' />
-              Add Entry
-            </Button>
-          )}
         </div>
       </div>
-    </div>
 
       {/* Summary Stats */}
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
@@ -549,47 +547,46 @@ export default function CashflowDetail({
           </div>
         ) : (
           <>
-          <div className='divide-y divide-border'>
-            {/* Desktop Table View */}
-            <div className='hidden md:block overflow-x-auto'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className='w-[80px] border-r border-border/40'>
-                      Date
-                    </TableHead>
-                    <TableHead className='w-[100px] border-r border-border/40'>
-                      Type
-                    </TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className='text-right'>Amount</TableHead>
-                    <TableHead className='w-[80px]'></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <motion.tbody
-                  key={currentPage}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                  data-slot='table-body'
-                  className='[&_tr:last-child]:border-0'
-                >
-                  {paginatedEntries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
-                        {(() => {
-                          const [year, month, day] = entry.date
-                            .split('-')
-                            .map(Number);
-                          const date = new Date(year, month - 1, day);
-                          return date.toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                          });
-                        })()}
-                      </TableCell>
-                      <TableCell className='border-r border-border/30'>
-                        <div className='flex flex-col items-start gap-1'>
+            <div className='divide-y divide-border'>
+              {/* Desktop Table View */}
+              <div className='hidden md:block overflow-x-auto'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className='w-[80px] border-r border-border/40'>
+                        Date
+                      </TableHead>
+                      <TableHead className='w-[100px] border-r border-border/40'>
+                        Type
+                      </TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className='text-right'>Amount</TableHead>
+                      <TableHead className='w-[80px]'></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <motion.tbody
+                    key={currentPage}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    data-slot='table-body'
+                    className='[&_tr:last-child]:border-0'
+                  >
+                    {paginatedEntries.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
+                          {(() => {
+                            const [year, month, day] = entry.date
+                              .split('-')
+                              .map(Number);
+                            const date = new Date(year, month - 1, day);
+                            return date.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            });
+                          })()}
+                        </TableCell>
+                        <TableCell className='border-r border-border/30'>
                           <span
                             className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
                               entry.type === 'income'
@@ -599,268 +596,289 @@ export default function CashflowDetail({
                           >
                             {entry.type}
                           </span>
-                          {entry.is_recurring && (
-                            <div className='flex items-center gap-0.5'>
-                              <LuRepeat className='w-3 h-3 text-emerald-600 dark:text-emerald-400' />
-                              <span className='text-[10px] font-medium capitalize text-emerald-600 dark:text-emerald-400'>
-                                {entry.recurrence_interval}
+                        </TableCell>
+                        <TableCell>
+                          <div className='flex items-center gap-2 flex-wrap'>
+                            <span className='font-medium'>
+                              {entry.description}
+                            </span>
+                            {entry.category && (
+                              <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
+                                {entry.category}
                               </span>
+                            )}
+                            {entry.is_recurring && (
+                              <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/30'>
+                                <LuRepeat className='w-2.5 h-2.5' />
+                                <span className='capitalize text-[10px]'>
+                                  {entry.recurrence_interval}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell
+                          className={`text-right font-medium text-nowrap ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                          {entry.type === 'income' ? '+' : '-'}
+                          {formatCurrencyCompact(
+                            Number(entry.amount),
+                            currency,
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {canEdit && (
+                            <div className='flex justify-end gap-1'>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-7 w-7'
+                                onClick={() => openEditEntry(entry)}
+                              >
+                                <LuPencil className='w-4 h-4' />
+                              </Button>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-7 w-7 text-destructive hover:text-destructive'
+                                onClick={() => {
+                                  setIsDeletingEntryId(null);
+                                  setDeletingEntryId(entry.id);
+                                }}
+                              >
+                                <LuTrash2 className='w-4 h-4' />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </motion.tbody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className='md:hidden'>
+                <motion.div
+                  key={currentPage}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  className='divide-y divide-border'
+                >
+                  {paginatedEntries.map((entry) => (
+                    <div key={entry.id} className='p-4 space-y-3'>
+                      <div className='flex items-center justify-between gap-4'>
+                        <div className='space-y-2 min-w-0 flex-1'>
+                          <div className='flex items-center gap-2'>
+                            <span className='text-xs text-muted-foreground font-medium'>
+                              {(() => {
+                                const [year, month, day] = entry.date
+                                  .split('-')
+                                  .map(Number);
+                                const date = new Date(year, month - 1, day);
+                                return date.toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                });
+                              })()}
+                            </span>
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
+                                entry.type === 'income'
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                                  : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                              }`}
+                            >
+                              {entry.type}
+                            </span>
+                          </div>
+                          <div className='flex flex-wrap items-center gap-1.5'>
+                            <span className='font-medium text-sm leading-tight overflow-wrap-anywhere'>
+                              {entry.description}
+                            </span>
+                            {entry.category && (
+                              <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
+                                {entry.category}
+                              </span>
+                            )}
+                            {entry.is_recurring && (
+                              <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/30'>
+                                <LuRepeat className='w-2.5 h-2.5' />
+                                <span className='capitalize text-[10px]'>
+                                  {entry.recurrence_interval}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className='text-right shrink-0 flex gap-4 items-center'>
+                          <div
+                            className={`font-bold text-sm ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                          >
+                            {entry.type === 'income' ? '+' : '-'}
+                            {formatCurrencyCompact(
+                              Number(entry.amount),
+                              currency,
+                            )}
+                          </div>
+                          {canEdit && (
+                            <div className='flex justify-end gap-1 flex-col'>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-8 w-8'
+                                onClick={() => openEditEntry(entry)}
+                              >
+                                <LuPencil className='w-4 h-4' />
+                              </Button>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-8 w-8 text-destructive hover:bg-destructive/10'
+                                onClick={() => {
+                                  setIsDeletingEntryId(null);
+                                  setDeletingEntryId(entry.id);
+                                }}
+                              >
+                                {isDeletingEntryId === entry.id ? (
+                                  <LuLoader className='w-4 h-4 animate-spin' />
+                                ) : (
+                                  <LuTrash2 className='w-4 h-4' />
+                                )}
+                              </Button>
                             </div>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className='font-medium'>{entry.description}</div>
-                        {entry.category && (
-                          <span className='inline-flex items-center px-1.5 py-0.5 mt-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
-                            {entry.category}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell
-                        className={`text-right font-medium text-nowrap ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
-                      >
-                        {entry.type === 'income' ? '+' : '-'}
-                        {formatCurrencyCompact(Number(entry.amount), currency)}
-                      </TableCell>
-                      <TableCell>
-                        {canEdit && (
-                          <div className='flex justify-end gap-1'>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-7 w-7'
-                              onClick={() => openEditEntry(entry)}
-                            >
-                              <LuPencil className='w-3.5 h-3.5' />
-                            </Button>
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-7 w-7 text-destructive hover:text-destructive'
-                              onClick={() => {
-                                setIsDeletingEntryId(null);
-                                setDeletingEntryId(entry.id);
-                              }}
-                            >
-                              {isDeletingEntryId === entry.id ? (
-                                <LuLoader className='w-3.5 h-3.5 animate-spin' />
-                              ) : (
-                                <LuTrash2 className='w-3.5 h-3.5' />
-                              )}
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </div>
                   ))}
-                </motion.tbody>
-              </Table>
+                </motion.div>
+              </div>
             </div>
 
-            {/* Mobile Card View */}
-            <div className='md:hidden'>
-              <motion.div
-                key={currentPage}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                className='divide-y divide-border'
-              >
-                {paginatedEntries.map((entry) => (
-                <div key={entry.id} className='p-4 space-y-3'>
-                  <div className='flex items-start justify-between gap-4'>
-                    <div className='space-y-2 min-w-0 flex-1'>
-                      <div className='flex items-center gap-2'>
-                        <span className='text-xs text-muted-foreground font-medium'>
-                          {(() => {
-                            const [year, month, day] = entry.date
-                              .split('-')
-                              .map(Number);
-                            const date = new Date(year, month - 1, day);
-                            return date.toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            });
-                          })()}
-                        </span>
-                        <span
-                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
-                            entry.type === 'income'
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                              : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-                          }`}
-                        >
-                          {entry.type}
-                        </span>
-                      </div>
-                      <div className='font-medium text-sm leading-tight overflow-wrap-anywhere'>
-                        {entry.description}
-                      </div>
-                      <div className='flex flex-wrap gap-1.5 items-center'>
-                        {entry.category && (
-                          <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
-                            {entry.category}
-                          </span>
-                        )}
-                        {entry.is_recurring && (
-                          <div className='flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400'>
-                            <LuRepeat className='w-3 h-3' />
-                            <span className='text-[10px] font-medium capitalize'>
-                              {entry.recurrence_interval}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className='text-right shrink-0'>
-                      <div
-                        className={`font-bold text-sm ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
-                      >
-                        {entry.type === 'income' ? '+' : '-'}
-                        {formatCurrencyCompact(Number(entry.amount), currency)}
-                      </div>
-                      {canEdit && (
-                        <div className='flex justify-end gap-1 mt-2'>
-                          <Button
-                            variant='outline'
-                            size='icon'
-                            className='h-8 w-8'
-                            onClick={() => openEditEntry(entry)}
-                          >
-                            <LuPencil className='w-4 h-4' />
-                          </Button>
-                          <Button
-                            variant='outline'
-                            size='icon'
-                            className='h-8 w-8 text-destructive hover:bg-destructive/10'
-                            onClick={() => {
-                              setIsDeletingEntryId(null);
-                              setDeletingEntryId(entry.id);
-                            }}
-                          >
-                            {isDeletingEntryId === entry.id ? (
-                              <LuLoader className='w-4 h-4 animate-spin' />
-                            ) : (
-                              <LuTrash2 className='w-4 h-4' />
-                            )}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className='flex items-center justify-between gap-3 px-4 py-3 border-t border-border/60 bg-muted/20 flex-wrap'>
-              {/* Left: entry count + page size picker */}
-              <div className='flex items-center gap-2'>
-                <p className='text-xs text-muted-foreground'>
-                  Showing{' '}
-                  <span className='font-medium text-foreground'>
-                    {(currentPage - 1) * pageSize + 1}–
-                    {Math.min(currentPage * pageSize, filteredEntries.length)}
-                  </span>{' '}
-                  of{' '}
-                  <span className='font-medium text-foreground'>
-                    {filteredEntries.length}
-                  </span>{' '}
-                  entries
-                </p>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    const num = Number(e.target.value);
-                    const size = PAGE_SIZE_OPTIONS.find((n) => n === num);
-                    if (size !== undefined) changePageSize(size);
-                  }}
-                  className='h-6 rounded border border-border bg-background px-1.5 text-[11px] text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring'
-                  aria-label='Entries per page'
-                >
-                  {PAGE_SIZE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>{n} / page</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Right: navigation buttons */}
-              <div className='flex items-center gap-1'>
-                {/* First page */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='h-7 w-7'
-                  onClick={() => goToPage(1)}
-                  disabled={currentPage === 1}
-                  aria-label='First page'
-                >
-                  <LuChevronsLeft className='w-3.5 h-3.5' />
-                </Button>
-                {/* Previous page */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='h-7 w-7'
-                  onClick={() => goToPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  aria-label='Previous page'
-                >
-                  <LuChevronLeft className='w-3.5 h-3.5' />
-                </Button>
-
-                {/* Slot-keyed buttons: same element type at every slot index,
-                    so React only updates props — never destroys/recreates nodes */}
-                {getPaginationSlots().map((slot, slotIdx) => (
-                  <Button
-                    key={slotIdx}
-                    variant={slot.kind === 'page' && currentPage === slot.page ? 'default' : 'outline'}
-                    size='icon'
-                    className={
-                      slot.kind === 'ellipsis'
-                        ? 'h-7 w-7 text-xs border-0 shadow-none text-muted-foreground cursor-default pointer-events-none'
-                        : 'h-7 w-7 text-xs'
-                    }
-                    disabled={slot.kind === 'ellipsis'}
-                    onClick={slot.kind === 'page' ? () => goToPage(slot.page) : undefined}
-                    aria-label={slot.kind === 'page' ? `Page ${slot.page}` : undefined}
-                    aria-current={slot.kind === 'page' && currentPage === slot.page ? 'page' : undefined}
-                    tabIndex={slot.kind === 'ellipsis' ? -1 : undefined}
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className='flex items-center justify-between gap-3 px-4 py-3 border-t border-border/60 bg-muted/20 flex-wrap'>
+                {/* Left: entry count + page size picker */}
+                <div className='flex items-center gap-2'>
+                  <p className='text-xs text-muted-foreground'>
+                    Showing{' '}
+                    <span className='font-medium text-foreground'>
+                      {(currentPage - 1) * pageSize + 1}–
+                      {Math.min(currentPage * pageSize, filteredEntries.length)}
+                    </span>{' '}
+                    of{' '}
+                    <span className='font-medium text-foreground'>
+                      {filteredEntries.length}
+                    </span>{' '}
+                    entries
+                  </p>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      const num = Number(e.target.value);
+                      const size = PAGE_SIZE_OPTIONS.find((n) => n === num);
+                      if (size !== undefined) changePageSize(size);
+                    }}
+                    className='h-6 rounded border border-border bg-background px-1.5 text-[11px] text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring'
+                    aria-label='Entries per page'
                   >
-                    {slot.kind === 'ellipsis' ? '…' : slot.page}
-                  </Button>
-                ))}
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        {n} / page
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                {/* Next page */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='h-7 w-7'
-                  onClick={() => goToPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  aria-label='Next page'
-                >
-                  <LuChevronRight className='w-3.5 h-3.5' />
-                </Button>
-                {/* Last page */}
-                <Button
-                  variant='outline'
-                  size='icon'
-                  className='h-7 w-7'
-                  onClick={() => goToPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  aria-label='Last page'
-                >
-                  <LuChevronsRight className='w-3.5 h-3.5' />
-                </Button>
+                {/* Right: navigation buttons */}
+                <div className='flex items-center gap-1'>
+                  {/* First page */}
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-7 w-7'
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage === 1}
+                    aria-label='First page'
+                  >
+                    <LuChevronsLeft className='w-3.5 h-3.5' />
+                  </Button>
+                  {/* Previous page */}
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-7 w-7'
+                    onClick={() => goToPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    aria-label='Previous page'
+                  >
+                    <LuChevronLeft className='w-3.5 h-3.5' />
+                  </Button>
+
+                  {/* Slot-keyed buttons: same element type at every slot index,
+                    so React only updates props — never destroys/recreates nodes */}
+                  {getPaginationSlots().map((slot, slotIdx) => (
+                    <Button
+                      key={slotIdx}
+                      variant={
+                        slot.kind === 'page' && currentPage === slot.page
+                          ? 'default'
+                          : 'outline'
+                      }
+                      size='icon'
+                      className={
+                        slot.kind === 'ellipsis'
+                          ? 'h-7 w-7 text-xs border-0 shadow-none text-muted-foreground cursor-default pointer-events-none'
+                          : 'h-7 w-7 text-xs'
+                      }
+                      disabled={slot.kind === 'ellipsis'}
+                      onClick={
+                        slot.kind === 'page'
+                          ? () => goToPage(slot.page)
+                          : undefined
+                      }
+                      aria-label={
+                        slot.kind === 'page' ? `Page ${slot.page}` : undefined
+                      }
+                      aria-current={
+                        slot.kind === 'page' && currentPage === slot.page
+                          ? 'page'
+                          : undefined
+                      }
+                      tabIndex={slot.kind === 'ellipsis' ? -1 : undefined}
+                    >
+                      {slot.kind === 'ellipsis' ? '…' : slot.page}
+                    </Button>
+                  ))}
+
+                  {/* Next page */}
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-7 w-7'
+                    onClick={() => goToPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    aria-label='Next page'
+                  >
+                    <LuChevronRight className='w-3.5 h-3.5' />
+                  </Button>
+                  {/* Last page */}
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-7 w-7'
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    aria-label='Last page'
+                  >
+                    <LuChevronsRight className='w-3.5 h-3.5' />
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </>
         )}
       </div>
