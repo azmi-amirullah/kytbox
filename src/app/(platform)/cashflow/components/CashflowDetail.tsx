@@ -39,6 +39,10 @@ import {
   LuCheck,
   LuRepeat,
   LuDownload,
+  LuChevronLeft,
+  LuChevronRight,
+  LuChevronsLeft,
+  LuChevronsRight,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import type {
@@ -119,6 +123,34 @@ export default function CashflowDetail({
     return filterEntriesByDate(entries, range);
   }, [entries, filterState]);
   // ─────────────────────────────────────────────────────────────────────────────
+
+  // ── Client-side pagination ─────────────────────────────────────────────────────
+  const PAGE_SIZE = 10;
+
+  // Store the filterState reference alongside the page so we can detect filter
+  // changes via pure object-reference equality during render — no refs, no effects.
+  const [pageInfo, setPageInfo] = useState<{ page: number; forFilter: DateFilterState }>({
+    page: 1,
+    forFilter: filterState,
+  });
+
+  // When filterState is a new object (user changed filters), derive page as 1.
+  const currentPage = pageInfo.forFilter === filterState ? pageInfo.page : 1;
+
+  function goToPage(next: number | ((p: number) => number)) {
+    setPageInfo({
+      page: typeof next === 'function' ? next(currentPage) : next,
+      forFilter: filterState,
+    });
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+  const paginatedEntries = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredEntries.slice(start, start + PAGE_SIZE);
+  }, [filteredEntries, currentPage]);
+  // ────────────────────────────────────────────────────────────────────────────────
+
 
   const canEdit = isOwner || userRole === 'edit';
 
@@ -451,6 +483,7 @@ export default function CashflowDetail({
             )}
           </div>
         ) : (
+          <>
           <div className='divide-y divide-border'>
             {/* Desktop Table View */}
             <div className='hidden md:block overflow-x-auto'>
@@ -469,7 +502,7 @@ export default function CashflowDetail({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEntries.map((entry) => (
+                  {paginatedEntries.map((entry) => (
                     <TableRow key={entry.id}>
                       <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
                         {(() => {
@@ -555,7 +588,7 @@ export default function CashflowDetail({
 
             {/* Mobile Card View */}
             <div className='md:hidden divide-y divide-border'>
-              {filteredEntries.map((entry) => (
+              {paginatedEntries.map((entry) => (
                 <div key={entry.id} className='p-4 space-y-3'>
                   <div className='flex items-start justify-between gap-4'>
                     <div className='space-y-2 min-w-0 flex-1'>
@@ -642,6 +675,113 @@ export default function CashflowDetail({
               ))}
             </div>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className='flex items-center justify-between px-4 py-3 border-t border-border/60 bg-muted/20'>
+              <p className='text-xs text-muted-foreground'>
+                Showing{' '}
+                <span className='font-medium text-foreground'>
+                  {(currentPage - 1) * PAGE_SIZE + 1}–
+                  {Math.min(currentPage * PAGE_SIZE, filteredEntries.length)}
+                </span>{' '}
+                of{' '}
+                <span className='font-medium text-foreground'>
+                  {filteredEntries.length}
+                </span>{' '}
+                entries
+              </p>
+              <div className='flex items-center gap-1'>
+                {/* First page */}
+                <Button
+                  variant='outline'
+                  size='icon'
+                  className='h-7 w-7'
+                  onClick={() => goToPage(1)}
+                  disabled={currentPage === 1}
+                  aria-label='First page'
+                >
+                  <LuChevronsLeft className='w-3.5 h-3.5' />
+                </Button>
+                {/* Previous page */}
+                <Button
+                  variant='outline'
+                  size='icon'
+                  className='h-7 w-7'
+                  onClick={() => goToPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  aria-label='Previous page'
+                >
+                  <LuChevronLeft className='w-3.5 h-3.5' />
+                </Button>
+
+                {/* Page number buttons with ellipsis */}
+                {(() => {
+                  type PaginationItem = { type: 'page'; page: number } | { type: 'ellipsis'; key: string };
+                  const items: PaginationItem[] = [];
+                  const visible = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
+                    (page) =>
+                      page === 1 ||
+                      page === totalPages ||
+                      Math.abs(page - currentPage) <= 1,
+                  );
+                  visible.forEach((page, idx) => {
+                    const prev = visible[idx - 1];
+                    if (idx > 0 && prev !== undefined && page - prev > 1) {
+                      items.push({ type: 'ellipsis', key: `ellipsis-${idx}` });
+                    }
+                    items.push({ type: 'page', page });
+                  });
+                  return items.map((item) =>
+                    item.type === 'ellipsis' ? (
+                      <span
+                        key={item.key}
+                        className='px-1 text-xs text-muted-foreground'
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <Button
+                        key={item.page}
+                        variant={currentPage === item.page ? 'default' : 'outline'}
+                        size='icon'
+                        className='h-7 w-7 text-xs'
+                        onClick={() => goToPage(item.page)}
+                        aria-label={`Page ${item.page}`}
+                        aria-current={currentPage === item.page ? 'page' : undefined}
+                      >
+                        {item.page}
+                      </Button>
+                    ),
+                  );
+                })()}
+
+                {/* Next page */}
+                <Button
+                  variant='outline'
+                  size='icon'
+                  className='h-7 w-7'
+                  onClick={() => goToPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  aria-label='Next page'
+                >
+                  <LuChevronRight className='w-3.5 h-3.5' />
+                </Button>
+                {/* Last page */}
+                <Button
+                  variant='outline'
+                  size='icon'
+                  className='h-7 w-7'
+                  onClick={() => goToPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  aria-label='Last page'
+                >
+                  <LuChevronsRight className='w-3.5 h-3.5' />
+                </Button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
 
