@@ -65,6 +65,7 @@ import {
   resolveFilterRange,
   type DateFilterState,
 } from '@/lib/cashflow-math';
+import { cn } from '@/lib/utils';
 
 interface CashflowDetailProps {
   cashflow: CashflowDTO;
@@ -667,7 +668,10 @@ export default function CashflowDetail({
                   className='divide-y divide-border'
                 >
                   {paginatedEntries.map((entry) => (
-                    <div key={entry.id} className='p-4 space-y-3'>
+                    <div
+                      key={entry.id}
+                      className={cn('px-4 py-2', canEdit ? 'pr-0' : '')}
+                    >
                       <div className='flex items-center justify-between gap-4'>
                         <div className='space-y-2 min-w-0 flex-1'>
                           <div className='flex items-center gap-2'>
@@ -724,7 +728,7 @@ export default function CashflowDetail({
                             )}
                           </div>
                           {canEdit && (
-                            <div className='flex justify-end gap-1 flex-col'>
+                            <div className='flex justify-end gap-1 flex-col border-l px-2'>
                               <Button
                                 variant='ghost'
                                 size='icon'
