@@ -11,6 +11,7 @@ import {
   LuWallet,
   LuFingerprint,
   LuSmartphone,
+  LuFileDown,
 } from 'react-icons/lu';
 import { SiGithub, SiLinkedin } from 'react-icons/si';
 
@@ -241,32 +242,43 @@ export default async function LandingPage() {
               <div className='flex flex-wrap justify-center gap-3 relative z-10'>
                 <Button variant='outline' size='sm' asChild>
                   <a
-                    href='https://github.com/azmi-amirullah'
+                    href={siteConfig.links.creatorGithub}
                     target='_blank'
                     rel='noopener noreferrer'
                   >
                     <SiGithub className='w-4 h-4 mr-2' />
-                    GitHub
+                    {siteConfig.labels.github}
                   </a>
                 </Button>
                 <Button variant='outline' size='sm' asChild>
                   <a
-                    href='https://www.linkedin.com/in/azmi-amirullah'
+                    href={siteConfig.links.creatorLinkedin}
                     target='_blank'
                     rel='noopener noreferrer'
                   >
                     <SiLinkedin className='w-4 h-4 mr-2' />
-                    LinkedIn
+                    {siteConfig.labels.linkedin}
                   </a>
                 </Button>
                 <Button variant='outline' size='sm' asChild>
                   <a
-                    href='https://azmi-dev.vercel.app'
+                    href={siteConfig.links.creatorPortfolio}
                     target='_blank'
                     rel='noopener noreferrer'
                   >
                     <LuGlobe className='w-4 h-4 mr-2' />
-                    Portfolio
+                    {siteConfig.labels.portfolio}
+                  </a>
+                </Button>
+                <Button variant='outline' size='sm' asChild>
+                  <a
+                    href={siteConfig.links.cv}
+                    download='Mohd_Azmi_Amirullah_CV.pdf'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  >
+                    <LuFileDown className='w-4 h-4 mr-2' />
+                    {siteConfig.labels.downloadCv}
                   </a>
                 </Button>
               </div>

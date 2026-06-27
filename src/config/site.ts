@@ -9,6 +9,17 @@ export const siteConfig = {
   links: {
     github: 'https://github.com/azmi-amirullah/kytbox',
     twitter: 'https://twitter.com/azmi_amirullah',
+    creatorGithub: 'https://github.com/azmi-amirullah',
+    creatorLinkedin: 'https://www.linkedin.com/in/azmi-amirullah',
+    creatorPortfolio: 'https://azmi-dev.vercel.app',
+    cv: '/CV/CV.pdf',
   },
   creator: 'Azmi',
+  labels: {
+    github: 'GitHub',
+    linkedin: 'LinkedIn',
+    portfolio: 'Portfolio',
+    downloadCv: 'Download CV',
+  },
 };
+
