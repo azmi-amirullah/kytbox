@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
 import {
   LuLink2,
@@ -59,36 +58,24 @@ const SUPPORT_SECTION = {
 
 /**
  * Platform Home - App Switcher
- * Shows all available Kytbox apps
+ * Shows all available Kytbox apps.
+ * Auth + profile guard is handled by the platform layout — this page
+ * only fetches the display fields it needs.
  */
 export default async function AppHomePage() {
-  const supabase = await createClient();
-
-  // Middleware (proxy.ts) validates auth, get user for profile fetch
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, display_name, avatar_url, role')
+    .select('username, display_name')
     .eq('id', user.id)
     .single();
-
-  // Redirect to onboarding if profile doesn't exist
-  if (!profile) {
-    redirect('/onboarding');
-  }
 
   return (
     <div className='max-w-4xl mx-auto px-4 py-8 md:py-12 w-full'>
       <div className='mb-8'>
         <h1 className='text-3xl font-bold tracking-tight'>
-          Welcome back, {profile.display_name || profile.username}!
+          Welcome back, {profile?.display_name || profile?.username}!
         </h1>
         <p className='text-muted-foreground mt-1'>
           Choose an app to get started

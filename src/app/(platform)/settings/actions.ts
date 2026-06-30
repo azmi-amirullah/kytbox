@@ -1,12 +1,14 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+
 import { randomUUID } from 'crypto';
 import { revalidatePath, updateTag } from 'next/cache';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { validateUsername } from '@/lib/username';
 import { z } from 'zod';
 import { updateProfileSchema } from '@/lib/validation.schemas';
+import { getIp } from '@/lib/ip';
+import { usernameRateLimit } from '@/lib/upstash/redis';
 
 const AVATAR_BUCKET = 'avatars';
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -79,12 +81,7 @@ export async function updateProfile(formData: FormData) {
  * Upload Avatar
  */
 export async function uploadAvatar(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: 'Unauthorized' };
+  const { user, supabase } = await getAuthenticatedUser();
 
   const parsed = z
     .object({
@@ -167,12 +164,7 @@ export async function uploadAvatar(formData: FormData) {
  * Remove Avatar
  */
 export async function removeAvatar() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: 'Unauthorized' };
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { data: currentProfile, error: currentProfileError } = await supabase
     .from('profiles')
@@ -207,6 +199,10 @@ export async function removeAvatar() {
 }
 
 export async function checkUsername(username: string) {
+  const ip = await getIp();
+  const { success } = await usernameRateLimit.limit(ip);
+  if (!success) return { available: false, error: 'Too many requests' };
+
   const { user, supabase } = await getAuthenticatedUser();
 
   const safeUsername = username.toLowerCase().trim();

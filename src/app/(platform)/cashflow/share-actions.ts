@@ -106,7 +106,18 @@ export async function removeShare(shareId: string) {
       }
     }
   } else {
-    // If it's the owner removing someone else, we delete as before
+    // Verify the current user owns the cashflow before allowing deletion
+    const { data: cashflow } = await supabase
+      .from('cashflows')
+      .select('id')
+      .eq('id', share.cashflow_id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!cashflow) {
+      return { error: 'Only the cashflow owner can remove shares' };
+    }
+
     const { error } = await supabase
       .from('cashflow_shares')
       .delete()
