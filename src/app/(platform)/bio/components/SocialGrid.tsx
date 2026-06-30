@@ -1,6 +1,6 @@
 'use client';
 
-import { getSocialIcon, detectSocialPlatform } from '@/lib/social-icons';
+import { getSocialIcon, detectSocialPlatform } from '@/components/ui/social-icons';
 import { cn } from '@/lib/utils';
 import type { ThemeConfig } from '@/lib/theme/theme.types';
 

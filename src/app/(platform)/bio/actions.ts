@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath, updateTag } from 'next/cache';
-import { getAuthenticatedUserAndProfile, getAuthenticatedUser } from '@/lib/auth';
+import { getAuthenticatedUserAndProfileWithRateLimit as getAuthenticatedUserAndProfile, getAuthenticatedUserWithRateLimit as getAuthenticatedUser } from '@/lib/auth-with-rate-limit';
 import {
   addLinkSchema,
   updateLinkSchema,

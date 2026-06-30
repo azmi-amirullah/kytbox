@@ -1,52 +1,7 @@
 import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
-import {
-  LuLink2,
-  LuLifeBuoy,
-  LuListTodo,
-  LuCar,
-  LuArrowRight,
-  LuWallet,
-} from 'react-icons/lu';
-
-const KYTBOX_APPS = [
-  {
-    id: 'bio',
-    name: 'Bio',
-    description: 'Share all your links in one beautiful page',
-    href: '/bio',
-    icon: LuLink2,
-    status: 'active' as const,
-    color: 'bg-primary/10 text-primary',
-  },
-  {
-    id: 'cashflow',
-    name: 'Cashflow',
-    description: 'Simple & effective personal finance tracking',
-    href: '/cashflow',
-    icon: LuWallet,
-    status: 'active' as const,
-    color: 'bg-emerald-500/10 text-emerald-600',
-  },
-  {
-    id: 'list',
-    name: 'List',
-    description: 'Todo lists, wishlists & ideas',
-    href: '/list',
-    icon: LuListTodo,
-    status: 'coming_soon' as const,
-    color: 'bg-blue-500/10 text-blue-600',
-  },
-  {
-    id: 'track',
-    name: 'Track',
-    description: 'Vehicle & service tracking',
-    href: '/track',
-    icon: LuCar,
-    status: 'coming_soon' as const,
-    color: 'bg-orange-500/10 text-orange-600',
-  },
-];
+import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
+import { KYTBOX_APPS } from '@/config/apps';
 
 const SUPPORT_SECTION = {
   name: 'Support',

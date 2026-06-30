@@ -31,3 +31,11 @@ export const usernameRateLimit = new Ratelimit({
   analytics: true,
   prefix: '@kytbox/username-ratelimit',
 });
+
+// Global rate limiter for authenticated server actions (60 requests per min per user)
+export const actionRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(60, '1m'),
+  analytics: true,
+  prefix: '@kytbox/action-ratelimit',
+});

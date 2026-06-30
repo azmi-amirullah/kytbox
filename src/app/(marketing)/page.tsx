@@ -2,13 +2,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   LuArrowRight,
-  LuLink2,
-  LuListTodo,
-  LuCar,
   LuShieldCheck,
   LuZap,
   LuGlobe,
-  LuWallet,
   LuFingerprint,
   LuSmartphone,
   LuFileDown,
@@ -21,47 +17,12 @@ import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import { Metadata } from 'next';
 import { siteConfig } from '@/config/site';
+import { KYTBOX_APPS } from '@/config/apps';
 
 export const metadata: Metadata = {
   title: `${siteConfig.name} - Your Personal Kit Box`,
   description: siteConfig.description,
 };
-
-// Kytbox Apps for landing page
-const KYTBOX_APPS = [
-  {
-    id: 'bio',
-    name: 'Bio',
-    description: 'Share all your links in one beautiful page',
-    icon: LuLink2,
-    status: 'active' as const,
-    color: 'bg-primary/10 text-primary',
-  },
-  {
-    id: 'cashflow',
-    name: 'Cashflow',
-    description: 'Simple & effective personal finance tracking',
-    icon: LuWallet,
-    status: 'active' as const,
-    color: 'bg-emerald-500/10 text-emerald-600',
-  },
-  {
-    id: 'list',
-    name: 'List',
-    description: 'Todo lists, wishlists & ideas',
-    icon: LuListTodo,
-    status: 'coming_soon' as const,
-    color: 'bg-blue-500/10 text-blue-600',
-  },
-  {
-    id: 'track',
-    name: 'Track',
-    description: 'Vehicle & service tracking',
-    icon: LuCar,
-    status: 'coming_soon' as const,
-    color: 'bg-orange-500/10 text-orange-600',
-  },
-];
 
 export default async function LandingPage() {
   const supabase = await createClient();

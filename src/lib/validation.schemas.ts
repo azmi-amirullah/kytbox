@@ -115,6 +115,10 @@ export const shareRoleSchema = z
   .enum(['owner', 'edit', 'read', 'public'])
   .catch('read');
 
+export const recurrenceIntervalSchema = z.enum(['monthly', 'yearly']).nullable();
+
+export const yearlyCalculationSchema = z.enum(['prorated', 'exact']).nullable();
+
 export const dtoShareRoleSchema = z
   .string()
   .transform((v): 'editor' | 'viewer' => (v === 'edit' ? 'editor' : 'viewer'));

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { getSocialIcon } from '@/lib/social-icons';
+import { getSocialIcon } from '@/components/ui/social-icons';
 import { cn } from '@/lib/utils';
 
 interface LinkButtonProps {

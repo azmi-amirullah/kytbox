@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getAuthenticatedUserWithRateLimit as getAuthenticatedUser } from '@/lib/auth-with-rate-limit';
 
 export async function togglePublic(cashflowId: string, isPublic: boolean) {
   const { user, supabase } = await getAuthenticatedUser();

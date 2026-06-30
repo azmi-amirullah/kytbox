@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserWithRateLimit as getAuthenticatedUser } from '@/lib/auth-with-rate-limit';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -16,14 +16,7 @@ export type State = {
 };
 
 export async function createTicket(prevState: State, formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized' };
-  }
+  const { supabase } = await getAuthenticatedUser();
 
   const validatedFields = supportTicketSchema.safeParse(
     Object.fromEntries(formData),
@@ -61,14 +54,7 @@ export async function replyToTicket(
   prevState: State,
   formData: FormData,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: 'Unauthorized', success: false };
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const validatedFields = replyTicketSchema.safeParse(
     Object.fromEntries(formData),
@@ -121,12 +107,7 @@ export async function replyToTicket(
 }
 
 export async function bumpUrgency(ticketId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: 'Unauthorized' };
+  const { supabase } = await getAuthenticatedUser();
 
   const { error } = await supabase.rpc('bump_support_ticket_urgency', {
     p_ticket_id: ticketId,

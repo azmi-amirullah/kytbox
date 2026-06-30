@@ -4,6 +4,9 @@ import { createStaticClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 export async function loadMorePublicLinks(profileId: string, offset: number, limit: number = 50) {
+  const parsed = z.uuid().safeParse(profileId);
+  if (!parsed.success) return { error: 'Invalid profile ID' };
+
   const supabase = createStaticClient();
   const { data, error } = await supabase
     .from('links')
@@ -45,6 +48,12 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
 }
 
 export async function loadMorePublicFolderLinks(profileId: string, folderId: string, offset: number, limit: number = 50) {
+  const idSchema = z.uuid();
+  const profileParsed = idSchema.safeParse(profileId);
+  const folderParsed = idSchema.safeParse(folderId);
+  if (!profileParsed.success) return { error: 'Invalid profile ID' };
+  if (!folderParsed.success) return { error: 'Invalid folder ID' };
+
   const supabase = createStaticClient();
   const { data, error, count } = await supabase
     .from('links')

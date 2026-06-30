@@ -7,10 +7,8 @@ import type {
   CashflowWithSummary,
   CashflowBudget,
 } from '@/types/database';
-import { dtoShareRoleSchema } from '@/lib/validation.schemas';
-import { z } from 'zod';
+import { dtoShareRoleSchema, recurrenceIntervalSchema, yearlyCalculationSchema } from '@/lib/validation.schemas';
 
-const recurrenceIntervalSchema = z.enum(['monthly', 'yearly']).nullable();
 import type {
   ProfileDTO,
   LinkDTO,
@@ -71,9 +69,7 @@ export function mapCashflowEntryToDTO(row: CashflowEntry): CashflowEntryDTO {
     recurrence_interval: recurrenceIntervalSchema
       .catch(null)
       .parse(row.recurrence_interval),
-    yearly_calculation: z
-      .enum(['prorated', 'exact'])
-      .nullable()
+    yearly_calculation: yearlyCalculationSchema
       .catch(null)
       .parse(row.yearly_calculation),
     created_at: row.created_at,
