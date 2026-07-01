@@ -82,7 +82,7 @@ export default function ShareModal({
     setIsPublic(checked);
     const result = await togglePublic(cashflow.id, checked);
     if (result.error) {
-      toast.error('Failed to update public status');
+      toast.error(result.error || 'Failed to update public status');
       setIsPublic(!checked);
     } else {
       toast.success(
@@ -109,7 +109,7 @@ export default function ShareModal({
   async function handleRemoveShare(shareId: string) {
     const result = await removeShare(shareId);
     if (result.error) {
-      toast.error('Failed to remove share');
+      toast.error(result.error || 'Failed to remove share');
     } else {
       toast.success('Share removed');
       loadShares();
@@ -119,7 +119,7 @@ export default function ShareModal({
   async function handleUpdateRole(shareId: string, newRole: 'read' | 'edit') {
     const result = await updateShareRole(shareId, newRole);
     if (result.error) {
-      toast.error('Failed to update role');
+      toast.error(result.error || 'Failed to update role');
     } else {
       toast.success('Role updated');
       loadShares();
