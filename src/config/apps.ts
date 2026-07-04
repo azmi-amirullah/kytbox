@@ -36,7 +36,7 @@ export const KYTBOX_APPS: KytboxApp[] = [
     description: 'Todo lists, wishlists & ideas',
     href: '/list',
     icon: LuListTodo,
-    status: 'coming_soon',
+    status: 'active',
     color: 'bg-blue-500/10 text-blue-600',
   },
   {

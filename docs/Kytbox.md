@@ -494,6 +494,8 @@ _Last Updated: March 11, 2026_
 | §12.4   | High-Performance Page Caching      | ✅ Done |
 | §12.4   | `'use cache'` Implementation       | ✅ Done |
 | §9      | Bio Dashboard Hybrid Sync Engine   | ✅ Done |
+|         | List App App & Database API        | ✅ Done |
+
 
 ### 🔜 Deferred to Post-Launch
 
@@ -518,6 +520,7 @@ For implementation details and coverage status, see: [Loading States Documentati
 
 - [Bio Documentation](./link-in-bio.md)
 - [Cashflow Documentation](./cashflow.md)
+- [List Documentation](./list.md)
 - [Monetization Strategy](./MONETIZATION.md)
 - [Pre-Monetization Improvements](./PRE_MONETIZATION_IMPROVEMENTS.md)
 
@@ -538,6 +541,11 @@ All page routes in Kytbox with their rendering type and auth requirements:
 | `/bio/analytics`       | Dynamic    | Yes       | Bio analytics                    |
 | `/cashflow`            | Dynamic    | Yes       | Cashflow list                    |
 | `/cashflow/[id]`       | Dynamic    | Mixed     | Cashflow detail (public or auth) |
+| `/list`                | Dynamic    | Yes       | List app hub                     |
+| `/list/todo`           | Dynamic    | Yes       | Todo boards grid                 |
+| `/list/wishlist`       | Dynamic    | Yes       | Wishlists grid                   |
+| `/list/ideas`          | Dynamic    | Yes       | Idea lists grid                  |
+| `/list/.../[id]`       | Dynamic    | Yes       | List detail boards               |
 | `/settings`            | Dynamic    | Yes       | Account settings                 |
 | `/support`             | Dynamic    | Yes       | User support portal              |
 | `/support/[id]`        | Dynamic    | Yes       | Ticket thread view               |

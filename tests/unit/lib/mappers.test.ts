@@ -6,6 +6,10 @@ import {
   mapCashflowShareToDTO,
   mapCashflowWithSummaryToDTO,
   mapBudgetToDTO,
+  mapListToDTO,
+  mapListWithSummaryToDTO,
+  mapListColumnToDTO,
+  mapListItemToDTO,
 } from '@/lib/mappers';
 import type {
   Profile,
@@ -15,6 +19,10 @@ import type {
   CashflowShare,
   CashflowBudget,
   CashflowWithSummary,
+  List,
+  ListColumn,
+  ListItem,
+  ListWithSummary,
 } from '@/types/database';
 
 // Helper to inject bad data into a typed fixture without using `as` casts inline.
@@ -79,7 +87,6 @@ const baseCashflowEntry: CashflowEntry = {
   is_recurring: false,
   recurrence_interval: null,
   yearly_calculation: null,
-  yearly_calc_type: null,
   created_at: '2026-03-01T00:00:00Z',
 };
 
@@ -336,3 +343,161 @@ describe('mapBudgetToDTO', () => {
     expect(dto.amount).toBe(750);
   });
 });
+
+// ==========================================
+// List Fixtures
+// ==========================================
+
+const baseList: List = {
+  id: 'list-1',
+  user_id: 'user-1',
+  title: 'My List',
+  description: 'A test list',
+  type: 'todo',
+  is_public: false,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+};
+
+const baseListSummary: ListWithSummary = {
+  id: 'list-1',
+  user_id: 'user-1',
+  title: 'My List',
+  description: 'A test list',
+  type: 'todo',
+  is_public: false,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  item_count: 5,
+  completed_count: 2,
+};
+
+const baseListColumn: ListColumn = {
+  id: 'col-1',
+  list_id: 'list-1',
+  title: 'Todo',
+  sort_order: 1024,
+  is_done_column: false,
+  created_at: '2026-01-01T00:00:00Z',
+};
+
+const baseListItem: ListItem = {
+  id: 'item-1',
+  list_id: 'list-1',
+  column_id: 'col-1',
+  title: 'Task 1',
+  description: 'Detail 1',
+  is_completed: false,
+  sort_order: 1024,
+  metadata: { price: 99.99, currency: 'USD', purchase_url: 'https://example.com' },
+  created_at: '2026-01-01T00:00:00Z',
+};
+
+// ==========================================
+// mapListToDTO
+// ==========================================
+
+describe('mapListToDTO', () => {
+  it('maps list fields correctly', () => {
+    const dto = mapListToDTO(baseList);
+    expect(dto.id).toBe('list-1');
+    expect(dto.title).toBe('My List');
+    expect(dto.description).toBe('A test list');
+    expect(dto.type).toBe('todo');
+    expect(dto.is_public).toBe(false);
+    expect(dto.user_id).toBe('user-1');
+    expect(dto.created_at).toBe('2026-01-01T00:00:00Z');
+    expect(dto.updated_at).toBe('2026-01-01T00:00:00Z');
+    expect(dto.item_count).toBe(0);
+    expect(dto.completed_count).toBe(0);
+  });
+
+  it('safely parses invalid list type as todo via catch() fallback', () => {
+    const dto = mapListToDTO(corrupt(baseList, { type: 'invalid_type' }));
+    expect(dto.type).toBe('todo');
+  });
+});
+
+// ==========================================
+// mapListWithSummaryToDTO
+// ==========================================
+
+describe('mapListWithSummaryToDTO', () => {
+  it('maps list summary fields correctly', () => {
+    const dto = mapListWithSummaryToDTO(baseListSummary);
+    expect(dto.id).toBe('list-1');
+    expect(dto.title).toBe('My List');
+    expect(dto.description).toBe('A test list');
+    expect(dto.type).toBe('todo');
+    expect(dto.is_public).toBe(false);
+    expect(dto.user_id).toBe('user-1');
+    expect(dto.created_at).toBe('2026-01-01T00:00:00Z');
+    expect(dto.updated_at).toBe('2026-01-01T00:00:00Z');
+    expect(dto.item_count).toBe(5);
+    expect(dto.completed_count).toBe(2);
+  });
+
+  it('handles nullable database view columns safely', () => {
+    const nullableSummary: ListWithSummary = {
+      id: 'list-1',
+      user_id: 'user-1',
+      title: 'My List',
+      description: null,
+      type: 'todo',
+      is_public: null,
+      created_at: null,
+      updated_at: null,
+      item_count: null,
+      completed_count: null,
+    };
+    const dto = mapListWithSummaryToDTO(nullableSummary);
+    expect(dto.description).toBeNull();
+    expect(dto.is_public).toBe(false);
+    expect(dto.item_count).toBe(0);
+    expect(dto.completed_count).toBe(0);
+  });
+});
+
+// ==========================================
+// mapListColumnToDTO
+// ==========================================
+
+describe('mapListColumnToDTO', () => {
+  it('maps list column fields correctly', () => {
+    const dto = mapListColumnToDTO(baseListColumn);
+    expect(dto.id).toBe('col-1');
+    expect(dto.list_id).toBe('list-1');
+    expect(dto.title).toBe('Todo');
+    expect(dto.sort_order).toBe(1024);
+    expect(dto.is_done_column).toBe(false);
+  });
+});
+
+// ==========================================
+// mapListItemToDTO
+// ==========================================
+
+describe('mapListItemToDTO', () => {
+  it('maps list item fields correctly', () => {
+    const dto = mapListItemToDTO(baseListItem);
+    expect(dto.id).toBe('item-1');
+    expect(dto.list_id).toBe('list-1');
+    expect(dto.column_id).toBe('col-1');
+    expect(dto.title).toBe('Task 1');
+    expect(dto.description).toBe('Detail 1');
+    expect(dto.is_completed).toBe(false);
+    expect(dto.sort_order).toBe(1024);
+    expect(dto.metadata).toEqual({
+      price: 99.99,
+      currency: 'USD',
+      purchase_url: 'https://example.com',
+    });
+    expect(dto.created_at).toBe('2026-01-01T00:00:00Z');
+  });
+
+  it('handles null/invalid metadata field by falling back to empty object', () => {
+    const dto = mapListItemToDTO(corrupt(baseListItem, { metadata: null }));
+    expect(dto.metadata).toEqual({});
+  });
+});
+

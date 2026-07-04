@@ -20,6 +20,7 @@ export async function proxy(request: NextRequest) {
   const protectedPaths = [
     '/app',
     '/bio',
+    '/list',
     '/onboarding',
     '/settings',
     '/support',

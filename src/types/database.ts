@@ -19,3 +19,9 @@ export type CashflowWithSummary =
   Database['public']['Views']['cashflow_summaries']['Row'] & {
     entries?: CashflowEntry[];
   };
+
+export type List = Database['public']['Tables']['lists']['Row'];
+export type ListColumn = Database['public']['Tables']['list_columns']['Row'];
+export type ListItem = Database['public']['Tables']['list_items']['Row'];
+export type ListWithSummary =
+  Database['public']['Views']['list_summaries']['Row'];

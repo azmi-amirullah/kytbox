@@ -69,6 +69,12 @@ Analytics for link clicks (UA, Country, Referer). Used to populate the Bio analy
 - **`support_tickets`**: High-level support requests.
 - **`support_messages`**: Conversations within a ticket.
 
+### 2.5 List App (`lists`, `list_columns`, `list_items`)
+
+- **`lists`**: Parent container for all types of lists (todo, wishlist, idea). Includes `is_public` sharing toggle.
+- **`list_columns`**: Used only for Kanban boards (type: `todo`). Includes `is_done_column` for automatic completion syncing.
+- **`list_items`**: Child items. Uses `metadata` JSONB for type-specific data (e.g., price and url for wishlists). Maps to a `column_id` if it belongs to a Kanban board.
+
 ---
 
 ## 3. Row Level Security (RLS) Strategy
@@ -98,6 +104,7 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 | 10    | `20260307061641_add_link_animations.sql`             | `animation_type` column on `links`.                                 |
 | 11    | `20260307153700_update_yearly_calc.sql`              | `yearly_calculation` column on `cashflow_entries`.                  |
 | 12    | `20260311_create_cashflow_budgets.sql`               | `cashflow_budgets` table with RLS (owner: all, editor: read).       |
+| 13    | `20260703063150_create_list_tables.sql`             | `lists`, `list_columns`, `list_items`, `list_summaries` view, and RLS. |
 
 ---
 

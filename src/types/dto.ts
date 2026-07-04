@@ -74,3 +74,48 @@ export interface CashflowWithSummaryDTO extends CashflowDTO {
   balance: number;
   isIncluded?: boolean;
 }
+
+// ==========================================
+// LIST APP DTOs
+// ==========================================
+
+export type ListType = 'todo' | 'wishlist' | 'idea';
+
+export interface ListDTO {
+  id: string;
+  title: string;
+  description: string | null;
+  type: ListType;
+  is_public: boolean;
+  user_id: string;
+  created_at: string | null;
+  updated_at: string | null;
+  item_count: number;
+  completed_count: number;
+}
+
+export interface ListColumnDTO {
+  id: string;
+  list_id: string;
+  title: string;
+  sort_order: number;
+  is_done_column: boolean;
+}
+
+export interface ListItemDTO {
+  id: string;
+  list_id: string;
+  column_id: string | null;
+  title: string;
+  description: string | null;
+  is_completed: boolean;
+  sort_order: number;
+  metadata: Record<string, unknown>;
+  created_at: string | null;
+}
+
+export interface WishlistItemMeta {
+  price: number | null;
+  currency: string | null;
+  purchase_url: string | null;
+}

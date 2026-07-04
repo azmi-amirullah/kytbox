@@ -62,7 +62,7 @@ export default async function CashflowPage() {
     const { data } = await supabase
       .from('cashflow_entries')
       .select(
-        'id, cashflow_id, amount, type, category, date, description, is_recurring, recurrence_interval, yearly_calculation, yearly_calc_type, created_at',
+        'id, cashflow_id, amount, type, category, date, description, is_recurring, recurrence_interval, yearly_calculation, created_at',
       )
       .in('cashflow_id', summaryIds)
       .order('date', { ascending: true })

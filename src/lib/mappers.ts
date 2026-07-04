@@ -6,8 +6,12 @@ import type {
   CashflowShare,
   CashflowWithSummary,
   CashflowBudget,
+  List,
+  ListColumn,
+  ListItem,
+  ListWithSummary,
 } from '@/types/database';
-import { dtoShareRoleSchema, recurrenceIntervalSchema, yearlyCalculationSchema } from '@/lib/validation.schemas';
+import { dtoShareRoleSchema, recurrenceIntervalSchema, yearlyCalculationSchema, listTypeSchema } from '@/lib/validation.schemas';
 
 import type {
   ProfileDTO,
@@ -17,7 +21,11 @@ import type {
   CashflowShareDTO,
   CashflowBudgetDTO,
   CashflowWithSummaryDTO,
+  ListDTO,
+  ListColumnDTO,
+  ListItemDTO,
 } from '@/types/dto';
+import { listItemMetadataClientSchema } from '@/lib/validation.schemas.client';
 
 export function mapProfileToDTO(row: Profile): ProfileDTO {
   return {
@@ -109,5 +117,59 @@ export function mapBudgetToDTO(row: CashflowBudget): CashflowBudgetDTO {
     category: row.category,
     amount: Number(row.amount),
     period: 'monthly',
+  };
+}
+
+export function mapListToDTO(row: List): ListDTO {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    type: listTypeSchema.catch('todo').parse(row.type),
+    is_public: row.is_public,
+    user_id: row.user_id,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    item_count: 0,
+    completed_count: 0,
+  };
+}
+
+export function mapListWithSummaryToDTO(row: ListWithSummary): ListDTO {
+  return {
+    id: row.id!,
+    title: row.title!,
+    description: row.description,
+    type: listTypeSchema.catch('todo').parse(row.type),
+    is_public: !!row.is_public,
+    user_id: row.user_id!,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    item_count: row.item_count ?? 0,
+    completed_count: row.completed_count ?? 0,
+  };
+}
+
+export function mapListColumnToDTO(row: ListColumn): ListColumnDTO {
+  return {
+    id: row.id,
+    list_id: row.list_id,
+    title: row.title,
+    sort_order: row.sort_order,
+    is_done_column: row.is_done_column,
+  };
+}
+
+export function mapListItemToDTO(row: ListItem): ListItemDTO {
+  return {
+    id: row.id,
+    list_id: row.list_id,
+    column_id: row.column_id,
+    title: row.title,
+    description: row.description,
+    is_completed: row.is_completed,
+    sort_order: row.sort_order,
+    metadata: listItemMetadataClientSchema.parse(row.metadata),
+    created_at: row.created_at,
   };
 }
