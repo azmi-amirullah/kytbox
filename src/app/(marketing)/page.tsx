@@ -18,6 +18,7 @@ import { BackgroundBlobs } from '@/components/background-blobs';
 import { Metadata } from 'next';
 import { siteConfig } from '@/config/site';
 import { KYTBOX_APPS } from '@/config/apps';
+import pkg from '../../../package.json';
 
 export const metadata: Metadata = {
   title: `${siteConfig.name} - Your Personal Kit Box`,
@@ -64,7 +65,7 @@ export default async function LandingPage() {
           <div className='max-w-4xl mx-auto space-y-8'>
             <div className='inline-flex items-center rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-sm text-green-500 backdrop-blur-sm'>
               <span className='mr-2 flex h-2 w-2 rounded-full bg-green-500'></span>
-              Kytbox v1.0 Live
+              Kytbox v{pkg.version.split('.').slice(0, 2).join('.')} Live
             </div>
 
             <h1 className='text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground'>
