@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 import type { ListDTO, ListItemDTO, ListType } from '@/types/dto';
 import { z } from 'zod';
 import {
-
   createListSchema,
   updateListSchema,
   createListItemSchema,
@@ -14,9 +13,13 @@ import {
   wishlistMetadataSchema,
 } from '@/lib/validation.schemas';
 import {
+  mapListToDTO,
   mapListWithSummaryToDTO,
   mapListItemToDTO,
 } from '@/lib/mappers';
+
+/** Sentinel title for the per-user hidden "New Idea" list */
+const NEW_IDEA_LIST_TITLE = '__new_idea__';
 
 // ==========================================
 // LIST-LEVEL ACTIONS
@@ -351,6 +354,7 @@ export async function getListsByType(type: ListType): Promise<ListDTO[]> {
     .from('list_summaries')
     .select('*')
     .eq('type', type)
+    .neq('title', NEW_IDEA_LIST_TITLE)
     .order('updated_at', { ascending: false });
 
   if (error || !data) return [];
@@ -361,7 +365,8 @@ export async function getListCounts(): Promise<Record<ListType, number>> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('list_summaries')
-    .select('type');
+    .select('type')
+    .neq('title', NEW_IDEA_LIST_TITLE);
 
   const counts: Record<ListType, number> = { todo: 0, wishlist: 0, idea: 0 };
   if (!error && data) {
@@ -399,4 +404,74 @@ export async function getItemsByListId(
 
   if (error || !data) return [];
   return data.map(mapListItemToDTO);
+}
+
+// ==========================================
+// IDEA "NEW IDEA" LIST (standalone items)
+// ==========================================
+
+/** Find or create the hidden "New Idea" list for standalone ideas */
+export async function getOrCreateNewIdeaList(): Promise<ListDTO | null> {
+  const supabase = await createClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return null;
+
+  const { data: existing } = await supabase
+    .from('lists')
+    .select('*')
+    .eq('user_id', userData.user.id)
+    .eq('type', 'idea')
+    .eq('title', NEW_IDEA_LIST_TITLE)
+    .single();
+
+  if (existing) {
+    return mapListToDTO(existing);
+  }
+
+  const { data: created, error } = await supabase
+    .from('lists')
+    .insert({
+      user_id: userData.user.id,
+      title: NEW_IDEA_LIST_TITLE,
+      type: 'idea',
+      is_public: false,
+    })
+    .select()
+    .single();
+
+  if (error || !created) return null;
+  return mapListToDTO(created);
+}
+
+/** Fetch items in the user's "New Idea" list */
+export async function getNewIdeaItems(): Promise<ListItemDTO[]> {
+  const newIdeaList = await getOrCreateNewIdeaList();
+  if (!newIdeaList) return [];
+  return getItemsByListId(newIdeaList.id);
+}
+
+/** Move an item from one list to another */
+export async function moveItemToList(itemId: string, targetListId: string) {
+  const supabase = await createClient();
+
+  const parsed = z.object({
+    itemId: z.uuid({ message: 'Invalid item ID' }),
+    targetListId: z.uuid({ message: 'Invalid target list ID' }),
+  }).safeParse({ itemId, targetListId });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { error } = await supabase
+    .from('list_items')
+    .update({ list_id: parsed.data.targetListId, column_id: null })
+    .eq('id', parsed.data.itemId);
+
+  if (error) {
+    return { error: 'Failed to move item' };
+  }
+
+  revalidatePath('/list');
+  return { success: true };
 }
