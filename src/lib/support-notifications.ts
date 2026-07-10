@@ -21,8 +21,16 @@ export async function getSupportTicketSummary(
 
   const query = supabase
     .from('support_tickets')
-    .select('id')
-    .in('status', ['open', 'in_progress']);
+    .select(`
+      id,
+      support_messages (
+        profiles!support_messages_sender_id_fkey(role),
+        support_message_reads(reader_id)
+      )
+    `)
+    .in('status', ['open', 'in_progress'])
+    .order('created_at', { ascending: false, foreignTable: 'support_messages' })
+    .limit(1, { foreignTable: 'support_messages' });
 
   // If regular user, only look at their own tickets
   if (!isAdmin) {
@@ -35,39 +43,26 @@ export async function getSupportTicketSummary(
     return { needsAttentionCount: 0 };
   }
 
-  const ticketIds = tickets.map((t) => t.id);
-
-  const { data: messages } = await supabase
-    .from('support_messages')
-    .select(
-      'id, ticket_id, profiles!support_messages_sender_id_fkey(role), support_message_reads(reader_id)',
-    )
-    .in('ticket_id', ticketIds)
-    .order('created_at', { ascending: true });
-
-  // Last entry per ticket_id wins (ascending order → last forEach write = newest)
-  const lastMessageByTicket = new Map<
-    string,
-    {
-      role: string;
-      reads: { reader_id: string }[];
-    }
-  >();
-
-  (messages || []).forEach((msg) => {
-    // Note: If using strict foreign key parsing, profiles might be an array or single.
-    // In our schema it's typically a single object.
-    const profiles = Array.isArray(msg.profiles) ? msg.profiles[0] : msg.profiles;
-    const role = userRoleSchema.parse(profiles?.role);
-    lastMessageByTicket.set(msg.ticket_id, {
-      role,
-      reads: msg.support_message_reads || [],
-    });
-  });
-
   let needsAttentionCount = 0;
   for (const ticket of tickets) {
-    const lastMsg = lastMessageByTicket.get(ticket.id);
+    const messages = ticket.support_messages || [];
+    const lastMsgRaw = Array.isArray(messages) ? messages[0] : messages;
+
+    let lastMsg = null;
+    if (lastMsgRaw) {
+      const profiles = Array.isArray(lastMsgRaw.profiles)
+        ? lastMsgRaw.profiles[0]
+        : lastMsgRaw.profiles;
+      const role = userRoleSchema.parse(profiles?.role);
+      
+      const rawReads = lastMsgRaw.support_message_reads || [];
+      const readsArray = Array.isArray(rawReads) ? rawReads : [rawReads];
+
+      lastMsg = {
+        role,
+        reads: readsArray,
+      };
+    }
 
     if (isAdmin) {
       // Admin: needs attention if last message was NOT from an admin (or no messages)

@@ -82,64 +82,54 @@ export default async function AdminSupportPage({
 
   if (ticketIds.length > 0) {
     const { data: ticketMessages } = await supabase
-      .from('support_messages')
-      .select('ticket_id, created_at, profiles!support_messages_sender_id_fkey(role), support_message_reads(reader_id)')
-      .in('ticket_id', ticketIds)
-      .order('created_at', { ascending: true });
+      .from('support_tickets')
+      .select(`
+        id,
+        support_messages (
+          ticket_id,
+          created_at,
+          profiles!support_messages_sender_id_fkey(role),
+          support_message_reads(reader_id)
+        )
+      `)
+      .in('id', ticketIds)
+      .order('created_at', { ascending: false, foreignTable: 'support_messages' })
+      .limit(1, { foreignTable: 'support_messages' });
 
-    const lastMessageByTicket = new Map<
-      string,
-      { senderRole: string | null; reads: { reader_id: string }[] }
-    >();
+    (ticketMessages || []).forEach((ticketMsgObj) => {
+      const ticketId = ticketMsgObj.id;
+      const messages = ticketMsgObj.support_messages || [];
+      const message = Array.isArray(messages) ? messages[0] : messages;
 
-    (ticketMessages || []).forEach((message) => {
+      if (!message) return;
+
       const profiles = Array.isArray(message.profiles)
         ? message.profiles[0]
         : message.profiles;
       const senderRole = userRoleSchema.parse(profiles?.role);
-      const reads = message.support_message_reads || [];
+      
+      const rawReads = message.support_message_reads || [];
+      const reads = Array.isArray(rawReads) ? rawReads : [rawReads];
 
-      // Check if current admin has read this message
       const adminHasRead = reads.some((r) => r.reader_id === user.id);
 
       if (senderRole !== 'admin' && !adminHasRead) {
-        unreadByTicket.set(
-          message.ticket_id,
-          (unreadByTicket.get(message.ticket_id) || 0) + 1,
-        );
+        unreadByTicket.set(ticketId, 1);
       }
 
-      lastMessageByTicket.set(message.ticket_id, {
-        senderRole,
-        reads,
-      });
-    });
-
-    lastMessageByTicket.forEach((lastMessage, ticketId) => {
       const ticket = allTickets.find((t) => t.id === ticketId);
       const ticketUserId = ticket?.user_id;
 
-      const awaitingUserReply = lastMessage.senderRole === 'admin';
-      const awaitingAdminReply = lastMessage.senderRole !== 'admin';
+      const awaitingUserReply = senderRole === 'admin';
+      const awaitingAdminReply = senderRole !== 'admin';
 
       awaitingReplyByTicket.set(ticketId, awaitingUserReply);
 
-      // User has seen it if there is a read record for the ticket owner
-      const userHasSeen = lastMessage.reads.some(
-        (r) => r.reader_id === ticketUserId,
-      );
+      const userHasSeen = reads.some((r) => r.reader_id === ticketUserId);
       seenNoReplyByTicket.set(ticketId, awaitingUserReply && userHasSeen);
 
       awaitingAdminReplyByTicket.set(ticketId, awaitingAdminReply);
-
-      // Admin has seen it if there is a read record for the current admin
-      const adminHasSeen = lastMessage.reads.some(
-        (r) => r.reader_id === user.id,
-      );
-      adminSeenNoReplyByTicket.set(
-        ticketId,
-        awaitingAdminReply && adminHasSeen,
-      );
+      adminSeenNoReplyByTicket.set(ticketId, awaitingAdminReply && adminHasRead);
     });
   }
 
