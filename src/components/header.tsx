@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BrandLogo } from '@/components/brand-logo';
 import { UserNav } from '@/components/user-nav';
+import { AdminNotificationBell } from '@/components/admin-notification-bell';
 import { Button } from '@/components/ui/button';
 import { LuExternalLink } from 'react-icons/lu';
 
@@ -56,6 +57,9 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
               <div className='h-6 w-px bg-border hidden md:block' />
             </>
           )}
+
+          {/* Admin notification bell — Suspense-wrapped, non-blocking */}
+          {user?.role === 'admin' && <AdminNotificationBell />}
 
           <ThemeToggle />
 

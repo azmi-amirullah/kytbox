@@ -2,6 +2,7 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
 import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
 import { KYTBOX_APPS } from '@/config/apps';
+import { AdminSupportNotice } from '@/components/admin-support-notice';
 
 const SUPPORT_SECTION = {
   name: 'Support',
@@ -22,9 +23,11 @@ export default async function AppHomePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, display_name')
+    .select('username, display_name, role')
     .eq('id', user.id)
     .single();
+
+  const isAdmin = profile?.role === 'admin';
 
   return (
     <div className='max-w-4xl mx-auto px-4 py-8 md:py-12 w-full'>
@@ -36,6 +39,13 @@ export default async function AppHomePage() {
           Choose an app to get started
         </p>
       </div>
+
+      {/* Admin: Support ticket notification */}
+      {isAdmin && (
+        <div className='mb-6'>
+          <AdminSupportNotice />
+        </div>
+      )}
 
       {/* App Grid */}
       <div className='grid sm:grid-cols-2 gap-4'>
