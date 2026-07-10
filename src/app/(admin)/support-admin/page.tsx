@@ -6,6 +6,7 @@ import { SupportTicket } from '@/types/support';
 import {
   ticketCategorySchema,
   ticketStatusSchema,
+  userRoleSchema,
 } from '@/lib/validation.schemas';
 import Link from 'next/link';
 
@@ -84,7 +85,7 @@ export default async function AdminSupportPage({
     >();
 
     (ticketMessages || []).forEach((message) => {
-      const senderRole = message.profiles?.role || null;
+      const senderRole = userRoleSchema.parse(message.profiles?.role);
 
       if (senderRole !== 'admin' && !message.read_at) {
         unreadByTicket.set(

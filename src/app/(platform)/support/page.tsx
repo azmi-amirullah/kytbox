@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import {
   ticketCategorySchema,
   ticketStatusSchema,
+  userRoleSchema,
 } from '@/lib/validation.schemas';
 
 export const metadata = {
@@ -50,7 +51,7 @@ export default async function SupportPage() {
     >();
 
     (ticketMessages || []).forEach((message) => {
-      const senderRole = message.profiles?.role || null;
+      const senderRole = userRoleSchema.parse(message.profiles?.role);
 
       if (senderRole === 'admin' && !message.read_at) {
         unreadByTicket.set(

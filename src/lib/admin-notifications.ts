@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
+import { userRoleSchema } from '@/lib/validation.schemas';
 
 /**
  * Returns count of active support tickets that need admin attention.
@@ -31,10 +32,12 @@ export async function getAdminTicketSummary(): Promise<{
     .order('created_at', { ascending: true });
 
   // Last entry per ticket_id wins (ascending order → last forEach write = newest)
-  const lastSenderByTicket = new Map<string, string | null>();
+  const lastSenderByTicket = new Map<string, string>();
   (messages || []).forEach((msg) => {
-    lastSenderByTicket.set(msg.ticket_id, msg.profiles?.role || null);
+    const role = userRoleSchema.parse(msg.profiles?.role);
+    lastSenderByTicket.set(msg.ticket_id, role);
   });
+
 
   let needsAttentionCount = 0;
   for (const ticket of tickets) {
