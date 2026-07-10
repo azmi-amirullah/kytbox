@@ -1,19 +1,35 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { LuBell } from 'react-icons/lu';
-import { getAdminTicketSummary } from '@/lib/admin-notifications';
+import { getSupportTicketSummary } from '@/lib/support-notifications';
+import { createClient } from '@/lib/supabase/server';
 
 async function BellContent() {
-  const { needsAttentionCount } = await getAdminTicketSummary();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  const isAdmin = profile?.role === 'admin';
+
+  const { needsAttentionCount } = await getSupportTicketSummary(
+    user.id,
+    isAdmin,
+  );
 
   return (
     <Link
-      href='/support-admin'
+      href={isAdmin ? '/support-admin' : '/support'}
       className='relative inline-flex items-center justify-center p-2 rounded-full hover:bg-secondary/80 transition-colors'
       aria-label={
         needsAttentionCount > 0
           ? `${needsAttentionCount} support tickets need attention`
-          : 'Support admin — no tickets pending'
+          : 'Support — no tickets pending'
       }
       title={
         needsAttentionCount > 0
@@ -31,7 +47,7 @@ async function BellContent() {
   );
 }
 
-export function AdminNotificationBell() {
+export function SupportNotificationBell() {
   return (
     <Suspense fallback={null}>
       <BellContent />
