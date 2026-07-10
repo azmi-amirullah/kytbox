@@ -7,6 +7,7 @@ import { z } from 'zod';
 import {
   supportTicketSchema,
   replyTicketSchema,
+  userRoleSchema,
 } from '@/lib/validation.schemas';
 
 export type State = {
@@ -74,7 +75,7 @@ export async function replyToTicket(
     .select('role')
     .eq('id', user.id)
     .single();
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = userRoleSchema.parse(profile?.role) === 'admin';
 
   const { error } = await supabase.from('support_messages').insert({
     ticket_id: ticketId,

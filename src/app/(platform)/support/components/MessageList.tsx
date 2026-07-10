@@ -1,6 +1,7 @@
 import { SupportMessage } from '@/types/support';
 import { formatDistanceToNow } from 'date-fns';
 import { LuUser } from 'react-icons/lu';
+import { userRoleSchema } from '@/lib/validation.schemas';
 
 interface MessageListProps {
   messages: SupportMessage[];
@@ -12,7 +13,7 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
     <div className='space-y-6'>
       {messages.map((msg) => {
         const isMe = msg.sender_id === currentUserId;
-        const isAdmin = msg.profiles?.role === 'admin';
+        const isAdmin = userRoleSchema.parse(msg.profiles?.role) === 'admin';
 
         return (
           <div

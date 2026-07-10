@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LuBell } from 'react-icons/lu';
 import { getSupportTicketSummary } from '@/lib/support-notifications';
 import { createClient } from '@/lib/supabase/server';
+import { userRoleSchema } from '@/lib/validation.schemas';
 
 async function BellContent() {
   const supabase = await createClient();
@@ -15,7 +16,7 @@ async function BellContent() {
     .select('role')
     .eq('id', user.id)
     .single();
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = userRoleSchema.parse(profile?.role) === 'admin';
 
   const { needsAttentionCount } = await getSupportTicketSummary(
     user.id,

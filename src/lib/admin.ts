@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { userRoleSchema } from '@/lib/validation.schemas';
 
 export async function checkAdmin() {
   const supabase = await createClient();
@@ -17,7 +18,7 @@ export async function checkAdmin() {
     .eq('id', user.id)
     .single();
 
-  return profile?.role === 'admin';
+  return userRoleSchema.parse(profile?.role) === 'admin';
 }
 
 export async function requireAdmin() {

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
 import { KYTBOX_APPS } from '@/config/apps';
 import { getSupportTicketSummary } from '@/lib/support-notifications';
+import { userRoleSchema } from '@/lib/validation.schemas';
 
 const SUPPORT_SECTION = {
   name: 'Support',
@@ -27,7 +28,7 @@ export default async function AppHomePage() {
     .eq('id', user.id)
     .single();
 
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = userRoleSchema.parse(profile?.role) === 'admin';
 
   const { needsAttentionCount } = await getSupportTicketSummary(user.id, isAdmin);
 
