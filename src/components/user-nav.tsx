@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { logout } from '@/app/(auth)/actions';
+import { logout } from '@/features/auth';
 import { getAvatarUrl } from '@/lib/avatar';
 
 interface UserNavProps {

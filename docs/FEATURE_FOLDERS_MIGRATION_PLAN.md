@@ -79,7 +79,7 @@ To prevent architectural decay, the boundary plugin enforces these rules:
 ### Phase 1: Foundation & Lint Infrastructure
 - [ ] Verify path alias mapping `@/*` -> `./src/*` exists in `tsconfig.json`.
 - [ ] Install `eslint-plugin-boundaries` in the workspace.
-- [ ] Create root `src/middleware.ts` enforcing Edge Runtime (CSP/HSTS).
+- [ ] Verify root `src/proxy.ts` is configured correctly enforcing CSP/HSTS.
 - [ ] Configure ESLint boundaries in `eslint.config.mjs`.
 - [ ] Verify build compiles: `npm run build`.
 

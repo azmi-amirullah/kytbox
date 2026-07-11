@@ -22,7 +22,7 @@ import {
   updateUsername,
   checkUsernameAvailable,
   logout,
-} from '../(auth)/actions';
+} from '@/features/auth';
 
 export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);

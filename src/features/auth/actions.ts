@@ -11,7 +11,7 @@ import {
   loginSchema,
   signupSchema,
   resetPasswordSchema,
-} from '@/lib/validation.schemas';
+} from './schemas.server';
 import { z } from 'zod';
 import { getSafeOrigin } from '@/lib/origin';
 
