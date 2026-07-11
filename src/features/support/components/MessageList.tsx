@@ -1,7 +1,7 @@
 import { SupportMessage } from '@/types/support';
 import { formatDistanceToNow } from 'date-fns';
 import { LuUser } from 'react-icons/lu';
-import { userRoleSchema } from '@/lib/validation.schemas';
+import { userRoleSchema } from '../schemas.client';
 
 interface MessageListProps {
   messages: SupportMessage[];

@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import SettingsForm from './SettingsForm';
-import { BackButton } from './BackButton';
+import { SettingsForm, BackButton } from '@/features/settings';
 import Link from 'next/link';
 import { LuChevronRight } from 'react-icons/lu';
 

@@ -11,7 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import { LuLoader } from 'react-icons/lu';
 import { useEffect, useState } from 'react';
-import { ticketStatusSchema } from '@/lib/validation.schemas.client';
+import { schemasClient } from '@/features/support';
 
 interface StatusSelectorProps {
   ticketId: string;
@@ -41,7 +41,7 @@ const statusItemColorMap: Record<TicketStatus, string> = {
 };
 
 function getStatusColorClass(status: string) {
-  const parsed = ticketStatusSchema.parse(status);
+  const parsed = schemasClient.ticketStatusSchema.parse(status);
   return statusSelectColorMap[parsed];
 }
 
@@ -58,7 +58,7 @@ export function StatusSelector({
 
   const handleStatusChange = async (value: string) => {
     const previousStatus = selectedStatus;
-    const parsed = ticketStatusSchema.parse(value);
+    const parsed = schemasClient.ticketStatusSchema.parse(value);
     setSelectedStatus(parsed);
     setIsPending(true);
     const result = await updateTicketStatus(ticketId, parsed);

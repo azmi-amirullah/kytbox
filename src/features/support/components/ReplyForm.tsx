@@ -1,6 +1,6 @@
 'use client';
 
-import { replyToTicket } from '@/app/(platform)/support/actions';
+import { replyToTicket } from '../actions';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { LuSend } from 'react-icons/lu';

@@ -1,9 +1,6 @@
-import { MessageList } from '@/app/(platform)/support/components/MessageList';
-import { ReplyForm } from '@/app/(platform)/support/components/ReplyForm';
-import { UrgencyControl } from '@/app/(platform)/support/components/UrgencyControl';
+import { MessageList, ReplyForm, UrgencyControl, schemasServer } from '@/features/support';
 import { StatusBadge } from '@/components/support/StatusBadge';
 import { createClient } from '@/lib/supabase/server';
-import { userRoleSchema } from '@/lib/validation.schemas';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -89,7 +86,7 @@ export default async function TicketDetailPage({
                 created_at: m.created_at || new Date().toISOString(),
                 profiles: {
                   ...m.profiles,
-                  role: userRoleSchema.parse(m.profiles?.role),
+                  role: schemasServer.userRoleSchema.parse(m.profiles?.role),
                 },
               })) || []
             }

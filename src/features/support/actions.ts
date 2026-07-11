@@ -8,7 +8,7 @@ import {
   supportTicketSchema,
   replyTicketSchema,
   userRoleSchema,
-} from '@/lib/validation.schemas';
+} from './schemas.server';
 
 export type State = {
   error?: string | null;

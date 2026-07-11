@@ -31,7 +31,7 @@ import {
   uploadAvatar,
   removeAvatar,
   checkUsername,
-} from './actions';
+} from '../actions';
 import { getAvatarUrl } from '@/lib/avatar';
 import { CURRENCIES, DEFAULT_CURRENCY, getCurrency } from '@/lib/currency';
 import {

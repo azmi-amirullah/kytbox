@@ -1,12 +1,11 @@
 'use server';
 
-
 import { randomUUID } from 'crypto';
 import { revalidatePath, updateTag } from 'next/cache';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { validateUsername } from '@/lib/username';
 import { z } from 'zod';
-import { updateProfileSchema } from '@/lib/validation.schemas';
+import { updateProfileSchema } from './schemas.server';
 import { getIp } from '@/lib/ip';
 import { usernameRateLimit } from '@/lib/upstash/redis';
 

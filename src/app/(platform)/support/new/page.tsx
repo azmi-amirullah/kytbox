@@ -1,4 +1,4 @@
-import { CreateTicketForm } from '@/app/(platform)/support/components/CreateTicketForm';
+import { CreateTicketForm } from '@/features/support';
 import { createClient } from '@/lib/supabase/server';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';

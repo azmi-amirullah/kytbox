@@ -1,5 +1,4 @@
-import { MessageList } from '@/app/(platform)/support/components/MessageList';
-import { ReplyForm } from '@/app/(platform)/support/components/ReplyForm';
+import { MessageList, ReplyForm, schemasServer } from '@/features/support';
 import { StatusSelector } from '@/app/(admin)/support-admin/components/StatusSelector';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +6,6 @@ import { requireAdmin } from '@/lib/admin';
 import { getUrgencyBadgeClass } from '@/lib/support-urgency';
 import { createClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
-import { userRoleSchema } from '@/lib/validation.schemas';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -55,7 +53,7 @@ export default async function AdminTicketDetailPage({
   const ageDays = queueTicket?.age_days ?? 0;
 
   const messages = (messagesData || []).map((m) => {
-    const role = userRoleSchema.parse(m.profiles?.role);
+    const role = schemasServer.userRoleSchema.parse(m.profiles?.role);
     return {
       id: m.id,
       ticket_id: m.ticket_id,

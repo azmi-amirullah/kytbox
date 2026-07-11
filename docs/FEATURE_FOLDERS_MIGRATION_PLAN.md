@@ -77,47 +77,47 @@ To prevent architectural decay, the boundary plugin enforces these rules:
 ## 📅 Step-by-Step Migration Checklist
 
 ### Phase 1: Foundation & Lint Infrastructure
-- [ ] Verify path alias mapping `@/*` -> `./src/*` exists in `tsconfig.json`.
-- [ ] Install `eslint-plugin-boundaries` in the workspace.
-- [ ] Verify root `src/proxy.ts` is configured correctly enforcing CSP/HSTS.
-- [ ] Configure ESLint boundaries in `eslint.config.mjs`.
-- [ ] Verify build compiles: `npm run build`.
+- [x] Verify path alias mapping `@/*` -> `./src/*` exists in `tsconfig.json`.
+- [x] Install `eslint-plugin-boundaries` in the workspace.
+- [x] Verify root `src/proxy.ts` is configured correctly enforcing CSP/HSTS.
+- [x] Configure ESLint boundaries in `eslint.config.mjs`.
+- [x] Verify build compiles: `npm run build`.
 
 ### Phase 2: Auth Feature
-- [ ] Create `src/features/auth/` directory.
-- [ ] Suffix auth validation schemas: `schemas.client.ts` (@zod/mini), `schemas.server.ts` (full Zod).
-- [ ] Move login and signup form components from `src/app/(auth)/` and `src/app/update-password/` into `src/features/auth/components/`. Mark them with `'use client'`.
-- [ ] Move authentication actions to `src/features/auth/actions.ts`.
-- [ ] Convert route pages in `src/app/(auth)/` and `src/app/update-password/` to thin composition layouts rendering components from `src/features/auth/`.
-- [ ] Run validation tests to confirm auth flows are intact.
+- [x] Create `src/features/auth/` directory.
+- [x] Suffix auth validation schemas: `schemas.client.ts` (@zod/mini), `schemas.server.ts` (full Zod).
+- [x] Move login and signup form components from `src/app/(auth)/` and `src/app/update-password/` into `src/features/auth/components/`. Mark them with `'use client'`.
+- [x] Move authentication actions to `src/features/auth/actions.ts`.
+- [x] Convert route pages in `src/app/(auth)/` and `src/app/update-password/` to thin composition layouts rendering components from `src/features/auth/`.
+- [x] Run validation tests to confirm auth flows are intact.
 
 ### Phase 3: Cashflow Feature
-- [ ] Create `src/features/cashflow/` directory.
-- [ ] Move cashflow-specific calculations from `src/lib/cashflow-math.ts` to `src/features/cashflow/lib/math.ts` or `src/features/cashflow/math.ts`.
-- [ ] Move components from `src/app/(platform)/cashflow/components/` into `src/features/cashflow/components/`.
-- [ ] Move cashflow data fetching and DB queries into `src/features/cashflow/db.ts` (marked with `server-only`).
-- [ ] Convert `src/app/(platform)/cashflow/page.tsx` into a thin wrapper rendering `CashflowDashboard` from the features layer.
-- [ ] Verify Vitest math suites and E2E cashflow flows compile and pass.
+- [x] Create `src/features/cashflow/` directory.
+- [x] Move cashflow-specific calculations from `src/lib/cashflow-math.ts` to `src/features/cashflow/lib/math.ts` or `src/features/cashflow/math.ts`.
+- [x] Move components from `src/app/(platform)/cashflow/components/` into `src/features/cashflow/components/`.
+- [x] Move cashflow data fetching and DB queries into `src/features/cashflow/db.ts` (marked with `server-only`).
+- [x] Convert `src/app/(platform)/cashflow/page.tsx` into a thin wrapper rendering `CashflowDashboard` from the features layer.
+- [x] Verify Vitest math suites and E2E cashflow flows compile and pass.
 
 ### Phase 4: Bio Links Feature
-- [ ] Create `src/features/bio/` directory.
-- [ ] Move bio-rendering components from `src/app/(platform)/bio/` and `src/app/[username]/` into `src/features/bio/components/`.
-- [ ] Colocate link CRUD database queries in `src/features/bio/db.ts` with strict DTO mappings to prevent private draft link leaks.
-- [ ] Convert `src/app/(platform)/bio/page.tsx` and public routing `src/app/[username]/page.tsx` to thin page components.
-- [ ] Test public profile layout and link ordering functionality.
+- [x] Create `src/features/bio/` directory.
+- [x] Move bio-rendering components from `src/app/(platform)/bio/` and `src/app/[username]/` into `src/features/bio/components/`.
+- [x] Colocate link CRUD database queries in `src/features/bio/db.ts` with strict DTO mappings to prevent private draft link leaks.
+- [x] Convert `src/app/(platform)/bio/page.tsx` and public routing `src/app/[username]/page.tsx` to thin page components.
+- [x] Test public profile layout and link ordering functionality.
 
 ### Phase 5: List Manager Feature
-- [ ] Create `src/features/list/` directory.
-- [ ] Move list and kanban components from `src/app/(platform)/list/components/` into `src/features/list/components/`.
-- [ ] Move list database actions and column mutation handlers into `src/features/list/actions.ts` & `src/features/list/column-actions.ts`.
-- [ ] Convert `src/app/(platform)/list/page.tsx` into a thin page.
-- [ ] Verify lists, boards, and ideas still load correctly.
+- [x] Create `src/features/list/` directory.
+- [x] Move list and kanban components from `src/app/(platform)/list/components/` into `src/features/list/components/`.
+- [x] Move list database actions and column mutation handlers into `src/features/list/actions.ts` & `src/features/list/column-actions.ts`.
+- [x] Convert `src/app/(platform)/list/page.tsx` into a thin page.
+- [x] Verify lists, boards, and ideas still load correctly.
 
 ### Phase 6: Settings & Support Features
-- [ ] Create `src/features/settings/` and `src/features/support/`.
-- [ ] Move setting forms, profile updates, and support ticket creation logic out of route components.
-- [ ] Delete empty legacy folders under `src/app/` and root `components/`.
-- [ ] Run final compilation build: `npm run build`.
+- [x] Create `src/features/settings/` and `src/features/support/`.
+- [x] Move setting forms, profile updates, and support ticket creation logic out of route components.
+- [x] Delete empty legacy folders under `src/app/` and root `components/`.
+- [x] Run final compilation build: `npm run build`.
 
 ---
 

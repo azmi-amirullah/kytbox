@@ -1,6 +1,6 @@
 'use client';
 
-import { bumpUrgency } from '@/app/(platform)/support/actions';
+import { bumpUrgency } from '../actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

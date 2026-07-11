@@ -3,11 +3,7 @@ import { requireAdmin } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
 import { SupportTicket } from '@/types/support';
-import {
-  ticketCategorySchema,
-  ticketStatusSchema,
-  userRoleSchema,
-} from '@/lib/validation.schemas';
+import { schemasServer } from '@/features/support';
 import Link from 'next/link';
 
 export const metadata = {
@@ -60,8 +56,8 @@ export default async function AdminSupportPage({
     id: ticket.id,
     user_id: ticket.user_id,
     subject: ticket.subject,
-    category: ticketCategorySchema.parse(ticket.category),
-    status: ticketStatusSchema.parse(ticket.status),
+    category: schemasServer.ticketCategorySchema.parse(ticket.category),
+    status: schemasServer.ticketStatusSchema.parse(ticket.status),
     urgency_score: ticket.urgency_score ?? 0,
     last_bumped_at: ticket.last_bumped_at,
     created_at: ticket.created_at,
@@ -106,7 +102,7 @@ export default async function AdminSupportPage({
       const profiles = Array.isArray(message.profiles)
         ? message.profiles[0]
         : message.profiles;
-      const senderRole = userRoleSchema.parse(profiles?.role);
+      const senderRole = schemasServer.userRoleSchema.parse(profiles?.role);
       
       const rawReads = message.support_message_reads || [];
       const reads = Array.isArray(rawReads) ? rawReads : [rawReads];

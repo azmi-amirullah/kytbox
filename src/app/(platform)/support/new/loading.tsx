@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { LuArrowLeft } from 'react-icons/lu';
-import { CreateTicketForm } from '@/app/(platform)/support/components/CreateTicketForm';
+import { CreateTicketForm } from '@/features/support';
 
 export default function NewTicketLoading() {
   return (

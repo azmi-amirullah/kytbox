@@ -1,14 +1,9 @@
-import { TicketList } from '@/app/(platform)/support/components/TicketList';
+import { TicketList, schemasServer } from '@/features/support';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/server';
 import { LuPlus } from 'react-icons/lu';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import {
-  ticketCategorySchema,
-  ticketStatusSchema,
-  userRoleSchema,
-} from '@/lib/validation.schemas';
 
 export const metadata = {
   title: 'Support | Kytbox',
@@ -64,7 +59,7 @@ export default async function SupportPage() {
       const profiles = Array.isArray(message.profiles)
         ? message.profiles[0]
         : message.profiles;
-      const senderRole = userRoleSchema.parse(profiles?.role);
+      const senderRole = schemasServer.userRoleSchema.parse(profiles?.role);
       
       const rawReads = message.support_message_reads || [];
       const reads = Array.isArray(rawReads) ? rawReads : [rawReads];
@@ -83,8 +78,8 @@ export default async function SupportPage() {
   }
 
   const ticketsWithSignals = (tickets || []).map((ticket) => {
-    const category = ticketCategorySchema.parse(ticket.category);
-    const status = ticketStatusSchema.parse(ticket.status);
+    const category = schemasServer.ticketCategorySchema.parse(ticket.category);
+    const status = schemasServer.ticketStatusSchema.parse(ticket.status);
 
     return {
       ...ticket,
