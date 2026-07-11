@@ -3,11 +3,25 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import tsParser from '@typescript-eslint/parser';
+import boundaries from 'eslint-plugin-boundaries';
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    plugins: {
+      boundaries,
+    },
+    settings: {
+      'boundaries/elements': [
+        { type: 'app', pattern: 'src/app/**/*' },
+        { type: 'app', pattern: 'src/components/*.{ts,tsx}' },
+        { type: 'app', pattern: 'src/components/!(ui)/**/*' },
+        { type: 'feature', pattern: 'src/features/*/**/*', capture: ['slice'] },
+        { type: 'shared-ui', pattern: 'src/components/ui/**/*' },
+        { type: 'shared-lib', pattern: 'src/{lib,config,types,env.ts,instrumentation.ts}/**/*' }
+      ]
+    },
     files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
     languageOptions: {
       parser: tsParser,
@@ -27,6 +41,44 @@ const eslintConfig = defineConfig([
         'error',
         {
           assertionStyle: 'never', // Block 'as Type' and '<Type>'
+        },
+      ],
+
+      // Strict Architectural Boundaries
+      'boundaries/entry-point': 'error',
+      'boundaries/dependencies': [
+        'error',
+        {
+          default: 'disallow',
+          policies: [
+            {
+              from: { element: { type: 'app' } },
+              allow: [
+                { to: { element: { type: 'app' } } },
+                { to: { element: { type: 'feature' } } },
+                { to: { element: { type: 'shared-ui' } } },
+                { to: { element: { type: 'shared-lib' } } },
+              ],
+            },
+            {
+              from: { element: { type: 'feature' } },
+              allow: [
+                { to: { element: { type: 'feature', captured: { slice: '{{from.captured.slice}}' } } } },
+                { to: { element: { type: 'shared-ui' } } },
+                { to: { element: { type: 'shared-lib' } } },
+              ],
+            },
+            {
+              from: { element: { type: 'shared-ui' } },
+              allow: [
+                { to: { element: { type: 'shared-lib' } } },
+              ],
+            },
+            {
+              from: { element: { type: 'shared-lib' } },
+              allow: [],
+            },
+          ],
         },
       ],
     },

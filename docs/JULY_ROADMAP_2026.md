@@ -1659,7 +1659,7 @@ function getEmbedInfo(url: string): { type: 'youtube' | 'spotify'; embedUrl: str
 | Idea | Description | Impact | Effort |
 |---|---|---|---|
 | **Load/Stress Testing** | k6 or Artillery — simulate 1000 concurrent users on public profiles | 🔥🔥 | ~3h |
-| **FSD Architecture Refactor** | Full Feature-Sliced Design migration for better code organization at scale | 🔥🔥 | ~10h+ |
+| **Domain-Driven Feature Folders Refactor** | Move to vertical slice feature folders for better code organization at scale | 🔥🔥 | ~10h+ |
 | **Visual Regression CI** | Auto-compare Playwright screenshots on every PR. Catch CSS regressions automatically | 🔥🔥 | ~3h |
 | **Staging Environment** | Separate Supabase project + Vercel preview branch for pre-prod testing | 🔥🔥🔥 | ~4h |
 | **Database Read Replicas** | When query load justifies it. Read from replica, write to primary. Supabase supports this | 🔥 | ~4h |

@@ -159,9 +159,7 @@ Major steps were taken to harden the application's infrastructure, such as white
 | ID | Issue | Severity | Status |
 | :--- | :--- | :--- | :--- |
 | **T1** | Set up comprehensive E2E tests for the support system messaging queues | 💡 Low | 🔲 Backlog |
-| **A3** | Architecture: Refactor to Hybrid Atomic-FSD Design (Mandatory) | 🚨 Critical | 🔲 Backlog |
-| **S3** | Bio Pagination DTO Leak: `loadMoreLinks` returns raw DB rows | 🚨 Critical | 🔲 Backlog |
-| **S4** | Cashflow Budgets DTO Leak: `getBudgets` returns raw DB rows | 🚨 Critical | 🔲 Backlog |
+| **A3** | Architecture: Refactor to Domain-Driven Feature Folders (Mandatory) | 🚨 Critical | 🔲 Backlog |
 | **Q3** | Manual `typeof` narrowing in AppearanceEditor and update-password | ⚠️ Medium | 🔲 Backlog |
 | **Q4** | Incomplete React 19 migration: Manual `isLoading` used in forms (signup, LinkModal, etc) | ⚠️ Medium | 🔲 Backlog |
 | **L1** | Linguistic Scale: Zero i18n localization infrastructure | ⚠️ Medium | ⏸️ Deferred (Roadmap) |
@@ -172,6 +170,8 @@ Major steps were taken to harden the application's infrastructure, such as white
 | :--- | :--- | :--- | :--- |
 | ~~**S1**~~ | ~~CSP Nonce Negated via `'unsafe-inline'` in script-src~~ | ~~🚨 Critical~~ | ~~✅ Fixed (June)~~ |
 | ~~**S2**~~ | ~~Whitelist redirect origins to prevent open redirect vulnerabilities~~ | ~~💡 Low~~ | ~~✅ Fixed (Mar 03)~~ |
+| ~~**S3**~~ | ~~Bio Pagination DTO Leak: `loadMoreLinks` returns raw DB rows~~ | ~~🚨 Critical~~ | ~~✅ Fixed (July)~~ |
+| ~~**S4**~~ | ~~Cashflow Budgets DTO Leak: `getBudgets` returns raw DB rows~~ | ~~🚨 Critical~~ | ~~✅ Fixed (July)~~ |
 | ~~**E1**~~ | ~~Hydration mismatch errors in bio dashboard delete link modal~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (Mar 07)~~ |
 | ~~**P1**~~ | ~~Decouple date filtering utilities from React lifecycle~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (Mar 14)~~ |
 | ~~**P2**~~ | ~~Unbounded profile queries on public profile views~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (Mar 12)~~ |
@@ -184,8 +184,8 @@ Major steps were taken to harden the application's infrastructure, such as white
 
 | Priority | Items | Effort | Status |
 | :--- | :--- | :---: | :--- |
-| **P0 — Critical** | **S3**: Bio DTO Leak, **S4**: Cashflow DTO Leak | ~1 hour | **BACKLOG** |
-| **P0 — Critical** | **A3**: Architecture Refactor to Hybrid Atomic-FSD Design | ~2 weeks | **BACKLOG** |
+| **P0 — Critical** | **S3**: Bio DTO Leak, **S4**: Cashflow DTO Leak | ~1 hour | **FIXED** |
+| **P0 — Critical** | **A3**: Architecture Refactor to Domain-Driven Feature Folders | ~2 weeks | **BACKLOG** |
 | **P0 — Critical** | **S1**: Remove `'unsafe-inline'` script-src fallback | ~2 hours | **FIXED** |
 | **P1 — High** | **P1**: Decouple date filtering, **Q2**: Math engine extraction | ~5 hours | **FIXED** |
 | **P2 — Medium** | **Q3**: Zod Migration for manual `typeof` guards | ~2 hours | **BACKLOG** |
