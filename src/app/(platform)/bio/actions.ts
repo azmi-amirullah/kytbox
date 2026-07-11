@@ -8,6 +8,7 @@ import {
   updateAppearanceSchema,
   moveToFolderSchema,
 } from '@/lib/validation.schemas';
+import { mapLinkToDTO } from '@/lib/mappers';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 async function calculateGlobalCounts(userId: string, supabase: SupabaseClient) {
@@ -113,7 +114,7 @@ export async function addLink(formData: FormData) {
 
   revalidatePath('/bio', 'page');
   if (profile) updateTag(`profile-${profile.username}`);
-  return { success: true, link: newLink, newCount: nextCount };
+  return { success: true, link: newLink ? mapLinkToDTO(newLink) : null, newCount: nextCount };
 }
 
 export async function updateLink(linkId: string, formData: FormData) {
@@ -350,7 +351,7 @@ export async function createFolder(formData: FormData) {
 
   revalidatePath('/bio', 'page');
   if (profile) updateTag(`profile-${profile.username}`);
-  return { success: true, link: newFolder, newCount: nextCount };
+  return { success: true, link: newFolder ? mapLinkToDTO(newFolder) : null, newCount: nextCount };
 }
 
 export async function moveToFolder(formData: FormData) {
@@ -412,7 +413,7 @@ export async function loadMoreLinks(offset: number, limit: number = 50) {
   }
   
   return { 
-    links: data, 
+    links: (data || []).map(mapLinkToDTO), 
     totalCount: count || 0, // Root count for pagination
     globalTotalCount: globalTotalCount || 0,
     globalActiveCount: globalActiveCount || 0
@@ -441,7 +442,7 @@ export async function loadFolderLinks(folderId: string, offset: number, limit: n
   }
   
   return { 
-    links: data, 
+    links: (data || []).map(mapLinkToDTO), 
     totalCount: count || 0, // Folder count for pagination
     globalTotalCount: globalTotalCount || 0,
     globalActiveCount: globalActiveCount || 0

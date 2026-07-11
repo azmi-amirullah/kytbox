@@ -1,6 +1,5 @@
 import type {
   Profile,
-  Link,
   Cashflow,
   CashflowEntry,
   CashflowShare,
@@ -11,7 +10,12 @@ import type {
   ListItem,
   ListWithSummary,
 } from '@/types/database';
-import { dtoShareRoleSchema, recurrenceIntervalSchema, yearlyCalculationSchema, listTypeSchema } from '@/lib/validation.schemas';
+import {
+  dtoShareRoleSchema,
+  recurrenceIntervalSchema,
+  yearlyCalculationSchema,
+  listTypeSchema,
+} from '@/lib/validation.schemas';
 
 import type {
   ProfileDTO,
@@ -37,9 +41,19 @@ export function mapProfileToDTO(row: Profile): ProfileDTO {
   };
 }
 
-export function mapLinkToDTO(
-  row: Link & { children?: { count: number }[]; child_count?: number },
-): LinkDTO {
+export function mapLinkToDTO(row: {
+  id: string;
+  url?: string | null;
+  title: string;
+  is_active?: boolean | null;
+  sort_order?: number | null;
+  is_folder?: boolean | null;
+  parent_id?: string | null;
+  clicks?: number | null;
+  animation_type?: string | null;
+  children?: { count: number }[];
+  child_count?: number | null;
+}): LinkDTO {
   return {
     id: row.id,
     url: row.url || '#',
@@ -47,10 +61,10 @@ export function mapLinkToDTO(
     is_active: !!row.is_active,
     sort_order: row.sort_order ?? 0,
     is_folder: !!row.is_folder,
-    parent_id: row.parent_id,
-    clicks: row.clicks,
-    animation_type: row.animation_type,
-    child_count: row.children?.[0]?.count ?? row.child_count,
+    parent_id: row.parent_id ?? null,
+    clicks: row.clicks ?? null,
+    animation_type: row.animation_type ?? null,
+    child_count: row.children?.[0]?.count ?? row.child_count ?? undefined,
   };
 }
 

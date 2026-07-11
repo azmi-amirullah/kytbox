@@ -24,7 +24,7 @@ import { LuFolderOpen, LuLoader } from 'react-icons/lu';
 import MoveToFolderModal from './MoveToFolderModal';
 import SortableLink from './SortableLink';
 import type { LinkDTO } from '@/types/dto';
-import { rawLinkListSchema } from '@/lib/validation.schemas.client';
+import { linkDtoListSchema } from '@/lib/validation.schemas.client';
 
 interface LinkListProps {
   links: LinkDTO[];
@@ -73,19 +73,7 @@ export default function LinkList({
         setLoadingFolder(id);
         const res = await loadFolderLinks(id, 0, 50);
         if ('links' in res && res.links) {
-          const rawLinks = rawLinkListSchema.parse(res.links);
-          const mappedLinks: LinkDTO[] = rawLinks.map((l) => ({
-            id: l.id,
-            title: l.title,
-            url: l.url || '',
-            sort_order: l.sort_order,
-            is_active: l.is_active,
-            clicks: l.clicks,
-            is_folder: l.is_folder,
-            parent_id: l.parent_id,
-            animation_type: l.animation_type,
-            child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
-          }));
+          const mappedLinks = linkDtoListSchema.parse(res.links);
           setLinks((prev) => {
             const serverIds = new Set(mappedLinks.map((m) => m.id));
             const filteredPrev = prev.filter((p) => !serverIds.has(p.id));
@@ -121,19 +109,7 @@ export default function LinkList({
     try {
       const res = await loadFolderLinks(currentFolderId, existingRealItems, 50);
       if ('links' in res && res.links) {
-        const rawLinks = rawLinkListSchema.parse(res.links);
-        const mappedLinks: LinkDTO[] = rawLinks.map((l) => ({
-          id: l.id,
-          title: l.title,
-          url: l.url || '',
-          sort_order: l.sort_order,
-          is_active: l.is_active,
-          clicks: l.clicks,
-          is_folder: l.is_folder,
-          parent_id: l.parent_id,
-          animation_type: l.animation_type,
-          child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
-        }));
+        const mappedLinks = linkDtoListSchema.parse(res.links);
 
         if ('totalCount' in res && res.totalCount !== undefined) {
           setFolderCounts((prev) => ({

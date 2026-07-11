@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import { addLink, updateLink, createFolder } from '../actions';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  rawLinkSchema,
+  linkDtoSchema,
   linkActionResponseSchema,
   linkTypeSchema,
 } from '@/lib/validation.schemas.client';
@@ -141,20 +141,8 @@ export default function LinkModal({
       );
       const validated = linkActionResponseSchema.parse(result);
       if (validated.link && onSuccess) {
-        const l = rawLinkSchema.parse(validated.link);
-        const mappedLink: LinkDTO = {
-          id: l.id,
-          title: l.title,
-          url: l.url || '',
-          sort_order: l.sort_order,
-          is_active: l.is_active,
-          clicks: l.clicks,
-          is_folder: l.is_folder,
-          parent_id: l.parent_id,
-          animation_type: l.animation_type,
-          child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
-        };
-        onSuccess(mappedLink, validated.newCount ?? undefined);
+        const l = linkDtoSchema.parse(validated.link);
+        onSuccess(l, validated.newCount ?? undefined);
       }
       setIsLoading(false);
       startTransition(() => {

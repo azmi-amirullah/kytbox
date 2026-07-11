@@ -18,7 +18,7 @@ import LinkModal from './LinkModal';
 import StatsCard from './StatsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { rawLinkListSchema } from '@/lib/validation.schemas.client';
+import { linkDtoListSchema } from '@/lib/validation.schemas.client';
 import type { LinkDTO } from '@/types/dto';
 
 interface LinksTabContentProps {
@@ -116,19 +116,7 @@ export default function LinksTabContent({
       results.forEach(({ parentId, res }) => {
         if ('links' in res && res.links) {
           updatedParentIds.add(parentId);
-          const raw = rawLinkListSchema.parse(res.links);
-          const mapped = raw.map((l) => ({
-            id: l.id,
-            title: l.title,
-            url: l.url || '',
-            sort_order: l.sort_order,
-            is_active: l.is_active,
-            clicks: l.clicks,
-            is_folder: l.is_folder,
-            parent_id: l.parent_id,
-            animation_type: l.animation_type,
-            child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
-          }));
+          const mapped = linkDtoListSchema.parse(res.links);
           allMapped.push(...mapped);
 
           if ('globalTotalCount' in res && res.globalTotalCount !== undefined) {
@@ -164,19 +152,7 @@ export default function LinksTabContent({
       if ('error' in result && result.error) {
         toast.error('Failed to load more links: ' + result.error);
       } else if ('links' in result && result.links) {
-        const rawLinks = rawLinkListSchema.parse(result.links);
-        const mappedLinks: LinkDTO[] = rawLinks.map((l) => ({
-          id: l.id,
-          title: l.title,
-          url: l.url || '',
-          sort_order: l.sort_order,
-          is_active: l.is_active,
-          clicks: l.clicks,
-          is_folder: l.is_folder,
-          parent_id: l.parent_id,
-          animation_type: l.animation_type,
-          child_count: l.children?.[0]?.count ?? l.child_count ?? 0,
-        }));
+        const mappedLinks = linkDtoListSchema.parse(result.links);
 
         // Update total and active counts from server
         if ('globalTotalCount' in result && result.globalTotalCount !== undefined) {

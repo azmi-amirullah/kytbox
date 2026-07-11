@@ -11,6 +11,7 @@ import {
 } from '@/lib/validation.schemas';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
+import { mapBudgetToDTO } from '@/lib/mappers';
 
 // Extracts user_id from Supabase joined relation (e.g. cashflows(user_id))
 const joinedOwnerSchema = z
@@ -484,5 +485,5 @@ export async function getBudgets(cashflowId: string) {
     return { error: error.message, data: null };
   }
 
-  return { data: data ?? [], error: null };
+  return { data: (data ?? []).map(mapBudgetToDTO), error: null };
 }
