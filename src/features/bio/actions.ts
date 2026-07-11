@@ -125,7 +125,10 @@ export async function addLink(formData: FormData) {
   ]);
 
   revalidatePath('/bio', 'page');
-  if (profile) updateTag(`profile-${profile.username}`);
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
+  }
   return { success: true, link: newLink ? mapLinkToDTO(newLink) : null, newCount: nextCount };
 }
 
@@ -189,7 +192,10 @@ export async function updateLink(linkId: string, formData: FormData) {
     .single();
 
   revalidatePath('/bio', 'page');
-  if (profile) updateTag(`profile-${profile.username}`);
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
+  }
   return { success: true, link: updatedLink };
 }
 
@@ -207,7 +213,10 @@ export async function deleteLink(linkId: string) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) updateTag(`profile-${profile.username}`);
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
+  }
   return { success: true };
 }
 
@@ -225,7 +234,10 @@ export async function toggleLinkActive(linkId: string, isActive: boolean) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) updateTag(`profile-${profile.username}`);
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
+  }
   return { success: true };
 }
 
@@ -243,7 +255,10 @@ export async function reorderLinks(linkIds: string[]) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) updateTag(`profile-${profile.username}`);
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
+  }
   return { success: true };
 }
 
@@ -301,6 +316,7 @@ export async function updateAppearance(formData: FormData) {
   revalidatePath('/bio', 'page');
   if (profile) {
     updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
     revalidatePath(`/${profile.username}`, 'page');
   }
   return { success: true };
@@ -363,7 +379,10 @@ export async function createFolder(formData: FormData) {
   ]);
 
   revalidatePath('/bio', 'page');
-  if (profile) updateTag(`profile-${profile.username}`);
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
+  }
   return { success: true, link: newFolder ? mapLinkToDTO(newFolder) : null, newCount: nextCount };
 }
 
@@ -402,7 +421,10 @@ export async function moveToFolder(formData: FormData) {
   }
 
   revalidatePath('/bio', 'page');
-  if (profile) updateTag(`profile-${profile.username}`);
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
+  }
   return { success: true };
 }
 
@@ -928,39 +950,34 @@ async function getTopRefererData(
 // Get top links with click counts in the time range
 async function getTopLinksData(
   supabase: SupabaseClient,
-  links: { id: string; title: string; url: string; clicks: number }[],
+  links: { id: string; title: string; url: string }[],
   linkIds: string[],
   startDate: Date | null,
 ): Promise<TopLink[]> {
-  let query = supabase
-    .from('link_events')
-    .select('link_id')
-    .in('link_id', linkIds);
+  const { data, error } = await supabase.rpc('get_top_links', {
+    p_link_ids: linkIds,
+    p_start_date: startDate?.toISOString() || null,
+    p_limit: 5,
+  });
 
-  if (startDate) {
-    query = query.gte('created_at', startDate.toISOString());
-  }
-
-  const { data: events, error } = await query;
-
-  if (error) {
-    console.error('getTopLinksData error:', error);
+  if (error || !data) {
+    console.error('getTopLinksData RPC error:', error);
     return [];
   }
 
-  const clicksPerLink: Record<string, number> = {};
-  if (events) {
-    events.forEach((e) => {
-      clicksPerLink[e.link_id] = (clicksPerLink[e.link_id] || 0) + 1;
-    });
-  }
+  const clicksMap = new Map<string, number>(
+    data.map((d: { link_id: string; click_count: number | string }) => [
+      d.link_id,
+      Number(d.click_count),
+    ])
+  );
 
   return links
     .map((l) => ({
       id: l.id,
       title: l.title,
       url: l.url,
-      clicks: clicksPerLink[l.id] || 0,
+      clicks: clicksMap.get(l.id) || 0,
     }))
     .sort((a, b) => b.clicks - a.clicks)
     .slice(0, 5);

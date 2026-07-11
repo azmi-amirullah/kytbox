@@ -748,6 +748,13 @@ export type Database = {
           username: string;
         }[];
       };
+      get_top_links: {
+        Args: { p_limit?: number; p_link_ids: string[]; p_start_date: string };
+        Returns: {
+          click_count: number;
+          link_id: string;
+        }[];
+      };
       get_top_referers: {
         Args: { p_limit?: number; p_link_ids: string[]; p_start_date?: string };
         Returns: {
@@ -762,6 +769,14 @@ export type Database = {
         Returns: number;
       };
       reorder_links: { Args: { p_link_ids: string[] }; Returns: undefined };
+      reorder_list_columns: {
+        Args: { p_column_ids: string[] };
+        Returns: undefined;
+      };
+      reorder_list_items: {
+        Args: { p_item_ids: string[] };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

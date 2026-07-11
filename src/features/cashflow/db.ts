@@ -90,7 +90,8 @@ export async function getCashflowDashboardData(
       )
       .in('cashflow_id', summaryIds)
       .order('date', { ascending: true })
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(1000);
     entriesData = data ?? [];
   }
 
@@ -156,7 +157,8 @@ export async function getCashflowDetailData(
         .select('*')
         .eq('cashflow_id', cashflowId)
         .order('date', { ascending: false })
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .limit(1000),
       userEmail
         ? supabase
             .from('cashflow_shares')

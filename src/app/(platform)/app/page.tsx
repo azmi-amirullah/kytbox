@@ -31,43 +31,30 @@ export default async function AppHomePage() {
 
   const isAdmin = userRoleSchema.parse(profile?.role) === 'admin';
 
-  // Fetch list/link metadata & support count in parallel
-  const [linksRes, listsRes, supportRes] = await Promise.all([
-    supabase.from('links').select('id').eq('user_id', user.id),
-    supabase.from('lists').select('id').eq('user_id', user.id),
-    getSupportTicketSummary(user.id, isAdmin),
-  ]);
-
-  const userLinkIds = linksRes.data?.map((l) => l.id) || [];
-  const userListIds = listsRes.data?.map((l) => l.id) || [];
-  const { needsAttentionCount } = supportRes;
-
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  // Fetch stats & activity timeline in parallel
-  const [clicksRes, cashflowsRes, tasksRes, activityRes] = await Promise.all([
-    userLinkIds.length > 0
-      ? supabase
-          .from('link_events')
-          .select('id', { count: 'exact', head: true })
-          .in('link_id', userLinkIds)
-          .gte('created_at', sevenDaysAgo.toISOString())
-      : Promise.resolve({ count: 0, error: null }),
+  // Fetch all dashboard stats in parallel (single batch)
+  const [supportRes, clicksRes, cashflowsRes, tasksRes, activityRes] = await Promise.all([
+    getSupportTicketSummary(user.id, isAdmin),
+    supabase
+      .from('link_events')
+      .select('id, links!inner(user_id)', { count: 'exact', head: true })
+      .eq('links.user_id', user.id)
+      .gte('created_at', sevenDaysAgo.toISOString()),
     supabase
       .from('cashflow_summaries')
       .select('balance')
       .eq('user_id', user.id),
-    userListIds.length > 0
-      ? supabase
-          .from('list_items')
-          .select('id', { count: 'exact', head: true })
-          .in('list_id', userListIds)
-          .eq('is_completed', false)
-      : Promise.resolve({ count: 0, error: null }),
+    supabase
+      .from('list_items')
+      .select('id, lists!inner(user_id)', { count: 'exact', head: true })
+      .eq('is_completed', false)
+      .eq('lists.user_id', user.id),
     supabase.rpc('get_recent_activity', { p_user_id: user.id, p_limit: 10 }),
   ]);
 
+  const { needsAttentionCount } = supportRes;
   const clicksCount = clicksRes.count || 0;
   const cashflowBalance = (cashflowsRes.data || []).reduce(
     (acc, curr) => acc + (Number(curr.balance) || 0),

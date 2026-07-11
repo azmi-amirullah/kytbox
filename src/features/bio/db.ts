@@ -3,7 +3,7 @@ import 'server-only';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { mapProfileToDTO, mapLinkToDTO } from '@/lib/mappers';
-import { getProfileByUsername } from '@/lib/data-cache';
+import { getProfileByUsername, getCachedPublicLinks } from '@/lib/data-cache';
 import { socialLinksSchema } from './schemas.server';
 import type { CustomThemeData } from '@/lib/theme';
 import type { ProfileDTO, LinkDTO } from '@/types/dto';
@@ -147,20 +147,8 @@ export async function getPublicProfileData(
   const profile = await getProfileByUsername(username);
   if (!profile) return null;
 
-  // Get links for this specific user
-  const rootLinksResult = await supabase
-    .from('links')
-    .select(
-      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, children:links(count)',
-      { count: 'exact' },
-    )
-    .eq('user_id', profile.id)
-    .eq('is_active', true)
-    .is('parent_id', null)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true })
-    .range(0, 49);
-
+  // Get links for this specific user using cached function
+  const rootLinksResult = await getCachedPublicLinks(profile.id, username);
   const rawRootLinks = rootLinksResult.data || [];
   const totalLinks = rootLinksResult.count ?? 0;
 

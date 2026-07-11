@@ -301,12 +301,8 @@ export async function deleteItem(itemId: string) {
 
 export async function reorderItems(listId: string, itemIds: string[]) {
   const supabase = await createClient();
-
-  const promises = itemIds.map((id, index) => 
-    supabase.from('list_items').update({ sort_order: index * 1024 }).eq('id', id)
-  );
-  
-  await Promise.all(promises);
+  const { error } = await supabase.rpc('reorder_list_items', { p_item_ids: itemIds });
+  if (error) return { error: 'Failed to reorder items' };
 
   revalidatePath('/list');
   return { success: true };
@@ -366,7 +362,7 @@ export async function getListsByType(type: ListType): Promise<ListDTO[]> {
 export async function getListCounts(): Promise<Record<ListType, number>> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from('list_summaries')
+    .from('lists')
     .select('type')
     .neq('title', NEW_IDEA_LIST_TITLE);
 
@@ -612,12 +608,8 @@ export async function deleteColumn(columnId: string) {
 
 export async function reorderColumns(listId: string, columnIds: string[]) {
   const supabase = await createClient();
-
-  const promises = columnIds.map((id, index) => 
-    supabase.from('list_columns').update({ sort_order: index * 1024 }).eq('id', id)
-  );
-  
-  await Promise.all(promises);
+  const { error } = await supabase.rpc('reorder_list_columns', { p_column_ids: columnIds });
+  if (error) return { error: 'Failed to reorder columns' };
 
   revalidatePath('/list');
   return { success: true };

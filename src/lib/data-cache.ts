@@ -21,3 +21,30 @@ export async function getProfileByUsername(username: string) {
   if (error) return null;
   return data;
 }
+
+/**
+ * Get Public Links by User ID
+ * Uses stable Next.js 16 modern caching ('use cache')
+ */
+export async function getCachedPublicLinks(userId: string, username: string) {
+  'use cache';
+  cacheTag(`links-${username}`);
+
+  const supabase = createStaticClient();
+  const { data, count, error } = await supabase
+    .from('links')
+    .select(
+      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, children:links(count)',
+      { count: 'exact' },
+    )
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .is('parent_id', null)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+    .range(0, 49);
+
+  if (error) return { data: [], count: 0 };
+  return { data: data || [], count: count || 0 };
+}
+
