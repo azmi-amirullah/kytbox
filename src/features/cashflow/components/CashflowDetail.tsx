@@ -57,14 +57,14 @@ import EntryModal from './EntryModal';
 import ShareModal from './ShareModal';
 import { CashflowCharts } from './CashflowCharts';
 import { ProjectionsView } from './ProjectionsView';
-import { subscribeToPublicCashflow, removeShare } from '../share-actions';
+import { subscribeToPublicCashflow, removeShare } from '../actions';
 import BudgetManager from './BudgetManager';
 import { DateFilter } from './DateFilter';
 import {
   filterEntriesByDate,
   resolveFilterRange,
   type DateFilterState,
-} from '@/lib/cashflow-math';
+} from '../math';
 import { cn } from '@/lib/utils';
 
 interface CashflowDetailProps {

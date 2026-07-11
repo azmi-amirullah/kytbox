@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CashflowEntryDTO } from '@/types/dto';
-import { calculateProjections } from '@/lib/cashflow-math';
+import { calculateProjections } from '../math';
 import { formatCurrencyCompact } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 import {

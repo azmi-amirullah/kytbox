@@ -3,13 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
-import CashflowDetail from '../../(platform)/cashflow/components/CashflowDetail';
-import {
-  mapCashflowToDTO,
-  mapCashflowEntryToDTO,
-  mapBudgetToDTO,
-} from '@/lib/mappers';
-import { shareRoleSchema } from '@/lib/validation.schemas';
+import { getCashflowDetailData, CashflowDetail, schemasServer } from '@/features/cashflow';
 
 interface CashflowDetailPageProps {
   params: Promise<{ id: string }>;
@@ -21,60 +15,45 @@ export default async function CashflowDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  // 1. Get User (don't redirect yet - public pages don't require login)
+  // 1. Get User
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 2. Parallelize: profile (if user) AND cashflow + entries + share + budgets
-  const [profileResult, cashflowResult, entriesResult, shareResult, budgetsResult] =
-    await Promise.all([
-      user
-        ? supabase
-            .from('profiles')
-            .select(
-              'username, avatar_url, display_name, role, default_currency',
-            )
-            .eq('id', user.id)
-            .single()
-        : Promise.resolve({ data: null }),
-      supabase.from('cashflows').select('*').eq('id', id).single(),
-      supabase
-        .from('cashflow_entries')
-        .select('*')
-        .eq('cashflow_id', id)
-        .order('date', { ascending: false })
-        .order('created_at', { ascending: false }),
-      user?.email
-        ? supabase
-            .from('cashflow_shares')
-            .select('id, role, is_pinned')
-            .eq('cashflow_id', id)
-            .eq('email', user.email.toLowerCase())
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      user
-        ? supabase
-            .from('cashflow_budgets')
-            .select('*')
-            .eq('cashflow_id', id)
-            .order('category', { ascending: true })
-        : Promise.resolve({ data: null }),
-    ]);
+  const isOwnerCheck = async () => {
+    if (!user) return false;
+    const { data } = await supabase
+      .from('cashflows')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+    return data?.user_id === user.id;
+  };
 
-  const profile = profileResult.data;
-  const cashflow = cashflowResult.data;
-  const entries = entriesResult.data;
-  const share = shareResult.data;
+  const isOwner = await isOwnerCheck();
 
-  if (!cashflow) {
-    notFound();
+  // 2. Fetch data via features DB layer
+  let data;
+  try {
+    data = await getCashflowDetailData(
+      supabase,
+      id,
+      user?.id,
+      user?.email,
+      isOwner
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message === 'CASHFLOW_NOT_FOUND') {
+      notFound();
+    }
+    throw error;
   }
 
-  // 4. Access Control
+  const { cashflow, entries, budgets, profile, share } = data;
+
+  // 3. Access Control
   const isPublic = cashflow.is_public;
 
-  // Explicit check for better UX:
   if (!user && !isPublic) {
     redirect('/login');
   }
@@ -93,21 +72,18 @@ export default async function CashflowDetailPage({
         }
       : undefined;
 
-  // 5. Get Share Status (Server-Side)
+  // 4. Get Share Status
   let initialUserRole: 'owner' | 'edit' | 'read' | 'public' = 'public';
   let initialShareId: string | null = null;
   let hasShare = false;
-
-  const isOwner = user?.id === cashflow.user_id;
 
   if (user) {
     if (isOwner) {
       initialUserRole = 'owner';
     } else {
       if (share) {
-        initialUserRole = shareRoleSchema.parse(share.role);
+        initialUserRole = schemasServer.shareRoleSchema.parse(share.role);
         initialShareId = share.id;
-        // The bookmark button should show "Saved" ONLY if it is pinned to the dashboard
         hasShare = !!share.is_pinned;
       } else if (isPublic) {
         initialUserRole = 'read';
@@ -116,11 +92,6 @@ export default async function CashflowDetailPage({
   } else if (isPublic) {
     initialUserRole = 'read';
   }
-
-  // Only map budgets if the user is the owner (budgets are owner-only)
-  const budgets = isOwner && budgetsResult?.data
-    ? budgetsResult.data.map(mapBudgetToDTO)
-    : [];
 
   return (
     <div className='min-h-screen relative bg-background flex flex-col'>
@@ -131,8 +102,8 @@ export default async function CashflowDetailPage({
       <main className='relative z-10 max-w-7xl mx-auto px-4 mt-16 py-8 flex-1 w-full'>
         <CashflowDetail
           key={cashflow.id}
-          cashflow={mapCashflowToDTO(cashflow)}
-          entries={(entries ?? []).map(mapCashflowEntryToDTO)}
+          cashflow={cashflow}
+          entries={entries}
           budgets={budgets}
           currency={profile?.default_currency ?? null}
           currentUserId={user?.id}

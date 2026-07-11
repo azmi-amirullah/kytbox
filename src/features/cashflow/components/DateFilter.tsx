@@ -8,7 +8,7 @@ import {
   resolveFilterRange, 
   type DateFilterPreset, 
   type DateFilterState,
-} from '@/lib/cashflow-math';
+} from '../math';
 
 const PRESETS: { value: DateFilterPreset; label: string }[] = [
   { value: 'all-time', label: 'All Time' },

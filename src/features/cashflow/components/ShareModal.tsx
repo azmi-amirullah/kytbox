@@ -34,9 +34,9 @@ import {
   removeShare,
   updateShareRole,
   getShares,
-} from '../share-actions';
+} from '../actions';
 import type { CashflowDTO } from '@/types/dto';
-import { shareSchema } from '@/lib/validation.schemas.client';
+import { shareSchema } from '../schemas.client';
 
 type Share = ReturnType<typeof shareSchema.parse>[number];
 

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { LuPencil, LuTrash2, LuLoader } from 'react-icons/lu';
-import { calculateBudgetStatus } from '@/lib/cashflow-math';
+import { calculateBudgetStatus } from '../math';
 import type { CashflowBudgetDTO, CashflowEntryDTO } from '@/types/dto';
 import { formatCurrencyCompact } from '@/lib/currency';
 

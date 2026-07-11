@@ -3,7 +3,7 @@ import {
   calculateBudgetStatus,
   resolveFilterRange,
   filterEntriesByDate
-} from '@/lib/cashflow-math';
+} from '@/features/cashflow/math';
 import type { CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
 
 // Fix "Today" to March 15, 2026 for all tests to ensure deterministic results

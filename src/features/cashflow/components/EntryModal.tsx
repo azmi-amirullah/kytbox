@@ -29,7 +29,7 @@ import { z } from 'zod';
 import {
   entryTypeSchema,
   entryCategorySchema,
-} from '@/lib/validation.schemas.client';
+} from '../schemas.client';
 
 interface EntryModalProps {
   cashflowId: string;

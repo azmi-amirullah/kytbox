@@ -25,7 +25,7 @@ import { toast } from 'react-toastify';
 import { upsertBudget } from '../actions';
 import type { CashflowBudgetDTO } from '@/types/dto';
 import { getCurrencySymbol } from '@/lib/currency';
-import { budgetExpenseCategorySchema } from '@/lib/validation.schemas.client';
+import { budgetExpenseCategorySchema } from '../schemas.client';
 
 const EXPENSE_CATEGORIES = [
   { value: 'food', label: 'Food & Dining' },
