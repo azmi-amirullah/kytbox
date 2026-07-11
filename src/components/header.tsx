@@ -5,6 +5,7 @@ import { UserNav } from '@/components/user-nav';
 import { SupportNotificationBell } from '@/components/support-notification-bell';
 import { Button } from '@/components/ui/button';
 import { LuExternalLink } from 'react-icons/lu';
+import { SearchTrigger } from '@/components/search-trigger';
 
 interface UserData {
   username: string;
@@ -57,6 +58,9 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
               <div className='h-6 w-px bg-border hidden md:block' />
             </>
           )}
+
+          {/* Search Trigger Button — Only for dashboard */}
+          {isDashboard && <SearchTrigger />}
 
           {/* Support notification bell — Suspense-wrapped, non-blocking */}
           <SupportNotificationBell />

@@ -45,23 +45,19 @@ export default function GlobalError({
   );
 
   return (
-    <html lang='en'>
-      <body>
-        <div className='flex items-center justify-center min-h-screen w-full bg-background p-6'>
-          <ErrorState
-            variant='card'
-            title='Something went wrong'
-            context={pathname}
-            description={
-              <>
-                We encountered a critical error. Please try refreshing. If it
-                persists, contact us via {supportLink}.
-              </>
-            }
-            retryAction={reset}
-          />
-        </div>
-      </body>
-    </html>
+    <div className='flex items-center justify-center min-h-screen w-full bg-background p-6'>
+      <ErrorState
+        variant='card'
+        title='Something went wrong'
+        context={pathname}
+        description={
+          <>
+            We encountered a critical error. Please try refreshing. If it
+            persists, contact us via {supportLink}.
+          </>
+        }
+        retryAction={reset}
+      />
+    </div>
   );
 }

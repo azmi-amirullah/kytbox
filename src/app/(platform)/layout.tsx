@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { userRoleSchema } from '@/lib/validation.schemas';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
+import { CommandPalette } from '@/components/command-palette';
 
 export default async function PlatformLayout({
   children,
@@ -48,6 +49,7 @@ export default async function PlatformLayout({
         publicUrl={`/${profile.username}`}
       />
       <main className='relative z-20 flex-1 w-full pt-16'>{children}</main>
+      <CommandPalette />
       <Footer />
     </div>
   );

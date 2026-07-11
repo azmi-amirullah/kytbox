@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   LuPlus,
@@ -54,13 +54,35 @@ export default function CashflowList({
   currentUserId,
 }: CashflowListProps) {
   const router = useRouter();
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const action = searchParams.get('action');
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(action === 'add');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [activeCashflow, setActiveCashflow] =
     useState<CashflowWithSummaryDTO | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [prevAction, setPrevAction] = useState(action);
+
+  if (action !== prevAction) {
+    setPrevAction(action);
+    if (action === 'add') {
+      setIsCreateModalOpen(true);
+    }
+  }
+
+  const handleCreateOpenChange = (open: boolean) => {
+    setIsCreateModalOpen(open);
+    if (!open && action === 'add') {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('action');
+      const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+    }
+  };
+
   // Initialize from props
   const [includedSharedIds, setIncludedSharedIds] = useState<Set<string>>(
     () => {
@@ -427,7 +449,7 @@ export default function CashflowList({
       <CashflowModal
         mode='create'
         open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        onOpenChange={handleCreateOpenChange}
       />
 
       <CashflowModal

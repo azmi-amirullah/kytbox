@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { loadMoreLinks, loadFolderLinks } from '../actions';
 import { toast } from 'react-toastify';
 
@@ -45,9 +46,31 @@ export default function LinksTabContent({
   setLocalRootTotalLinks,
   isLoading,
 }: LinksTabContentProps) {
+  const searchParams = useSearchParams();
+  const action = searchParams.get('action');
+
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [folderCounts, setFolderCounts] = useState<Record<string, number>>({});
+  const [isAddModalOpen, setIsAddModalOpen] = useState(action === 'add');
+  const [prevAction, setPrevAction] = useState(action);
+
+  if (action !== prevAction) {
+    setPrevAction(action);
+    if (action === 'add') {
+      setIsAddModalOpen(true);
+    }
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    setIsAddModalOpen(open);
+    if (!open && action === 'add') {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('action');
+      const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+    }
+  };
 
   // Sync folder counts from links child_count prop
   useEffect(() => {
@@ -230,22 +253,25 @@ export default function LinksTabContent({
           {isLoading ? (
             <Skeleton className='h-8 w-24 rounded-md' />
           ) : (
-            <LinkModal
-              mode='create'
-              parentId={currentFolderId}
-              onSuccess={async () => {
-                await refreshCurrentView();
-              }}
-              trigger={
-                <Button
-                  size='sm'
-                  className='font-medium shadow-md shadow-primary/20'
-                >
-                  <LuPlus className='w-4 h-4 mr-2' />
-                  Add Item
-                </Button>
-              }
-            />
+            <>
+              <Button
+                size='sm'
+                className='font-medium shadow-md shadow-primary/20'
+                onClick={() => handleOpenChange(true)}
+              >
+                <LuPlus className='w-4 h-4 mr-2' />
+                Add Item
+              </Button>
+              <LinkModal
+                mode='create'
+                parentId={currentFolderId}
+                open={isAddModalOpen}
+                onOpenChange={handleOpenChange}
+                onSuccess={async () => {
+                  await refreshCurrentView();
+                }}
+              />
+            </>
           )}
         </div>
         <CardContent className='p-0'>

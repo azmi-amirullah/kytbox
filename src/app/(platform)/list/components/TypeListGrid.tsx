@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import type { ListDTO, ListType } from '@/types/dto';
 import ListCard from './ListCard';
 import CreateListModal from './CreateListModal';
@@ -43,7 +44,29 @@ const TYPE_META: Record<
 };
 
 export default function TypeListGrid({ lists, type }: TypeListGridProps) {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const action = searchParams.get('action');
+
+  const [isCreateOpen, setIsCreateOpen] = useState(action === 'create');
+  const [prevAction, setPrevAction] = useState(action);
+
+  if (action !== prevAction) {
+    setPrevAction(action);
+    if (action === 'create') {
+      setIsCreateOpen(true);
+    }
+  }
+
+  const handleCreateOpenChange = (open: boolean) => {
+    setIsCreateOpen(open);
+    if (!open && action === 'create') {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('action');
+      const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+    }
+  };
+
   const meta = TYPE_META[type];
   const Icon = meta.icon;
 
@@ -106,7 +129,7 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
       <CreateListModal
         type={type}
         open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
+        onOpenChange={handleCreateOpenChange}
       />
     </div>
   );
