@@ -1,6 +1,6 @@
 'use client';
 
-import ProfileView from '@/app/[username]/components/ProfileView';
+import ProfileView from './ProfileView';
 import type { CustomThemeData } from '@/lib/theme/theme.types';
 
 interface PhonePreviewProps {

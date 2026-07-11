@@ -24,7 +24,7 @@ import { LuFolderOpen, LuLoader } from 'react-icons/lu';
 import MoveToFolderModal from './MoveToFolderModal';
 import SortableLink from './SortableLink';
 import type { LinkDTO } from '@/types/dto';
-import { linkDtoListSchema } from '@/lib/validation.schemas.client';
+import { linkDtoListSchema } from '../schemas.client';
 
 interface LinkListProps {
   links: LinkDTO[];

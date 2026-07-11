@@ -10,7 +10,7 @@ import {
   linkDtoSchema,
   linkActionResponseSchema,
   linkTypeSchema,
-} from '@/lib/validation.schemas.client';
+} from '../schemas.client';
 import type { LinkDTO } from '@/types/dto';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,4 +1,4 @@
-import ProfileView from './components/ProfileView';
+import { ProfileView } from '@/features/bio';
 
 export default function Loading() {
   return (

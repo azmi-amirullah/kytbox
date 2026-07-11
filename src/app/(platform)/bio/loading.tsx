@@ -1,4 +1,4 @@
-import DashboardClient from './components/DashboardClient';
+import { DashboardClient } from '@/features/bio';
 
 export default function Loading() {
   return (

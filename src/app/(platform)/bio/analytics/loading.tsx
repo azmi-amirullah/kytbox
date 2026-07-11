@@ -1,4 +1,4 @@
-import AnalyticsClient from './components/AnalyticsClient';
+import { AnalyticsClient } from '@/features/bio';
 
 export default function Loading() {
   return (

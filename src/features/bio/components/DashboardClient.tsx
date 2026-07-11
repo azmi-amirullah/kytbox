@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   bioTabSchema,
   socialLinksSchema,
-} from '@/lib/validation.schemas.client';
+} from '../schemas.client';
 import { LuEye, LuLink, LuPalette } from 'react-icons/lu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LinksTabContent from './LinksTabContent';

@@ -18,7 +18,7 @@ import LinkModal from './LinkModal';
 import StatsCard from './StatsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { linkDtoListSchema } from '@/lib/validation.schemas.client';
+import { linkDtoListSchema } from '../schemas.client';
 import type { LinkDTO } from '@/types/dto';
 
 interface LinksTabContentProps {

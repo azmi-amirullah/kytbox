@@ -27,7 +27,7 @@ import {
 } from '@/components/analytics/DateRangePicker';
 import type { DateRange, AnalyticsData } from '@/types/analytics';
 import { getAnalyticsData } from '../actions';
-import StatsCard from '../../components/StatsCard';
+import StatsCard from './StatsCard';
 
 interface AnalyticsClientProps {
   initialData: AnalyticsData;

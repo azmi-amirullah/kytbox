@@ -11,8 +11,8 @@ import {
   normalizeHex,
 } from '@/lib/theme';
 import type { CustomThemeData } from '@/lib/theme/theme.types';
-import { socialLinksSchema } from '@/lib/validation.schemas.client';
-import SocialGrid from '@/app/(platform)/bio/components/SocialGrid';
+import { socialLinksSchema } from '../schemas.client';
+import SocialGrid from './SocialGrid';
 import ProfileHeader from './ProfileHeader';
 import ProfileLinks from './ProfileLinks';
 
