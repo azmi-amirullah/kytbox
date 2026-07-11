@@ -4,6 +4,9 @@ import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
 import { KYTBOX_APPS } from '@/config/apps';
 import { getSupportTicketSummary } from '@/lib/support-notifications';
 import { userRoleSchema } from '@/lib/validation.schemas';
+import { QuickStats } from './components/QuickStats';
+import { QuickActions } from './components/QuickActions';
+import { ActivityFeed } from './components/ActivityFeed';
 
 const SUPPORT_SECTION = {
   name: 'Support',
@@ -14,148 +17,215 @@ const SUPPORT_SECTION = {
 };
 
 /**
- * Platform Home - App Switcher
- * Shows all available Kytbox apps.
- * Auth + profile guard is handled by the platform layout — this page
- * only fetches the display fields it needs.
+ * Platform Home - Activity Feed Dashboard
+ * Dynamic view aggregating statistics and recent activities across all Kytbox apps.
  */
 export default async function AppHomePage() {
   const { user, supabase } = await getAuthenticatedUser();
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, display_name, role')
+    .select('username, display_name, role, default_currency')
     .eq('id', user.id)
     .single();
 
   const isAdmin = userRoleSchema.parse(profile?.role) === 'admin';
 
-  const { needsAttentionCount } = await getSupportTicketSummary(user.id, isAdmin);
+  // Fetch list/link metadata & support count in parallel
+  const [linksRes, listsRes, supportRes] = await Promise.all([
+    supabase.from('links').select('id').eq('user_id', user.id),
+    supabase.from('lists').select('id').eq('user_id', user.id),
+    getSupportTicketSummary(user.id, isAdmin),
+  ]);
+
+  const userLinkIds = linksRes.data?.map((l) => l.id) || [];
+  const userListIds = listsRes.data?.map((l) => l.id) || [];
+  const { needsAttentionCount } = supportRes;
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  // Fetch stats & activity timeline in parallel
+  const [clicksRes, cashflowsRes, tasksRes, activityRes] = await Promise.all([
+    userLinkIds.length > 0
+      ? supabase
+          .from('link_events')
+          .select('id', { count: 'exact', head: true })
+          .in('link_id', userLinkIds)
+          .gte('created_at', sevenDaysAgo.toISOString())
+      : Promise.resolve({ count: 0, error: null }),
+    supabase
+      .from('cashflow_summaries')
+      .select('balance')
+      .eq('user_id', user.id),
+    userListIds.length > 0
+      ? supabase
+          .from('list_items')
+          .select('id', { count: 'exact', head: true })
+          .in('list_id', userListIds)
+          .eq('is_completed', false)
+      : Promise.resolve({ count: 0, error: null }),
+    supabase.rpc('get_recent_activity', { p_user_id: user.id, p_limit: 10 }),
+  ]);
+
+  const clicksCount = clicksRes.count || 0;
+  const cashflowBalance = (cashflowsRes.data || []).reduce(
+    (acc, curr) => acc + (Number(curr.balance) || 0),
+    0
+  );
+  const activeTasksCount = tasksRes.count || 0;
+  const recentActivity = activityRes.data || [];
 
   return (
-    <div className='max-w-4xl mx-auto px-4 py-8 md:py-12 w-full'>
-      <div className='mb-8'>
+    <div className='max-w-7xl mx-auto px-4 py-8 md:py-12 w-full space-y-8'>
+      <div>
         <h1 className='text-3xl font-bold tracking-tight'>
           Welcome back, {profile?.display_name || profile?.username}!
         </h1>
-        <p className='text-muted-foreground mt-1'>
-          Choose an app to get started
+        <p className='text-muted-foreground mt-1 text-sm'>
+          Here is what is happening across your workspace today.
         </p>
       </div>
 
-      {/* App Grid */}
-      <div className='grid sm:grid-cols-2 gap-4'>
-        {KYTBOX_APPS.map((app) => {
-          const Icon = app.icon;
-          const isActive = app.status === 'active';
+      {/* Stats Section */}
+      <QuickStats
+        clicksCount={clicksCount}
+        cashflowBalance={cashflowBalance}
+        activeTasksCount={activeTasksCount}
+        defaultCurrency={profile?.default_currency || null}
+      />
 
-          return (
-            <Link
-              key={app.id}
-              href={isActive ? app.href : '#'}
-              className={`
-                  group relative p-6 rounded-2xl border bg-card
-                  transition-all duration-200
-                  ${
-                    isActive
-                      ? 'hover:border-primary/40 hover:shadow-lg cursor-pointer'
-                      : 'opacity-60 cursor-not-allowed'
-                  }
-                `}
-            >
-              <div className='flex items-start gap-4'>
-                <div className={`p-3 rounded-xl ${app.color}`}>
-                  <Icon className='w-6 h-6' />
-                </div>
-                <div className='flex-1'>
-                  <div className='flex items-center gap-2'>
-                    <h2 className='font-semibold text-lg'>{app.name}</h2>
-                    {!isActive && (
-                      <span className='text-[10px] uppercase tracking-wider font-bold bg-muted text-muted-foreground px-2 py-0.5 rounded'>
-                        Coming Soon
-                      </span>
-                    )}
+      {/* Apps Section */}
+      <div className='w-full pt-8 border-t'>
+        <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4'>
+          All Apps
+        </h2>
+        <div className='grid sm:grid-cols-2 md:grid-cols-3 gap-4'>
+          {KYTBOX_APPS.map((app) => {
+            const Icon = app.icon;
+            const isActive = app.status === 'active';
+
+            return (
+              <Link
+                key={app.id}
+                href={isActive ? app.href : '#'}
+                className={`
+                    group relative p-5 rounded-2xl border bg-card
+                    transition-all duration-200
+                    ${
+                      isActive
+                        ? 'hover:border-primary/25 hover:shadow-md cursor-pointer'
+                        : 'opacity-60 cursor-not-allowed'
+                    }
+                  `}
+              >
+                <div className='flex items-start gap-4'>
+                  <div className={`p-2.5 rounded-xl ${app.color}`}>
+                    <Icon className='w-5 h-5' />
                   </div>
-                  <p className='text-sm text-muted-foreground mt-1'>
-                    {app.description}
-                  </p>
+                  <div className='flex-1 min-w-0'>
+                    <div className='flex items-center gap-2'>
+                      <h3 className='font-semibold text-base truncate'>{app.name}</h3>
+                      {!isActive && (
+                        <span className='text-[9px] uppercase tracking-wider font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded'>
+                          Soon
+                        </span>
+                      )}
+                    </div>
+                    <p className='text-xs text-muted-foreground mt-1 line-clamp-2'>
+                      {app.description}
+                    </p>
+                  </div>
+                  {isActive && (
+                    <LuArrowRight className='w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all self-center' />
+                  )}
                 </div>
-                {isActive && (
-                  <LuArrowRight className='w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
-                )}
-              </div>
-            </Link>
-          );
-        })}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
-    {/* Support */}
-      <div className='mt-8'>
-        <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3'>
-          Help
-        </h2>
-        <Link
-          href={isAdmin ? '/support-admin' : SUPPORT_SECTION.href}
-          className={`
-            group relative p-6 rounded-2xl border transition-all duration-200 hover:shadow-lg cursor-pointer block
-            ${
-              needsAttentionCount > 0
-                ? 'bg-orange-50 border-orange-200 hover:border-orange-300 dark:bg-orange-950/20 dark:border-orange-900/50 dark:hover:border-orange-800/80'
-                : 'bg-card hover:border-primary/40'
-            }
-          `}
-        >
-          <div className='flex items-center justify-between'>
-            <div className='flex items-start gap-4'>
-              <div
-                className={`p-3 rounded-xl ${
+      <div className='grid md:grid-cols-3 gap-8 items-start pt-8 border-t'>
+        {/* Left Side: Activity Feed */}
+        <div className='md:col-span-2 space-y-6'>
+          <ActivityFeed activities={recentActivity} />
+        </div>
+
+        {/* Right Side: Quick Actions & Help */}
+        <div className='space-y-6'>
+          <QuickActions />
+
+          {/* Support Ticket Section */}
+          <div className='w-full'>
+            <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3'>
+              Help
+            </h2>
+            <Link
+              href={isAdmin ? '/support-admin' : SUPPORT_SECTION.href}
+              className={`
+                group relative p-6 rounded-2xl border transition-all duration-200 hover:shadow-md cursor-pointer block
+                ${
                   needsAttentionCount > 0
-                    ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400'
-                    : SUPPORT_SECTION.color
-                }`}
-              >
-                <SUPPORT_SECTION.icon className='w-6 h-6' />
-              </div>
-              <div className='flex-1'>
-                <h3
-                  className={`font-semibold text-lg ${
-                    needsAttentionCount > 0 ? 'text-orange-900 dark:text-orange-100' : ''
-                  }`}
-                >
-                  {isAdmin ? 'Support Queue' : SUPPORT_SECTION.name}
-                </h3>
-                <p
-                  className={`text-sm mt-1 ${
+                    ? 'bg-orange-50 border-orange-200 hover:border-orange-300 dark:bg-orange-950/20 dark:border-orange-900/50 dark:hover:border-orange-800/80'
+                    : 'bg-card hover:border-primary/25'
+                }
+              `}
+            >
+              <div className='flex items-start gap-4'>
+                <div
+                  className={`p-3 rounded-xl ${
                     needsAttentionCount > 0
-                      ? 'text-orange-700/80 dark:text-orange-300/80'
-                      : 'text-muted-foreground'
+                      ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400'
+                      : SUPPORT_SECTION.color
                   }`}
                 >
-                  {needsAttentionCount > 0
-                    ? isAdmin
-                      ? `${needsAttentionCount} support tickets need your attention`
-                      : `${needsAttentionCount} unread updates from support`
-                    : SUPPORT_SECTION.description}
-                </p>
+                  <SUPPORT_SECTION.icon className='w-6 h-6' />
+                </div>
+                <div className='flex-1 min-w-0'>
+                  <h3
+                    className={`font-semibold text-base ${
+                      needsAttentionCount > 0 ? 'text-orange-900 dark:text-orange-100' : ''
+                    }`}
+                  >
+                    {isAdmin ? 'Support Queue' : SUPPORT_SECTION.name}
+                  </h3>
+                  <p
+                    className={`text-xs mt-1 leading-normal ${
+                      needsAttentionCount > 0
+                        ? 'text-orange-700/80 dark:text-orange-300/80'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    {needsAttentionCount > 0
+                      ? isAdmin
+                        ? `${needsAttentionCount} support tickets need attention`
+                        : `${needsAttentionCount} unread updates from support`
+                      : SUPPORT_SECTION.description}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className='flex items-center gap-3'>
-              {needsAttentionCount > 0 && (
-                <span className='text-xs font-medium text-orange-600 dark:text-orange-400 mr-2 bg-orange-100 dark:bg-orange-900/40 px-2 py-1 rounded-full'>
-                  {isAdmin ? 'Awaiting admin reply' : 'Awaiting your review'}
-                </span>
-              )}
-              <LuArrowRight
-                className={`w-5 h-5 transition-all group-hover:translate-x-1 ${
-                  needsAttentionCount > 0
-                    ? 'text-orange-500 group-hover:text-orange-600 dark:text-orange-400 dark:group-hover:text-orange-300'
-                    : 'text-muted-foreground group-hover:text-primary'
-                }`}
-              />
-            </div>
+              <div className='flex items-center justify-between mt-4 pt-4 border-t border-border/40'>
+                {needsAttentionCount > 0 ? (
+                  <span className='text-[10px] font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/40 px-2 py-0.5 rounded-full'>
+                    Needs Action
+                  </span>
+                ) : (
+                  <span className='text-xs text-muted-foreground'>Open a ticket</span>
+                )}
+                <LuArrowRight
+                  className={`w-4 h-4 transition-all group-hover:translate-x-1 ${
+                    needsAttentionCount > 0
+                      ? 'text-orange-500 group-hover:text-orange-600 dark:text-orange-400 dark:group-hover:text-orange-300'
+                      : 'text-muted-foreground group-hover:text-primary'
+                  }`}
+                />
+              </div>
+            </Link>
           </div>
-        </Link>
+        </div>
       </div>
     </div>
   );
 }
+
