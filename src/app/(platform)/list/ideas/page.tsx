@@ -1,6 +1,10 @@
-import { getListsByType, getOrCreateNewIdeaList, getNewIdeaItems } from '../actions';
-import TypeListGrid from '../components/TypeListGrid';
-import NewIdeas from '../components/NewIdeas';
+import {
+  getListsByType,
+  getOrCreateNewIdeaList,
+  getNewIdeaItems,
+  TypeListGrid,
+  NewIdeas,
+} from '@/features/list';
 
 export default async function IdeasPage() {
   const [lists, newIdeaList, newIdeaItems] = await Promise.all([

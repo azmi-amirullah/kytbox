@@ -1,7 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getListById, getItemsByListId } from '../../actions';
-import { getColumnsByListId } from '../../column-actions';
-import KanbanBoard from '../../components/KanbanBoard';
+import { getListById, getItemsByListId, getColumnsByListId, KanbanBoard } from '@/features/list';
 
 export default async function KanbanBoardPage({
   params,

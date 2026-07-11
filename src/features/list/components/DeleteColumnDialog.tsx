@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { deleteColumn } from '../column-actions';
+import { deleteColumn } from '../actions';
 import { toast } from 'react-toastify';
 import type { ListColumnDTO } from '@/types/dto';
 

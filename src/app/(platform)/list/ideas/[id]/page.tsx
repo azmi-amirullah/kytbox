@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getListById, getItemsByListId } from '../../actions';
-import IdeaDetail from '../../components/IdeaDetail';
+import { getListById, getItemsByListId, IdeaDetail } from '@/features/list';
 
 export default async function IdeaDetailPage({
   params,

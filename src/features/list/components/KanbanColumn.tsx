@@ -24,7 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ListColumnDTO, ListItemDTO } from '@/types/dto';
-import { updateColumn, toggleDoneColumn } from '../column-actions';
+import { updateColumn, toggleDoneColumn } from '../actions';
 import KanbanCard from './KanbanCard';
 import DeleteColumnDialog from './DeleteColumnDialog';
 import { toast } from 'react-toastify';

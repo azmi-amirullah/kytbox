@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import type { ListDTO, ListItemDTO } from '@/types/dto';
 import WishlistItemRow from './WishlistItemRow';
 import AddWishlistItemModal from './AddWishlistItemModal';
-import { wishlistMetadataClientSchema } from '@/lib/validation.schemas.client';
+import { wishlistMetadataClientSchema } from '../schemas.client';
 
 
 interface WishlistDetailProps {

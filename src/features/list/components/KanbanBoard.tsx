@@ -24,8 +24,7 @@ import {
 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import type { ListDTO, ListColumnDTO, ListItemDTO } from '@/types/dto';
-import { moveItem, addItem } from '../actions';
-import { reorderColumns } from '../column-actions';
+import { moveItem, addItem, reorderColumns } from '../actions';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import AddColumnModal from './AddColumnModal';

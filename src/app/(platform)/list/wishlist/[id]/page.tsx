@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getListById, getItemsByListId } from '../../actions';
-import WishlistDetail from '../../components/WishlistDetail';
+import { getListById, getItemsByListId, WishlistDetail } from '@/features/list';
 
 export default async function WishlistDetailPage({
   params,

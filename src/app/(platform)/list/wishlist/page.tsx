@@ -1,5 +1,4 @@
-import { getListsByType } from '../actions';
-import TypeListGrid from '../components/TypeListGrid';
+import { getListsByType, TypeListGrid } from '@/features/list';
 
 export default async function WishlistPage() {
   const lists = await getListsByType('wishlist');

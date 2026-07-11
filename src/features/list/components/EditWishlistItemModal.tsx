@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { updateItem } from '../actions';
 import { toast } from 'react-toastify';
 import type { ListItemDTO } from '@/types/dto';
-import { wishlistMetadataClientSchema } from '@/lib/validation.schemas.client';
+import { wishlistMetadataClientSchema } from '../schemas.client';
 
 interface EditWishlistItemModalProps {
   item: ListItemDTO;

@@ -12,8 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LuLayoutGrid, LuHeart, LuLightbulb } from 'react-icons/lu';
-import { createList } from '../actions';
-import { seedDefaultColumns } from '../column-actions';
+import { createList, seedDefaultColumns } from '../actions';
 import { toast } from 'react-toastify';
 import type { ListType } from '@/types/dto';
 

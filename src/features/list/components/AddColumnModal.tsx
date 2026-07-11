@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { addColumn } from '../column-actions';
+import { addColumn } from '../actions';
 import { toast } from 'react-toastify';
 import type { ListColumnDTO } from '@/types/dto';
 

@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { ListItemDTO } from '@/types/dto';
 import { toggleItem, deleteItem } from '../actions';
 import { toast } from 'react-toastify';
-import { wishlistMetadataClientSchema } from '@/lib/validation.schemas.client';
+import { wishlistMetadataClientSchema } from '../schemas.client';
 import EditWishlistItemModal from './EditWishlistItemModal';
 
 

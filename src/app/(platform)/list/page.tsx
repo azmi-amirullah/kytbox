@@ -1,5 +1,4 @@
-import { getListCounts } from './actions';
-import ListHub from './components/ListHub';
+import { getListCounts, ListHub } from '@/features/list';
 
 export default async function ListPage() {
   const counts = await getListCounts();
