@@ -150,19 +150,34 @@ export async function getPublicProfileData(
   // Get links for this specific user using cached function
   const rootLinksResult = await getCachedPublicLinks(profile.id, username);
   const rawRootLinks = rootLinksResult.data || [];
-  const totalLinks = rootLinksResult.count ?? 0;
 
-  const typedLinks = rawRootLinks.map((link) => ({
-    id: link.id,
-    title: link.title || '',
-    url: link.url || '',
-    is_active: !!link.is_active,
-    short_id: link.short_id,
-    is_folder: !!link.is_folder,
-    parent_id: link.parent_id,
-    animation_type: link.animation_type,
-    child_count: link.children?.[0]?.count ?? 0,
-  }));
+  const now = new Date();
+  const { count: validTotalLinks } = await supabase
+    .from('links')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', profile.id)
+    .eq('is_active', true)
+    .is('parent_id', null)
+    .or(`scheduled_at.is.null,scheduled_at.lte.${now.toISOString()}`)
+    .or(`expires_at.is.null,expires_at.gte.${now.toISOString()}`);
+
+  const typedLinks = rawRootLinks
+    .filter((link) => {
+      if (link.scheduled_at && new Date(link.scheduled_at) > now) return false;
+      if (link.expires_at && new Date(link.expires_at) < now) return false;
+      return true;
+    })
+    .map((link) => ({
+      id: link.id,
+      title: link.title || '',
+      url: link.url || '',
+      is_active: !!link.is_active,
+      short_id: link.short_id,
+      is_folder: !!link.is_folder,
+      parent_id: link.parent_id,
+      animation_type: link.animation_type,
+      child_count: link.children?.[0]?.count ?? 0,
+    }));
 
   return {
     profile: {
@@ -173,6 +188,6 @@ export async function getPublicProfileData(
         : null,
     },
     links: typedLinks,
-    totalLinks,
+    totalLinks: validTotalLinks ?? 0,
   };
 }

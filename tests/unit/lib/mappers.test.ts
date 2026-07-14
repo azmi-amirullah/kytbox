@@ -65,6 +65,8 @@ const baseLink: Link = {
   animation_type: 'slide',
   short_id: 1,
   last_clicked_at: null,
+  scheduled_at: null,
+  expires_at: null,
   created_at: '2026-01-01T00:00:00Z',
 };
 
@@ -205,6 +207,26 @@ describe('mapLinkToDTO', () => {
   it('returns undefined child_count if neither source is present', () => {
     const dto = mapLinkToDTO(baseLink);
     expect(dto.child_count).toBeUndefined();
+  });
+
+  it('maps scheduled_at and expires_at fields correctly', () => {
+    const dto = mapLinkToDTO({
+      ...baseLink,
+      scheduled_at: '2026-07-20T12:00:00Z',
+      expires_at: '2026-07-25T12:00:00Z',
+    });
+    expect(dto.scheduled_at).toBe('2026-07-20T12:00:00Z');
+    expect(dto.expires_at).toBe('2026-07-25T12:00:00Z');
+  });
+
+  it('maps null scheduled_at and expires_at to null', () => {
+    const dto = mapLinkToDTO({
+      ...baseLink,
+      scheduled_at: null,
+      expires_at: null,
+    });
+    expect(dto.scheduled_at).toBeNull();
+    expect(dto.expires_at).toBeNull();
   });
 });
 

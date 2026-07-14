@@ -248,6 +248,8 @@ export type Database = {
           is_folder: boolean | null;
           last_clicked_at: string | null;
           parent_id: string | null;
+          scheduled_at: string | null;
+          expires_at: string | null;
           short_id: number | null;
           sort_order: number | null;
           title: string;
@@ -263,6 +265,8 @@ export type Database = {
           is_folder?: boolean | null;
           last_clicked_at?: string | null;
           parent_id?: string | null;
+          scheduled_at?: string | null;
+          expires_at?: string | null;
           short_id?: number | null;
           sort_order?: number | null;
           title: string;
@@ -278,6 +282,8 @@ export type Database = {
           is_folder?: boolean | null;
           last_clicked_at?: string | null;
           parent_id?: string | null;
+          scheduled_at?: string | null;
+          expires_at?: string | null;
           short_id?: number | null;
           sort_order?: number | null;
           title?: string;

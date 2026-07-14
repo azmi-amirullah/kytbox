@@ -25,6 +25,8 @@ export interface LinkDTO {
   parent_id: string | null;
   clicks: number | null;
   animation_type: string | null;
+  scheduled_at: string | null;
+  expires_at: string | null;
   child_count?: number;
   is_local?: boolean;
 }

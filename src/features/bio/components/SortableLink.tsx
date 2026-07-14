@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, memo } from 'react';
+import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSortable, defaultAnimateLayoutChanges } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -88,6 +89,39 @@ const LinkItemContent = memo(function LinkItemContent({
     setShowDeleteDialog(false);
   };
 
+  const isExpired = link.expires_at && new Date(link.expires_at) < new Date();
+  const isScheduled = link.scheduled_at && new Date(link.scheduled_at) > new Date();
+
+  const getScheduleBadge = () => {
+    if (!link.scheduled_at && !link.expires_at) return null;
+    const now = new Date();
+    const start = link.scheduled_at ? new Date(link.scheduled_at) : null;
+    const end = link.expires_at ? new Date(link.expires_at) : null;
+
+    if (start && start > now) {
+      return (
+        <span className='text-[10px] uppercase tracking-wider font-bold text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-sm flex items-center gap-1 border border-sky-500/20'>
+          🕐 Goes live {format(start, 'MMM d, h:mm a')}
+        </span>
+      );
+    }
+    if (end && end < now) {
+      return (
+        <span className='text-[10px] uppercase tracking-wider font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-sm flex items-center gap-1 border border-destructive/20'>
+          🔴 Expired {format(end, 'MMM d, h:mm a')}
+        </span>
+      );
+    }
+    if (end) {
+      return (
+        <span className='text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-sm flex items-center gap-1 border border-emerald-500/20'>
+          🟢 Live until {format(end, 'MMM d, h:mm a')}
+        </span>
+      );
+    }
+    return null;
+  };
+
   return (
     <>
       {/* Drag Handle */}
@@ -140,12 +174,13 @@ const LinkItemContent = memo(function LinkItemContent({
 
       {/* Link Info */}
       <div className='flex-1 min-w-0 ml-1'>
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
           <h3
-            className={`font-semibold truncate text-sm sm:text-base flex items-center gap-1.5 ${
-              !link.is_active &&
-              'text-muted-foreground line-through decoration-muted-foreground/50'
-            }`}
+            className={cn(
+              'font-semibold truncate text-sm sm:text-base flex items-center gap-1.5',
+              (!link.is_active || isExpired) && 'text-muted-foreground line-through decoration-muted-foreground/50',
+              isScheduled && 'text-muted-foreground'
+            )}
           >
             {link.is_folder && (
               <LuFolderOpen className='w-4 h-4 shrink-0 text-muted-foreground' />
@@ -172,17 +207,20 @@ const LinkItemContent = memo(function LinkItemContent({
             </span>
           )}
         </div>
-        {!link.is_folder && (
-          <a
-            href={link.url}
-            target='_blank'
-            rel='noopener noreferrer'
-            className='text-xs text-muted-foreground truncate hover:text-primary transition-colors hover:underline block'
-            onClick={(e) => e.stopPropagation()}
-          >
-            {link.url}
-          </a>
-        )}
+        <div className='flex flex-wrap items-center gap-2 mt-1'>
+          {getScheduleBadge()}
+          {!link.is_folder && (
+            <a
+              href={link.url}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-xs text-muted-foreground truncate hover:text-primary transition-colors hover:underline block'
+              onClick={(e) => e.stopPropagation()}
+            >
+              {link.url}
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -387,6 +425,9 @@ export default function SortableLink({
     touchAction: 'none',
   };
 
+  const isExpired = link.expires_at && new Date(link.expires_at) < new Date();
+  const isScheduled = link.scheduled_at && new Date(link.scheduled_at) > new Date();
+
   return (
     <div
       ref={setNodeRef}
@@ -433,6 +474,8 @@ export default function SortableLink({
         }
         ${link.is_folder && !isDragging ? 'cursor-pointer hover:border-primary/50' : ''}
         ${isParentHidden ? 'opacity-70 bg-secondary/30' : ''}
+        ${isExpired ? 'opacity-50 grayscale' : ''}
+        ${isScheduled ? 'opacity-75 bg-secondary/40' : ''}
       `}
     >
       <LinkItemContent

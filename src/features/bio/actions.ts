@@ -53,7 +53,7 @@ export async function addLink(formData: FormData) {
   const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, parentId, animationType } = parsed.data;
+  const { title, parentId, animationType, scheduled_at, expires_at } = parsed.data;
   let url = parsed.data.url || '';
 
   if (!/^https?:\/\//i.test(url)) {
@@ -105,6 +105,8 @@ export async function addLink(formData: FormData) {
     short_id: nextShortId,
     parent_id: parentId || null,
     animation_type: animationType || 'none',
+    scheduled_at: scheduled_at ? scheduled_at.toISOString() : null,
+    expires_at: expires_at ? expires_at.toISOString() : null,
   });
 
   if (error) {
@@ -142,12 +144,20 @@ export async function updateLink(linkId: string, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, isFolder, animationType } = parsed.data;
+  const { title, isFolder, animationType, scheduled_at, expires_at } = parsed.data;
   let url = parsed.data.url || null;
 
-  const updates: { title: string; url?: string; animation_type?: string } = {
+  const updates: {
+    title: string;
+    url?: string;
+    animation_type?: string;
+    scheduled_at: string | null;
+    expires_at: string | null;
+  } = {
     title,
     animation_type: animationType || 'none',
+    scheduled_at: scheduled_at ? scheduled_at.toISOString() : null,
+    expires_at: expires_at ? expires_at.toISOString() : null,
   };
 
   if (!isFolder && url) {
@@ -462,7 +472,7 @@ export async function loadFolderLinks(folderId: string, offset: number, limit: n
     supabase
       .from('links')
       .select(
-        'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, clicks, children:links(count)',
+        'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, clicks, scheduled_at, expires_at, children:links(count)',
         { count: 'exact' }
       ).eq('user_id', user.id)
       .eq('parent_id', folderId)
@@ -493,14 +503,17 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
   if (!parsed.success) return { error: 'Invalid profile ID' };
 
   const supabase = createStaticClient();
+  const nowStr = new Date().toISOString();
   const { data, error } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
     )
     .eq('user_id', profileId)
     .eq('is_active', true)
     .is('parent_id', null)
+    .or(`scheduled_at.is.null,scheduled_at.lte.${nowStr}`)
+    .or(`expires_at.is.null,expires_at.gte.${nowStr}`)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
@@ -519,18 +532,22 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
     parent_id: z.string().nullable(),
     sort_order: z.number().nullable(),
     animation_type: z.string().nullable(),
+    scheduled_at: z.string().nullable().optional(),
+    expires_at: z.string().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
   })).safeParse(data);
 
   const rawLinks = parsedResult.success ? parsedResult.data : null;
 
   return { 
-    links: rawLinks ? rawLinks.map((link) => ({
+    links: (rawLinks || []).map((link) => ({
       ...link,
       url: link.url || '',
       is_active: !!link.is_active,
       child_count: link.children?.[0]?.count ?? 0,
-    })) : [] 
+      scheduled_at: link.scheduled_at || null,
+      expires_at: link.expires_at || null,
+    }))
   };
 }
 
@@ -542,15 +559,18 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
   if (!folderParsed.success) return { error: 'Invalid folder ID' };
 
   const supabase = createStaticClient();
+  const nowStr = new Date().toISOString();
   const { data, error, count } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
       { count: 'exact' }
     )
     .eq('user_id', profileId)
     .eq('is_active', true)
     .eq('parent_id', folderId)
+    .or(`scheduled_at.is.null,scheduled_at.lte.${nowStr}`)
+    .or(`expires_at.is.null,expires_at.gte.${nowStr}`)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
@@ -569,18 +589,22 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
     parent_id: z.string().nullable(),
     sort_order: z.number().nullable(),
     animation_type: z.string().nullable(),
+    scheduled_at: z.string().nullable().optional(),
+    expires_at: z.string().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
   })).safeParse(data);
 
   const rawLinks = parsedResult.success ? parsedResult.data : null;
 
   return { 
-    links: rawLinks ? rawLinks.map((link) => ({
+    links: (rawLinks || []).map((link) => ({
       ...link,
       url: link.url || '',
       is_active: !!link.is_active,
       child_count: link.children?.[0]?.count ?? 0,
-    })) : [],
+      scheduled_at: link.scheduled_at || null,
+      expires_at: link.expires_at || null,
+    })),
     totalFolderLinks: count || 0
   };
 }

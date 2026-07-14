@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LuLoader, LuType, LuGlobe, LuFolderOpen } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { addLink, updateLink, createFolder } from '../actions';
@@ -15,6 +16,7 @@ import type { LinkDTO } from '@/types/dto';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +35,19 @@ import {
 } from '@/components/ui/select';
 
 
+
+const formatToDatetimeLocal = (dateStr: string | null | undefined) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const pad = (num: number) => String(num).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  const MM = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const mm = pad(date.getMinutes());
+  return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+};
 
 interface LinkModalProps {
   mode: 'create' | 'edit';
@@ -67,6 +82,15 @@ export default function LinkModal({
   const [animationType, setAnimationType] = useState(
     link?.animation_type || 'none',
   );
+  const [scheduledAt, setScheduledAt] = useState(
+    formatToDatetimeLocal(link?.scheduled_at),
+  );
+  const [expiresAt, setExpiresAt] = useState(
+    formatToDatetimeLocal(link?.expires_at),
+  );
+  const [isScheduledEnabled, setIsScheduledEnabled] = useState(
+    !!link?.scheduled_at || !!link?.expires_at
+  );
 
   // Determine if controlled or uncontrolled
   const isControlled = controlledOpen !== undefined;
@@ -84,6 +108,9 @@ export default function LinkModal({
         setTitle(link?.title || '');
         setUrl(link?.url || '');
         setAnimationType(link?.animation_type || 'none');
+        setScheduledAt(formatToDatetimeLocal(link?.scheduled_at));
+        setExpiresAt(formatToDatetimeLocal(link?.expires_at));
+        setIsScheduledEnabled(!!link?.scheduled_at || !!link?.expires_at);
         setError(null);
       });
     }
@@ -104,6 +131,12 @@ export default function LinkModal({
     setIsLoading(true);
     setError(null);
 
+    if (isScheduledEnabled && scheduledAt && expiresAt && new Date(scheduledAt) >= new Date(expiresAt)) {
+      setError('Expiry must be after start date');
+      setIsLoading(false);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('title', title);
     if (type === 'link') {
@@ -111,6 +144,8 @@ export default function LinkModal({
     }
     formData.append('animationType', animationType);
     formData.append('isFolder', type === 'folder' ? 'true' : 'false');
+    formData.append('scheduled_at', isScheduledEnabled ? (scheduledAt || '') : '');
+    formData.append('expires_at', isScheduledEnabled ? (expiresAt || '') : '');
     if (parentId) formData.append('parentId', parentId);
 
     let result;
@@ -194,8 +229,7 @@ export default function LinkModal({
                 htmlFor='title'
                 className='font-medium text-foreground/80 gap-0.5'
               >
-                {type === 'folder' ? 'Folder Name' : 'Link Title'}
-                <span className='text-destructive'>*</span>
+                Title<span className='text-destructive'>*</span>
               </Label>
               <div className='relative'>
                 <LuType className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
@@ -204,40 +238,12 @@ export default function LinkModal({
                   name='title'
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder={
-                    type === 'folder'
-                      ? 'My Awesome Folder'
-                      : 'My Awesome Website'
-                  }
+                  placeholder='Enter a title...'
                   required
                   className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
                 />
               </div>
             </div>
-
-            {type === 'link' && (
-              <div className='grid gap-2'>
-                <Label
-                  htmlFor='url'
-                  className='font-medium text-foreground/80 gap-0.5'
-                >
-                  Destination URL<span className='text-destructive'>*</span>
-                </Label>
-                <div className='relative'>
-                  <LuGlobe className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
-                  <Input
-                    id='url'
-                    name='url'
-                    type='text'
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder='https://example.com/awesome-page'
-                    required
-                    className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
-                  />
-                </div>
-              </div>
-            )}
 
             <div className='grid gap-2'>
               <Label
@@ -262,6 +268,111 @@ export default function LinkModal({
                 </SelectContent>
               </Select>
             </div>
+
+            <AnimatePresence initial={false}>
+              {type === 'link' && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  className='overflow-hidden'
+                >
+                  <div className='grid gap-4 pb-1'>
+                    <div className='grid gap-2'>
+                      <Label
+                        htmlFor='url'
+                        className='font-medium text-foreground/80 gap-0.5'
+                      >
+                        Destination URL<span className='text-destructive'>*</span>
+                      </Label>
+                      <div className='relative'>
+                        <LuGlobe className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+                        <Input
+                          id='url'
+                          name='url'
+                          type='text'
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                          placeholder='https://example.com/awesome-page'
+                          required={type === 'link'}
+                          className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                        />
+                      </div>
+                    </div>
+
+                    <div className='grid gap-4 border-t pt-4 mt-2'>
+                      <div className='flex items-center justify-between'>
+                        <div className='space-y-0.5'>
+                          <Label htmlFor='schedule-toggle' className='font-semibold text-sm'>
+                            Schedule Link
+                          </Label>
+                          <p className='text-xs text-muted-foreground'>
+                            Set a visibility window for this link
+                          </p>
+                        </div>
+                        <Switch
+                          id='schedule-toggle'
+                          checked={isScheduledEnabled}
+                          onCheckedChange={setIsScheduledEnabled}
+                        />
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {isScheduledEnabled && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeInOut' }}
+                            className='overflow-hidden'
+                          >
+                            <div className='grid gap-4 pt-4'>
+                              <div className='grid gap-2'>
+                                <Label htmlFor='scheduled_at' className='font-medium text-foreground/80 text-xs'>
+                                  Scheduled Start Date
+                                </Label>
+                                <Input
+                                  id='scheduled_at'
+                                  name='scheduled_at'
+                                  type='datetime-local'
+                                  value={scheduledAt}
+                                  onChange={(e) => setScheduledAt(e.target.value)}
+                                  onFocus={(e) => {
+                                    try {
+                                      e.target.showPicker();
+                                    } catch {}
+                                  }}
+                                  className='bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                                />
+                              </div>
+                              <div className='grid gap-2'>
+                                <Label htmlFor='expires_at' className='font-medium text-foreground/80 text-xs'>
+                                  Expiration Date
+                                </Label>
+                                <Input
+                                  id='expires_at'
+                                  name='expires_at'
+                                  type='datetime-local'
+                                  value={expiresAt}
+                                  onChange={(e) => setExpiresAt(e.target.value)}
+                                  onFocus={(e) => {
+                                    try {
+                                      e.target.showPicker();
+                                    } catch {}
+                                  }}
+                                  className='bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                                />
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {error && (
               <p className='text-sm text-destructive text-center bg-destructive/10 p-2 rounded-md font-medium'>

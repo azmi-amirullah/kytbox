@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
     // Look up by short_id (per-user)
     const { data } = await supabase
       .from('links')
-      .select('id, url')
+      .select('id, url, scheduled_at, expires_at')
       .eq('user_id', profile.id)
       .eq('short_id', parseInt(linkId, 10))
       .eq('is_active', true)
@@ -58,7 +58,7 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
     // Fall back to UUID lookup (for backwards compatibility)
     const { data } = await supabase
       .from('links')
-      .select('id, url')
+      .select('id, url, scheduled_at, expires_at')
       .eq('id', linkId)
       .eq('is_active', true)
       .eq('is_folder', false)
@@ -68,6 +68,15 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
 
   if (!link) {
     // Link not found or inactive - redirect to bio page instead of 404
+    redirect(`/${username}`);
+  }
+
+  // Check scheduling visibility
+  const now = new Date();
+  if (link.scheduled_at && new Date(link.scheduled_at) > now) {
+    redirect(`/${username}`);
+  }
+  if (link.expires_at && new Date(link.expires_at) < now) {
     redirect(`/${username}`);
   }
 
