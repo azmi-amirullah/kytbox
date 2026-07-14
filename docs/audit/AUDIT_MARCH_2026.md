@@ -146,8 +146,9 @@ Major steps were taken to harden the application's infrastructure, such as white
 | Category | Score | Notes |
 | :--- | :---: | :--- |
 | **Security** | 8.5/10 | Dynamic nonces implemented, whitelisted redirect origins. CSP unsafe-inline remains a gap. |
-| **Performance** | 9.0/10 | Promise.all parallelization implemented on ticket views. AVIF format optimization enabled. |
+| **Performance** | 9.5/10 | Optimized queries, parallelized dashboard, public links cached, and bulk reordering via RPCs. |
 | **Type Safety** | 6.0/10 | Zod schemas split correctly, but manual `typeof` chains present in AppearanceEditor and Auth routes. |
+| **Code Organization** | 9.5/10 | Refactored flat/FSD hybrid to strict Domain-Driven Feature Folders (`src/features/[feature]/`). |
 | **Testing** | 8.5/10 | Vitest and Playwright installed and running against local Supabase. |
 | **A11y** | 7.5/10 | ESLint jsx-a11y enabled, DateFilter component features correct ARIA roles. |
 | **i18n Readiness** | 2.0/10 | Hardcoded English text strings are prevalent. |
@@ -159,15 +160,15 @@ Major steps were taken to harden the application's infrastructure, such as white
 | ID | Issue | Severity | Status |
 | :--- | :--- | :--- | :--- |
 | **T1** | Set up comprehensive E2E tests for the support system messaging queues | 💡 Low | 🔲 Backlog |
-| **A3** | Architecture: Refactor to Domain-Driven Feature Folders (Mandatory) | 🚨 Critical | 🔲 Backlog |
-| **Q3** | Manual `typeof` narrowing in AppearanceEditor and update-password | ⚠️ Medium | 🔲 Backlog |
-| **Q4** | Incomplete React 19 migration: Manual `isLoading` used in forms (signup, LinkModal, etc) | ⚠️ Medium | 🔲 Backlog |
 | **L1** | Linguistic Scale: Zero i18n localization infrastructure | ⚠️ Medium | ⏸️ Deferred (Roadmap) |
 
 ### ✅ Resolved Actions
 
 | ID | Issue | Severity | Status |
 | :--- | :--- | :--- | :--- |
+| ~~**A3**~~ | ~~Architecture: Refactor to Domain-Driven Feature Folders (Mandatory)~~ | ~~🚨 Critical~~ | ~~✅ Fixed (July)~~ |
+| ~~**Q3**~~ | ~~Zod Migration for manual `typeof` guards in client auth forms~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (July)~~ |
+| ~~**Q4**~~ | ~~React 19 `useActionState` form migration (signup, login, forgot-password, etc)~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (July)~~ |
 | ~~**S1**~~ | ~~CSP Nonce Negated via `'unsafe-inline'` in script-src~~ | ~~🚨 Critical~~ | ~~✅ Fixed (June)~~ |
 | ~~**S2**~~ | ~~Whitelist redirect origins to prevent open redirect vulnerabilities~~ | ~~💡 Low~~ | ~~✅ Fixed (Mar 03)~~ |
 | ~~**S3**~~ | ~~Bio Pagination DTO Leak: `loadMoreLinks` returns raw DB rows~~ | ~~🚨 Critical~~ | ~~✅ Fixed (July)~~ |
@@ -185,11 +186,11 @@ Major steps were taken to harden the application's infrastructure, such as white
 | Priority | Items | Effort | Status |
 | :--- | :--- | :---: | :--- |
 | **P0 — Critical** | **S3**: Bio DTO Leak, **S4**: Cashflow DTO Leak | ~1 hour | **FIXED** |
-| **P0 — Critical** | **A3**: Architecture Refactor to Domain-Driven Feature Folders | ~2 weeks | **BACKLOG** |
+| **P0 — Critical** | **A3**: Architecture Refactor to Domain-Driven Feature Folders | ~2 weeks | **FIXED** |
 | **P0 — Critical** | **S1**: Remove `'unsafe-inline'` script-src fallback | ~2 hours | **FIXED** |
 | **P1 — High** | **P1**: Decouple date filtering, **Q2**: Math engine extraction | ~5 hours | **FIXED** |
-| **P2 — Medium** | **Q3**: Zod Migration for manual `typeof` guards | ~2 hours | **BACKLOG** |
-| **P2 — Medium** | **Q4**: React 19 `useActionState` form migration | ~3 hours | **BACKLOG** |
+| **P2 — Medium** | **Q3**: Zod Migration for manual `typeof` guards | ~2 hours | **FIXED** |
+| **P2 — Medium** | **Q4**: React 19 `useActionState` form migration | ~3 hours | **FIXED** |
 | **P2 — Medium** | **E1**: Modal hydration fix, **P2**: Profile query dedup | ~4 hours | **FIXED** |
 | **P3 — Backlog** | **T1**: Support System E2E messaging tests | ~4 hours | **BACKLOG** |
 

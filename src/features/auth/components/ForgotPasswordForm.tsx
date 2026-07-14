@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useActionState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -20,28 +20,27 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { resetPassword } from '../actions';
+import { forgotPasswordSchema } from '../schemas.client';
 
 export default function ForgotPasswordForm() {
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [formState, formAction, isPending] = useActionState(
+    async (_prev: { error: string | null; success: boolean }, formData: FormData) => {
+      const parsed = forgotPasswordSchema.safeParse(Object.fromEntries(formData));
+      if (!parsed.success) {
+        return { error: parsed.error.issues[0].message, success: false };
+      }
+      const result = await resetPassword(formData);
+      if (result?.error) {
+        return { error: result.error, success: false };
+      }
+      return { error: null, success: true };
+    },
+    { error: null, success: false },
+  );
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    const formData = new FormData(e.currentTarget);
-    const result = await resetPassword(formData);
-
-    if (result?.error) {
-      setError(result.error);
-      setIsLoading(false);
-    } else if (result?.success) {
-      setIsSuccess(true);
-      setIsLoading(false);
-    }
-  }
+  const isLoading = isPending;
+  const error = formState.error;
+  const isSuccess = formState.success;
 
   if (isSuccess) {
     return (
@@ -83,10 +82,6 @@ export default function ForgotPasswordForm() {
             </p>
             <Link
               href='/login'
-              onClick={() => {
-                setIsSuccess(false);
-                setError(null);
-              }}
             >
               <Button variant='outline' className='w-full'>
                 <LuArrowLeft className='mr-2 h-4 w-4' />
@@ -127,7 +122,7 @@ export default function ForgotPasswordForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4 relative z-10'>
-          <form onSubmit={handleSubmit} className='space-y-4'>
+          <form action={formAction} className='space-y-4'>
             <div className='space-y-2'>
               <div className='relative group'>
                 <LuMail className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />

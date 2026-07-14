@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useActionState } from 'react';
 import { motion } from 'framer-motion';
 import {
   LuLoader,
@@ -20,51 +20,32 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { updatePassword } from '../actions';
+import { resetPasswordSchema } from '../schemas.client';
 
 export default function UpdatePasswordForm() {
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  const [formState, formAction, isPending] = useActionState(
+    async (_prev: { error: string | null }, formData: FormData) => {
+      const parsed = resetPasswordSchema.safeParse(Object.fromEntries(formData));
+      if (!parsed.success) {
+        return { error: parsed.error.issues[0].message };
+      }
+      const password = formData.get('password');
+      const confirmPassword = formData.get('confirmPassword');
+      if (password !== confirmPassword) {
+        return { error: 'Passwords do not match' };
+      }
+      const result = await updatePassword(formData);
+      if (result?.error) return { error: result.error };
+      return { error: null };
+    },
+    { error: null },
+  );
 
-    const formData = new FormData(e.currentTarget);
-    const pwd = formData.get('password');
-    const confirm = formData.get('confirmPassword');
-
-    if (typeof pwd !== 'string' || typeof confirm !== 'string') {
-      setError('Invalid input format');
-      setIsLoading(false);
-      return;
-    }
-
-    const password = pwd;
-    const confirmPassword = confirm;
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setIsLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      setIsLoading(false);
-      return;
-    }
-
-    const result = await updatePassword(formData);
-
-    if (result?.error) {
-      setError(result.error);
-      setIsLoading(false);
-    }
-    // On success, server action redirects to /login
-  }
+  const isLoading = isPending;
+  const error = formState.error;
 
   return (
     <motion.div
@@ -93,7 +74,7 @@ export default function UpdatePasswordForm() {
           <CardDescription>Enter your new password below</CardDescription>
         </CardHeader>
         <CardContent className='space-y-4 relative z-10'>
-          <form onSubmit={handleSubmit} className='space-y-4'>
+          <form action={formAction} className='space-y-4'>
             <div className='space-y-2'>
               <div className='relative group'>
                 <LuLock className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors' />

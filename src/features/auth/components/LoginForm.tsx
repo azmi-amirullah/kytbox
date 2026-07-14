@@ -23,6 +23,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { login } from '../actions';
+import { loginSchema } from '../schemas.client';
 import { FcGoogle } from 'react-icons/fc';
 import { createClient } from '@/lib/supabase/client';
 
@@ -35,6 +36,10 @@ function LoginContent() {
   // useActionState: isPending auto-resets on navigation/redirect
   const [formState, formAction, isPending] = useActionState(
     async (_prev: { error: string | null }, formData: FormData) => {
+      const parsed = loginSchema.safeParse(Object.fromEntries(formData));
+      if (!parsed.success) {
+        return { error: parsed.error.issues[0].message };
+      }
       const result = await login(formData);
       if (result?.error) return { error: result.error };
       return { error: null }; // redirect fires, this never returns

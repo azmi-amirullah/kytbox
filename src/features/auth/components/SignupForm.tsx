@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useActionState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -24,13 +24,30 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { signup, checkUsernameAvailable } from '../actions';
+import { signupSchema } from '../schemas.client';
 import { FcGoogle } from 'react-icons/fc';
 import { createClient } from '@/lib/supabase/client';
 
 export default function SignupForm() {
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [formState, formAction, isPending] = useActionState(
+    async (_prev: { error: string | null }, formData: FormData) => {
+      const parsed = signupSchema.safeParse(Object.fromEntries(formData));
+      if (!parsed.success) {
+        return { error: parsed.error.issues[0].message };
+      }
+      const result = await signup(formData);
+      if (result?.error) return { error: result.error };
+      return { error: null };
+    },
+    { error: null },
+  );
+
+  const isLoading = isPending || isGoogleLoading;
+  const error = formState.error || googleError;
 
   // Username state
   const [username, setUsername] = useState('');
@@ -83,7 +100,8 @@ export default function SignupForm() {
   }, [username]);
 
   const handleGoogleSignup = async () => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
+    setGoogleError(null);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -93,25 +111,10 @@ export default function SignupForm() {
     });
 
     if (error) {
-      setError(error.message);
-      setIsLoading(false);
+      setGoogleError(error.message);
+      setIsGoogleLoading(false);
     }
   };
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    const formData = new FormData(e.currentTarget);
-    const result = await signup(formData);
-
-    if (result?.error) {
-      setError(result.error);
-      setIsLoading(false);
-    }
-    // On success, the server action redirects
-  }
 
   const isUsernameValid = usernameStatus === 'available';
 
@@ -160,7 +163,7 @@ export default function SignupForm() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className='space-y-4'>
+          <form action={formAction} className='space-y-4'>
             {/* Email Field */}
             <div className='space-y-2'>
               <div className='relative group'>
