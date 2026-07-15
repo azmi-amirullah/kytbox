@@ -8,814 +8,811 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
+    PostgrestVersion: '14.1'
+  }
   public: {
     Tables: {
       cashflow_budgets: {
         Row: {
-          amount: number;
-          cashflow_id: string;
-          category: string;
-          created_at: string | null;
-          id: string;
-          period: string;
-          updated_at: string | null;
-        };
+          amount: number
+          cashflow_id: string
+          category: string
+          created_at: string | null
+          id: string
+          period: string
+          updated_at: string | null
+        }
         Insert: {
-          amount: number;
-          cashflow_id: string;
-          category: string;
-          created_at?: string | null;
-          id?: string;
-          period?: string;
-          updated_at?: string | null;
-        };
+          amount: number
+          cashflow_id: string
+          category: string
+          created_at?: string | null
+          id?: string
+          period?: string
+          updated_at?: string | null
+        }
         Update: {
-          amount?: number;
-          cashflow_id?: string;
-          category?: string;
-          created_at?: string | null;
-          id?: string;
-          period?: string;
-          updated_at?: string | null;
-        };
+          amount?: number
+          cashflow_id?: string
+          category?: string
+          created_at?: string | null
+          id?: string
+          period?: string
+          updated_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: 'cashflow_budgets_cashflow_id_fkey';
-            columns: ['cashflow_id'];
-            isOneToOne: false;
-            referencedRelation: 'cashflow_summaries';
-            referencedColumns: ['id'];
+            foreignKeyName: 'cashflow_budgets_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflow_summaries'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'cashflow_budgets_cashflow_id_fkey';
-            columns: ['cashflow_id'];
-            isOneToOne: false;
-            referencedRelation: 'cashflows';
-            referencedColumns: ['id'];
+            foreignKeyName: 'cashflow_budgets_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflows'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       cashflow_entries: {
         Row: {
-          amount: number;
-          cashflow_id: string;
-          category: string | null;
-          created_at: string | null;
-          date: string;
-          description: string;
-          id: string;
-          is_recurring: boolean | null;
-          recurrence_interval: string | null;
-          type: string;
-          yearly_calculation: string | null;
-        };
+          amount: number
+          cashflow_id: string
+          category: string | null
+          created_at: string | null
+          date: string
+          description: string
+          id: string
+          is_recurring: boolean | null
+          recurrence_interval: string | null
+          type: string
+          yearly_calculation: string | null
+        }
         Insert: {
-          amount: number;
-          cashflow_id: string;
-          category?: string | null;
-          created_at?: string | null;
-          date?: string;
-          description: string;
-          id?: string;
-          is_recurring?: boolean | null;
-          recurrence_interval?: string | null;
-          type: string;
-          yearly_calculation?: string | null;
-        };
+          amount: number
+          cashflow_id: string
+          category?: string | null
+          created_at?: string | null
+          date?: string
+          description: string
+          id?: string
+          is_recurring?: boolean | null
+          recurrence_interval?: string | null
+          type: string
+          yearly_calculation?: string | null
+        }
         Update: {
-          amount?: number;
-          cashflow_id?: string;
-          category?: string | null;
-          created_at?: string | null;
-          date?: string;
-          description?: string;
-          id?: string;
-          is_recurring?: boolean | null;
-          recurrence_interval?: string | null;
-          type?: string;
-          yearly_calculation?: string | null;
-        };
+          amount?: number
+          cashflow_id?: string
+          category?: string | null
+          created_at?: string | null
+          date?: string
+          description?: string
+          id?: string
+          is_recurring?: boolean | null
+          recurrence_interval?: string | null
+          type?: string
+          yearly_calculation?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: 'cashflow_entries_cashflow_id_fkey';
-            columns: ['cashflow_id'];
-            isOneToOne: false;
-            referencedRelation: 'cashflow_summaries';
-            referencedColumns: ['id'];
+            foreignKeyName: 'cashflow_entries_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflow_summaries'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'cashflow_entries_cashflow_id_fkey';
-            columns: ['cashflow_id'];
-            isOneToOne: false;
-            referencedRelation: 'cashflows';
-            referencedColumns: ['id'];
+            foreignKeyName: 'cashflow_entries_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflows'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       cashflow_shares: {
         Row: {
-          cashflow_id: string;
-          created_at: string;
-          created_via_public_access: boolean | null;
-          email: string;
-          id: string;
-          is_included_in_totals: boolean | null;
-          is_pinned: boolean | null;
-          role: string;
-        };
+          cashflow_id: string
+          created_at: string
+          created_via_public_access: boolean | null
+          email: string
+          id: string
+          is_included_in_totals: boolean | null
+          is_pinned: boolean | null
+          role: string
+        }
         Insert: {
-          cashflow_id: string;
-          created_at?: string;
-          created_via_public_access?: boolean | null;
-          email: string;
-          id?: string;
-          is_included_in_totals?: boolean | null;
-          is_pinned?: boolean | null;
-          role?: string;
-        };
+          cashflow_id: string
+          created_at?: string
+          created_via_public_access?: boolean | null
+          email: string
+          id?: string
+          is_included_in_totals?: boolean | null
+          is_pinned?: boolean | null
+          role?: string
+        }
         Update: {
-          cashflow_id?: string;
-          created_at?: string;
-          created_via_public_access?: boolean | null;
-          email?: string;
-          id?: string;
-          is_included_in_totals?: boolean | null;
-          is_pinned?: boolean | null;
-          role?: string;
-        };
+          cashflow_id?: string
+          created_at?: string
+          created_via_public_access?: boolean | null
+          email?: string
+          id?: string
+          is_included_in_totals?: boolean | null
+          is_pinned?: boolean | null
+          role?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'cashflow_shares_cashflow_id_fkey';
-            columns: ['cashflow_id'];
-            isOneToOne: false;
-            referencedRelation: 'cashflow_summaries';
-            referencedColumns: ['id'];
+            foreignKeyName: 'cashflow_shares_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflow_summaries'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'cashflow_shares_cashflow_id_fkey';
-            columns: ['cashflow_id'];
-            isOneToOne: false;
-            referencedRelation: 'cashflows';
-            referencedColumns: ['id'];
+            foreignKeyName: 'cashflow_shares_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflows'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       cashflows: {
         Row: {
-          created_at: string | null;
-          id: string;
-          is_public: boolean | null;
-          title: string;
-          user_id: string;
-        };
+          created_at: string | null
+          id: string
+          is_public: boolean | null
+          title: string
+          user_id: string
+        }
         Insert: {
-          created_at?: string | null;
-          id?: string;
-          is_public?: boolean | null;
-          title: string;
-          user_id: string;
-        };
+          created_at?: string | null
+          id?: string
+          is_public?: boolean | null
+          title: string
+          user_id: string
+        }
         Update: {
-          created_at?: string | null;
-          id?: string;
-          is_public?: boolean | null;
-          title?: string;
-          user_id?: string;
-        };
+          created_at?: string | null
+          id?: string
+          is_public?: boolean | null
+          title?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'cashflows_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'cashflows_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       link_events: {
         Row: {
-          city: string | null;
-          country: string | null;
-          created_at: string;
-          id: string;
-          link_id: string;
-          referer: string | null;
-          user_agent: string | null;
-        };
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          link_id: string
+          referer: string | null
+          user_agent: string | null
+        }
         Insert: {
-          city?: string | null;
-          country?: string | null;
-          created_at?: string;
-          id?: string;
-          link_id: string;
-          referer?: string | null;
-          user_agent?: string | null;
-        };
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          link_id: string
+          referer?: string | null
+          user_agent?: string | null
+        }
         Update: {
-          city?: string | null;
-          country?: string | null;
-          created_at?: string;
-          id?: string;
-          link_id?: string;
-          referer?: string | null;
-          user_agent?: string | null;
-        };
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          link_id?: string
+          referer?: string | null
+          user_agent?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: 'link_events_link_id_fkey';
-            columns: ['link_id'];
-            isOneToOne: false;
-            referencedRelation: 'links';
-            referencedColumns: ['id'];
+            foreignKeyName: 'link_events_link_id_fkey'
+            columns: ['link_id']
+            isOneToOne: false
+            referencedRelation: 'links'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       links: {
         Row: {
-          animation_type: string | null;
-          clicks: number | null;
-          created_at: string;
-          id: string;
-          is_active: boolean | null;
-          is_folder: boolean | null;
-          last_clicked_at: string | null;
-          parent_id: string | null;
-          scheduled_at: string | null;
-          expires_at: string | null;
-          short_id: number | null;
-          sort_order: number | null;
-          title: string;
-          url: string;
-          user_id: string;
-        };
+          animation_type: string | null
+          clicks: number | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          is_folder: boolean | null
+          is_header: boolean
+          last_clicked_at: string | null
+          parent_id: string | null
+          scheduled_at: string | null
+          short_id: number | null
+          sort_order: number | null
+          title: string
+          url: string
+          user_id: string
+        }
         Insert: {
-          animation_type?: string | null;
-          clicks?: number | null;
-          created_at?: string;
-          id?: string;
-          is_active?: boolean | null;
-          is_folder?: boolean | null;
-          last_clicked_at?: string | null;
-          parent_id?: string | null;
-          scheduled_at?: string | null;
-          expires_at?: string | null;
-          short_id?: number | null;
-          sort_order?: number | null;
-          title: string;
-          url: string;
-          user_id: string;
-        };
+          animation_type?: string | null
+          clicks?: number | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_folder?: boolean | null
+          is_header?: boolean
+          last_clicked_at?: string | null
+          parent_id?: string | null
+          scheduled_at?: string | null
+          short_id?: number | null
+          sort_order?: number | null
+          title: string
+          url: string
+          user_id: string
+        }
         Update: {
-          animation_type?: string | null;
-          clicks?: number | null;
-          created_at?: string;
-          id?: string;
-          is_active?: boolean | null;
-          is_folder?: boolean | null;
-          last_clicked_at?: string | null;
-          parent_id?: string | null;
-          scheduled_at?: string | null;
-          expires_at?: string | null;
-          short_id?: number | null;
-          sort_order?: number | null;
-          title?: string;
-          url?: string;
-          user_id?: string;
-        };
+          animation_type?: string | null
+          clicks?: number | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_folder?: boolean | null
+          is_header?: boolean
+          last_clicked_at?: string | null
+          parent_id?: string | null
+          scheduled_at?: string | null
+          short_id?: number | null
+          sort_order?: number | null
+          title?: string
+          url?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'links_parent_id_fkey';
-            columns: ['parent_id'];
-            isOneToOne: false;
-            referencedRelation: 'links';
-            referencedColumns: ['id'];
+            foreignKeyName: 'links_parent_id_fkey'
+            columns: ['parent_id']
+            isOneToOne: false
+            referencedRelation: 'links'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'links_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'links_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       list_columns: {
         Row: {
-          created_at: string;
-          id: string;
-          is_done_column: boolean;
-          list_id: string;
-          sort_order: number;
-          title: string;
-        };
+          created_at: string
+          id: string
+          is_done_column: boolean
+          list_id: string
+          sort_order: number
+          title: string
+        }
         Insert: {
-          created_at?: string;
-          id?: string;
-          is_done_column?: boolean;
-          list_id: string;
-          sort_order?: number;
-          title: string;
-        };
+          created_at?: string
+          id?: string
+          is_done_column?: boolean
+          list_id: string
+          sort_order?: number
+          title: string
+        }
         Update: {
-          created_at?: string;
-          id?: string;
-          is_done_column?: boolean;
-          list_id?: string;
-          sort_order?: number;
-          title?: string;
-        };
+          created_at?: string
+          id?: string
+          is_done_column?: boolean
+          list_id?: string
+          sort_order?: number
+          title?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'list_columns_list_id_fkey';
-            columns: ['list_id'];
-            isOneToOne: false;
-            referencedRelation: 'list_summaries';
-            referencedColumns: ['id'];
+            foreignKeyName: 'list_columns_list_id_fkey'
+            columns: ['list_id']
+            isOneToOne: false
+            referencedRelation: 'list_summaries'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'list_columns_list_id_fkey';
-            columns: ['list_id'];
-            isOneToOne: false;
-            referencedRelation: 'lists';
-            referencedColumns: ['id'];
+            foreignKeyName: 'list_columns_list_id_fkey'
+            columns: ['list_id']
+            isOneToOne: false
+            referencedRelation: 'lists'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       list_items: {
         Row: {
-          column_id: string | null;
-          created_at: string;
-          description: string | null;
-          id: string;
-          is_completed: boolean;
-          list_id: string;
-          metadata: Json | null;
-          sort_order: number;
-          title: string;
-        };
+          column_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_completed: boolean
+          list_id: string
+          metadata: Json | null
+          sort_order: number
+          title: string
+        }
         Insert: {
-          column_id?: string | null;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_completed?: boolean;
-          list_id: string;
-          metadata?: Json | null;
-          sort_order?: number;
-          title: string;
-        };
+          column_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          list_id: string
+          metadata?: Json | null
+          sort_order?: number
+          title: string
+        }
         Update: {
-          column_id?: string | null;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_completed?: boolean;
-          list_id?: string;
-          metadata?: Json | null;
-          sort_order?: number;
-          title?: string;
-        };
+          column_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          list_id?: string
+          metadata?: Json | null
+          sort_order?: number
+          title?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'list_items_column_id_fkey';
-            columns: ['column_id'];
-            isOneToOne: false;
-            referencedRelation: 'list_columns';
-            referencedColumns: ['id'];
+            foreignKeyName: 'list_items_column_id_fkey'
+            columns: ['column_id']
+            isOneToOne: false
+            referencedRelation: 'list_columns'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'list_items_list_id_fkey';
-            columns: ['list_id'];
-            isOneToOne: false;
-            referencedRelation: 'list_summaries';
-            referencedColumns: ['id'];
+            foreignKeyName: 'list_items_list_id_fkey'
+            columns: ['list_id']
+            isOneToOne: false
+            referencedRelation: 'list_summaries'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'list_items_list_id_fkey';
-            columns: ['list_id'];
-            isOneToOne: false;
-            referencedRelation: 'lists';
-            referencedColumns: ['id'];
+            foreignKeyName: 'list_items_list_id_fkey'
+            columns: ['list_id']
+            isOneToOne: false
+            referencedRelation: 'lists'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       lists: {
         Row: {
-          created_at: string;
-          description: string | null;
-          id: string;
-          is_public: boolean;
-          title: string;
-          type: string;
-          updated_at: string;
-          user_id: string;
-        };
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
         Insert: {
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_public?: boolean;
-          title: string;
-          type: string;
-          updated_at?: string;
-          user_id: string;
-        };
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
         Update: {
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_public?: boolean;
-          title?: string;
-          type?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'lists_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'lists_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       profile_events: {
         Row: {
-          city: string | null;
-          country: string | null;
-          created_at: string | null;
-          device_type: string | null;
-          id: string;
-          profile_id: string;
-          referer: string | null;
-          user_agent: string | null;
-        };
+          city: string | null
+          country: string | null
+          created_at: string | null
+          device_type: string | null
+          id: string
+          profile_id: string
+          referer: string | null
+          user_agent: string | null
+        }
         Insert: {
-          city?: string | null;
-          country?: string | null;
-          created_at?: string | null;
-          device_type?: string | null;
-          id?: string;
-          profile_id: string;
-          referer?: string | null;
-          user_agent?: string | null;
-        };
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          id?: string
+          profile_id: string
+          referer?: string | null
+          user_agent?: string | null
+        }
         Update: {
-          city?: string | null;
-          country?: string | null;
-          created_at?: string | null;
-          device_type?: string | null;
-          id?: string;
-          profile_id?: string;
-          referer?: string | null;
-          user_agent?: string | null;
-        };
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          id?: string
+          profile_id?: string
+          referer?: string | null
+          user_agent?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: 'profile_events_profile_id_fkey';
-            columns: ['profile_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'profile_events_profile_id_fkey'
+            columns: ['profile_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       profiles: {
         Row: {
-          avatar_url: string | null;
-          bio: string | null;
-          button_shape: string | null;
-          button_style: string | null;
-          created_at: string;
-          custom_theme: Json | null;
-          default_currency: string | null;
-          display_name: string | null;
-          id: string;
-          role: string | null;
-          social_links: Json;
-          theme_name: string | null;
-          tier: string | null;
-          username: string;
-        };
+          avatar_url: string | null
+          bio: string | null
+          button_shape: string | null
+          button_style: string | null
+          created_at: string
+          custom_theme: Json | null
+          default_currency: string | null
+          display_name: string | null
+          id: string
+          role: string | null
+          social_links: Json
+          theme_name: string | null
+          tier: string | null
+          username: string
+        }
         Insert: {
-          avatar_url?: string | null;
-          bio?: string | null;
-          button_shape?: string | null;
-          button_style?: string | null;
-          created_at?: string;
-          custom_theme?: Json | null;
-          default_currency?: string | null;
-          display_name?: string | null;
-          id: string;
-          role?: string | null;
-          social_links?: Json;
-          theme_name?: string | null;
-          tier?: string | null;
-          username: string;
-        };
+          avatar_url?: string | null
+          bio?: string | null
+          button_shape?: string | null
+          button_style?: string | null
+          created_at?: string
+          custom_theme?: Json | null
+          default_currency?: string | null
+          display_name?: string | null
+          id: string
+          role?: string | null
+          social_links?: Json
+          theme_name?: string | null
+          tier?: string | null
+          username: string
+        }
         Update: {
-          avatar_url?: string | null;
-          bio?: string | null;
-          button_shape?: string | null;
-          button_style?: string | null;
-          created_at?: string;
-          custom_theme?: Json | null;
-          default_currency?: string | null;
-          display_name?: string | null;
-          id?: string;
-          role?: string | null;
-          social_links?: Json;
-          theme_name?: string | null;
-          tier?: string | null;
-          username?: string;
-        };
-        Relationships: [];
-      };
+          avatar_url?: string | null
+          bio?: string | null
+          button_shape?: string | null
+          button_style?: string | null
+          created_at?: string
+          custom_theme?: Json | null
+          default_currency?: string | null
+          display_name?: string | null
+          id?: string
+          role?: string | null
+          social_links?: Json
+          theme_name?: string | null
+          tier?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       support_message_reads: {
         Row: {
-          id: string;
-          message_id: string;
-          read_at: string;
-          reader_id: string;
-        };
+          id: string
+          message_id: string
+          read_at: string
+          reader_id: string
+        }
         Insert: {
-          id?: string;
-          message_id: string;
-          read_at?: string;
-          reader_id: string;
-        };
+          id?: string
+          message_id: string
+          read_at?: string
+          reader_id: string
+        }
         Update: {
-          id?: string;
-          message_id?: string;
-          read_at?: string;
-          reader_id?: string;
-        };
+          id?: string
+          message_id?: string
+          read_at?: string
+          reader_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'support_message_reads_message_id_fkey';
-            columns: ['message_id'];
-            isOneToOne: false;
-            referencedRelation: 'support_messages';
-            referencedColumns: ['id'];
+            foreignKeyName: 'support_message_reads_message_id_fkey'
+            columns: ['message_id']
+            isOneToOne: false
+            referencedRelation: 'support_messages'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'support_message_reads_reader_id_fkey';
-            columns: ['reader_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'support_message_reads_reader_id_fkey'
+            columns: ['reader_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       support_messages: {
         Row: {
-          created_at: string | null;
-          id: string;
-          message: string;
-          read_at: string | null;
-          sender_id: string;
-          ticket_id: string;
-        };
+          created_at: string | null
+          id: string
+          message: string
+          read_at: string | null
+          sender_id: string
+          ticket_id: string
+        }
         Insert: {
-          created_at?: string | null;
-          id?: string;
-          message: string;
-          read_at?: string | null;
-          sender_id: string;
-          ticket_id: string;
-        };
+          created_at?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          sender_id: string
+          ticket_id: string
+        }
         Update: {
-          created_at?: string | null;
-          id?: string;
-          message?: string;
-          read_at?: string | null;
-          sender_id?: string;
-          ticket_id?: string;
-        };
+          created_at?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          sender_id?: string
+          ticket_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'support_messages_sender_id_fkey';
-            columns: ['sender_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'support_messages_sender_id_fkey'
+            columns: ['sender_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'support_messages_ticket_id_fkey';
-            columns: ['ticket_id'];
-            isOneToOne: false;
-            referencedRelation: 'support_tickets';
-            referencedColumns: ['id'];
+            foreignKeyName: 'support_messages_ticket_id_fkey'
+            columns: ['ticket_id']
+            isOneToOne: false
+            referencedRelation: 'support_tickets'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       support_tickets: {
         Row: {
-          category: string;
-          created_at: string | null;
-          id: string;
-          last_bumped_at: string | null;
-          status: string | null;
-          subject: string;
-          urgency_score: number | null;
-          user_id: string;
-        };
+          category: string
+          created_at: string | null
+          id: string
+          last_bumped_at: string | null
+          status: string | null
+          subject: string
+          urgency_score: number | null
+          user_id: string
+        }
         Insert: {
-          category: string;
-          created_at?: string | null;
-          id?: string;
-          last_bumped_at?: string | null;
-          status?: string | null;
-          subject: string;
-          urgency_score?: number | null;
-          user_id: string;
-        };
+          category: string
+          created_at?: string | null
+          id?: string
+          last_bumped_at?: string | null
+          status?: string | null
+          subject: string
+          urgency_score?: number | null
+          user_id: string
+        }
         Update: {
-          category?: string;
-          created_at?: string | null;
-          id?: string;
-          last_bumped_at?: string | null;
-          status?: string | null;
-          subject?: string;
-          urgency_score?: number | null;
-          user_id?: string;
-        };
+          category?: string
+          created_at?: string | null
+          id?: string
+          last_bumped_at?: string | null
+          status?: string | null
+          subject?: string
+          urgency_score?: number | null
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'support_tickets_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'support_tickets_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
-        ];
-      };
-    };
+        ]
+      }
+    }
     Views: {
       cashflow_summaries: {
         Row: {
-          balance: number | null;
-          created_at: string | null;
-          entry_count: number | null;
-          expense: number | null;
-          id: string | null;
-          income: number | null;
-          is_public: boolean | null;
-          title: string | null;
-          user_id: string | null;
-        };
+          balance: number | null
+          created_at: string | null
+          entry_count: number | null
+          expense: number | null
+          id: string | null
+          income: number | null
+          is_public: boolean | null
+          title: string | null
+          user_id: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: 'cashflows_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'cashflows_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
-        ];
-      };
+        ]
+      }
       list_summaries: {
         Row: {
-          completed_count: number | null;
-          created_at: string | null;
-          description: string | null;
-          id: string | null;
-          is_public: boolean | null;
-          item_count: number | null;
-          title: string | null;
-          type: string | null;
-          updated_at: string | null;
-          user_id: string | null;
-        };
+          completed_count: number | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_public: boolean | null
+          item_count: number | null
+          title: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: 'lists_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
+            foreignKeyName: 'lists_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
           },
-        ];
-      };
-    };
+        ]
+      }
+    }
     Functions: {
       bump_support_ticket_urgency: {
-        Args: { p_ticket_id: string };
-        Returns: undefined;
-      };
+        Args: { p_ticket_id: string }
+        Returns: undefined
+      }
       create_support_ticket: {
-        Args: { p_category: string; p_message: string; p_subject: string };
-        Returns: string;
-      };
+        Args: { p_category: string; p_message: string; p_subject: string }
+        Returns: string
+      }
       get_analytics_chart_data: {
         Args: {
-          p_bucket_interval?: string;
-          p_link_ids: string[];
-          p_start_date?: string;
-        };
+          p_bucket_interval?: string
+          p_link_ids: string[]
+          p_start_date?: string
+        }
         Returns: {
-          bucket: string;
-          click_count: number;
-        }[];
-      };
-      get_next_short_id: { Args: { p_user_id: string }; Returns: number };
+          bucket: string
+          click_count: number
+        }[]
+      }
+      get_next_short_id: { Args: { p_user_id: string }; Returns: number }
       get_recent_activity: {
-        Args: { p_limit?: number; p_user_id: string };
+        Args: { p_limit?: number; p_user_id: string }
         Returns: {
-          context: string;
-          created_at: string;
-          title: string;
-          type: string;
-        }[];
-      };
+          context: string
+          created_at: string
+          title: string
+          type: string
+        }[]
+      }
       get_support_ticket_queue: {
-        Args: never;
+        Args: never
         Returns: {
-          age_days: number;
-          avatar_url: string;
-          category: string;
-          created_at: string;
-          id: string;
-          last_bumped_at: string;
-          status: string;
-          subject: string;
-          total_urgency: number;
-          urgency_score: number;
-          user_id: string;
-          username: string;
-        }[];
-      };
+          age_days: number
+          avatar_url: string
+          category: string
+          created_at: string
+          id: string
+          last_bumped_at: string
+          status: string
+          subject: string
+          total_urgency: number
+          urgency_score: number
+          user_id: string
+          username: string
+        }[]
+      }
       get_top_links: {
-        Args: { p_limit?: number; p_link_ids: string[]; p_start_date: string };
+        Args: { p_limit?: number; p_link_ids: string[]; p_start_date: string }
         Returns: {
-          click_count: number;
-          link_id: string;
-        }[];
-      };
+          click_count: number
+          link_id: string
+        }[]
+      }
       get_top_referers: {
-        Args: { p_limit?: number; p_link_ids: string[]; p_start_date?: string };
+        Args: { p_limit?: number; p_link_ids: string[]; p_start_date?: string }
         Returns: {
-          click_count: number;
-          referer_domain: string;
-        }[];
-      };
-      increment_link_click: { Args: { link_id: string }; Returns: undefined };
-      is_cashflow_owner: { Args: { _cashflow_id: string }; Returns: boolean };
+          click_count: number
+          referer_domain: string
+        }[]
+      }
+      increment_link_click: { Args: { link_id: string }; Returns: undefined }
+      is_cashflow_owner: { Args: { _cashflow_id: string }; Returns: boolean }
       mark_support_messages_read: {
-        Args: { p_ticket_id: string };
-        Returns: number;
-      };
-      reorder_links: { Args: { p_link_ids: string[] }; Returns: undefined };
+        Args: { p_ticket_id: string }
+        Returns: number
+      }
+      reorder_links: { Args: { p_link_ids: string[] }; Returns: undefined }
       reorder_list_columns: {
-        Args: { p_column_ids: string[] };
-        Returns: undefined;
-      };
-      reorder_list_items: {
-        Args: { p_item_ids: string[] };
-        Returns: undefined;
-      };
-    };
+        Args: { p_column_ids: string[] }
+        Returns: undefined
+      }
+      reorder_list_items: { Args: { p_item_ids: string[] }; Returns: undefined }
+    }
     Enums: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
-};
+      [_ in never]: never
+    }
+  }
+}
 
-type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>;
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<
-  keyof Database,
-  'public'
->];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
-      Row: infer R;
+      Row: infer R
     }
     ? R
     : never
@@ -823,98 +820,98 @@ export type Tables<
         DefaultSchema['Views'])
     ? (DefaultSchema['Tables'] &
         DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R;
+        Row: infer R
       }
       ? R
       : never
-    : never;
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
-      Insert: infer I;
+      Insert: infer I
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
     ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I;
+        Insert: infer I
       }
       ? I
       : never
-    : never;
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
-      Update: infer U;
+      Update: infer U
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
     ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U;
+        Update: infer U
       }
       ? U
       : never
-    : never;
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema['Enums']
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
     ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
-    : never;
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
     ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
-    : never;
+    : never
 
 export const Constants = {
   public: {
     Enums: {},
   },
-} as const;
+} as const

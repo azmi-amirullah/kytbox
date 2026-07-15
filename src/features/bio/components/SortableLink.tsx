@@ -15,6 +15,7 @@ import {
   LuFolderOpen,
   LuFolderInput,
   LuTriangleAlert,
+  LuType,
 } from 'react-icons/lu';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -178,12 +179,15 @@ const LinkItemContent = memo(function LinkItemContent({
           <h3
             className={cn(
               'font-semibold truncate text-sm sm:text-base flex items-center gap-1.5',
-              (!link.is_active || isExpired) && 'text-muted-foreground line-through decoration-muted-foreground/50',
+              (!link.is_active || isExpired) && (link.is_header ? 'text-muted-foreground' : 'text-muted-foreground line-through decoration-muted-foreground/50'),
               isScheduled && 'text-muted-foreground'
             )}
           >
             {link.is_folder && (
               <LuFolderOpen className='w-4 h-4 shrink-0 text-muted-foreground' />
+            )}
+            {link.is_header && (
+              <LuType className='w-4 h-4 shrink-0 text-muted-foreground' />
             )}
             {link.title}
           </h3>
@@ -209,7 +213,7 @@ const LinkItemContent = memo(function LinkItemContent({
         </div>
         <div className='flex flex-wrap items-center gap-2 mt-1'>
           {getScheduleBadge()}
-          {!link.is_folder && (
+          {!link.is_folder && !link.is_header && (
             <a
               href={link.url}
               target='_blank'
@@ -232,7 +236,7 @@ const LinkItemContent = memo(function LinkItemContent({
             <span className='opacity-70'>items</span>
           </div>
         )
-      ) : (
+      ) : link.is_header ? null : (
         <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
           <LuActivity className='w-3.5 h-3.5' />
           {link.clicks ?? 0}
@@ -250,7 +254,7 @@ const LinkItemContent = memo(function LinkItemContent({
         role='toolbar'
         aria-label='Link actions'
       >
-        {!link.is_folder && (
+        {!link.is_folder && !link.is_header && (
           <TooltipProvider>
             <Tooltip open={hasCopied || undefined}>
               <TooltipTrigger asChild>
@@ -352,7 +356,7 @@ const LinkItemContent = memo(function LinkItemContent({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className='pb-2 border-b mb-2'>
-              Delete {link.is_folder ? 'Folder' : 'Link'}
+              Delete {link.is_folder ? 'Folder' : link.is_header ? 'Header' : 'Link'}
             </AlertDialogTitle>
             <AlertDialogDescription className='space-y-3' asChild>
               <div>

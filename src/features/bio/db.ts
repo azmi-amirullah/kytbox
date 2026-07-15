@@ -46,6 +46,7 @@ export interface PublicProfileData {
     is_active: boolean;
     short_id: string | number | null;
     is_folder: boolean;
+    is_header: boolean;
     parent_id: string | null;
     animation_type: string | null;
     child_count: number;
@@ -174,6 +175,7 @@ export async function getPublicProfileData(
       is_active: !!link.is_active,
       short_id: link.short_id,
       is_folder: !!link.is_folder,
+      is_header: !!link.is_header,
       parent_id: link.parent_id,
       animation_type: link.animation_type,
       child_count: link.children?.[0]?.count ?? 0,

@@ -99,6 +99,7 @@ export default function LinkModal({
 
   const isBusy = isLoading || isPending;
   const isEdit = mode === 'edit';
+  const isHeader = !!link?.is_header;
 
   // Reset form when link changes (for edit mode) or modal opens
   useEffect(() => {
@@ -139,7 +140,7 @@ export default function LinkModal({
 
     const formData = new FormData();
     formData.append('title', title);
-    if (type === 'link') {
+    if (type === 'link' && !isHeader) {
       formData.append('url', url);
     }
     formData.append('animationType', animationType);
@@ -165,13 +166,13 @@ export default function LinkModal({
     if (result?.error) {
       setError(result.error);
       toast.error(
-        isEdit ? `Failed to update ${type}` : `Failed to add ${type}`,
+        isEdit ? `Failed to update ${isHeader ? 'header' : type}` : `Failed to add ${type}`,
       );
       setIsLoading(false);
     } else {
       toast.success(
         isEdit
-          ? `${type === 'folder' ? 'Folder' : 'Link'} updated!`
+          ? `${isHeader ? 'Header' : type === 'folder' ? 'Folder' : 'Link'} updated!`
           : `${type === 'folder' ? 'Folder' : 'Link'} added!`,
       );
       const validated = linkActionResponseSchema.parse(result);
@@ -193,18 +194,18 @@ export default function LinkModal({
         <DialogHeader className='mb-6'>
           <DialogTitle className='text-xl text-center'>
             {isEdit
-              ? `Edit ${type === 'folder' ? 'Folder' : 'Link'}`
+              ? `Edit ${isHeader ? 'Header' : type === 'folder' ? 'Folder' : 'Link'}`
               : `Add New ${type === 'folder' ? 'Folder' : 'Link'}`}
           </DialogTitle>
           <DialogDescription className='text-center'>
             {isEdit
-              ? `Make changes to your ${type} here. Click save when you're done.`
+              ? `Make changes to your ${isHeader ? 'header' : type} here. Click save when you're done.`
               : `Add a new ${type} to share with your audience.`}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
-          {!isEdit && (
+          {!isEdit && !isHeader && (
             <Tabs
               value={type}
               onValueChange={(val) => setType(linkTypeSchema.parse(val))}
@@ -245,32 +246,34 @@ export default function LinkModal({
               </div>
             </div>
 
-            <div className='grid gap-2'>
-              <Label
-                htmlFor='animationType'
-                className='font-medium text-foreground/80 gap-0.5'
-              >
-                Animation Style
-              </Label>
-              <Select value={animationType} onValueChange={setAnimationType}>
-                <SelectTrigger className='bg-background/50 border-input/60 focus:border-primary/50 transition-colors'>
-                  <SelectValue placeholder='Select an animation' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='none'>None</SelectItem>
-                  <SelectItem value='pulse'>Pulse (Subtle Pulse)</SelectItem>
-                  <SelectItem value='bounce'>
-                    Bounce (Draws Attention)
-                  </SelectItem>
-                  <SelectItem value='glow'>
-                    Glow (Highlighted Border)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!isHeader && (
+              <div className='grid gap-2'>
+                <Label
+                  htmlFor='animationType'
+                  className='font-medium text-foreground/80 gap-0.5'
+                >
+                  Animation Style
+                </Label>
+                <Select value={animationType} onValueChange={setAnimationType}>
+                  <SelectTrigger className='bg-background/50 border-input/60 focus:border-primary/50 transition-colors'>
+                    <SelectValue placeholder='Select an animation' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='none'>None</SelectItem>
+                    <SelectItem value='pulse'>Pulse (Subtle Pulse)</SelectItem>
+                    <SelectItem value='bounce'>
+                      Bounce (Draws Attention)
+                    </SelectItem>
+                    <SelectItem value='glow'>
+                      Glow (Highlighted Border)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <AnimatePresence initial={false}>
-              {type === 'link' && (
+              {type === 'link' && !isHeader && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}

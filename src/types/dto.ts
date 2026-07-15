@@ -22,6 +22,7 @@ export interface LinkDTO {
   is_active: boolean;
   sort_order: number;
   is_folder: boolean;
+  is_header: boolean;
   parent_id: string | null;
   clicks: number | null;
   animation_type: string | null;

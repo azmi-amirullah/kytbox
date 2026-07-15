@@ -60,6 +60,7 @@ const baseLink: Link = {
   is_active: true,
   sort_order: 1,
   is_folder: false,
+  is_header: false,
   parent_id: null,
   clicks: 42,
   animation_type: 'slide',
@@ -227,6 +228,26 @@ describe('mapLinkToDTO', () => {
     });
     expect(dto.scheduled_at).toBeNull();
     expect(dto.expires_at).toBeNull();
+  });
+
+  it('maps is_header field correctly', () => {
+    const dto1 = mapLinkToDTO({
+      ...baseLink,
+      is_header: true,
+    });
+    expect(dto1.is_header).toBe(true);
+
+    const dto2 = mapLinkToDTO({
+      ...baseLink,
+      is_header: false,
+    });
+    expect(dto2.is_header).toBe(false);
+
+    const dto3 = mapLinkToDTO({
+      ...baseLink,
+      is_header: null,
+    });
+    expect(dto3.is_header).toBe(false);
   });
 });
 

@@ -34,7 +34,7 @@ export async function getCachedPublicLinks(userId: string, username: string) {
   const { data, count, error } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
       { count: 'exact' },
     )
     .eq('user_id', userId)

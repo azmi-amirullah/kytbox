@@ -396,6 +396,67 @@ export async function createFolder(formData: FormData) {
   return { success: true, link: newFolder ? mapLinkToDTO(newFolder) : null, newCount: nextCount };
 }
 
+export async function addHeader(title: string, parentId: string | null) {
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+
+  const parsed = z.string().trim().min(1, 'Title is required').max(100, 'Title is too long').safeParse(title);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const [{ data: lastLink }, { data: nextShortId, error: rpcError }] =
+    await Promise.all([
+      supabase
+        .from('links')
+        .select('sort_order')
+        .eq('user_id', user.id)
+        .order('sort_order', { ascending: false })
+        .limit(1)
+        .single(),
+      supabase.rpc('get_next_short_id', { p_user_id: user.id }),
+    ]);
+
+  const nextOrder = (lastLink?.sort_order ?? 0) + 1;
+
+  if (rpcError) {
+    console.error('Failed to get next short_id:', rpcError);
+    return { error: 'Failed to create header' };
+  }
+
+  const { error } = await supabase.from('links').insert({
+    user_id: user.id,
+    title: parsed.data,
+    url: '#', // Headers don't have a real URL
+    sort_order: nextOrder,
+    short_id: nextShortId,
+    is_header: true,
+    is_folder: false,
+    is_active: true,
+    parent_id: parentId || null,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const [{ data: newHeader }, { count: nextCount }] = await Promise.all([
+    supabase
+      .from('links')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('short_id', nextShortId)
+      .single(),
+    parentId 
+      ? supabase.from('links').select('id', { count: 'exact', head: true }).eq('parent_id', parentId)
+      : Promise.resolve({ count: 0 })
+  ]);
+
+  revalidatePath('/bio', 'page');
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
+    updateTag(`links-${profile.username}`);
+  }
+  return { success: true, link: newHeader ? mapLinkToDTO(newHeader) : null, newCount: nextCount };
+}
+
 export async function moveToFolder(formData: FormData) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
@@ -507,7 +568,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
   const { data, error } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
     )
     .eq('user_id', profileId)
     .eq('is_active', true)
@@ -529,6 +590,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
     is_active: z.boolean(),
     short_id: z.union([z.string(), z.number()]).nullable(),
     is_folder: z.boolean(),
+    is_header: z.boolean(),
     parent_id: z.string().nullable(),
     sort_order: z.number().nullable(),
     animation_type: z.string().nullable(),
@@ -563,7 +625,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
   const { data, error, count } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
       { count: 'exact' }
     )
     .eq('user_id', profileId)
@@ -586,6 +648,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
     is_active: z.boolean(),
     short_id: z.union([z.string(), z.number()]).nullable(),
     is_folder: z.boolean(),
+    is_header: z.boolean(),
     parent_id: z.string().nullable(),
     sort_order: z.number().nullable(),
     animation_type: z.string().nullable(),

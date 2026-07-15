@@ -12,9 +12,11 @@ import {
   LuEye,
   LuPlus,
   LuLoader,
+  LuType,
 } from 'react-icons/lu';
 import LinkList from './LinkList';
 import LinkModal from './LinkModal';
+import HeaderModal from './HeaderModal';
 import StatsCard from './StatsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -53,6 +55,7 @@ export default function LinksTabContent({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [folderCounts, setFolderCounts] = useState<Record<string, number>>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(action === 'add');
+  const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
   const [prevAction, setPrevAction] = useState(action);
 
   if (action !== prevAction) {
@@ -231,6 +234,15 @@ export default function LinksTabContent({
           ) : (
             <>
               <Button
+                variant='outline'
+                size='sm'
+                className='font-medium shadow-sm mr-2'
+                onClick={() => setIsHeaderModalOpen(true)}
+              >
+                <LuType className='w-4 h-4 mr-2' />
+                Add Header
+              </Button>
+              <Button
                 size='sm'
                 className='font-medium shadow-md shadow-primary/20'
                 onClick={() => handleOpenChange(true)}
@@ -243,6 +255,14 @@ export default function LinksTabContent({
                 parentId={currentFolderId}
                 open={isAddModalOpen}
                 onOpenChange={handleOpenChange}
+                onSuccess={async () => {
+                  await refreshCurrentView();
+                }}
+              />
+              <HeaderModal
+                parentId={currentFolderId}
+                open={isHeaderModalOpen}
+                onOpenChange={setIsHeaderModalOpen}
                 onSuccess={async () => {
                   await refreshCurrentView();
                 }}

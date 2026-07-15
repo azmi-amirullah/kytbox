@@ -14,6 +14,7 @@ export const linkDtoSchema = z.object({
   is_active: z.catch(z.boolean(), true),
   sort_order: z.catch(z.number(), 0),
   is_folder: z.catch(z.boolean(), false),
+  is_header: z.catch(z.boolean(), false),
   parent_id: z.catch(z.union([z.string(), z.null()]), null),
   clicks: z.catch(z.union([z.number(), z.null()]), null),
   animation_type: z.catch(z.union([z.string(), z.null()]), null),

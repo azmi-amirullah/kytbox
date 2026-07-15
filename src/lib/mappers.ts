@@ -48,6 +48,7 @@ export function mapLinkToDTO(row: {
   is_active?: boolean | null;
   sort_order?: number | null;
   is_folder?: boolean | null;
+  is_header?: boolean | null;
   parent_id?: string | null;
   clicks?: number | null;
   animation_type?: string | null;
@@ -63,6 +64,7 @@ export function mapLinkToDTO(row: {
     is_active: !!row.is_active,
     sort_order: row.sort_order ?? 0,
     is_folder: !!row.is_folder,
+    is_header: !!row.is_header,
     parent_id: row.parent_id ?? null,
     clicks: row.clicks ?? null,
     animation_type: row.animation_type ?? null,

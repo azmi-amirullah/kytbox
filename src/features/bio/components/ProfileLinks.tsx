@@ -18,10 +18,13 @@ interface ProfileLinksProps {
     is_active: boolean;
     short_id?: string | number | null;
     is_folder?: boolean;
+    is_header?: boolean;
     parent_id?: string | null;
     sort_order?: number | null;
     animation_type?: string | null;
     child_count?: number;
+    scheduled_at?: string | null;
+    expires_at?: string | null;
   }[];
   username: string;
   profileId: string;
@@ -43,7 +46,13 @@ export default function ProfileLinks({
   const { colors } = theme;
   const [links, setLinks] = useState(initialLinks);
   const [localTotalLinks, setLocalTotalLinks] = useState(totalLinks);
-  const activeLinks = links.filter((l) => l.is_active);
+  const activeLinks = links.filter((l) => {
+    if (!l.is_active) return false;
+    const now = new Date();
+    if (l.scheduled_at && new Date(l.scheduled_at) > now) return false;
+    if (l.expires_at && new Date(l.expires_at) < now) return false;
+    return true;
+  });
 
   // Sync state if initialLinks prop changes (e.g. from server-side navigation or dashboard pagination)
   useEffect(() => {
@@ -186,6 +195,7 @@ export default function ProfileLinks({
     ? activeLinks.filter(
         (l) =>
           !l.is_folder &&
+          !l.is_header &&
           l.title.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : activeLinks.filter((l) =>
@@ -329,10 +339,18 @@ export default function ProfileLinks({
               return (
                 <div
                   key={link.id}
-                  className='animate-in fade-in slide-in-from-bottom-4 duration-250 transition-all fill-mode-both'
+                  className='animate-in fade-in slide-in-from-bottom-4 duration-250 transition-all fill-mode-both w-full'
                   style={{ animationDelay: `${index * 25}ms` }}
                 >
-                  {link.is_folder ? (
+                  {link.is_header ? (
+                    <div className="w-full py-3 flex items-center gap-3" style={{ color: colors.textPrimary }}>
+                      <div className="h-px flex-1 bg-current opacity-20" />
+                      <span className="text-sm font-semibold tracking-wide uppercase opacity-70">
+                        {link.title}
+                      </span>
+                      <div className="h-px flex-1 bg-current opacity-20" />
+                    </div>
+                  ) : link.is_folder ? (
                     <button
                       onClick={() => handleDrillDown(link.id)}
                       className={cn(

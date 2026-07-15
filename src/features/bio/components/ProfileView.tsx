@@ -36,9 +36,12 @@ interface ProfileViewProps {
     is_active: boolean;
     short_id?: string | number | null;
     is_folder?: boolean;
+    is_header?: boolean;
     parent_id?: string | null;
     child_count?: number;
     animation_type?: string | null;
+    scheduled_at?: string | null;
+    expires_at?: string | null;
   }[];
   totalLinks?: number;
   isLoading?: boolean;
