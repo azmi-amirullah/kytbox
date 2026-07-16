@@ -796,12 +796,14 @@ export async function subscribeToPublicCashflow(cashflowId: string) {
 export async function generateRecurringEntries(
   cashflowId: string,
   targetYear?: number,
-  targetMonth?: number
+  targetMonth?: number,
+  generatePast?: boolean
 ) {
   const parsed = generateRecurringSchema.safeParse({
     cashflowId,
     targetYear,
     targetMonth,
+    generatePast,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
@@ -837,6 +839,7 @@ export async function generateRecurringEntries(
   const now = new Date();
   const currentMonth = targetMonth !== undefined ? targetMonth : now.getMonth();
   const currentYear = targetYear !== undefined ? targetYear : now.getFullYear();
+  const currentMonthStart = new Date(currentYear, currentMonth, 1);
 
   // Active recurring series are those where the latest entry in the series is marked recurring
   // (allEntries from RPC is already grouped by description+type and sorted to have the latest entry)
@@ -859,6 +862,117 @@ export async function generateRecurringEntries(
 
   const formatLocalYYYYMMDD = (year: number, month: number, day: number) =>
     `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+  // If generating past entries
+  if (parsed.data.generatePast) {
+    // Find the earliest date among recurring series
+    let earliestDateStr = formatLocalYYYYMMDD(currentYear, currentMonth, 1);
+    for (const entry of uniqueRecurring) {
+      if (entry.date < earliestDateStr) {
+        earliestDateStr = entry.date;
+      }
+    }
+
+    const [earliestYear, earliestMonth] = earliestDateStr.split('-').map(Number);
+    const scanStart = formatLocalYYYYMMDD(earliestYear, earliestMonth - 1, 1);
+    const lastDayCurrentMonth = new Date(currentYear, currentMonth + 1, 0);
+    const currentMonthEnd = formatLocalYYYYMMDD(
+      lastDayCurrentMonth.getFullYear(),
+      lastDayCurrentMonth.getMonth(),
+      lastDayCurrentMonth.getDate()
+    );
+
+    const { data: existingPastEntries, error: pastError } = await supabase
+      .from('cashflow_entries')
+      .select('description, type, amount, date')
+      .eq('cashflow_id', cashflowId)
+      .gte('date', scanStart)
+      .lte('date', currentMonthEnd);
+
+    if (pastError) {
+      console.error('Failed to fetch existing past entries:', pastError);
+      return { error: 'Failed to check past entries' };
+    }
+
+    const pastExistingSet = new Set(
+      (existingPastEntries || []).map((e) => {
+        const [y, m] = e.date.split('-').map(Number);
+        return `${y}|${m - 1}|${e.description.trim().toLowerCase()}|${e.type}`;
+      })
+    );
+
+    const toInsert: Array<{
+      cashflow_id: string;
+      description: string;
+      type: 'income' | 'expense';
+      amount: number;
+      category: string | null;
+      date: string;
+      is_recurring: boolean;
+      recurrence_interval: 'monthly' | 'yearly' | null;
+      yearly_calculation: 'prorated' | 'exact' | null;
+    }> = [];
+    for (const entry of uniqueRecurring) {
+      const [entryYear, entryMonthNumber, entryDay] = entry.date.split('-').map(Number);
+      
+      const tempDate = new Date(entryYear, entryMonthNumber - 1, 1);
+      while (tempDate <= currentMonthStart) {
+        const y = tempDate.getFullYear();
+        const m = tempDate.getMonth();
+
+        // Check if yearly and not anniversary
+        if (entry.recurrence_interval === 'yearly' && (entryMonthNumber - 1) !== m) {
+          tempDate.setMonth(tempDate.getMonth() + 1);
+          continue;
+        }
+
+        const lastDayOfTempMonth = new Date(y, m + 1, 0).getDate();
+        const targetDay = Math.min(entryDay, lastDayOfTempMonth);
+
+        // If it's the current month, verify it is not in the future relative to today's local date
+        if (y === currentYear && m === currentMonth) {
+          const todayDay = now.getDate();
+          if (targetDay > todayDay) {
+            tempDate.setMonth(tempDate.getMonth() + 1);
+            continue;
+          }
+        }
+
+        const key = `${y}|${m}|${entry.description.trim().toLowerCase()}|${entry.type}`;
+        if (!pastExistingSet.has(key)) {
+          const formattedDate = formatLocalYYYYMMDD(y, m, targetDay);
+
+          toInsert.push({
+            cashflow_id: cashflowId,
+            description: entry.description.trim(),
+            type: entry.type === 'income' ? 'income' : 'expense',
+            amount: entry.amount,
+            category: entry.category,
+            date: formattedDate,
+            is_recurring: true,
+            recurrence_interval: entry.recurrence_interval === 'monthly' ? 'monthly' : entry.recurrence_interval === 'yearly' ? 'yearly' : null,
+            yearly_calculation: entry.yearly_calculation === 'prorated' ? 'prorated' : entry.yearly_calculation === 'exact' ? 'exact' : null,
+          });
+        }
+        tempDate.setMonth(tempDate.getMonth() + 1);
+      }
+    }
+
+    if (toInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from('cashflow_entries')
+        .insert(toInsert);
+
+      if (insertError) {
+        console.error('Failed to insert past recurring entries:', insertError);
+        return { error: 'Failed to generate past entries' };
+      }
+    }
+
+    revalidatePath('/cashflow');
+    revalidatePath(`/cashflow/${cashflowId}`);
+    return { generated: toInsert.length };
+  }
 
   // Get all entries for the current month to check for existing entries
   const monthStart = formatLocalYYYYMMDD(currentYear, currentMonth, 1);
@@ -900,8 +1014,37 @@ export async function generateRecurringEntries(
         is_recurring: true,
         recurrence_interval: entry.recurrence_interval,
         yearly_calculation: entry.yearly_calculation,
+        targetDay,
       };
-    });
+    })
+    .filter((entry) => {
+      const todayDay = now.getDate();
+      const todayMonth = now.getMonth();
+      const todayYear = now.getFullYear();
+
+      // Check if target date is in the future relative to current local date
+      const isFuture =
+        currentYear > todayYear ||
+        (currentYear === todayYear && currentMonth > todayMonth) ||
+        (currentYear === todayYear && currentMonth === todayMonth && entry.targetDay > todayDay);
+
+      // Since this block is only reached for "Generate Early", we only generate future entries
+      if (!isFuture) {
+        return false;
+      }
+      return true;
+    })
+    .map((entry) => ({
+      cashflow_id: entry.cashflow_id,
+      description: entry.description,
+      type: entry.type === 'income' ? 'income' : 'expense',
+      amount: entry.amount,
+      category: entry.category,
+      date: entry.date,
+      is_recurring: entry.is_recurring,
+      recurrence_interval: entry.recurrence_interval === 'monthly' ? 'monthly' : entry.recurrence_interval === 'yearly' ? 'yearly' : null,
+      yearly_calculation: entry.yearly_calculation === 'prorated' ? 'prorated' : entry.yearly_calculation === 'exact' ? 'exact' : null,
+    }));
 
   if (toInsert.length > 0) {
     const { error: insertError } = await supabase

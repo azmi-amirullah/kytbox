@@ -12,6 +12,8 @@ import {
   ticketStatusSchema,
   ticketCategorySchema,
 } from '@/lib/validation.schemas';
+import { generateRecurringSchema } from '@/features/cashflow/schemas.server';
+
 
 // ==========================================
 // AUTH SCHEMAS
@@ -292,4 +294,32 @@ describe('ticketStatusSchema', () => {
 describe('ticketCategorySchema', () => {
   it('parses valid category', () => expect(ticketCategorySchema.parse('billing')).toBe('billing'));
   it('falls back to "general" for invalid category', () => expect(ticketCategorySchema.parse('????')).toBe('general'));
+});
+
+describe('generateRecurringSchema', () => {
+  const validData = {
+    cashflowId: '123e4567-e89b-12d3-a456-426614174000',
+  };
+
+  it('accepts valid data with required fields only', () => {
+    const result = generateRecurringSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts valid data with generatePast=true', () => {
+    const result = generateRecurringSchema.safeParse({ ...validData, generatePast: true });
+    expect(result.success).toBe(true);
+    expect(result.data?.generatePast).toBe(true);
+  });
+
+  it('accepts valid data with generatePast=false', () => {
+    const result = generateRecurringSchema.safeParse({ ...validData, generatePast: false });
+    expect(result.success).toBe(true);
+    expect(result.data?.generatePast).toBe(false);
+  });
+
+  it('rejects invalid cashflowId', () => {
+    const result = generateRecurringSchema.safeParse({ cashflowId: 'invalid' });
+    expect(result.success).toBe(false);
+  });
 });

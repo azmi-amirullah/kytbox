@@ -488,15 +488,15 @@ export async function generateRecurringEntries(cashflowId: string) {
 - Each generated entry has a small recurrence icon (🔄) badge in the table
 
 **Acceptance Criteria:**
-- [ ] "Generate Recurring" button appears when recurring entries are missing for current month
-- [ ] Clicking generates all missing entries for the current month
-- [ ] Duplicate detection: won't re-create if matching entry already exists this month
-- [ ] Day-of-month preserved from original (e.g., "15th" stays on 15th)
-- [ ] Handles month-end edge cases (Jan 31 → Feb 28)
-- [ ] Entries inherit category, recurrence settings from original
-- [ ] Success toast shows count
-- [ ] Banner disappears after generation (all caught up)
-- [ ] Only owner can generate (ownership check)
+- [x] "Generate Recurring" button appears when recurring entries are missing for current month
+- [x] Clicking generates all missing entries for the current month
+- [x] Duplicate detection: won't re-create if matching entry already exists this month
+- [x] Day-of-month preserved from original (e.g., "15th" stays on 15th)
+- [x] Handles month-end edge cases (Jan 31 → Feb 28)
+- [x] Entries inherit category, recurrence settings from original
+- [x] Success toast shows count
+- [x] Banner disappears after generation (all caught up)
+- [x] Only owner can generate (ownership check)
 
 ---
 
@@ -639,7 +639,7 @@ async function completeOnboarding() {
 
 ### Day 10 — Monday, Jul 20 | ✨ Feature
 
-#### Sentry Error Tracking
+#### 1. Sentry Error Tracking
 
 **Why**: When users hit bugs in production, you currently have **zero visibility**. The `console.error` in `error.tsx` writes to the server log that nobody reads. Sentry captures exact errors, stack traces, browser info, user context, and sends real-time alerts. Non-negotiable for any product heading toward real users.
 
@@ -697,14 +697,28 @@ useEffect(() => {
 - [ ] Server errors captured with stack trace + route info
 - [ ] Error boundaries send to Sentry automatically
 - [ ] Source maps uploaded during build (dev sees original code in Sentry)
-- [ ] Build succeeds with Sentry (no breaking changes)
 - [ ] Optional: works fine when SENTRY_DSN is empty (dev mode)
+
+#### 2. Cashflow: Entry Searchbar
+
+**Why**: Finding specific transactions (e.g. "Netflix", "grocery") in a large ledger is tedious. Dynamic description-based search solves this.
+
+**Database Changes**: None.
+
+**Files to Modify:**
+- `src/features/cashflow/components/CashflowDetail.tsx` — Add search input and apply case-insensitive description filtering.
+
+**Acceptance Criteria:**
+- [ ] Search input above transaction list
+- [ ] Instant case-insensitive filtering of entries
+- [ ] Clean empty state when no results match
+- [ ] Clear button in search input to reset search
 
 ---
 
 ### Day 11 — Tuesday, Jul 21 | ✨ Feature
 
-#### Landing Page Premium Redesign
+#### 1. Landing Page Premium Redesign
 
 **Why**: The marketing page at `/` is the first thing potential users see. It needs to scream premium. Current page has basic app cards. Competitors like Linktree have beautiful, animated landing pages.
 
@@ -756,6 +770,20 @@ useEffect(() => {
 - [ ] CTA buttons link to `/signup`
 - [ ] Page loads fast (< 2s LCP) — no heavy images, CSS-only effects
 - [ ] Accessible: proper heading hierarchy, sufficient contrast
+
+#### 2. Cashflow: Entry Filters (Category/Type)
+
+**Why**: Users need to isolate transaction types (income/expense) or specific categories ("Food", "Bills") combined with the search and date filters.
+
+**Database Changes**: None.
+
+**Files to Modify:**
+- `src/features/cashflow/components/CashflowDetail.tsx` — Add category and type select dropdowns.
+
+**Acceptance Criteria:**
+- [ ] Dropdowns for type (All/Income/Expense) and category (All + unique categories).
+- [ ] Filters are multi-criteria (combine with search query and date filter).
+- [ ] Clear filters action.
 
 ---
 
