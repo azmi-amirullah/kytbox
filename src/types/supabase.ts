@@ -783,6 +783,12 @@ export type Database = {
         Returns: undefined
       }
       reorder_list_items: { Args: { p_item_ids: string[] }; Returns: undefined }
+      get_latest_recurring_templates: {
+        Args: {
+          p_cashflow_id: string
+        }
+        Returns: Database['public']['Tables']['cashflow_entries']['Row'][]
+      }
     }
     Enums: {
       [_ in never]: never

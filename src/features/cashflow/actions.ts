@@ -784,11 +784,9 @@ export async function generateRecurringEntries(
     return { error: 'Cashflow not found or access denied' };
   }
 
-  // Get all entries to determine active recurring series
+  // Get active templates via database RPC
   const { data: allEntries, error: fetchError } = await supabase
-    .from('cashflow_entries')
-    .select('id, description, type, amount, category, date, is_recurring, recurrence_interval, yearly_calculation')
-    .eq('cashflow_id', cashflowId);
+    .rpc('get_latest_recurring_templates', { p_cashflow_id: cashflowId });
 
   if (fetchError) {
     console.error('Failed to fetch entries:', fetchError);
