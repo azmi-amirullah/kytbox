@@ -152,7 +152,139 @@ describe('calculateProjections', () => {
     // Result: 1800
     expect(result.projectedResult).toBe(1800);
   });
+
+  it('deduplicates recurring items of the same series to avoid double-counting in projections', () => {
+    const entries = [
+      createEntry({
+        id: 'entry-1',
+        description: 'Netflix Subscription',
+        amount: 15,
+        type: 'expense',
+        date: '2026-01-15',
+        is_recurring: true,
+        recurrence_interval: 'monthly'
+      }),
+      createEntry({
+        id: 'entry-2',
+        description: 'Netflix Subscription',
+        amount: 15,
+        type: 'expense',
+        date: '2026-02-15',
+        is_recurring: true,
+        recurrence_interval: 'monthly'
+      }),
+      createEntry({
+        id: 'entry-3',
+        description: 'Netflix Subscription',
+        amount: 15,
+        type: 'expense',
+        date: '2026-03-15',
+        is_recurring: true,
+        recurrence_interval: 'monthly'
+      }),
+    ];
+
+    const result = calculateProjections(entries, TODAY);
+    
+    // Settled: Netflix has occurred in Jan, Feb, March (today is 15th, so March 15 is settled)
+    // Realized Expense: 15 + 15 + 15 = 45
+    // Upcoming projection: Netflix should only project for April (1 occurrence).
+    // If it was not deduplicated, it would project April for ALL 3 entries, multiplying upcoming expenses by 3.
+    // With deduplication, upcomingMonthlyExpenses should be exactly 15 (1 * 15).
+    expect(result.upcomingMonthlyExpenses).toBe(15);
+    
+    // Only 1 recurring item should have non-zero projected amount
+    const recurringItemsWithProjections = result.recurringItems.filter(item => item.projectedAmount > 0);
+    expect(recurringItemsWithProjections).toHaveLength(1);
+    expect(recurringItemsWithProjections[0].id).toBe('entry-3');
+  });
+
+  it('does not project cancelled recurring items if the latest entry in the series is not recurring', () => {
+    const entries = [
+      createEntry({
+        id: 'entry-1',
+        description: 'Gym Membership',
+        amount: 50,
+        type: 'expense',
+        date: '2026-01-10',
+        is_recurring: true,
+        recurrence_interval: 'monthly'
+      }),
+      createEntry({
+        id: 'entry-2',
+        description: 'Gym Membership',
+        amount: 50,
+        type: 'expense',
+        date: '2026-02-10',
+        is_recurring: true,
+        recurrence_interval: 'monthly'
+      }),
+      createEntry({
+        id: 'entry-3',
+        description: 'Gym Membership',
+        amount: 50,
+        type: 'expense',
+        date: '2026-03-10',
+        is_recurring: false, // Cancelled this month
+        recurrence_interval: null
+      }),
+    ];
+
+    const result = calculateProjections(entries, TODAY);
+    
+    // Gym Membership is cancelled (latest is entry-3, which is_recurring = false)
+    // So there should be no upcoming projections for it.
+    expect(result.upcomingMonthlyExpenses).toBe(0);
+    const recurringItemsWithProjections = result.recurringItems.filter(item => item.projectedAmount > 0);
+    expect(recurringItemsWithProjections).toHaveLength(0);
+  });
+
+  it('projects only the latest price/interval when a recurring item changes price', () => {
+    const entries = [
+      createEntry({
+        id: 'entry-1',
+        description: 'Spotify Premium',
+        amount: 10,
+        type: 'expense',
+        date: '2026-01-05',
+        is_recurring: true,
+        recurrence_interval: 'monthly'
+      }),
+      createEntry({
+        id: 'entry-2',
+        description: 'Spotify Premium',
+        amount: 10,
+        type: 'expense',
+        date: '2026-02-05',
+        is_recurring: true,
+        recurrence_interval: 'monthly'
+      }),
+      createEntry({
+        id: 'entry-3',
+        description: 'Spotify Premium',
+        amount: 12, // Price went up to 12
+        type: 'expense',
+        date: '2026-03-05',
+        is_recurring: true,
+        recurrence_interval: 'monthly'
+      }),
+    ];
+
+    const result = calculateProjections(entries, TODAY);
+
+    // Spotify Premium price was increased to 12. Only the latest ($12) should project.
+    // Settled: Spotify has occurred in Jan, Feb, March (all before TODAY March 15)
+    // Upcoming projection: Spotify should only project for April (1 occurrence).
+    // Expected upcoming expense for Spotify is 12 (not 10, and not 10 + 12).
+    expect(result.upcomingMonthlyExpenses).toBe(12);
+
+    const recurringItemsWithProjections = result.recurringItems.filter(item => item.projectedAmount > 0);
+    expect(recurringItemsWithProjections).toHaveLength(1);
+    expect(recurringItemsWithProjections[0].id).toBe('entry-3');
+    expect(recurringItemsWithProjections[0].amount).toBe(12);
+  });
 });
+
 
 describe('calculateBudgetStatus', () => {
   const budget: CashflowBudgetDTO = {

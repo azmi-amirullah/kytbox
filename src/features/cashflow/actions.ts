@@ -8,6 +8,7 @@ import {
   updateCashflowEntrySchema,
   cashflowBudgetSchema,
   deleteCashflowBudgetSchema,
+  generateRecurringSchema,
 } from './schemas.server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
@@ -754,3 +755,141 @@ export async function subscribeToPublicCashflow(cashflowId: string) {
   revalidatePath(`/cashflow/${cashflowId}`);
   return { success: true, data };
 }
+
+export async function generateRecurringEntries(
+  cashflowId: string,
+  targetYear?: number,
+  targetMonth?: number
+) {
+  const parsed = generateRecurringSchema.safeParse({
+    cashflowId,
+    targetYear,
+    targetMonth,
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const { user, supabase } = await getAuthenticatedUser();
+
+  // Verify ownership
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id')
+    .eq('id', cashflowId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!cashflow) {
+    return { error: 'Cashflow not found or access denied' };
+  }
+
+  // Get all entries to determine active recurring series
+  const { data: allEntries, error: fetchError } = await supabase
+    .from('cashflow_entries')
+    .select('id, description, type, amount, category, date, is_recurring, recurrence_interval, yearly_calculation')
+    .eq('cashflow_id', cashflowId);
+
+  if (fetchError) {
+    console.error('Failed to fetch entries:', fetchError);
+    return { error: 'Failed to fetch entries' };
+  }
+
+  if (!allEntries || allEntries.length === 0) {
+    return { generated: 0 };
+  }
+
+  const now = new Date();
+  const currentMonth = targetMonth !== undefined ? targetMonth : now.getMonth();
+  const currentYear = targetYear !== undefined ? targetYear : now.getFullYear();
+
+  // Group all entries by description + type (case-insensitive) to find the absolute latest entry of each series
+  const latestSeriesMap = new Map<string, typeof allEntries[number]>();
+  for (const entry of allEntries) {
+    const key = `${entry.description.trim().toLowerCase()}|${entry.type}`;
+    const existing = latestSeriesMap.get(key);
+    if (!existing || entry.date > existing.date) {
+      latestSeriesMap.set(key, entry);
+    }
+  }
+
+  // Active recurring series are those where the latest entry in the series is marked recurring
+  const uniqueRecurring = Array.from(latestSeriesMap.values()).filter((e) => {
+    if (!e.is_recurring) return false;
+
+    // Check if the template starts in the future relative to target month/year
+    const [entryYear, entryMonthNumber] = e.date.split('-').map(Number);
+    if (entryYear > currentYear || (entryYear === currentYear && entryMonthNumber - 1 > currentMonth)) {
+      return false;
+    }
+
+    // If yearly, only generate in the anniversary month
+    if (e.recurrence_interval === 'yearly' && entryMonthNumber - 1 !== currentMonth) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const formatLocalYYYYMMDD = (year: number, month: number, day: number) =>
+    `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+  // Get all entries for the current month to check for existing entries
+  const monthStart = formatLocalYYYYMMDD(currentYear, currentMonth, 1);
+  const monthEnd = formatLocalYYYYMMDD(currentYear, currentMonth, new Date(currentYear, currentMonth + 1, 0).getDate());
+
+  const { data: existingThisMonth, error: existingError } = await supabase
+    .from('cashflow_entries')
+    .select('description, type, amount')
+    .eq('cashflow_id', cashflowId)
+    .gte('date', monthStart)
+    .lte('date', monthEnd);
+
+  if (existingError) {
+    console.error('Failed to fetch existing entries:', existingError);
+    return { error: 'Failed to check existing entries' };
+  }
+
+  const existingSet = new Set(
+    (existingThisMonth || []).map((e) => `${e.description.trim().toLowerCase()}|${e.type}`)
+  );
+
+  // Generate missing entries
+  const toInsert = uniqueRecurring
+    .filter((entry) => !existingSet.has(`${entry.description.trim().toLowerCase()}|${entry.type}`))
+    .map((entry) => {
+      const [, , entryDay] = entry.date.split('-').map(Number);
+      // Handle month-end cases (e.g. 31st of Jan -> 28th of Feb)
+      const lastDayOfCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const targetDay = Math.min(entryDay, lastDayOfCurrentMonth);
+      const formattedDate = formatLocalYYYYMMDD(currentYear, currentMonth, targetDay);
+
+      return {
+        cashflow_id: cashflowId,
+        description: entry.description.trim(),
+        type: entry.type,
+        amount: entry.amount,
+        category: entry.category,
+        date: formattedDate,
+        is_recurring: true,
+        recurrence_interval: entry.recurrence_interval,
+        yearly_calculation: entry.yearly_calculation,
+      };
+    });
+
+  if (toInsert.length > 0) {
+    const { error: insertError } = await supabase
+      .from('cashflow_entries')
+      .insert(toInsert);
+
+    if (insertError) {
+      console.error('Failed to insert recurring entries:', insertError);
+      return { error: 'Failed to generate entries' };
+    }
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { generated: toInsert.length };
+}
+

@@ -39,3 +39,10 @@ export const cashflowBudgetSchema = z.object({
 export const deleteCashflowBudgetSchema = z.object({
   budgetId: z.uuid({ message: 'Invalid budget ID' }),
 });
+
+export const generateRecurringSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  targetYear: z.number().int().min(2000).max(2100).optional(),
+  targetMonth: z.number().int().min(0).max(11).optional(),
+});
+

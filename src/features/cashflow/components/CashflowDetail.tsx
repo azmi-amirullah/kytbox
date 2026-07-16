@@ -51,7 +51,7 @@ import type {
   CashflowBudgetDTO,
 } from '@/types/dto';
 import { formatCurrencyCompact } from '@/lib/currency';
-import { deleteCashflow, deleteEntry } from '../actions';
+import { deleteCashflow, deleteEntry, generateRecurringEntries } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
 import ShareModal from './ShareModal';
@@ -216,6 +216,92 @@ export default function CashflowDetail({
   // ────────────────────────────────────────────────────────────────────────────────
 
   const canEdit = isOwner || userRole === 'edit';
+
+  const [isGeneratingRecurring, setIsGeneratingRecurring] = useState(false);
+
+  const missingRecurringCount = useMemo(() => {
+    if (userRole !== 'owner') return 0;
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Group all entries by description + type (case-insensitive) to find the absolute latest entry of each series
+    const latestSeriesMap = new Map<string, typeof entries[number]>();
+    for (const entry of entries) {
+      const key = `${entry.description.trim().toLowerCase()}|${entry.type}`;
+      const existing = latestSeriesMap.get(key);
+      if (!existing || entry.date > existing.date) {
+        latestSeriesMap.set(key, entry);
+      }
+    }
+    const uniqueRecurring = Array.from(latestSeriesMap.values()).filter((e) => {
+      if (!e.is_recurring) return false;
+
+      // Check if the template starts in the future relative to target month/year
+      const [entryYear, entryMonthNumber] = e.date.split('-').map(Number);
+      if (entryYear > currentYear || (entryYear === currentYear && entryMonthNumber - 1 > currentMonth)) {
+        return false;
+      }
+
+      // If yearly, only generate in the anniversary month
+      if (e.recurrence_interval === 'yearly' && entryMonthNumber - 1 !== currentMonth) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (uniqueRecurring.length === 0) return 0;
+
+    // Get all entries for the current month
+    const existingThisMonth = entries.filter((e) => {
+      const [year, month] = e.date.split('-').map(Number);
+      return year === currentYear && month - 1 === currentMonth;
+    });
+
+    const existingSet = new Set(
+      existingThisMonth.map((e) => `${e.description.trim().toLowerCase()}|${e.type}`)
+    );
+
+    // Count how many unique templates do not exist in the current month
+    let missingCount = 0;
+    for (const entry of uniqueRecurring) {
+      const key = `${entry.description.trim().toLowerCase()}|${entry.type}`;
+      if (!existingSet.has(key)) {
+        missingCount++;
+      }
+    }
+
+    return missingCount;
+  }, [entries, userRole]);
+
+  async function handleGenerateRecurring() {
+    setIsGeneratingRecurring(true);
+    try {
+      const now = new Date();
+      const result = await generateRecurringEntries(
+        cashflow.id,
+        now.getFullYear(),
+        now.getMonth()
+      );
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.generated !== undefined) {
+        if (result.generated > 0) {
+          toast.success(`Generated ${result.generated} recurring ${result.generated === 1 ? 'entry' : 'entries'}`);
+          router.refresh();
+        } else {
+          toast.info('No recurring entries to generate');
+        }
+      }
+    } catch (err) {
+      console.error('Error generating recurring entries:', err);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsGeneratingRecurring(false);
+    }
+  }
 
   // Calculate stats from filtered entries
   const income = filteredEntries
@@ -479,6 +565,37 @@ export default function CashflowDetail({
           </div>
         </div>
       </div>
+
+      {/* Recurring Entry Generation Banner */}
+      {missingRecurringCount > 0 && (
+        <div className='bg-emerald-50/30 border border-emerald-200/30 dark:bg-emerald-950/10 dark:border-emerald-800/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2 bg-emerald-50/50 border border-emerald-200/30 dark:bg-emerald-950/40 rounded-lg text-emerald-600 dark:text-emerald-400'>
+              <LuRepeat className='w-5 h-5 animate-pulse' />
+            </div>
+            <div>
+              <p className='font-semibold text-sm text-foreground'>
+                {missingRecurringCount} recurring {missingRecurringCount === 1 ? 'entry is' : 'entries are'} ready for {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </p>
+              <p className='text-xs text-muted-foreground'>
+                Import your subscriptions and recurring transactions for this month.
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleGenerateRecurring}
+            disabled={isGeneratingRecurring}
+            className='gap-2 sm:self-center self-start shrink-0'
+          >
+            {isGeneratingRecurring ? (
+              <LuLoader className='w-4 h-4 animate-spin' />
+            ) : (
+              <LuRepeat className='w-4 h-4' />
+            )}
+            Generate
+          </Button>
+        </div>
+      )}
 
       {/* Summary Stats */}
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>

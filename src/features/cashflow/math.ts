@@ -98,6 +98,24 @@ export function calculateProjections(
     0
   );
 
+  // Group all entries by description + type (case-insensitive) to find the absolute latest entry of each series
+  const latestSeriesMap = new Map<string, typeof entries[number]>();
+  for (const entry of entries) {
+    const key = `${entry.description.trim().toLowerCase()}|${entry.type}`;
+    const existing = latestSeriesMap.get(key);
+    if (!existing || entry.date > existing.date) {
+      latestSeriesMap.set(key, entry);
+    }
+  }
+
+  // Active recurring series are those where the latest entry in the series is marked recurring
+  const latestRecurringIds = new Set<string>();
+  for (const entry of latestSeriesMap.values()) {
+    if (entry.is_recurring) {
+      latestRecurringIds.add(entry.id);
+    }
+  }
+
   const recurringList: RecurringItemEnriched[] = [];
 
   for (const entry of entries) {
@@ -117,7 +135,7 @@ export function calculateProjections(
       if (entry.type === 'expense') realizedExpense += amount;
     }
 
-    if (entry.is_recurring) {
+    if (entry.is_recurring && latestRecurringIds.has(entry.id)) {
       let multiplier = 0;
       let monthlyEquivalent = 0;
 
