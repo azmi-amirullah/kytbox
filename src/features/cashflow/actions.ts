@@ -185,6 +185,24 @@ export async function addEntry(formData: FormData) {
     return { error: permission.error || 'Access denied' };
   }
 
+  // Prevent accidental recurring series cancellation
+  if (!is_recurring) {
+    const { data: activeTemplates } = await supabase
+      .rpc('get_latest_recurring_templates', { p_cashflow_id: cashflowId });
+
+    if (activeTemplates) {
+      const isKillingSeries = activeTemplates.some((t) => 
+        t.is_recurring && 
+        t.type === type && 
+        t.description.trim().toLowerCase() === description.trim().toLowerCase()
+      );
+
+      if (isKillingSeries) {
+        return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
+      }
+    }
+  }
+
   const { error } = await supabase.from('cashflow_entries').insert({
     cashflow_id: cashflowId,
     description: description.trim(),
@@ -252,6 +270,25 @@ export async function updateEntry(entryId: string, formData: FormData) {
   );
   if (!permission.canEdit) {
     return { error: permission.error || 'Access denied' };
+  }
+
+  // Prevent accidental recurring series cancellation
+  if (!is_recurring) {
+    const { data: activeTemplates } = await supabase
+      .rpc('get_latest_recurring_templates', { p_cashflow_id: entry.cashflow_id });
+
+    if (activeTemplates) {
+      const isKillingSeries = activeTemplates.some((t) => 
+        t.is_recurring && 
+        t.type === type && 
+        t.description.trim().toLowerCase() === description.trim().toLowerCase() &&
+        t.id !== entryId
+      );
+
+      if (isKillingSeries) {
+        return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
+      }
+    }
   }
 
   const { error } = await supabase
@@ -801,18 +838,9 @@ export async function generateRecurringEntries(
   const currentMonth = targetMonth !== undefined ? targetMonth : now.getMonth();
   const currentYear = targetYear !== undefined ? targetYear : now.getFullYear();
 
-  // Group all entries by description + type (case-insensitive) to find the absolute latest entry of each series
-  const latestSeriesMap = new Map<string, typeof allEntries[number]>();
-  for (const entry of allEntries) {
-    const key = `${entry.description.trim().toLowerCase()}|${entry.type}`;
-    const existing = latestSeriesMap.get(key);
-    if (!existing || entry.date > existing.date) {
-      latestSeriesMap.set(key, entry);
-    }
-  }
-
   // Active recurring series are those where the latest entry in the series is marked recurring
-  const uniqueRecurring = Array.from(latestSeriesMap.values()).filter((e) => {
+  // (allEntries from RPC is already grouped by description+type and sorted to have the latest entry)
+  const uniqueRecurring = allEntries.filter((e) => {
     if (!e.is_recurring) return false;
 
     // Check if the template starts in the future relative to target month/year
