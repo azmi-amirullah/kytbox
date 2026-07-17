@@ -1,16 +1,17 @@
 import { z } from 'zod';
+import {
+  shareRoleSchema,
+  recurrenceIntervalSchema,
+  yearlyCalculationSchema,
+  dtoShareRoleSchema,
+} from '@/lib/validation.schemas';
 
-export const shareRoleSchema = z
-  .enum(['owner', 'edit', 'read', 'public'])
-  .catch('read');
-
-export const recurrenceIntervalSchema = z.enum(['monthly', 'yearly']).nullable();
-
-export const yearlyCalculationSchema = z.enum(['prorated', 'exact']).nullable();
-
-export const dtoShareRoleSchema = z
-  .string()
-  .transform((v): 'editor' | 'viewer' => (v === 'edit' ? 'editor' : 'viewer'));
+export {
+  shareRoleSchema,
+  recurrenceIntervalSchema,
+  yearlyCalculationSchema,
+  dtoShareRoleSchema,
+};
 
 export const cashflowEntrySchema = z.object({
   description: z.string().min(1, 'Description is required'),
@@ -22,8 +23,8 @@ export const cashflowEntrySchema = z.object({
     .preprocess((val) => val === 'true' || val === true, z.boolean())
     .optional()
     .default(false),
-  recurrence_interval: z.enum(['monthly', 'yearly']).nullable().optional(),
-  yearly_calculation: z.enum(['prorated', 'exact']).nullable().optional(),
+  recurrence_interval: recurrenceIntervalSchema.optional(),
+  yearly_calculation: yearlyCalculationSchema.optional(),
 });
 
 export const updateCashflowEntrySchema = cashflowEntrySchema.extend({
