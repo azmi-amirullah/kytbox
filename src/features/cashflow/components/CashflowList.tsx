@@ -180,7 +180,7 @@ export default function CashflowList({
     <div className='space-y-6'>
       {/* Breadcrumbs */}
       <div>
-        <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
+        <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
           <Link
             href='/app'
             className='hover:text-foreground transition-colors'
@@ -188,7 +188,7 @@ export default function CashflowList({
             Kytbox
           </Link>
           <span className='text-muted-foreground'>/</span>
-          <span className='text-foreground font-medium'>Cashflow</span>
+          <span aria-current='page' className='text-foreground font-medium'>Cashflow</span>
         </nav>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
           <div>

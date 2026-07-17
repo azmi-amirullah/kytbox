@@ -529,6 +529,7 @@ export default function AppearanceEditor({
               <div className='flex bg-muted p-1 rounded-xl gap-1 w-fit overflow-x-auto no-scrollbar scroll-smooth'>
                 {themeCategories.map((cat) => (
                   <button
+                    type='button'
                     key={cat}
                     onClick={async () => {
                       setActiveCategory(cat);

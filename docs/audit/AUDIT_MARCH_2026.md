@@ -160,7 +160,7 @@ Major steps were taken to harden the application's infrastructure, such as white
 | ID | Issue | Severity | Status |
 | :--- | :--- | :--- | :--- |
 | **T1** | Set up comprehensive E2E tests for the support system messaging queues | 💡 Low | 🔲 Backlog |
-| **L1** | Linguistic Scale: Zero i18n localization infrastructure | ⚠️ Medium | ⏸️ Deferred (Roadmap) |
+| **L1** | Linguistic Scale: Zero i18n localization infrastructure | ⚠️ Medium | 🔲 Backlog |
 
 ### ✅ Resolved Actions
 
@@ -193,4 +193,5 @@ Major steps were taken to harden the application's infrastructure, such as white
 | **P2 — Medium** | **Q4**: React 19 `useActionState` form migration | ~3 hours | **FIXED** |
 | **P2 — Medium** | **E1**: Modal hydration fix, **P2**: Profile query dedup | ~4 hours | **FIXED** |
 | **P3 — Backlog** | **T1**: Support System E2E messaging tests | ~4 hours | **BACKLOG** |
+| **P3 — Backlog** | **L1**: i18n localization infrastructure | ~8 hours | **BACKLOG** |
 

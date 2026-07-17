@@ -41,7 +41,7 @@ export default async function AdminLayout({
   };
 
   return (
-    <div className='min-h-screen relative bg-background flex flex-col'>
+    <div className='min-h-screen relative bg-background flex flex-col pt-16'>
       <BackgroundBlobs />
       <Header
         variant='dashboard'
