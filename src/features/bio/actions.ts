@@ -698,6 +698,7 @@ export async function getAnalyticsData(
       topLinks: [],
       topReferer: null,
       userLinks: [],
+      countries: [],
     };
   }
 
@@ -716,6 +717,7 @@ export async function getAnalyticsData(
         topLinks: [],
         topReferer: null,
         userLinks,
+        countries: [],
       };
     }
     targetLinkIds = [linkId];
@@ -750,8 +752,8 @@ export async function getAnalyticsData(
       bucketInterval = 'hour';
   }
 
-  // Run all four major data-fetching queries in parallel for performance (Fix P1)
-  const [chartDataResult, topReferer, topLinks, totalViews] = await Promise.all([
+  // Run all five major data-fetching queries in parallel for performance (Fix P1)
+  const [chartDataResult, topReferer, topLinks, totalViews, countries] = await Promise.all([
     // 1. Chart Data & Clicks (with fallback wrapper)
     getAggregatedChartData(
       supabase,
@@ -795,6 +797,9 @@ export async function getAnalyticsData(
 
     // 4. Total Profile Views
     getTotalProfileViews(supabase, user.id, startDate),
+
+    // 5. Country Analytics
+    getCountryAnalyticsData(supabase, targetLinkIds, startDate),
   ]);
 
   const { chartData, totalClicks } = chartDataResult;
@@ -810,6 +815,7 @@ export async function getAnalyticsData(
     topLinks,
     topReferer,
     userLinks,
+    countries,
   };
 }
 
@@ -1167,4 +1173,57 @@ function groupEventsByTimeBucket(
     label,
     value,
   }));
+}
+
+// Get country analytics in range (try RPC first, fallback to client-side)
+async function getCountryAnalyticsData(
+  supabase: SupabaseClient,
+  linkIds: string[],
+  startDate: Date | null,
+): Promise<{ country: string; click_count: number }[]> {
+  try {
+    const { data, error } = await supabase.rpc('get_analytics_by_country', {
+      p_link_ids: linkIds,
+      p_start_date: startDate?.toISOString() || null,
+    });
+
+    if (!error && data) {
+      return data.map((row: { country: string | null; click_count: number }) => ({
+        country: row.country || 'Unknown',
+        click_count: Number(row.click_count),
+      }));
+    }
+    if (error) {
+      console.warn('RPC get_analytics_by_country failed, falling back to client-side:', error);
+    }
+  } catch (err) {
+    console.warn('RPC get_analytics_by_country exception:', err);
+  }
+
+  // Fallback: client-side
+  let query = supabase
+    .from('link_events')
+    .select('country')
+    .in('link_id', linkIds);
+
+  if (startDate) {
+    query = query.gte('created_at', startDate.toISOString());
+  }
+
+  const { data: events, error } = await query;
+
+  if (error || !events) {
+    console.error('getCountryAnalyticsData fallback error:', error);
+    return [];
+  }
+
+  const counts: Record<string, number> = {};
+  events.forEach((e) => {
+    const country = e.country || 'Unknown';
+    counts[country] = (counts[country] || 0) + 1;
+  });
+
+  return Object.entries(counts)
+    .map(([country, count]) => ({ country, click_count: count }))
+    .sort((a, b) => b.click_count - a.click_count);
 }

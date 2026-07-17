@@ -20,6 +20,11 @@ export interface TopLink {
   clicks: number;
 }
 
+export interface CountryAnalytics {
+  country: string;
+  click_count: number;
+}
+
 export interface AnalyticsData {
   chartData: ChartDataPoint[];
   totalClicks: number;
@@ -28,6 +33,7 @@ export interface AnalyticsData {
   topLinks: TopLink[];
   topReferer: string | null;
   userLinks: { id: string; title: string }[];
+  countries: CountryAnalytics[];
 }
 
 export interface Database {

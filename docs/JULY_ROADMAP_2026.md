@@ -284,15 +284,15 @@ export const linkScheduleSchema = z.object({
 ```
 
 **Acceptance Criteria:**
-- [ ] User can set start date on a link → link hidden on public page until that date
-- [ ] User can set end date → link auto-hides after expiry
-- [ ] User can set both → link visible only within the window
-- [ ] Dashboard shows schedule badges with human-readable dates
-- [ ] Expired links stay in dashboard (dimmed) but hidden on public page
-- [ ] Cache invalidation respects time-based visibility
-- [ ] No schedule = always visible (backward compatible)
-- [ ] Date pickers use native `<input type="datetime-local">`
-- [ ] Validation: end must be after start
+- [x] User can set start date on a link → link hidden on public page until that date
+- [x] User can set end date → link auto-hides after expiry
+- [x] User can set both → link visible only within the window
+- [x] Dashboard shows schedule badges with human-readable dates
+- [x] Expired links stay in dashboard (dimmed) but hidden on public page
+- [x] Cache invalidation respects time-based visibility
+- [x] No schedule = always visible (backward compatible)
+- [x] Date pickers use native `<input type="datetime-local">`
+- [x] Validation: end must be after start
 
 ---
 
@@ -382,14 +382,14 @@ export async function addHeader(title: string, parentId: string | null) {
 ```
 
 **Acceptance Criteria:**
-- [ ] "Add Header" button in dashboard creates a section divider
-- [ ] Headers render as styled dividers on public profile (title + horizontal lines)
-- [ ] Headers are draggable in the dashboard (reorder among links)
-- [ ] Headers work inside folders
-- [ ] Headers inherit theme colors on public page
-- [ ] Headers have no URL, no click tracking, no toggle
-- [ ] Edit modal: title field only
-- [ ] Delete works normally (with confirmation)
+- [x] "Add Header" button in dashboard creates a section divider
+- [x] Headers render as styled dividers on public profile (title + horizontal lines)
+- [x] Headers are draggable in the dashboard (reorder among links)
+- [x] Headers work inside folders
+- [x] Headers inherit theme colors on public page
+- [x] Headers have no URL, no click tracking, no toggle
+- [x] Edit modal: title field only
+- [x] Delete works normally (with confirmation)
 
 ---
 
@@ -559,15 +559,15 @@ const COUNTRY_FLAGS: Record<string, string> = {
 ```
 
 **Acceptance Criteria:**
-- [ ] Country breakdown table shows on analytics page
-- [ ] Sorted by click count descending
-- [ ] Flag emoji + country name + count + percentage + visual bar
-- [ ] Respects date range filter (24h, 7d, 30d, lifetime)
-- [ ] Respects link filter (specific link or all links)
-- [ ] "Unknown" for entries with null country
-- [ ] Top country highlighted at the top
-- [ ] Show top 10, toggle "Show All" for more
-- [ ] `isLoading` skeleton state matches layout
+- [x] Country breakdown table shows on analytics page
+- [x] Sorted by click count descending
+- [x] Flag emoji + country name + count + percentage + visual bar
+- [x] Respects date range filter (24h, 7d, 30d, lifetime)
+- [x] Respects link filter (specific link or all links)
+- [x] "Unknown" for entries with null country
+- [x] Top country highlighted at the top
+- [x] Show top 10, toggle "Show All" for more
+- [x] `isLoading` skeleton state matches layout
 
 ---
 

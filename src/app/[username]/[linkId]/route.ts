@@ -82,6 +82,8 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
 
   // Capture metadata from request
   const userAgent = request.headers.get('user-agent') || null;
+  const country = request.headers.get('x-vercel-ip-country') || null;
+  const city = request.headers.get('x-vercel-ip-city') || null;
 
   // Prefer ?ref= param (passed from bio page capturing original source)
   // Fallback to referer header (direct link sharing)
@@ -107,6 +109,8 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
             link_id: link.id,
             user_agent: userAgent,
             referer: referer,
+            country: country,
+            city: city,
           }),
         ]);
       } catch (error) {

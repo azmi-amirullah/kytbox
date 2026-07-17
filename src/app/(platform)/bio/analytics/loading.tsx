@@ -12,6 +12,7 @@ export default function Loading() {
           topLinks: [],
           topReferer: null,
           userLinks: [],
+          countries: [],
         }}
         isLoading={true}
       />
