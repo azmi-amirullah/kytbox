@@ -18,6 +18,7 @@ import { BackgroundBlobs } from '@/components/background-blobs';
 import { Metadata } from 'next';
 import { siteConfig } from '@/config/site';
 import { KYTBOX_APPS } from '@/config/apps';
+import { connection } from 'next/server';
 import pkg from '../../../package.json';
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LandingPage() {
+  await connection();
   const supabase = await createClient();
 
   // Get user first (required for profile lookup)

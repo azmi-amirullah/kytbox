@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { getBioDashboardData, DashboardClient, schemasServer } from '@/features/bio';
+import { redirect } from 'next/navigation';
 
 export default async function BioDashboardPage({
   searchParams,
@@ -9,15 +9,7 @@ export default async function BioDashboardPage({
 }) {
   const params = await searchParams;
   const activeTab = schemasServer.bioTabSchema.parse(params.tab);
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   let data;
   try {

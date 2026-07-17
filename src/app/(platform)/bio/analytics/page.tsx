@@ -1,17 +1,9 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { AnalyticsClient, getAnalyticsData } from '@/features/bio';
 
 export default async function AnalyticsPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const [profileResult, initialData] = await Promise.all([
     supabase.from('profiles').select('id').eq('id', user.id).single(),

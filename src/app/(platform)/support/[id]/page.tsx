@@ -1,6 +1,6 @@
 import { MessageList, ReplyForm, UrgencyControl, schemasServer } from '@/features/support';
 import { StatusBadge } from '@/components/support/StatusBadge';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { LuArrowLeft } from 'react-icons/lu';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -11,12 +11,7 @@ export default async function TicketDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return notFound();
+  const { user, supabase } = await getAuthenticatedUser();
 
   // Fetch ticket details
   const { data: ticket } = await supabase

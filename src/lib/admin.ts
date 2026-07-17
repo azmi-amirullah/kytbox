@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { userRoleSchema } from '@/lib/validation.schemas';
+import { connection } from 'next/server';
 
 export async function checkAdmin() {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },

@@ -1,9 +1,8 @@
 import { TicketList, schemasServer } from '@/features/support';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { LuPlus } from 'react-icons/lu';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 export const metadata = {
   title: 'Support | Kytbox',
@@ -11,14 +10,7 @@ export const metadata = {
 };
 
 export default async function SupportPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { data: tickets } = await supabase
     .from('support_tickets')

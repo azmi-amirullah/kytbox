@@ -1,19 +1,11 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { SettingsForm, BackButton } from '@/features/settings';
 import Link from 'next/link';
 import { LuChevronRight } from 'react-icons/lu';
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
+  const { user, supabase } = await getAuthenticatedUser();
 
   const { data: profile } = await supabase
     .from('profiles')

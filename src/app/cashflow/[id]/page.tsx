@@ -4,6 +4,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import { getCashflowDetailData, CashflowDetail, schemasServer } from '@/features/cashflow';
+import { connection } from 'next/server';
 
 interface CashflowDetailPageProps {
   params: Promise<{ id: string }>;
@@ -13,6 +14,7 @@ export default async function CashflowDetailPage({
   params,
 }: CashflowDetailPageProps) {
   const { id } = await params;
+  await connection();
   const supabase = await createClient();
 
   // 1. Get User
