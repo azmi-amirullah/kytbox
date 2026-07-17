@@ -6,6 +6,7 @@ import { SupportNotificationBell } from '@/components/support-notification-bell'
 import { Button } from '@/components/ui/button';
 import { LuExternalLink } from 'react-icons/lu';
 import { SearchTrigger } from '@/components/search-trigger';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface UserData {
   username: string;
@@ -69,7 +70,9 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
 
           {/* Auth state handling - Hide on Auth pages */}
           {!isAuth &&
-            (user ? (
+            (user === undefined ? (
+              <Skeleton className='w-8 h-8 rounded-full' />
+            ) : user ? (
               <div className='flex items-center gap-4'>
                 {(isLanding || isLegal) && (
                   <Link href='/app'>

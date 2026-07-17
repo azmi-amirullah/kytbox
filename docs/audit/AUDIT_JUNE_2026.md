@@ -102,8 +102,9 @@ At the end of the month, a systematic security and architectural audit was perfo
 
 | ID | Issue | Severity | Status |
 | :--- | :--- | :--- | :--- |
-| **E1** | Add `loading.tsx` skeletons for auth and link sub-routes | ⚠️ Medium | 🔲 Backlog |
 | **T1** | Add tests for security-critical middleware (origin, IP, CSP) | ⚠️ Medium | 🔲 Backlog |
+| **E3** | Header avatar/username flash on route transitions | 💡 Low | 🔲 Backlog |
+| **E4** | Keep support notification bell persistent and toggle count badge only | 💡 Low | 🔲 Backlog |
 | **Q4** | Centralize duplicate `recurrenceIntervalSchema` | 💡 Low | 🔲 Backlog |
 | **Q2** | Replace `isCustomThemeData` type guard with Zod | 💡 Low | 🔲 Backlog |
 | **Q3** | Remove redundant `getAvatarUrl` utility | 💡 Low | 🔲 Backlog |
@@ -115,6 +116,7 @@ At the end of the month, a systematic security and architectural audit was perfo
 | :--- | :--- | :--- | :--- |
 | ~~**E2**~~ | ~~Fix layout tag duplication in `GlobalError`~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (July)~~ |
 | ~~**A1**~~ | ~~Add `connection()` to static pages for dynamic safety~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (July)~~ |
+| ~~**E1**~~ | ~~Add `loading.tsx` skeletons for auth and link sub-routes~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (July)~~ |
 
 ---
 
@@ -124,6 +126,9 @@ At the end of the month, a systematic security and architectural audit was perfo
 | :--- | :--- | :---: | :--- |
 | **P0 — Critical** | **E2**: GlobalError layout fix | — | **FIXED** |
 | **P0 — Critical** | **A1**: page `connection()` safety | — | **FIXED** |
-| **P1 — High** | **E1**: Missing route skeletons, **T1**: Security helper tests | ~4 hours | 🔲 Backlog |
+| **P1 — High** | **E1**: Missing route skeletons | — | **FIXED** |
+| **P1 — High** | **T1**: Security helper tests | ~2 hours | 🔲 Backlog |
+| **P2 — Medium** | **E3**: Header transitions cache, **E4**: Persistent support bell | ~2 hours | 🔲 Backlog |
 | **P2 — Medium** | **Q4**: DRY recurrence schema, **Q2**: Zod theme guard | ~2 hours | 🔲 Backlog |
 | **P3 — Low** | **Q3**: Remove getAvatarUrl, **U1**: Dark mode shadows | ~1 hour | 🔲 Backlog |
+
