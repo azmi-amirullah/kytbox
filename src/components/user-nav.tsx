@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { logout } from '@/features/auth';
-import { getAvatarUrl } from '@/lib/avatar';
 
 interface UserNavProps {
   user: {
@@ -27,7 +26,7 @@ interface UserNavProps {
 }
 
 export function UserNav({ user }: UserNavProps) {
-  const avatarUrl = getAvatarUrl(user.avatar_url);
+  const avatarUrl = user.avatar_url || null;
 
   return (
     <DropdownMenu modal={false}>

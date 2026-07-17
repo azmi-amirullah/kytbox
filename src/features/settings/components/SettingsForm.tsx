@@ -32,7 +32,6 @@ import {
   removeAvatar,
   checkUsername,
 } from '../actions';
-import { getAvatarUrl } from '@/lib/avatar';
 import { CURRENCIES, DEFAULT_CURRENCY, getCurrency } from '@/lib/currency';
 import {
   Popover,
@@ -124,7 +123,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
     };
   }, [username, profile.username, profile.id]);
 
-  const currentAvatarUrl = getAvatarUrl(avatarUrl);
+  const currentAvatarUrl = avatarUrl || null;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
