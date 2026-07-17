@@ -1,5 +1,5 @@
 -- Migration: 20260717_get_analytics_by_country.sql
--- Description: RPC for country-based click aggregation with user authorization check
+-- Description: RPC for country-based click aggregation with user authorization check (fixed column reference ambiguity)
 
 CREATE OR REPLACE FUNCTION get_analytics_by_country(
   p_link_ids uuid[],
@@ -18,12 +18,12 @@ BEGIN
 
   RETURN QUERY
   SELECT
-    COALESCE(country, 'Unknown') AS country,
+    COALESCE(link_events.country, 'Unknown') AS country,
     COUNT(*)::bigint AS click_count
   FROM link_events
   WHERE link_id = ANY(p_link_ids)
     AND (p_start_date IS NULL OR created_at >= p_start_date)
-  GROUP BY COALESCE(country, 'Unknown')
+  GROUP BY COALESCE(link_events.country, 'Unknown')
   ORDER BY click_count DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
