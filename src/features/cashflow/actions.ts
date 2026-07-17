@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { getAuthenticatedUserWithRateLimit as getAuthenticatedUser } from '@/lib/auth-with-rate-limit';
+import { getAuthenticatedUser as getAuthenticatedUserOnly } from '@/lib/auth';
+import { actionRateLimit } from '@/lib/upstash/redis';
 import { z } from 'zod';
 import {
   cashflowEntrySchema,
@@ -158,7 +160,8 @@ async function checkEditPermission(
 }
 
 export async function addEntry(formData: FormData) {
-  const { user, supabase } = await getAuthenticatedUser();
+  // Plain auth — rate limit is handled below inside Promise.all
+  const { user, supabase } = await getAuthenticatedUserOnly();
 
   const formDataObj = Object.fromEntries(formData);
   const parsed = updateCashflowEntrySchema.safeParse(formDataObj);
@@ -179,28 +182,30 @@ export async function addEntry(formData: FormData) {
     yearly_calculation,
   } = parsed.data;
 
-  // Verify access (owner or editor)
-  const permission = await checkEditPermission(supabase, cashflowId, user);
-  if (!permission.canEdit) {
-    return { error: permission.error || 'Access denied' };
-  }
+  // Parallelize: rate limit + permission check + targeted recurring conflict check
+  const [{ success: rateLimitOk }, permission, { data: latestSameSeries }] = await Promise.all([
+    actionRateLimit.limit(user.id),
+    checkEditPermission(supabase, cashflowId, user),
+    // Targeted: fetch only the latest entry for this exact name+type instead of all templates
+    !is_recurring
+      ? supabase
+          .from('cashflow_entries')
+          .select('is_recurring')
+          .eq('cashflow_id', cashflowId)
+          .eq('type', type)
+          .ilike('description', description.trim())
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  if (!rateLimitOk) throw new Error('Too many requests. Please slow down.');
+  if (!permission.canEdit) return { error: permission.error || 'Access denied' };
 
   // Prevent accidental recurring series cancellation
-  if (!is_recurring) {
-    const { data: activeTemplates } = await supabase
-      .rpc('get_latest_recurring_templates', { p_cashflow_id: cashflowId });
-
-    if (activeTemplates) {
-      const isKillingSeries = activeTemplates.some((t) => 
-        t.is_recurring && 
-        t.type === type && 
-        t.description.trim().toLowerCase() === description.trim().toLowerCase()
-      );
-
-      if (isKillingSeries) {
-        return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
-      }
-    }
+  if (latestSameSeries?.is_recurring) {
+    return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
   }
 
   const { error } = await supabase.from('cashflow_entries').insert({
@@ -230,7 +235,8 @@ export async function addEntry(formData: FormData) {
 }
 
 export async function updateEntry(entryId: string, formData: FormData) {
-  const { user, supabase } = await getAuthenticatedUser();
+  // Plain auth — rate limit is handled below inside Promise.all
+  const { user, supabase } = await getAuthenticatedUserOnly();
 
   const formDataObj = Object.fromEntries(formData);
   const parsed = cashflowEntrySchema.safeParse(formDataObj);
@@ -250,45 +256,48 @@ export async function updateEntry(entryId: string, formData: FormData) {
     yearly_calculation,
   } = parsed.data;
 
-  // Verify entry exists
-  const { data: entry } = await supabase
-    .from('cashflow_entries')
-    .select('cashflow_id, cashflows(user_id)')
-    .eq('id', entryId)
-    .single();
+  // Batch 1: rate limit + entry fetch are independent — run in parallel
+  const [{ success: rateLimitOk }, { data: entry }] = await Promise.all([
+    actionRateLimit.limit(user.id),
+    supabase
+      .from('cashflow_entries')
+      .select('cashflow_id, cashflows(user_id)')
+      .eq('id', entryId)
+      .single(),
+  ]);
 
-  if (!entry) {
-    return { error: 'Entry not found' };
-  }
+  if (!rateLimitOk) throw new Error('Too many requests. Please slow down.');
+  if (!entry) return { error: 'Entry not found' };
 
-  // Verify permission
-  const permission = await checkEditPermission(
-    supabase,
-    entry.cashflow_id,
-    user,
-    joinedOwnerSchema.parse(entry.cashflows),
-  );
-  if (!permission.canEdit) {
-    return { error: permission.error || 'Access denied' };
-  }
+  // Batch 2: permission check + targeted recurring conflict check are independent — run in parallel
+  const [permission, { data: latestSameSeries }] = await Promise.all([
+    checkEditPermission(
+      supabase,
+      entry.cashflow_id,
+      user,
+      joinedOwnerSchema.parse(entry.cashflows),
+    ),
+    // Targeted: fetch only the latest entry for this exact name+type instead of all templates.
+    // Exclude the current entry (entryId) so editing a recurring entry doesn't block itself.
+    !is_recurring
+      ? supabase
+          .from('cashflow_entries')
+          .select('is_recurring')
+          .eq('cashflow_id', entry.cashflow_id)
+          .eq('type', type)
+          .ilike('description', description.trim())
+          .neq('id', entryId)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  if (!permission.canEdit) return { error: permission.error || 'Access denied' };
 
   // Prevent accidental recurring series cancellation
-  if (!is_recurring) {
-    const { data: activeTemplates } = await supabase
-      .rpc('get_latest_recurring_templates', { p_cashflow_id: entry.cashflow_id });
-
-    if (activeTemplates) {
-      const isKillingSeries = activeTemplates.some((t) => 
-        t.is_recurring && 
-        t.type === type && 
-        t.description.trim().toLowerCase() === description.trim().toLowerCase() &&
-        t.id !== entryId
-      );
-
-      if (isKillingSeries) {
-        return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
-      }
-    }
+  if (latestSameSeries?.is_recurring) {
+    return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
   }
 
   const { error } = await supabase
