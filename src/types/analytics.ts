@@ -23,6 +23,7 @@ export interface TopLink {
 export interface CountryAnalytics {
   country: string;
   click_count: number;
+  view_count: number;
 }
 
 export interface AnalyticsData {

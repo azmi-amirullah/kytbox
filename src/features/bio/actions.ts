@@ -799,7 +799,13 @@ export async function getAnalyticsData(
     getTotalProfileViews(supabase, user.id, startDate),
 
     // 5. Country Analytics
-    getCountryAnalyticsData(supabase, targetLinkIds, startDate),
+    getCountryAnalyticsData(
+      supabase,
+      user.id,
+      targetLinkIds,
+      startDate,
+      !linkId || linkId === 'all',
+    ),
   ]);
 
   const { chartData, totalClicks } = chartDataResult;
@@ -1178,19 +1184,23 @@ function groupEventsByTimeBucket(
 // Get country analytics in range (try RPC first, fallback to client-side)
 async function getCountryAnalyticsData(
   supabase: SupabaseClient,
+  userId: string,
   linkIds: string[],
   startDate: Date | null,
-): Promise<{ country: string; click_count: number }[]> {
+  includeViews: boolean,
+): Promise<{ country: string; click_count: number; view_count: number }[]> {
   try {
     const { data, error } = await supabase.rpc('get_analytics_by_country', {
       p_link_ids: linkIds,
       p_start_date: startDate?.toISOString() || null,
+      p_include_views: includeViews,
     });
 
     if (!error && data) {
-      return data.map((row: { country: string | null; click_count: number }) => ({
+      return data.map((row: { country: string | null; click_count: number; view_count: number }) => ({
         country: row.country || 'Unknown',
         click_count: Number(row.click_count),
+        view_count: Number(row.view_count),
       }));
     }
     if (error) {
@@ -1200,7 +1210,7 @@ async function getCountryAnalyticsData(
     console.warn('RPC get_analytics_by_country exception:', err);
   }
 
-  // Fallback: client-side
+  // Fallback: client-side clicks
   let query = supabase
     .from('link_events')
     .select('country')
@@ -1210,20 +1220,43 @@ async function getCountryAnalyticsData(
     query = query.gte('created_at', startDate.toISOString());
   }
 
-  const { data: events, error } = await query;
+  const { data: events } = await query;
 
-  if (error || !events) {
-    console.error('getCountryAnalyticsData fallback error:', error);
-    return [];
+  // Fallback: client-side views
+  let viewsEvents: { country: string | null }[] = [];
+  if (includeViews) {
+    let viewsQuery = supabase
+      .from('profile_events')
+      .select('country')
+      .eq('profile_id', userId);
+
+    if (startDate) {
+      viewsQuery = viewsQuery.gte('created_at', startDate.toISOString());
+    }
+
+    const { data } = await viewsQuery;
+    viewsEvents = data || [];
   }
 
-  const counts: Record<string, number> = {};
-  events.forEach((e) => {
+  const counts: Record<string, { click_count: number; view_count: number }> = {};
+  if (events) {
+    events.forEach((e) => {
+      const country = e.country || 'Unknown';
+      if (!counts[country]) counts[country] = { click_count: 0, view_count: 0 };
+      counts[country].click_count += 1;
+    });
+  }
+  viewsEvents.forEach((e) => {
     const country = e.country || 'Unknown';
-    counts[country] = (counts[country] || 0) + 1;
+    if (!counts[country]) counts[country] = { click_count: 0, view_count: 0 };
+    counts[country].view_count += 1;
   });
 
   return Object.entries(counts)
-    .map(([country, count]) => ({ country, click_count: count }))
-    .sort((a, b) => b.click_count - a.click_count);
+    .map(([country, item]) => ({
+      country,
+      click_count: item.click_count,
+      view_count: item.view_count,
+    }))
+    .sort((a, b) => b.click_count - a.click_count || b.view_count - a.view_count);
 }

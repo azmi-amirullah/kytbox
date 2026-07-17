@@ -46,12 +46,10 @@ export default function CountryBreakdown({ countries, isLoading }: CountryBreakd
   const [showAll, setShowAll] = useState(false);
 
   const totalClicks = countries.reduce((sum, c) => sum + c.click_count, 0);
+  const totalViews = countries.reduce((sum, c) => sum + c.view_count, 0);
   const displayCountries = showAll ? countries : countries.slice(0, 10);
 
   const topCountry = countries[0];
-  const topPercentage = topCountry && totalClicks > 0
-    ? Math.round((topCountry.click_count / totalClicks) * 100)
-    : 0;
 
   return (
     <div className='rounded-xl border bg-card shadow-sm overflow-hidden p-4 md:p-6 flex flex-col h-full'>
@@ -71,8 +69,9 @@ export default function CountryBreakdown({ countries, isLoading }: CountryBreakd
               <TableHeader>
                 <TableRow className='hover:bg-transparent'>
                   <TableHead>Country</TableHead>
+                  <TableHead className='text-right'>Views</TableHead>
                   <TableHead className='text-right'>Clicks</TableHead>
-                  <TableHead className='w-[40%] text-right'>Percentage</TableHead>
+                  <TableHead className='w-[30%] text-right'>Percentage</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -83,6 +82,9 @@ export default function CountryBreakdown({ countries, isLoading }: CountryBreakd
                         <Skeleton className='h-4 w-6 rounded' />
                         <Skeleton className='h-4 w-24 rounded' />
                       </div>
+                    </TableCell>
+                    <TableCell className='text-right'>
+                      <Skeleton className='h-4 w-8 rounded ml-auto' />
                     </TableCell>
                     <TableCell className='text-right'>
                       <Skeleton className='h-4 w-8 rounded ml-auto' />
@@ -114,7 +116,7 @@ export default function CountryBreakdown({ countries, isLoading }: CountryBreakd
                 <span className='font-medium text-foreground'>
                   {getFlagEmoji(topCountry.country)} {getCountryName(topCountry.country)}
                 </span>{' '}
-                ({topPercentage}%)
+                ({topCountry.view_count} views, {topCountry.click_count} clicks)
               </p>
             )}
 
@@ -124,15 +126,18 @@ export default function CountryBreakdown({ countries, isLoading }: CountryBreakd
                 <TableHeader>
                   <TableRow className='bg-muted/50 hover:bg-muted/50'>
                     <TableHead className='h-10'>Country</TableHead>
+                    <TableHead className='h-10 text-right'>Views</TableHead>
                     <TableHead className='h-10 text-right'>Clicks</TableHead>
-                    <TableHead className='h-10 w-[40%] text-right'>Distribution</TableHead>
+                    <TableHead className='h-10 w-[30%] text-right'>Distribution</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {displayCountries.map((c) => {
                     const percentage = totalClicks > 0
                       ? Math.round((c.click_count / totalClicks) * 100)
-                      : 0;
+                      : totalViews > 0
+                        ? Math.round((c.view_count / totalViews) * 100)
+                        : 0;
                     return (
                       <TableRow
                         key={c.country}
@@ -144,6 +149,7 @@ export default function CountryBreakdown({ countries, isLoading }: CountryBreakd
                           </span>
                           {getCountryName(c.country)}
                         </TableCell>
+                        <TableCell className='text-right py-3'>{c.view_count}</TableCell>
                         <TableCell className='text-right py-3'>{c.click_count}</TableCell>
                         <TableCell className='py-3'>
                           <div className='flex items-center gap-3 justify-end'>
