@@ -104,7 +104,6 @@ At the end of the month, a systematic security and architectural audit was perfo
 | :--- | :--- | :--- | :--- |
 | **E3** | Header avatar/username flash on route transitions | 💡 Low | 🔲 Backlog |
 | **E4** | Keep support notification bell persistent and toggle count badge only | 💡 Low | 🔲 Backlog |
-| **Q2** | Replace `isCustomThemeData` type guard with Zod | 💡 Low | 🔲 Backlog |
 | **Q3** | Remove redundant `getAvatarUrl` utility | 💡 Low | 🔲 Backlog |
 | **U1** | Customize dark mode shadow tokens | 💡 Low | 🔲 Backlog |
 
@@ -117,6 +116,7 @@ At the end of the month, a systematic security and architectural audit was perfo
 | ~~**E1**~~ | ~~Add `loading.tsx` skeletons for auth and link sub-routes~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (July)~~ |
 | ~~**T1**~~ | ~~Add tests for security-critical middleware (origin, IP, CSP)~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (July)~~ |
 | ~~**Q4**~~ | ~~Centralize duplicate `recurrenceIntervalSchema`~~ | ~~💡 Low~~ | ~~✅ Fixed (July)~~ |
+| ~~**Q2**~~ | ~~Replace `isCustomThemeData` type guard with Zod~~ | ~~💡 Low~~ | ~~✅ Fixed (July)~~ |
 
 ---
 
@@ -129,7 +129,7 @@ At the end of the month, a systematic security and architectural audit was perfo
 | **P1 — High** | **E1**: Missing route skeletons | — | **FIXED** |
 | **P1 — High** | **T1**: Security helper tests | — | **FIXED** |
 | **P2 — Medium** | **Q4**: DRY recurrence schema | — | **FIXED** |
+| **P2 — Medium** | **Q2**: Zod theme guard | — | **FIXED** |
 | **P2 — Medium** | **E3**: Header transitions cache, **E4**: Persistent support bell | ~2 hours | 🔲 Backlog |
-| **P2 — Medium** | **Q2**: Zod theme guard | ~1 hour | 🔲 Backlog |
 | **P3 — Low** | **Q3**: Remove getAvatarUrl, **U1**: Dark mode shadows | ~1 hour | 🔲 Backlog |
 

@@ -107,6 +107,21 @@ export const updateAppearanceSchema = z.object({
   customTheme: z.string().optional().or(z.literal('')),
 });
 
+export const customThemeDataSchema = z.object({
+  background: z.string(),
+  textPrimary: z.string(),
+  textSecondary: z.string(),
+  elementBg: z.string(),
+  elementBorder: z.string(),
+  elementRing: z.string(),
+  buttonBg: z.string(),
+  buttonBorder: z.string(),
+  buttonText: z.string(),
+  footerBg: z.string(),
+  footerBorder: z.string(),
+  footerText: z.string(),
+});
+
 // ==========================================
 // CASHFLOW SCHEMAS
 // ==========================================

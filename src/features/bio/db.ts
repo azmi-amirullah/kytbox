@@ -5,6 +5,7 @@ import { Database } from '@/types/supabase';
 import { mapProfileToDTO, mapLinkToDTO } from '@/lib/mappers';
 import { getProfileByUsername, getCachedPublicLinks } from '@/lib/data-cache';
 import { socialLinksSchema } from './schemas.server';
+import { customThemeDataSchema } from '@/lib/validation.schemas';
 import type { CustomThemeData } from '@/lib/theme';
 import type { ProfileDTO, LinkDTO } from '@/types/dto';
 
@@ -54,9 +55,6 @@ export interface PublicProfileData {
   totalLinks: number;
 }
 
-function isCustomThemeData(obj: unknown): obj is CustomThemeData {
-  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
-}
 
 export async function getBioDashboardData(
   supabase: SupabaseClient<Database>,
@@ -127,9 +125,10 @@ export async function getBioDashboardData(
       button_shape: profile.button_shape,
       display_name: profile.display_name,
       social_links: socialLinksSchema.parse(profile.social_links),
-      custom_theme: isCustomThemeData(profile.custom_theme)
-        ? profile.custom_theme
-        : null,
+      custom_theme: customThemeDataSchema
+        .nullable()
+        .catch(null)
+        .parse(profile.custom_theme),
     },
     initialLinks: mappedLinks,
     publicUrl,
@@ -185,9 +184,10 @@ export async function getPublicProfileData(
     profile: {
       ...profile,
       social_links: socialLinksSchema.parse(profile.social_links),
-      custom_theme: isCustomThemeData(profile.custom_theme)
-        ? profile.custom_theme
-        : null,
+      custom_theme: customThemeDataSchema
+        .nullable()
+        .catch(null)
+        .parse(profile.custom_theme),
     },
     links: typedLinks,
     totalLinks: validTotalLinks ?? 0,
