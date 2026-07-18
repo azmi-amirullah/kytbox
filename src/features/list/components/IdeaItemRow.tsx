@@ -1,18 +1,18 @@
-'use client';
+'use client'
 
-import { useState, useTransition } from 'react';
-import { LuTrash2 } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import type { ListItemDTO } from '@/types/dto';
-import { toggleItem, deleteItem, updateItem } from '../actions';
-import { toast } from 'react-toastify';
+import { useState, useTransition } from 'react'
+import { LuTrash2, LuCheck, LuX } from 'react-icons/lu'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import type { ListItemDTO } from '@/types/dto'
+import { toggleItem, deleteItem, updateItem } from '../actions'
+import { toast } from 'react-toastify'
 
 interface IdeaItemRowProps {
-  item: ListItemDTO;
-  onUpdate: (item: ListItemDTO) => void;
-  onDelete: (itemId: string) => void;
+  item: ListItemDTO
+  onUpdate: (item: ListItemDTO) => void
+  onDelete: (itemId: string) => void
 }
 
 export default function IdeaItemRow({
@@ -20,58 +20,58 @@ export default function IdeaItemRow({
   onUpdate,
   onDelete,
 }: IdeaItemRowProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(item.title);
-  const [isPending, startTransition] = useTransition();
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(item.title)
+  const [isPending, startTransition] = useTransition()
 
   const handleToggle = () => {
-    if (isPending) return;
+    if (isPending) return
     startTransition(async () => {
-      const result = await toggleItem(item.id, !item.is_completed);
+      const result = await toggleItem(item.id, !item.is_completed)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        onUpdate({ ...item, is_completed: !item.is_completed });
+        onUpdate({ ...item, is_completed: !item.is_completed })
       }
-    });
-  };
+    })
+  }
 
   const handleDelete = () => {
-    if (isPending) return;
+    if (isPending) return
     startTransition(async () => {
-      const result = await deleteItem(item.id);
+      const result = await deleteItem(item.id)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        onDelete(item.id);
+        onDelete(item.id)
       }
-    });
-  };
+    })
+  }
 
   const handleSaveEdit = () => {
-    if (!editTitle.trim()) return;
+    if (!editTitle.trim()) return
 
-    const formData = new FormData();
-    formData.set('title', editTitle);
+    const formData = new FormData()
+    formData.set('title', editTitle)
 
     startTransition(async () => {
-      const result = await updateItem(item.id, formData);
+      const result = await updateItem(item.id, formData)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        onUpdate({ ...item, title: editTitle.trim() });
-        setIsEditing(false);
+        onUpdate({ ...item, title: editTitle.trim() })
+        setIsEditing(false)
       }
-    });
-  };
+    })
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSaveEdit();
+    if (e.key === 'Enter') handleSaveEdit()
     if (e.key === 'Escape') {
-      setEditTitle(item.title);
-      setIsEditing(false);
+      setEditTitle(item.title)
+      setIsEditing(false)
     }
-  };
+  }
 
   return (
     <div
@@ -88,18 +88,45 @@ export default function IdeaItemRow({
       />
 
       {isEditing ? (
-        <Input
-          value={editTitle}
-          onChange={(e) => setEditTitle(e.target.value)}
-          onBlur={handleSaveEdit}
-          onKeyDown={handleKeyDown}
-          className='flex-1 h-8'
-          maxLength={300}
-        />
+        <div className='flex-1 flex items-center gap-1.5'>
+          <Input
+            ref={(input) => {
+              if (input) input.focus()
+            }}
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className='flex-1 h-8'
+            maxLength={300}
+          />
+          <Button
+            variant='ghost'
+            size='icon'
+            className='h-7 w-7 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
+            onClick={handleSaveEdit}
+            aria-label='Save edit'
+            disabled={isPending}
+          >
+            <LuCheck className='w-4 h-4' />
+          </Button>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='h-7 w-7 text-muted-foreground hover:text-foreground'
+            onClick={() => {
+              setEditTitle(item.title)
+              setIsEditing(false)
+            }}
+            aria-label='Cancel edit'
+            disabled={isPending}
+          >
+            <LuX className='w-4 h-4' />
+          </Button>
+        </div>
       ) : (
         <span
           onClick={() => setIsEditing(true)}
-          className={`flex-1 text-sm cursor-pointer transition-all duration-300 ${
+          className={`flex-1 text-base md:text-sm cursor-pointer transition-all duration-300 ${
             item.is_completed ? 'line-through text-muted-foreground' : ''
           }`}
           role='button'
@@ -110,15 +137,17 @@ export default function IdeaItemRow({
         </span>
       )}
 
-      <Button
-        variant='ghost'
-        size='icon'
-        className={`h-7 w-7 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity text-muted-foreground hover:text-destructive ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
-        onClick={handleDelete}
-        aria-label={`Delete "${item.title}"`}
-      >
-        <LuTrash2 className='w-3.5 h-3.5' />
-      </Button>
+      {!isEditing && (
+        <Button
+          variant='ghost'
+          size='icon'
+          className={`h-7 w-7 text-destructive hover:text-destructive/80 hover:bg-destructive/10 ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
+          onClick={handleDelete}
+          aria-label={`Delete "${item.title}"`}
+        >
+          <LuTrash2 className='w-3.5 h-3.5' />
+        </Button>
+      )}
     </div>
-  );
+  )
 }

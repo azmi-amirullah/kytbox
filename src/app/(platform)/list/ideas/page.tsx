@@ -1,17 +1,18 @@
 import {
   getListsByType,
   getOrCreateNewIdeaList,
-  getNewIdeaItems,
+  getItemsByListId,
   TypeListGrid,
   NewIdeas,
 } from '@/features/list';
 
 export default async function IdeasPage() {
-  const [lists, newIdeaList, newIdeaItems] = await Promise.all([
+  const [lists, newIdeaList] = await Promise.all([
     getListsByType('idea'),
     getOrCreateNewIdeaList(),
-    getNewIdeaItems(),
   ]);
+
+  const newIdeaItems = newIdeaList ? await getItemsByListId(newIdeaList.id) : [];
 
   return (
     <div className='max-w-7xl mx-auto px-4 py-8 md:py-8 w-full space-y-10'>

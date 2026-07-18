@@ -414,16 +414,35 @@ export async function getOrCreateNewIdeaList(): Promise<ListDTO | null> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) return null;
 
-  const { data: existing } = await supabase
+  const { data: lists, error: selectError } = await supabase
     .from('lists')
     .select('*')
     .eq('user_id', userData.user.id)
     .eq('type', 'idea')
     .eq('title', NEW_IDEA_LIST_TITLE)
-    .single();
+    .order('created_at', { ascending: true });
 
-  if (existing) {
-    return mapListToDTO(existing);
+  if (selectError) return null;
+
+  if (lists && lists.length > 0) {
+    const primaryList = lists[0];
+
+    // If duplicate new idea lists exist, migrate items to primary list and clean up duplicates
+    if (lists.length > 1) {
+      const duplicateIds = lists.slice(1).map((l) => l.id);
+      
+      await supabase
+        .from('list_items')
+        .update({ list_id: primaryList.id })
+        .in('list_id', duplicateIds);
+
+      await supabase
+        .from('lists')
+        .delete()
+        .in('id', duplicateIds);
+    }
+
+    return mapListToDTO(primaryList);
   }
 
   const { data: created, error } = await supabase

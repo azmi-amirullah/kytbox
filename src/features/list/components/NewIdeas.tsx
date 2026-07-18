@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import { useState, useTransition } from 'react';
-import { LuPlus, LuLightbulb, LuArrowRight } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState, useTransition } from 'react'
+import { LuPlus, LuLightbulb, LuArrowRight } from 'react-icons/lu'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,29 +13,29 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import type { ListDTO, ListItemDTO } from '@/types/dto';
-import { addItem, moveItemToList } from '../actions';
-import IdeaItemRow from './IdeaItemRow';
-import { toast } from 'react-toastify';
+} from '@/components/ui/dropdown-menu'
+import type { ListDTO, ListItemDTO } from '@/types/dto'
+import { addItem, moveItemToList } from '../actions'
+import IdeaItemRow from './IdeaItemRow'
+import { toast } from 'react-toastify'
 
 interface NewIdeasProps {
-  newIdeaList: ListDTO;
-  initialItems: ListItemDTO[];
-  ideaLists: ListDTO[];
+  newIdeaList: ListDTO
+  initialItems: ListItemDTO[]
+  ideaLists: ListDTO[]
 }
 
 interface PendingMove {
-  itemId: string;
-  itemTitle: string;
-  targetListId: string;
-  targetListTitle: string;
+  itemId: string
+  itemTitle: string
+  targetListId: string
+  targetListTitle: string
 }
 
 export default function NewIdeas({
@@ -43,62 +43,62 @@ export default function NewIdeas({
   initialItems,
   ideaLists,
 }: NewIdeasProps) {
-  const [items, setItems] = useState(initialItems);
-  const [newTitle, setNewTitle] = useState('');
-  const [isPending, startTransition] = useTransition();
-  const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  const [items, setItems] = useState(initialItems)
+  const [newTitle, setNewTitle] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
 
   const handleAddItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
+    e.preventDefault()
+    if (!newTitle.trim()) return
 
-    const formData = new FormData();
-    formData.set('listId', newIdeaList.id);
-    formData.set('title', newTitle);
+    const formData = new FormData()
+    formData.set('listId', newIdeaList.id)
+    formData.set('title', newTitle)
 
     startTransition(async () => {
-      const result = await addItem(formData);
+      const result = await addItem(formData)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else if (result.data) {
-        setItems((prev) => [...prev, result.data!]);
-        setNewTitle('');
+        setItems((prev) => [...prev, result.data!])
+        setNewTitle('')
       }
-    });
-  };
+    })
+  }
 
   const handleItemUpdate = (updatedItem: ListItemDTO) => {
     setItems((prev) =>
       prev.map((item) => (item.id === updatedItem.id ? updatedItem : item)),
-    );
-  };
+    )
+  }
 
   const handleItemDelete = (itemId: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== itemId));
-  };
+    setItems((prev) => prev.filter((item) => item.id !== itemId))
+  }
 
   const handleConfirmMove = () => {
-    if (!pendingMove) return;
-    const { itemId, targetListId } = pendingMove;
+    if (!pendingMove) return
+    const { itemId, targetListId } = pendingMove
 
     startTransition(async () => {
-      const result = await moveItemToList(itemId, targetListId);
+      const result = await moveItemToList(itemId, targetListId)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        setItems((prev) => prev.filter((item) => item.id !== itemId));
-        toast.success('Idea moved to list');
+        setItems((prev) => prev.filter((item) => item.id !== itemId))
+        toast.success('Idea moved to list')
       }
-      setPendingMove(null);
-    });
-  };
+      setPendingMove(null)
+    })
+  }
 
   return (
     <div className='space-y-4'>
       <div>
-        <h2 className='text-lg font-semibold tracking-tight'>New Ideas</h2>
+        <h2 className='text-lg font-semibold tracking-tight'>Quick Capture</h2>
         <p className='text-sm text-muted-foreground'>
-          Quick capture — move to a list later.
+          Capture ideas instantly, organize them into lists later.
         </p>
       </div>
 
@@ -189,8 +189,8 @@ export default function NewIdeas({
             <AlertDialogTitle>Move idea?</AlertDialogTitle>
             <AlertDialogDescription>
               Move &quot;{pendingMove?.itemTitle}&quot; to{' '}
-              <strong>{pendingMove?.targetListTitle}</strong>. It will be removed
-              from New Ideas.
+              <strong>{pendingMove?.targetListTitle}</strong>. It will be
+              removed from Quick Capture.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -202,5 +202,5 @@ export default function NewIdeas({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }
