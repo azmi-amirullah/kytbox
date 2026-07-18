@@ -8,21 +8,43 @@ import { Checkbox } from '@/components/ui/checkbox'
 import type { ListItemDTO } from '@/types/dto'
 import { toggleItem, deleteItem, updateItem } from '../actions'
 import { toast } from 'react-toastify'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface IdeaItemRowProps {
   item: ListItemDTO
   onUpdate: (item: ListItemDTO) => void
   onDelete: (itemId: string) => void
+  extraActions?: React.ReactNode
 }
 
 export default function IdeaItemRow({
   item,
   onUpdate,
   onDelete,
+  extraActions,
 }: IdeaItemRowProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(item.title)
   const [isPending, startTransition] = useTransition()
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: item.id,
+    disabled: isPending || isEditing,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: isDragging ? 'none' : transition,
+    touchAction: 'none',
+  }
 
   const handleToggle = () => {
     if (isPending) return
@@ -75,20 +97,25 @@ export default function IdeaItemRow({
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       className={`group flex items-center gap-3 p-3 bg-card border rounded-xl transition-all duration-300 ${
         item.is_completed ? 'opacity-60' : ''
-      }`}
+      } ${isDragging ? 'shadow-md border-amber-500/30 opacity-50 z-50' : ''}`}
       role='listitem'
     >
       <Checkbox
         checked={item.is_completed}
         onCheckedChange={handleToggle}
+        onPointerDown={(e) => e.stopPropagation()}
         className={`cursor-pointer ${isPending ? 'cursor-wait' : 'cursor-pointer'} border-muted-foreground/60 dark:border-muted-foreground/40 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 data-[state=checked]:text-white dark:data-[state=checked]:bg-emerald-500 dark:data-[state=checked]:border-emerald-500`}
         aria-label={`Mark "${item.title}" as ${item.is_completed ? 'not noted' : 'noted'}`}
       />
 
       {isEditing ? (
-        <div className='flex-1 flex items-center gap-1.5'>
+        <div className='flex-1 flex items-center gap-1.5' onPointerDown={(e) => e.stopPropagation()}>
           <Input
             ref={(input) => {
               if (input) input.focus()
@@ -138,15 +165,18 @@ export default function IdeaItemRow({
       )}
 
       {!isEditing && (
-        <Button
-          variant='ghost'
-          size='icon'
-          className={`h-7 w-7 text-destructive hover:text-destructive/80 hover:bg-destructive/10 ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
-          onClick={handleDelete}
-          aria-label={`Delete "${item.title}"`}
-        >
-          <LuTrash2 className='w-3.5 h-3.5' />
-        </Button>
+        <div className='flex items-center gap-1.5' onPointerDown={(e) => e.stopPropagation()}>
+          {extraActions}
+          <Button
+            variant='ghost'
+            size='icon'
+            className={`h-7 w-7 text-destructive hover:text-destructive/80 hover:bg-destructive/10 ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
+            onClick={handleDelete}
+            aria-label={`Delete "${item.title}"`}
+          >
+            <LuTrash2 className='w-3.5 h-3.5' />
+          </Button>
+        </div>
       )}
     </div>
   )

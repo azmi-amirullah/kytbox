@@ -6,9 +6,23 @@ import { LuPlus, LuLightbulb } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ListDTO, ListItemDTO } from '@/types/dto';
-import { addItem } from '../actions';
+import { addItem, reorderItems } from '../actions';
 import IdeaItemRow from './IdeaItemRow';
 import { toast } from 'react-toastify';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 interface IdeaDetailProps {
   list: ListDTO;
@@ -19,6 +33,33 @@ export default function IdeaDetail({ list, initialItems }: IdeaDetailProps) {
   const [items, setItems] = useState(initialItems);
   const [newTitle, setNewTitle] = useState('');
   const [isPending, startTransition] = useTransition();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor),
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const originalItems = [...items];
+      const reordered = arrayMove(items, oldIndex, newIndex);
+      setItems(reordered);
+
+      const result = await reorderItems(list.id, reordered.map((item) => item.id));
+      if (result.error) {
+        toast.error(result.error);
+        setItems(originalItems);
+      }
+    }
+  };
 
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,16 +147,27 @@ export default function IdeaDetail({ list, initialItems }: IdeaDetailProps) {
           </p>
         </div>
       ) : (
-        <div className='space-y-2'>
-          {items.map((item) => (
-            <IdeaItemRow
-              key={item.id}
-              item={item}
-              onUpdate={handleItemUpdate}
-              onDelete={handleItemDelete}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={items.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className='space-y-2'>
+              {items.map((item) => (
+                <IdeaItemRow
+                  key={item.id}
+                  item={item}
+                  onUpdate={handleItemUpdate}
+                  onDelete={handleItemDelete}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );

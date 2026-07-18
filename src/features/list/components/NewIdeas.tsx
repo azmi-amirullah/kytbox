@@ -19,11 +19,27 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import type { ListDTO, ListItemDTO } from '@/types/dto'
-import { addItem, moveItemToList } from '../actions'
+import { addItem, moveItemToList, reorderItems } from '../actions'
 import IdeaItemRow from './IdeaItemRow'
 import { toast } from 'react-toastify'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 
 interface NewIdeasProps {
   newIdeaList: ListDTO
@@ -47,6 +63,33 @@ export default function NewIdeas({
   const [newTitle, setNewTitle] = useState('')
   const [isPending, startTransition] = useTransition()
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor),
+  )
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = items.findIndex((item) => item.id === active.id)
+    const newIndex = items.findIndex((item) => item.id === over.id)
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const originalItems = [...items]
+      const reordered = arrayMove(items, oldIndex, newIndex)
+      setItems(reordered)
+
+      const result = await reorderItems(newIdeaList.id, reordered.map((item) => item.id))
+      if (result.error) {
+        toast.error(result.error)
+        setItems(originalItems)
+      }
+    }
+  }
 
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault()
@@ -131,52 +174,65 @@ export default function NewIdeas({
           </p>
         </div>
       ) : (
-        <div className='space-y-2'>
-          {items.map((item) => (
-            <div key={item.id} className='flex items-center gap-2'>
-              <div className='flex-1 min-w-0'>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={items.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className='space-y-2'>
+              {items.map((item) => (
                 <IdeaItemRow
+                  key={item.id}
                   item={item}
                   onUpdate={handleItemUpdate}
                   onDelete={handleItemDelete}
+                  extraActions={
+                    ideaLists.length > 0 ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground'
+                            aria-label={`Move "${item.title}" to a list`}
+                            disabled={isPending}
+                          >
+                            <LuArrowRight className='w-4 h-4' />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align='end'>
+                          <DropdownMenuLabel className='text-xs font-semibold text-muted-foreground px-2 py-1'>
+                            Move to:
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {ideaLists.map((list) => (
+                            <DropdownMenuItem
+                              key={list.id}
+                              onClick={() =>
+                                setPendingMove({
+                                  itemId: item.id,
+                                  itemTitle: item.title,
+                                  targetListId: list.id,
+                                  targetListTitle: list.title,
+                                })
+                              }
+                            >
+                              {list.title}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : undefined
+                  }
                 />
-              </div>
-
-              {ideaLists.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground'
-                      aria-label={`Move "${item.title}" to a list`}
-                      disabled={isPending}
-                    >
-                      <LuArrowRight className='w-4 h-4' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end'>
-                    {ideaLists.map((list) => (
-                      <DropdownMenuItem
-                        key={list.id}
-                        onClick={() =>
-                          setPendingMove({
-                            itemId: item.id,
-                            itemTitle: item.title,
-                            targetListId: list.id,
-                            targetListTitle: list.title,
-                          })
-                        }
-                      >
-                        {list.title}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Move confirmation dialog */}

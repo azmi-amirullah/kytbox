@@ -8,6 +8,22 @@ import type { ListDTO, ListItemDTO } from '@/types/dto';
 import WishlistItemRow from './WishlistItemRow';
 import AddWishlistItemModal from './AddWishlistItemModal';
 import { wishlistMetadataClientSchema } from '../schemas.client';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { reorderItems } from '../actions';
+import { toast } from 'react-toastify';
 
 
 interface WishlistDetailProps {
@@ -21,6 +37,33 @@ export default function WishlistDetail({
 }: WishlistDetailProps) {
   const [items, setItems] = useState(initialItems);
   const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor),
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const originalItems = [...items];
+      const reordered = arrayMove(items, oldIndex, newIndex);
+      setItems(reordered);
+
+      const result = await reorderItems(list.id, reordered.map((item) => item.id));
+      if (result.error) {
+        toast.error(result.error);
+        setItems(originalItems);
+      }
+    }
+  };
 
   const handleItemAdded = (newItem: ListItemDTO) => {
     setItems((prev) => [...prev, newItem]);
@@ -106,16 +149,27 @@ export default function WishlistDetail({
           </Button>
         </div>
       ) : (
-        <div className='space-y-2'>
-          {items.map((item) => (
-            <WishlistItemRow
-              key={item.id}
-              item={item}
-              onUpdate={handleItemUpdate}
-              onDelete={handleItemDelete}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={items.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className='space-y-2'>
+              {items.map((item) => (
+                <WishlistItemRow
+                  key={item.id}
+                  item={item}
+                  onUpdate={handleItemUpdate}
+                  onDelete={handleItemDelete}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Summary */}
