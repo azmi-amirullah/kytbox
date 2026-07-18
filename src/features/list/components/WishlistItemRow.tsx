@@ -4,6 +4,16 @@ import { useState, useTransition } from 'react';
 import { LuTrash2, LuExternalLink } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { ListItemDTO } from '@/types/dto';
 import { toggleItem, deleteItem } from '../actions';
 import { toast } from 'react-toastify';
@@ -25,6 +35,7 @@ export default function WishlistItemRow({
 }: WishlistItemRowProps) {
   const [isPending, startTransition] = useTransition();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const {
     attributes,
@@ -69,6 +80,7 @@ export default function WishlistItemRow({
         toast.error(result.error);
       } else {
         onDelete(item.id);
+        setIsDeleteDialogOpen(false);
       }
     });
   };
@@ -149,7 +161,7 @@ export default function WishlistItemRow({
             className={`h-7 w-7 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity text-muted-foreground hover:text-destructive ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete();
+              setIsDeleteDialogOpen(true);
             }}
             aria-label={`Delete "${item.title}"`}
           >
@@ -164,6 +176,30 @@ export default function WishlistItemRow({
         onOpenChange={setIsEditOpen}
         onItemUpdated={onUpdate}
       />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete wish item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{item.title}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+              disabled={isPending}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            >
+              {isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

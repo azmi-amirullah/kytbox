@@ -5,6 +5,16 @@ import { LuTrash2, LuCheck, LuX } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import type { ListItemDTO } from '@/types/dto'
 import { toggleItem, deleteItem, updateItem } from '../actions'
 import { toast } from 'react-toastify'
@@ -27,6 +37,7 @@ export default function IdeaItemRow({
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(item.title)
   const [isPending, startTransition] = useTransition()
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const {
     attributes,
@@ -66,6 +77,7 @@ export default function IdeaItemRow({
         toast.error(result.error)
       } else {
         onDelete(item.id)
+        setIsDeleteDialogOpen(false)
       }
     })
   }
@@ -96,88 +108,117 @@ export default function IdeaItemRow({
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`group flex items-center gap-3 p-3 bg-card border rounded-xl transition-all duration-300 ${
-        item.is_completed ? 'opacity-60' : ''
-      } ${isDragging ? 'shadow-md border-amber-500/30 opacity-50 z-50' : ''}`}
-      role='listitem'
-    >
-      <Checkbox
-        checked={item.is_completed}
-        onCheckedChange={handleToggle}
-        onPointerDown={(e) => e.stopPropagation()}
-        className={`cursor-pointer ${isPending ? 'cursor-wait' : 'cursor-pointer'} border-muted-foreground/60 dark:border-muted-foreground/40 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 data-[state=checked]:text-white dark:data-[state=checked]:bg-emerald-500 dark:data-[state=checked]:border-emerald-500`}
-        aria-label={`Mark "${item.title}" as ${item.is_completed ? 'not noted' : 'noted'}`}
-      />
+    <>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className={`group flex items-center gap-3 p-3 bg-card border rounded-xl transition-all duration-300 ${
+          item.is_completed ? 'opacity-60' : ''
+        } ${isDragging ? 'shadow-md border-amber-500/30 opacity-50 z-50' : ''}`}
+        role='listitem'
+      >
+        <Checkbox
+          checked={item.is_completed}
+          onCheckedChange={handleToggle}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={`cursor-pointer ${isPending ? 'cursor-wait' : 'cursor-pointer'} border-muted-foreground/60 dark:border-muted-foreground/40 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 data-[state=checked]:text-white dark:data-[state=checked]:bg-emerald-500 dark:data-[state=checked]:border-emerald-500`}
+          aria-label={`Mark "${item.title}" as ${item.is_completed ? 'not noted' : 'noted'}`}
+        />
 
-      {isEditing ? (
-        <div className='flex-1 flex items-center gap-1.5' onPointerDown={(e) => e.stopPropagation()}>
-          <Input
-            ref={(input) => {
-              if (input) input.focus()
-            }}
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className='flex-1 h-8'
-            maxLength={300}
-          />
-          <Button
-            variant='ghost'
-            size='icon'
-            className='h-7 w-7 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
-            onClick={handleSaveEdit}
-            aria-label='Save edit'
-            disabled={isPending}
+        {isEditing ? (
+          <div className='flex-1 flex items-center gap-1.5' onPointerDown={(e) => e.stopPropagation()}>
+            <Input
+              ref={(input) => {
+                if (input) input.focus()
+              }}
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className='flex-1 h-8'
+              maxLength={300}
+            />
+            <Button
+              variant='ghost'
+              size='icon'
+              className='h-7 w-7 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
+              onClick={handleSaveEdit}
+              aria-label='Save edit'
+              disabled={isPending}
+            >
+              <LuCheck className='w-4 h-4' />
+            </Button>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='h-7 w-7 text-muted-foreground hover:text-foreground'
+              onClick={() => {
+                setEditTitle(item.title)
+                setIsEditing(false)
+              }}
+              aria-label='Cancel edit'
+              disabled={isPending}
+            >
+              <LuX className='w-4 h-4' />
+            </Button>
+          </div>
+        ) : (
+          <span
+            onClick={() => setIsEditing(true)}
+            className={`flex-1 text-base md:text-sm cursor-pointer transition-all duration-300 ${
+              item.is_completed ? 'line-through text-muted-foreground' : ''
+            }`}
+            role='button'
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && setIsEditing(true)}
           >
-            <LuCheck className='w-4 h-4' />
-          </Button>
-          <Button
-            variant='ghost'
-            size='icon'
-            className='h-7 w-7 text-muted-foreground hover:text-foreground'
-            onClick={() => {
-              setEditTitle(item.title)
-              setIsEditing(false)
-            }}
-            aria-label='Cancel edit'
-            disabled={isPending}
-          >
-            <LuX className='w-4 h-4' />
-          </Button>
-        </div>
-      ) : (
-        <span
-          onClick={() => setIsEditing(true)}
-          className={`flex-1 text-base md:text-sm cursor-pointer transition-all duration-300 ${
-            item.is_completed ? 'line-through text-muted-foreground' : ''
-          }`}
-          role='button'
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && setIsEditing(true)}
-        >
-          {item.title}
-        </span>
-      )}
+            {item.title}
+          </span>
+        )}
 
-      {!isEditing && (
-        <div className='flex items-center gap-1.5' onPointerDown={(e) => e.stopPropagation()}>
-          {extraActions}
-          <Button
-            variant='ghost'
-            size='icon'
-            className={`h-7 w-7 text-destructive hover:text-destructive/80 hover:bg-destructive/10 ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
-            onClick={handleDelete}
-            aria-label={`Delete "${item.title}"`}
-          >
-            <LuTrash2 className='w-3.5 h-3.5' />
-          </Button>
-        </div>
-      )}
-    </div>
+        {!isEditing && (
+          <div className='flex items-center gap-1.5' onPointerDown={(e) => e.stopPropagation()}>
+            {extraActions}
+            <Button
+              variant='ghost'
+              size='icon'
+              className={`h-7 w-7 text-destructive hover:text-destructive/80 hover:bg-destructive/10 ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsDeleteDialogOpen(true)
+              }}
+              aria-label={`Delete "${item.title}"`}
+            >
+              <LuTrash2 className='w-3.5 h-3.5' />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete idea?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{item.title}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDelete()
+              }}
+              disabled={isPending}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            >
+              {isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

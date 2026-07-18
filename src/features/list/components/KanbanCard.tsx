@@ -5,6 +5,16 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { LuTrash2 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { ListItemDTO } from '@/types/dto';
 import { deleteItem, toggleItem } from '../actions';
 import { toast } from 'react-toastify';
@@ -27,6 +37,7 @@ export default function KanbanCard({
 }: KanbanCardProps) {
   const [isPending, startTransition] = useTransition();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -56,6 +67,7 @@ export default function KanbanCard({
         toast.error(result.error);
       } else {
         onDelete(item.id);
+        setIsDeleteDialogOpen(false);
       }
     });
   };
@@ -129,7 +141,7 @@ export default function KanbanCard({
             className={`h-6 w-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0 ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete();
+              setIsDeleteDialogOpen(true);
             }}
             onPointerDown={(e) => e.stopPropagation()}
             aria-label={`Delete "${item.title}"`}
@@ -145,6 +157,30 @@ export default function KanbanCard({
         onOpenChange={setIsEditOpen}
         onUpdated={(updatedItem) => onUpdate?.(updatedItem)}
       />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete task?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{item.title}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+              disabled={isPending}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            >
+              {isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
