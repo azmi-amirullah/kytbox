@@ -621,15 +621,15 @@ async function completeOnboarding() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Tour shows ONLY on first login (when `has_completed_onboarding = false`)
-- [ ] 5 steps with spotlight overlay targeting correct elements
-- [ ] "Skip" dismisses immediately and marks complete
-- [ ] "Next" advances through steps
-- [ ] Last step shows "Get Started" button
-- [ ] After completion: never shows again
-- [ ] Responsive: works on mobile (full-width tooltips)
-- [ ] Keyboard accessible: Tab navigates buttons, Escape skips
-- [ ] Smooth transitions between steps (Framer Motion)
+- [x] Tour shows ONLY on first login (when `has_completed_onboarding = false`)
+- [x] 5 steps with spotlight overlay targeting correct elements
+- [x] "Skip" dismisses immediately and marks complete
+- [x] "Next" advances through steps
+- [x] Last step shows "Get Started" button
+- [x] After completion: never shows again
+- [x] Responsive: works on mobile (full-width tooltips)
+- [x] Keyboard accessible: Tab navigates buttons, Escape skips
+- [x] Smooth transitions between steps (Framer Motion)
 
 ---
 

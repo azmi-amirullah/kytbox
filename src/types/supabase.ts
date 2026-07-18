@@ -502,6 +502,7 @@ export type Database = {
           custom_theme: Json | null
           default_currency: string | null
           display_name: string | null
+          has_completed_onboarding: boolean
           id: string
           role: string | null
           social_links: Json
@@ -518,6 +519,7 @@ export type Database = {
           custom_theme?: Json | null
           default_currency?: string | null
           display_name?: string | null
+          has_completed_onboarding?: boolean
           id: string
           role?: string | null
           social_links?: Json
@@ -534,6 +536,7 @@ export type Database = {
           custom_theme?: Json | null
           default_currency?: string | null
           display_name?: string | null
+          has_completed_onboarding?: boolean
           id?: string
           role?: string | null
           social_links?: Json

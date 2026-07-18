@@ -5,6 +5,7 @@ import { LuSearch } from 'react-icons/lu';
 export function SearchTrigger() {
   return (
     <button
+      id='tour-search-trigger'
       onClick={() => window.dispatchEvent(new CustomEvent('toggle-command-palette'))}
       className='flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-secondary/40 border border-border/80 rounded-lg hover:bg-secondary/80 hover:text-foreground transition-all cursor-pointer'
       aria-label='Search commands'

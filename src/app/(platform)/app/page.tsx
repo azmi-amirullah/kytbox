@@ -87,7 +87,7 @@ export default async function AppHomePage() {
         <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4'>
           All Apps
         </h2>
-        <div className='grid sm:grid-cols-2 md:grid-cols-3 gap-4'>
+        <div id='tour-apps-grid' className='grid sm:grid-cols-2 md:grid-cols-3 gap-4'>
           {KYTBOX_APPS.map((app) => {
             const Icon = app.icon;
             const isActive = app.status === 'active';
@@ -95,6 +95,7 @@ export default async function AppHomePage() {
             return (
               <Link
                 key={app.id}
+                id={`tour-app-${app.id}`}
                 href={isActive ? app.href : '#'}
                 className={`
                     group relative p-5 rounded-2xl border bg-card

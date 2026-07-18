@@ -6,6 +6,7 @@ import { userRoleSchema } from '@/lib/validation.schemas';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { CommandPalette } from '@/components/command-palette';
+import { OnboardingTour } from '@/components/onboarding-tour';
 
 export default async function PlatformLayout({
   children,
@@ -24,7 +25,7 @@ export default async function PlatformLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, display_name, avatar_url, role')
+    .select('username, display_name, avatar_url, role, has_completed_onboarding')
     .eq('id', user.id)
     .single();
 
@@ -50,6 +51,7 @@ export default async function PlatformLayout({
       />
       <main className='relative z-20 flex-1 w-full pt-16'>{children}</main>
       <CommandPalette />
+      <OnboardingTour hasCompletedOnboarding={profile.has_completed_onboarding} />
       <Footer />
     </div>
   );
