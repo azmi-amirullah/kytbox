@@ -57,9 +57,9 @@ No commits were pushed to the repository during May 2026.
 
 | ID | Issue | Severity | Status |
 | :--- | :--- | :--- | :--- |
-| **L1** | Fix layout overlap in Admin dashboard | ⚠️ Medium | 🔲 Backlog |
-| **A1** | Add ARIA attributes to breadcrumb `<nav>` and active elements | 💡 Low | 🔲 Backlog |
-| **Q1** | Add `type="button"` to theme category buttons | 💡 Low | 🔲 Backlog |
+| ~~**L1**~~ | ~~Fix layout overlap in Admin dashboard~~ | ~~⚠️ Medium~~ | ~~✅ Resolved~~ |
+| ~~**A1**~~ | ~~Add ARIA attributes to breadcrumb `<nav>` and active elements~~ | ~~💡 Low~~ | ~~✅ Resolved~~ |
+| ~~**Q1**~~ | ~~Add `type="button"` to theme category buttons~~ | ~~💡 Low~~ | ~~✅ Resolved~~ |
 
 ---
 
@@ -67,6 +67,6 @@ No commits were pushed to the repository during May 2026.
 
 | Priority | Items | Effort | Status |
 | :--- | :--- | :---: | :--- |
-| **P0 — Critical** | **L1**: Admin layout offset fix | ~15 min | 🔲 Backlog |
-| **P1 — High** | **A1**: Breadcrumb accessibility attributes | ~15 min | 🔲 Backlog |
-| **P2 — Medium** | **Q1**: Button markup standardizations | ~5 min | 🔲 Backlog |
+| **P0 — Critical** | **L1**: Admin layout offset fix | — | **RESOLVED** |
+| **P1 — High** | **A1**: Breadcrumb accessibility attributes | — | **RESOLVED** |
+| **P2 — Medium** | **Q1**: Button markup standardizations | — | **RESOLVED** |

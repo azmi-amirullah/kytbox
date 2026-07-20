@@ -54,12 +54,12 @@ export default function ListHub({ counts }: ListHubProps) {
   return (
     <div className='space-y-8'>
       {/* Breadcrumbs */}
-      <nav className='flex items-center gap-1 text-sm text-muted-foreground'>
+      <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground'>
         <Link href='/app' className='hover:text-foreground transition-colors'>
           Kytbox
         </Link>
         <span className='text-muted-foreground'>/</span>
-        <span className='text-foreground font-medium'>
+        <span aria-current='page' className='text-foreground font-medium'>
           List
         </span>
       </nav>

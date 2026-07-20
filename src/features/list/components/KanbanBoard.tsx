@@ -262,7 +262,7 @@ export default function KanbanBoard({
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
-      <nav className='flex items-center gap-1 text-sm text-muted-foreground'>
+      <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground'>
         <Link href='/app' className='hover:text-foreground transition-colors'>
           Kytbox
         </Link>
@@ -275,7 +275,7 @@ export default function KanbanBoard({
           Todo
         </Link>
         <span className='text-muted-foreground'>/</span>
-        <span className='text-foreground font-medium truncate max-w-[200px]'>
+        <span aria-current='page' className='text-foreground font-medium truncate max-w-[200px]'>
           {list.title}
         </span>
       </nav>

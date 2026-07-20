@@ -84,15 +84,15 @@ Key infrastructure changes included resolving client/server hydration errors by 
 
 | ID | Issue | Severity | Status |
 | :--- | :--- | :--- | :--- |
-| **L1** | Fix layout overlap in Admin dashboard | ⚠️ Medium | 🔲 Backlog |
-| **A1** | Add ARIA attributes to breadcrumb `<nav>` and active elements | 💡 Low | 🔲 Backlog |
-| **Q1** | Add `type="button"` to theme category buttons | 💡 Low | 🔲 Backlog |
 
 ## Resolved Actions
 
 | ID | Issue | Severity | Status |
 | :--- | :--- | :--- | :--- |
+| ~~**L1**~~ | ~~Fix layout overlap in Admin dashboard~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (June)~~ |
 | ~~**E1**~~ | ~~Hydration mismatch error in NextTopLoader~~ | ~~⚠️ Medium~~ | ~~✅ Fixed (Apr 15)~~ |
+| ~~**A1**~~ | ~~Add ARIA attributes to breadcrumb `<nav>` and active elements~~ | ~~💡 Low~~ | ~~✅ Fixed (July)~~ |
+| ~~**Q1**~~ | ~~Add `type="button"` to theme category buttons~~ | ~~💡 Low~~ | ~~✅ Fixed (June)~~ |
 
 ---
 
@@ -100,6 +100,6 @@ Key infrastructure changes included resolving client/server hydration errors by 
 
 | Priority | Items | Effort | Status |
 | :--- | :--- | :---: | :--- |
-| **P0 — Critical** | **L1**: Admin layout offset fix | ~15 min | 🔲 Backlog |
-| **P1 — High** | **A1**: Breadcrumb accessibility attributes | ~15 min | 🔲 Backlog |
-| **P2 — Medium** | **Q1**: Button markup standardizations | ~5 min | 🔲 Backlog |
+| **P0 — Critical** | **L1**: Admin layout offset fix | — | **FIXED** |
+| **P1 — High** | **A1**: Breadcrumb accessibility attributes | — | **FIXED** |
+| **P2 — Medium** | **Q1**: Button markup standardizations | — | **FIXED** |
