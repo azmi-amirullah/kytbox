@@ -43,6 +43,8 @@ import {
   LuChevronRight,
   LuChevronsLeft,
   LuChevronsRight,
+  LuSearch,
+  LuX,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import type {
@@ -60,6 +62,7 @@ import { ProjectionsView } from './ProjectionsView';
 import { subscribeToPublicCashflow, removeShare } from '../actions';
 import BudgetManager from './BudgetManager';
 import { DateFilter } from './DateFilter';
+import { Input } from '@/components/ui/input';
 import {
   filterEntriesByDate,
   resolveFilterRange,
@@ -115,6 +118,9 @@ export default function CashflowDetail({
     isOwner ? 'owner' : initialUserRole,
   );
 
+  // ── Search query ─────────────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState('');
+
   // ── Date filter ──────────────────────────────────────────────────────────────
   const [filterState, setFilterState] = useState<DateFilterState>({
     preset: 'all-time',
@@ -123,23 +129,33 @@ export default function CashflowDetail({
 
   const filteredEntries = useMemo(() => {
     const range = resolveFilterRange(filterState);
-    return filterEntriesByDate(entries, range);
-  }, [entries, filterState]);
+    const dateFiltered = filterEntriesByDate(entries, range);
+    if (!searchQuery.trim()) return dateFiltered;
+
+    const query = searchQuery.toLowerCase().trim();
+    return dateFiltered.filter((entry) =>
+      entry.description.toLowerCase().includes(query)
+    );
+  }, [entries, filterState, searchQuery]);
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Client-side pagination ─────────────────────────────────────────────────────
   const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
   type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
 
-  // Store page, pageSize, and filterState reference together so filter changes
+  // Store page, pageSize, filterState, and searchQuery reference together so filter or search changes
   // reset the page to 1 in a single render pass — no refs, no effects.
   const [pageInfo, setPageInfo] = useState<{
     page: number;
     pageSize: PageSizeOption;
     forFilter: DateFilterState;
-  }>({ page: 1, pageSize: 10, forFilter: filterState });
+    forSearch: string;
+  }>({ page: 1, pageSize: 10, forFilter: filterState, forSearch: searchQuery });
 
-  const currentPage = pageInfo.forFilter === filterState ? pageInfo.page : 1;
+  const currentPage =
+    pageInfo.forFilter === filterState && pageInfo.forSearch === searchQuery
+      ? pageInfo.page
+      : 1;
   const pageSize = pageInfo.pageSize;
 
   function goToPage(next: number | ((p: number) => number)) {
@@ -147,11 +163,12 @@ export default function CashflowDetail({
       page: typeof next === 'function' ? next(currentPage) : next,
       pageSize: prev.pageSize,
       forFilter: filterState,
+      forSearch: searchQuery,
     }));
   }
 
   function changePageSize(size: PageSizeOption) {
-    setPageInfo({ page: 1, pageSize: size, forFilter: filterState });
+    setPageInfo({ page: 1, pageSize: size, forFilter: filterState, forSearch: searchQuery });
   }
 
   const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize));
@@ -787,6 +804,28 @@ export default function CashflowDetail({
       {/* Projections View — always uses unfiltered entries (recurring logic is time-aware) */}
       <ProjectionsView entries={entries} currency={currency} />
 
+      {/* Search Input */}
+      {entries.length > 0 && (
+        <div className='relative flex items-center max-w-sm w-full'>
+          <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground' />
+          <Input
+            placeholder='Search entries...'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className='pl-9 pr-9 bg-card'
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className='absolute right-3 text-muted-foreground hover:text-foreground focus:outline-none'
+              aria-label='Clear search'
+            >
+              <LuX className='w-4 h-4' />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Entries Table */}
       <div className='bg-card border rounded-xl overflow-hidden relative'>
         {isPending && (
@@ -802,9 +841,11 @@ export default function CashflowDetail({
             <p className='text-sm mb-4'>
               {entries.length === 0
                 ? 'No entries yet. Add your first transaction.'
+                : searchQuery.trim()
+                ? `No entries match "${searchQuery}".`
                 : 'No entries match the selected date range.'}
             </p>
-            {entries.length === 0 && (
+            {entries.length === 0 ? (
               <Button
                 onClick={openAddEntry}
                 variant='outline'
@@ -813,6 +854,17 @@ export default function CashflowDetail({
                 <LuPlus className='w-4 h-4' />
                 Add Entry
               </Button>
+            ) : (
+              searchQuery.trim() && (
+                <Button
+                  onClick={() => setSearchQuery('')}
+                  variant='outline'
+                  className='gap-2'
+                >
+                  <LuX className='w-4 h-4' />
+                  Clear Search
+                </Button>
+              )
             )}
           </div>
         ) : (

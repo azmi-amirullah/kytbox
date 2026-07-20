@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { ErrorState } from '@/components/ui/error-state';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 
 export default function AdminError({
   error,
@@ -16,6 +17,10 @@ export default function AdminError({
 
   useEffect(() => {
     console.error('Admin Panel Error:', error, { path: pathname });
+    Sentry.captureException(error, {
+      tags: { path: pathname },
+      extra: { digest: error.digest },
+    });
   }, [error, pathname]);
 
   return (

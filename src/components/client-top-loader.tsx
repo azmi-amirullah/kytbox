@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import '@/sentry.client.config';
 
 const NextTopLoader = dynamic(() => import('nextjs-toploader'), { ssr: false });
 

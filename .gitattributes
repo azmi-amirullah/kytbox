@@ -13,4 +13,3 @@
 *.avif binary
 *.ico binary
 *.gif binary
-graphify-out/graph.json merge=graphify

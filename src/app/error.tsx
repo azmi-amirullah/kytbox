@@ -5,6 +5,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 
 export default function GlobalError({
   error,
@@ -19,6 +20,10 @@ export default function GlobalError({
   useEffect(() => {
     // Log the error to an error reporting service
     console.error('Global Application Error:', error, { path: pathname });
+    Sentry.captureException(error, {
+      tags: { path: pathname },
+      extra: { digest: error.digest },
+    });
 
     const checkAuth = async () => {
       const supabase = createClient();
