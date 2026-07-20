@@ -10,7 +10,7 @@ const isDev = process.env.NODE_ENV === 'development';
 export function buildCspHeader(nonce: string): string {
   const csp = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' https://va.vercel-scripts.com ${isDev ? "'unsafe-eval'" : ''};
+    script-src 'self' 'nonce-${nonce}' https://va.vercel-scripts.com 'sha256-TiyWB4YB4NUrUHDJSqaW0w0OtUb7i0Tddwwo6j0O07c=' 'sha256-HugGj5oR7f2UGBbrPIOJua5vPpKBIJj8354Z6gsKoUQ=' ${isDev ? "'unsafe-eval'" : ''};
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://*.supabase.co;
     font-src 'self';
