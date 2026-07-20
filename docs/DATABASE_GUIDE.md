@@ -105,6 +105,15 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 | 11    | `20260307153700_update_yearly_calc.sql`              | `yearly_calculation` column on `cashflow_entries`.                  |
 | 12    | `20260311_create_cashflow_budgets.sql`               | `cashflow_budgets` table with RLS (owner: all, editor: read).       |
 | 13    | `20260703063150_create_list_tables.sql`             | `lists`, `list_columns`, `list_items`, `list_summaries` view, and RLS. |
+| 14    | `20260712000000_recent_activity_rpc.sql`            | RPC function `get_recent_activity` for the platform dashboard feed. |
+| 15    | `20260712000100_reorder_items_rpc.sql`              | RPC function `reorder_items` for list/board card sorting.            |
+| 16    | `20260712000200_top_links_rpc.sql`                  | RPC function `get_top_links` for analytics.                          |
+| 17    | `20260712000300_performance_indexes.sql`            | Added database performance indexes on high-traffic tables.          |
+| 18    | `20260714_add_link_scheduling.sql`                  | `scheduled_at` and `expires_at` columns on `links` with indexing.    |
+| 19    | `20260715_add_link_headers.sql`                     | Section header support on `links` (url null, is_header boolean).     |
+| 20    | `20260716_add_unique_recurring_index.sql`           | `unique_recurring_monthly_entry` constraint and template RPC.       |
+| 21    | `20260717_get_analytics_by_country.sql`             | RPC function `get_analytics_by_country` for visitor geography.       |
+| 22    | `20260718_add_onboarding_flag.sql`                  | `has_completed_onboarding` column on `profiles` for onboarding.       |
 
 ---
 
@@ -119,4 +128,4 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 
 ---
 
-_Last Updated: March 11, 2026_
+_Last Updated: July 20, 2026_

@@ -692,12 +692,12 @@ useEffect(() => {
 ```
 
 **Acceptance Criteria:**
-- [ ] Sentry DSN configured via env vars
-- [ ] Client errors captured with stack trace + browser info
-- [ ] Server errors captured with stack trace + route info
-- [ ] Error boundaries send to Sentry automatically
-- [ ] Source maps uploaded during build (dev sees original code in Sentry)
-- [ ] Optional: works fine when SENTRY_DSN is empty (dev mode)
+- [x] Sentry DSN configured via env vars
+- [x] Client errors captured with stack trace + browser info
+- [x] Server errors captured with stack trace + route info
+- [x] Error boundaries send to Sentry automatically
+- [x] Source maps uploaded during build (dev sees original code in Sentry)
+- [x] Optional: works fine when SENTRY_DSN is empty (dev mode)
 
 #### 2. Cashflow: Entry Searchbar
 
@@ -709,10 +709,10 @@ useEffect(() => {
 - `src/features/cashflow/components/CashflowDetail.tsx` — Add search input and apply case-insensitive description filtering.
 
 **Acceptance Criteria:**
-- [ ] Search input above transaction list
-- [ ] Instant case-insensitive filtering of entries
-- [ ] Clean empty state when no results match
-- [ ] Clear button in search input to reset search
+- [x] Search input above transaction list
+- [x] Instant case-insensitive filtering of entries
+- [x] Clean empty state when no results match
+- [x] Clear button in search input to reset search
 
 ---
 

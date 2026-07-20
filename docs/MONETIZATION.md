@@ -6,12 +6,7 @@ This document defines the monetization model, pricing strategy, and technical ar
 > **Core Philosophy:** Free users get a fully functional product. Pro users pay for **advanced power**, **custom branding**, and **higher limits**.
 > **Strategic Pivot (Feb 2025):** We use a **Merchant of Record (MoR)** strategy to avoid global tax liability.
 >
-> **Documentation Note:** This document includes detailed architectural specs for future phases (Payment Integration, Gating). We document them **now** so we understand the _implementation path_ and _structural requirements_ early, avoiding costly refactors later. **Knowing "Why later" is as important as knowing "What now".**
->
-> **See Also:** [PRE_MONETIZATION_IMPROVEMENTS.md](./PRE_MONETIZATION_IMPROVEMENTS.md) for the UX, legal, and support readiness work required **before** enabling payments.
->
-> > [!WARNING]
-> > **STATUS UPDATE (Feb 2026):** Implementation of this monetization architecture is currently **ON HOLD**. The team is prioritizing core product features (Bio Editor, Auto-save, etc.) before introducing payment gates. All schema migrations and integrations below are deferred.
+> **STATUS UPDATE (Feb 2026):** Implementation of this monetization architecture is currently **ON HOLD**. The team is prioritizing core product features (Bio Editor, Auto-save, etc.) before introducing payment gates. All schema migrations and integrations below are deferred.
 
 ---
 
@@ -107,6 +102,11 @@ create index idx_subscriptions_user_id on subscriptions (user_id);
 -- RLS: Users can read their own subscription
 create policy "Users can read own subscription" on subscriptions
   for select using (auth.uid() = user_id);
+
+-- public.profiles modifications
+alter table profiles add column tier text not null default 'free'
+  check (tier in ('free', 'pro'));
+alter table profiles add column subscription_status text not null default 'none';
 ```
 
 ### 3.3 The "IsPro" Check (Performance)
@@ -116,8 +116,6 @@ create policy "Users can read own subscription" on subscriptions
 
 > [!IMPORTANT]
 > The `profiles.tier` column is the **single source of truth** for feature gating on the frontend. The `subscriptions` table is the **billing record**. A database trigger keeps them in sync.
->
-> See [PRE_MONETIZATION_IMPROVEMENTS.md § 4.1](./PRE_MONETIZATION_IMPROVEMENTS.md#41-the-user-tier-system) for the `profiles.tier` schema change.
 
 **Database Trigger:** When `subscriptions` changes, update `profiles.tier`. Handles the cancellation grace period (`ends_at`).
 
@@ -199,9 +197,36 @@ We must handle webhooks securely and idempotently to keep the database in sync.
 > [!WARNING]
 > **Webhook Reliability:** Lemon Squeezy (and all webhook providers) may deliver the same event multiple times. Every webhook handler **must** be idempotent. Never assume a webhook fires exactly once.
 
-### 3.5 Pro Feature Boundaries
+### 3.5 Feature Gating Utility
 
-The table below defines what is gated behind Pro. Both docs reference this as the canonical list.
+Create a centralized utility to manage feature access. Uses a feature map for easy extension.
+
+```typescript
+// lib/permissions.ts
+const PRO_FEATURES = [
+  'custom_theme',
+  'remove_branding',
+  'custom_domain',
+  'advanced_analytics',
+] as const;
+
+type ProFeature = (typeof PRO_FEATURES)[number];
+
+const FEATURE_ACCESS: Record<ProFeature, string[]> = {
+  custom_theme: ['pro'],
+  remove_branding: ['pro'],
+  custom_domain: ['pro'],
+  advanced_analytics: ['pro'],
+};
+
+export function canAccess(tier: string, feature: ProFeature): boolean {
+  return FEATURE_ACCESS[feature]?.includes(tier) ?? false;
+}
+```
+
+### 3.6 Pro Feature Boundaries
+
+The table below defines what is gated behind Pro.
 
 | Feature           | Free                      | Pro                                   |
 | :---------------- | :------------------------ | :------------------------------------ |
@@ -213,7 +238,27 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 
 ---
 
-## 4. Phasing Strategy & Rationale
+## 4. Operational & UX Readiness Foundations
+
+These structures were implemented in Phase 1 and Phase 2 to prepare Kytbox for payment gateways.
+
+### 4.1 Bio Dashboard UX Refactor (Tabs Architecture)
+The Bio Dashboard is refactored from a monolithic client view into isolated contexts using URL-driven state (`?tab=links`).
+* **Persistent Preview**: `PhonePreview` remains visible across tab switches.
+* **Layout Integrity**: The 2-column layout ensures the live mobile preview is never squashed or hidden on standard desktop sizes.
+
+### 4.2 Legal Compliance
+Merchant of Record (Lemon Squeezy) requires these pages to be publicly accessible:
+* **Terms of Service**: Defines acceptable use, cancellation policy, and warranties.
+* **Privacy Policy**: GDPR-compliant with legal basis for data processing.
+* **Refund Policy**: Explicit rules (e.g., "14-day money-back guarantee").
+
+### 4.3 Support Infrastructure (Ticket System)
+Paid users expect priority support. We built a lightweight internal ticketing system (`/support` and `/support-admin`) to score ticket urgency (`total_urgency = age_days + urgency_score`) and prioritize paid users without Intercom/Zendesk subscription overhead.
+
+---
+
+## 5. Phasing Strategy & Rationale
 
 **Why do we implement features in this specific order?**
 
@@ -226,7 +271,6 @@ The table below defines what is gated behind Pro. Both docs reference this as th
     - We must build the _value_ (themes, analytics, expert features) before we build the _gate_.
     - Asking for money without a polished product leads to high churn.
     - Legal compliance (Terms/Privacy) must exist before taking a single cent.
-    - See [PRE_MONETIZATION_IMPROVEMENTS.md](./PRE_MONETIZATION_IMPROVEMENTS.md) for the full pre-payment readiness checklist.
 
 3.  **Deferred Features (Post-Launch):**
     - **Link Scheduling:** Complex UI, niche use case. High effort, low initial impact.
@@ -234,32 +278,32 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 
 ---
 
-## 5. Implementation Roadmap
+## 6. Implementation Roadmap
 
-### Phase 1: Foundation & UX (Pre-Monetization)
+### Phase 1: Foundation & UX (Pre-Monetization) - **[COMPLETED]**
 
-- [x] Refactor Bio Dashboard to tab-based architecture (see [PRE_MONETIZATION doc § 1](./PRE_MONETIZATION_IMPROVEMENTS.md#1-bio-dashboard-architecture-ux-refactor))
-- [x] Legal pages: `/terms`, `/privacy`, `/refund` (see [PRE_MONETIZATION doc § 3.1](./PRE_MONETIZATION_IMPROVEMENTS.md#31-legal-compliance))
-- [x] Internal support ticket system (see [PRE_MONETIZATION doc § 3.2](./PRE_MONETIZATION_IMPROVEMENTS.md#32-support-infrastructure-internal-ticket-system))
-- [x] High-performance Custom Theme engine (Debounced, CSS variables)
-- [x] Add `tier` column to `profiles` (see [PRE_MONETIZATION doc § 4.1](./PRE_MONETIZATION_IMPROVEMENTS.md#41-the-user-tier-system))
-- [ ] Implement `canAccess()` feature gate utility (see [PRE_MONETIZATION doc § 4.2](./PRE_MONETIZATION_IMPROVEMENTS.md#42-feature-flag-utility))
+- [x] Refactor Bio Dashboard to tab-based architecture.
+- [x] Legal pages: `/terms`, `/privacy`, `/refund`.
+- [x] Internal support ticket system.
+- [x] High-performance Custom Theme engine (Debounced, CSS variables).
+- [x] Add `tier` column to `profiles`.
+- [ ] Implement `canAccess()` feature gate utility.
 
-### Phase 2: Payment Integration
+### Phase 2: Payment Integration - **[ON HOLD]**
 
 - [ ] Set up Lemon Squeezy Store & Products.
-- [ ] Create `subscriptions` table (schema above).
+- [ ] Create `subscriptions` table.
 - [ ] Create API Route for Checkout Session creation.
 - [ ] Create API Route for Webhook handling (idempotent).
 - [ ] Set up `pg_cron` for grace period cleanup.
 
-### Phase 3: Gating & UI
+### Phase 3: Gating & UI - **[ON HOLD]**
 
 - [ ] Add "Upgrade" buttons in UI.
 - [ ] Gate "Remove Branding" feature.
 - [ ] Gate "Custom Themes" (Engine is built, entry points need gating).
 
-### Phase 4: Launch
+### Phase 4: Launch - **[ON HOLD]**
 
 - [ ] Test purchase flow (Sandbox).
 - [ ] Verify webhook reliability (multiple deliveries, edge cases).
@@ -267,7 +311,7 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 
 ---
 
-## 6. Rollback & Failure Modes
+## 7. Rollback & Failure Modes
 
 | Failure Scenario              | Impact                            | Mitigation                                                    |
 | :---------------------------- | :-------------------------------- | :------------------------------------------------------------ |
@@ -278,4 +322,4 @@ The table below defines what is gated behind Pro. Both docs reference this as th
 
 ---
 
-_Last Updated: February 2026_
+_Last Updated: July 20, 2026_

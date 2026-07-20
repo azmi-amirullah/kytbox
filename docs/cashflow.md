@@ -246,10 +246,10 @@ stateDiagram-v2
 ✅ DTO Safety Layer — zero raw DB rows leaked to client  
 ✅ SQL View aggregation (`cashflow_summaries`) — O(N) offloaded to DB  
 ✅ Scalable sharing model with full RLS audit  
-🔲 CSV Export (respects date filter, next up)
+✅ CSV Export (respects date filter)  
 
 ---
 
 _For loading state details, see [LOADING_STATES.md](./LOADING_STATES.md)_
 
-_Last Updated: March 11, 2026_
+_Last Updated: July 20, 2026_

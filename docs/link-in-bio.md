@@ -15,6 +15,8 @@ Focus: **Scalable branding and high-performance UX.**
 - **Nested Folders**: Recursive single-table PostgreSQL design. Native iOS-style slide transitions via Framer Motion for drill-down navigation.
 - **High-Performance Pagination**: Native "Load More" pattern for both root-level links and nested folder contents on the public profile and dashboard preview.
 - **Hybrid Sync Engine**: 1:1 state synchronization between the dashboard editor and phone preview using a 'Server-as-Truth' Refresh API for structural changes (Add/Move) and local patching for micro-interactions (Toggles/Drag).
+- **Link Scheduling**: Start and end date/time parameters for scheduled activation or auto-expiration of links and folders.
+- **Section Headers**: Visual divider elements inside profiles and folders to category-group related links.
 
 ## 2. Tech Stack
 
@@ -71,6 +73,9 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 | `parent_id`       | uuid        | Self-referencing FK for nesting (ON DELETE CASCADE) |
 | `created_at`      | timestamptz |                                                     |
 | `short_id`        | int         | Per-user sequential ID (1, 2, 3). Unique per user.  |
+| `scheduled_at`    | timestamptz | Nullable. Start date/time for visibility.           |
+| `expires_at`      | timestamptz | Nullable. Expiry date/time for visibility.          |
+| `is_header`       | bool        | True if item acts as a section divider header.      |
 
 ### `link_events` (Analytics)
 
@@ -81,8 +86,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-supabase-anon-key
 | `created_at` | timestamptz | Event timestamp           |
 | `user_agent` | text        | Nullable                  |
 | `referer`    | text        | Nullable. Traffic source. |
-| `country`    | text        | Nullable. Future use.     |
-| `city`       | text        | Nullable. Future use.     |
+| `country`    | text        | Nullable. Country code.   |
+| `city`       | text        | Nullable. City name.      |
 
 ### `profile_events` (Page Views)
 
@@ -392,4 +397,4 @@ See `src/lib/username.ts` for full list.
 - **Custom Domain support** — deferred.
 - **Advanced SEO metadata editor** — Pro feature, deferred.
 
-_Last Updated: March 11, 2026_
+_Last Updated: July 20, 2026_

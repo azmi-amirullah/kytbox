@@ -345,14 +345,13 @@ Note: If Bio fails, the platform can pivot to other apps (List, Track, etc.).
 | **Logic**         | Zero-Based Budgeting | Debt Tracking Only | **Multi-Book Tracking**                |
 | **Collaboration** | Household Sharing    | Group Expenses     | **Granular ACL** (Owner/Editor/Reader) |
 | **Recurrence**    | Manual / Auto        | Basic Recurring    | **Prorated vs Exact** (Advanced)       |
-| **Portability**   | Full Export          | Basic CSV          | 🔲 CSV Export (next up)               |
+| **Portability**   | Full Export          | Basic CSV          | **CSV Export**                         |
 | **Visuals**       | Complexity First     | List First         | **Dashboard First**                    |
 
-**V1 Status: ~90% Launch Ready.** Strongest differentiator is collaborative tracking with granular ACL. Remaining gap:
+**V1 Status: ~95% Launch Ready.** Strongest differentiator is collaborative tracking with granular ACL. Remaining gaps:
 
 | Gap | Impact |
 | :-- | :----- |
-| **CSV Export** | Critical — users won't commit financial data to a black box |
 | **Receipt/Attachment Support** | High for business/freelance tax records |
 | **Bulk Transaction Editing** | Medium — power-user quality of life |
 

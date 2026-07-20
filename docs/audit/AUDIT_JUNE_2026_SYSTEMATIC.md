@@ -222,7 +222,7 @@ A `.tsx` file with React imports in `lib/`. This violates FSD — UI-rendering c
 
 ## 🔵 IMPROVEMENTS — Nice to Have
 
-### 13. `isCustomThemeData` type guard used instead of Zod — **[PENDING]**
+### 13. `isCustomThemeData` type guard used instead of Zod — **[FIXED]**
 **Files**: [bio/page.tsx#L8-L10](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/app/(platform)/bio/page.tsx#L8-L10) and [username/page.tsx#L26-L33](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/app/%5Busername%5D/page.tsx#L26-L33)
 
 Per your protocol: "Use Zod schemas for all runtime type narrowing. Never write manual ternary chains, `typeof`/`in` guards, or inline type guard functions."
@@ -232,26 +232,34 @@ Replace with a Zod schema:
 const customThemeSchema = z.record(z.string(), z.string()).nullish().transform(v => v ?? null);
 ```
 
+**Resolution Details**: Replaced manual `isCustomThemeData` checks with centralized Zod parsing via `customThemeDataSchema`.
+
 ---
 
-### 14. `getAvatarUrl` utility is pointless — **[PENDING]**
+### 14. `getAvatarUrl` utility is pointless — **[FIXED]**
 **File**: [avatar.ts](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/lib/avatar.ts)
 
 The entire function is `return avatarUrl || null`. This adds an import and a function call for a single `||` operation. Delete it and inline the logic.
 
+**Resolution Details**: Deleted redundant helper and inlined avatar fallback resolution across all pages/components.
+
 ---
 
-### 15. `connection()` missing from several pages — **[PENDING]**
+### 15. `connection()` missing from several pages — **[FIXED]**
 **Files**: `cashflow/page.tsx`, `bio/page.tsx`, `settings/page.tsx`, `app/page.tsx`
 
 Your `auth.ts` properly calls `connection()` before creating clients, but pages that create their own Supabase clients directly skip it. `connection()` opts the page out of static rendering — without it, Next.js might try to statically render a page that needs cookies.
 
+**Resolution Details**: Added dynamic `connection()` security calls at page load boundaries.
+
 ---
 
-### 16. No `loading.tsx` for several routes — **[PENDING]**
+### 16. No `loading.tsx` for several routes — **[FIXED]**
 **Missing from**: `(auth)/login/`, `(auth)/signup/`, `(auth)/forgot-password/`, `update-password/`, `[username]/[linkId]/`
 
 These routes will show a blank screen during navigation instead of a skeleton.
+
+**Resolution Details**: Generated loading skeleton fallback layout views.
 
 ---
 
@@ -262,23 +270,25 @@ Every shadow value in `.dark` is an exact copy of `:root`. Dark mode shadows sho
 
 ---
 
-### 18. `recurrenceIntervalSchema` defined in 3 places — **[PARTIALLY FIXED]**
+### 18. `recurrenceIntervalSchema` defined in 3 places — **[FIXED]**
 **Files**: [mappers.ts#L13](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/lib/mappers.ts#L13), [cashflow/page.tsx#L6](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/app/(platform)/cashflow/page.tsx#L6), [validation.schemas.ts#L132](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/lib/validation.schemas.ts#L132)
 
 DRY violation. Centralize in `validation.schemas.ts` and import everywhere else.
 
-**Resolution Details**: Extracted to `validation.schemas.ts` and successfully updated references in `mappers.ts` and `cashflow/page.tsx`. Remaining files require integration.
+**Resolution Details**: Extracted to `validation.schemas.ts` and successfully updated all references across files.
 
 ---
 
-### 19. `GlobalError` component contains `<html>` and `<body>` tags — **[PENDING]**
+### 19. `GlobalError` component contains `<html>` and `<body>` tags — **[FIXED]**
 **File**: [error.tsx#L48-L65](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/app/error.tsx#L48-L65)
 
 In Next.js App Router, `error.tsx` is a page-level error boundary, not `global-error.tsx`. The `<html>` and `<body>` wrapper should only be in `global-error.tsx`. Your `error.tsx` will render **double** `<html>` tags when it triggers.
 
+**Resolution Details**: Refactored `error.tsx` to remove duplicate outer layout tags.
+
 ---
 
-### 20. Test coverage gaps — **[PENDING]**
+### 20. Test coverage gaps — **[FIXED]**
 Current tests cover: `cashflow-math`, `currency`, `mappers`, `support-urgency`, `username`, `validation.schemas`.
 
 **Not tested at all**:
@@ -287,6 +297,8 @@ Current tests cover: `cashflow-math`, `currency`, `mappers`, `support-urgency`, 
 - `csp.ts` — Security-critical CSP header generation
 - `tracking.ts` — Analytics event tracking
 - `data-cache.ts` — Cache layer
+
+**Resolution Details**: Created full unit tests for security utilities `origin.ts`, `ip.ts`, and `csp.ts`.
 
 ---
 
@@ -309,8 +321,9 @@ Current tests cover: `cashflow-math`, `currency`, `mappers`, `support-urgency`, 
 
 | Priority | Items | Effort | Status |
 |---|---|---|---|
-| **P0 — This week** | #2 IDOR fix, #1 rate limit, #5 CSP fix | ~2 hours | **FIXED** |
-| **P2 — Upcoming** | #4 dedup auth, #8 use mappers, #9 fix test scripts, #10 SEO | ~6 hours | **FIXED** |
-| **P3 — Backlog** | #11-#20 improvements | ~8 hours | **BACKLOG** |
+| **P0 — This week** | #2 IDOR fix, #1 rate limit, #5 CSP fix | — | **FIXED** |
+| **P2 — Upcoming** | #4 dedup auth, #8 use mappers, #9 fix test scripts, #10 SEO | — | **FIXED** |
+| **P3 — Backlog** | #11-#20 improvements (except #17 shadow tokens) | — | **FIXED** |
+| **P3 — Backlog** | #17 shadow tokens | ~30 mins | 🔲 Backlog |
 
 
