@@ -1,33 +1,17 @@
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { userRoleSchema } from '@/lib/validation.schemas';
 import { redirect } from 'next/navigation';
-import { connection } from 'next/server';
-import { CommandPalette } from '@/components/command-palette';
-import { OnboardingTour } from '@/components/onboarding-tour';
+import { PlatformOverlays } from '@/components/platform-overlays';
 
 export default async function PlatformLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await connection();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username, display_name, avatar_url, role, has_completed_onboarding')
-    .eq('id', user.id)
-    .single();
+  const { user, profile } = await getAuthenticatedUserAndProfile();
 
   if (!profile) {
     redirect('/onboarding');
@@ -51,8 +35,7 @@ export default async function PlatformLayout({
         publicUrl={`/${profile.username}`}
       />
       <main className='relative z-20 flex-1 w-full pt-16'>{children}</main>
-      <CommandPalette />
-      <OnboardingTour hasCompletedOnboarding={profile.has_completed_onboarding} />
+      <PlatformOverlays hasCompletedOnboarding={profile.has_completed_onboarding} />
       <Footer />
     </div>
   );

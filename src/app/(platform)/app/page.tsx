@@ -1,4 +1,4 @@
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import Link from 'next/link';
 import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
 import { KYTBOX_APPS } from '@/config/apps';
@@ -19,13 +19,7 @@ const SUPPORT_SECTION = {
  * Dynamic view aggregating statistics and recent activities across all Kytbox apps.
  */
 export default async function AppHomePage() {
-  const { user, supabase } = await getAuthenticatedUser();
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username, display_name, role, default_currency')
-    .eq('id', user.id)
-    .single();
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);

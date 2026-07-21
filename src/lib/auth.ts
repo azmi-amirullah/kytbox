@@ -40,7 +40,7 @@ export const getOptionalUserAndProfile = cache(async () => {
   return { user, profile, supabase };
 });
 
-export async function getAuthenticatedUserAndProfile() {
+export const getAuthenticatedUserAndProfile = cache(async () => {
   await connection();
   const supabase = await createClient();
 
@@ -60,15 +60,13 @@ export async function getAuthenticatedUserAndProfile() {
 
   if (error || !profile) {
     console.error('Profile not found for authenticated user:', user.id);
-    // In many cases, we might want to redirect if the profile is missing
-    // but handle_new_user trigger should prevent this.
     return { user, profile: null, supabase };
   }
 
   return { user, profile, supabase };
-}
+});
 
-export async function getAuthenticatedUser() {
+export const getAuthenticatedUser = cache(async () => {
   await connection();
   const supabase = await createClient();
 
@@ -81,5 +79,5 @@ export async function getAuthenticatedUser() {
   }
 
   return { user, supabase };
-}
+});
 
