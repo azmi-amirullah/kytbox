@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import {
   LuArrowRight,
   LuShieldCheck,
@@ -16,31 +16,54 @@ import {
   LuLightbulb,
   LuSparkles,
   LuCommand,
-} from 'react-icons/lu';
-import { SiGithub, SiLinkedin } from 'react-icons/si';
+} from 'react-icons/lu'
+import { SiGithub, SiLinkedin } from 'react-icons/si'
 
-import { getOptionalUserAndProfile } from '@/lib/auth';
-import { Header } from '@/components/header';
-import { Footer } from '@/components/footer';
-import { Metadata } from 'next';
-import { siteConfig } from '@/config/site';
-import pkg from '../../../package.json';
+import dynamic from 'next/dynamic'
+import { getOptionalUserAndProfile } from '@/lib/auth'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
+import { Metadata } from 'next'
+import { siteConfig } from '@/config/site'
+import pkg from '../../../package.json'
 
-import { HeroTextCycler } from './components/HeroTextCycler';
-import { ScrollReveal } from './components/ScrollReveal';
-import {
-  BioMockup,
-  CashflowMockup,
-  ListMockup,
-} from './components/FeatureMockups';
+import { HeroTextCycler } from './components/HeroTextCycler'
+import { ScrollReveal } from './components/ScrollReveal'
+
+const BioMockup = dynamic(
+  () => import('./components/FeatureMockups').then((mod) => mod.BioMockup),
+  {
+    loading: () => (
+      <div className='mx-auto w-55 sm:w-65 h-90 rounded-4xl border border-border/40 bg-card/40 animate-pulse' />
+    ),
+  },
+)
+
+const CashflowMockup = dynamic(
+  () => import('./components/FeatureMockups').then((mod) => mod.CashflowMockup),
+  {
+    loading: () => (
+      <div className='mx-auto w-full max-w-80 h-60 rounded-2xl border border-border/40 bg-card/40 animate-pulse' />
+    ),
+  },
+)
+
+const ListMockup = dynamic(
+  () => import('./components/FeatureMockups').then((mod) => mod.ListMockup),
+  {
+    loading: () => (
+      <div className='mx-auto w-full max-w-90 h-55 rounded-2xl border border-border/40 bg-card/40 animate-pulse' />
+    ),
+  },
+)
 
 export const metadata: Metadata = {
   title: `${siteConfig.name} - Your Personal Kit Box`,
   description: siteConfig.description,
-};
+}
 
 export default async function LandingPage() {
-  const { user, profile } = await getOptionalUserAndProfile();
+  const { user, profile } = await getOptionalUserAndProfile()
 
   const userData =
     user && profile
@@ -52,9 +75,9 @@ export default async function LandingPage() {
           display_name: profile.display_name,
           role: profile.role,
         }
-      : null;
+      : null
 
-  const ctaHref = userData ? '/app' : '/signup';
+  const ctaHref = userData ? '/app' : '/signup'
 
   return (
     <div className='relative min-h-screen flex flex-col overflow-x-hidden'>
@@ -86,8 +109,7 @@ export default async function LandingPage() {
             <h1 className='text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-tight'>
               Your links. Your money.
               <br className='hidden sm:block' />
-              Your lists.{' '}
-              <span className='text-primary'>One platform.</span>
+              Your lists. <span className='text-primary'>One platform.</span>
             </h1>
 
             <p className='text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed'>
@@ -124,19 +146,27 @@ export default async function LandingPage() {
             </ScrollReveal>
             <ScrollReveal delay={0.15}>
               <div className='space-y-6'>
-                <div className='inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-widest'>
-                  <span className='w-8 h-px bg-primary' />
+                <div className='inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gray-600'>
                   Bio
                 </div>
                 <h2 className='text-3xl sm:text-4xl font-bold tracking-tight'>
                   Your link-in-bio,{' '}
-                  <span className='text-primary'>supercharged</span>
+                  <span className='text-gray-600'>supercharged</span>
                 </h2>
                 <ul className='space-y-4 text-muted-foreground'>
                   {[
-                    { icon: LuFolderTree, text: 'Nested folders for organized link groups' },
-                    { icon: LuPalette, text: '13+ themes with custom color engine' },
-                    { icon: LuChartBar, text: 'Click analytics with country breakdown' },
+                    {
+                      icon: LuFolderTree,
+                      text: 'Nested folders for organized link groups',
+                    },
+                    {
+                      icon: LuPalette,
+                      text: '13+ themes with custom color engine',
+                    },
+                    {
+                      icon: LuChartBar,
+                      text: 'Click analytics with country breakdown',
+                    },
                   ].map(({ icon: Icon, text }) => (
                     <li key={text} className='flex items-start gap-3'>
                       <div className='mt-0.5 p-1.5 rounded-lg bg-primary/10'>
@@ -156,8 +186,7 @@ export default async function LandingPage() {
           <div className='max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center'>
             <ScrollReveal delay={0.15} className='order-2 md:order-1'>
               <div className='space-y-6'>
-                <div className='inline-flex items-center gap-2 text-xs font-semibold text-emerald-500 uppercase tracking-widest'>
-                  <span className='w-8 h-px bg-emerald-500' />
+                <div className='inline-flex items-center gap-2 text-xs font-semibold text-emerald-500 uppercase tracking-widest '>
                   Cashflow
                 </div>
                 <h2 className='text-3xl sm:text-4xl font-bold tracking-tight'>
@@ -166,9 +195,18 @@ export default async function LandingPage() {
                 </h2>
                 <ul className='space-y-4 text-muted-foreground'>
                   {[
-                    { icon: LuChartBar, text: 'Smart projections & budget tracking' },
-                    { icon: LuPiggyBank, text: 'Recurring entry auto-generation' },
-                    { icon: LuUsers, text: 'Granular ACL sharing with collaborators' },
+                    {
+                      icon: LuChartBar,
+                      text: 'Smart projections & budget tracking',
+                    },
+                    {
+                      icon: LuPiggyBank,
+                      text: 'Recurring entry auto-generation',
+                    },
+                    {
+                      icon: LuUsers,
+                      text: 'Granular ACL sharing with collaborators',
+                    },
                   ].map(({ icon: Icon, text }) => (
                     <li key={text} className='flex items-start gap-3'>
                       <div className='mt-0.5 p-1.5 rounded-lg bg-emerald-500/10'>
@@ -195,7 +233,6 @@ export default async function LandingPage() {
             <ScrollReveal delay={0.15}>
               <div className='space-y-6'>
                 <div className='inline-flex items-center gap-2 text-xs font-semibold text-blue-500 uppercase tracking-widest'>
-                  <span className='w-8 h-px bg-blue-500' />
                   List
                 </div>
                 <h2 className='text-3xl sm:text-4xl font-bold tracking-tight'>
@@ -229,7 +266,8 @@ export default async function LandingPage() {
                 Built for creators, freelancers, and teams
               </h2>
               <p className='text-muted-foreground text-lg max-w-xl mx-auto'>
-                Everything you need to manage your online presence, finances, and productivity.
+                Everything you need to manage your online presence, finances,
+                and productivity.
               </p>
             </div>
           </ScrollReveal>
@@ -400,5 +438,5 @@ export default async function LandingPage() {
 
       <Footer variant='landing' />
     </div>
-  );
+  )
 }
