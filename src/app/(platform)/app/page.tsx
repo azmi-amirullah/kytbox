@@ -1,10 +1,14 @@
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
 import { KYTBOX_APPS } from '@/config/apps';
 import { QuickStats } from './components/QuickStats';
+import { QuickStatsSkeleton } from './components/QuickStatsSkeleton';
 import { QuickActions } from './components/QuickActions';
 import { ActivityFeed } from './components/ActivityFeed';
+import { ActivityFeedSkeleton } from './components/ActivityFeedSkeleton';
 
 const SUPPORT_SECTION = {
   name: 'Support',
@@ -14,33 +18,32 @@ const SUPPORT_SECTION = {
   color: 'bg-cyan-500/10 text-cyan-600',
 };
 
-/**
- * Platform Home - Activity Feed Dashboard
- * Dynamic view aggregating statistics and recent activities across all Kytbox apps.
- */
-export default async function AppHomePage() {
-  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
-
+async function AsyncQuickStats({
+  userId,
+  defaultCurrency,
+}: {
+  userId: string;
+  defaultCurrency: string | null;
+}) {
+  const supabase = await createClient();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  // Fetch all dashboard stats in parallel (single batch)
-  const [clicksRes, cashflowsRes, tasksRes, activityRes] = await Promise.all([
+  const [clicksRes, cashflowsRes, tasksRes] = await Promise.all([
     supabase
       .from('link_events')
       .select('id, links!inner(user_id)', { count: 'exact', head: true })
-      .eq('links.user_id', user.id)
+      .eq('links.user_id', userId)
       .gte('created_at', sevenDaysAgo.toISOString()),
     supabase
       .from('cashflow_summaries')
       .select('balance')
-      .eq('user_id', user.id),
+      .eq('user_id', userId),
     supabase
       .from('list_items')
       .select('id, lists!inner(user_id)', { count: 'exact', head: true })
       .eq('is_completed', false)
-      .eq('lists.user_id', user.id),
-    supabase.rpc('get_recent_activity', { p_user_id: user.id, p_limit: 10 }),
+      .eq('lists.user_id', userId),
   ]);
 
   const clicksCount = clicksRes.count || 0;
@@ -49,7 +52,33 @@ export default async function AppHomePage() {
     0
   );
   const activeTasksCount = tasksRes.count || 0;
-  const recentActivity = activityRes.data || [];
+
+  return (
+    <QuickStats
+      clicksCount={clicksCount}
+      cashflowBalance={cashflowBalance}
+      activeTasksCount={activeTasksCount}
+      defaultCurrency={defaultCurrency}
+    />
+  );
+}
+
+async function AsyncActivityFeed({ userId }: { userId: string }) {
+  const supabase = await createClient();
+  const { data: recentActivity } = await supabase.rpc('get_recent_activity', {
+    p_user_id: userId,
+    p_limit: 10,
+  });
+
+  return <ActivityFeed activities={recentActivity || []} />;
+}
+
+/**
+ * Platform Home - Activity Feed Dashboard
+ * Dynamic view aggregating statistics and recent activities across all Kytbox apps.
+ */
+export default async function AppHomePage() {
+  const { user, profile } = await getAuthenticatedUserAndProfile();
 
   return (
     <div className='max-w-7xl mx-auto px-4 py-8 md:py-12 w-full space-y-8'>
@@ -63,12 +92,12 @@ export default async function AppHomePage() {
       </div>
 
       {/* Stats Section */}
-      <QuickStats
-        clicksCount={clicksCount}
-        cashflowBalance={cashflowBalance}
-        activeTasksCount={activeTasksCount}
-        defaultCurrency={profile?.default_currency || null}
-      />
+      <Suspense fallback={<QuickStatsSkeleton />}>
+        <AsyncQuickStats
+          userId={user.id}
+          defaultCurrency={profile?.default_currency || null}
+        />
+      </Suspense>
 
       {/* Apps Section */}
       <div className='w-full pt-8 border-t'>
@@ -125,7 +154,9 @@ export default async function AppHomePage() {
       <div className='grid md:grid-cols-3 gap-8 items-start pt-8 border-t'>
         {/* Left Side: Activity Feed */}
         <div className='md:col-span-2 space-y-6'>
-          <ActivityFeed activities={recentActivity} />
+          <Suspense fallback={<ActivityFeedSkeleton />}>
+            <AsyncActivityFeed userId={user.id} />
+          </Suspense>
         </div>
 
         {/* Right Side: Quick Actions & Help */}
