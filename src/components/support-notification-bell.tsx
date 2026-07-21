@@ -4,13 +4,31 @@ import { LuBell } from 'react-icons/lu';
 import { getSupportTicketSummary } from '@/lib/support-notifications';
 import { createClient } from '@/lib/supabase/server';
 import { userRoleSchema } from '@/lib/validation.schemas';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+function BellSkeleton() {
+  return (
+    <Link
+      href='/support'
+      className={cn(
+        buttonVariants({ variant: 'outline', size: 'icon' }),
+        'relative h-8 w-8 md:h-9 md:w-9 rounded-full',
+      )}
+      aria-label='Support'
+      title='Support'
+    >
+      <LuBell className='h-4 w-4' />
+    </Link>
+  );
+}
 
 async function BellContent() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return <BellSkeleton />;
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
@@ -26,7 +44,10 @@ async function BellContent() {
   return (
     <Link
       href={isAdmin ? '/support-admin' : '/support'}
-      className='relative inline-flex items-center justify-center p-2 rounded-full hover:bg-secondary/80 transition-colors'
+      className={cn(
+        buttonVariants({ variant: 'outline', size: 'icon' }),
+        'relative h-8 w-8 md:h-9 md:w-9 rounded-full',
+      )}
       aria-label={
         needsAttentionCount > 0
           ? `${needsAttentionCount} support tickets need attention`
@@ -38,7 +59,7 @@ async function BellContent() {
           : 'No tickets pending'
       }
     >
-      <LuBell className='w-[18px] h-[18px]' />
+      <LuBell className='h-4 w-4' />
       {needsAttentionCount > 0 && (
         <span className='absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground animate-in fade-in-0 zoom-in-50'>
           {needsAttentionCount > 99 ? '99+' : needsAttentionCount}
@@ -50,7 +71,7 @@ async function BellContent() {
 
 export function SupportNotificationBell() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<BellSkeleton />}>
       <BellContent />
     </Suspense>
   );
