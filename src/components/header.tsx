@@ -9,6 +9,7 @@ import { SearchTrigger } from '@/components/search-trigger';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface UserData {
+  id?: string;
   username: string;
   email?: string;
   avatar_url: string | null;
@@ -64,7 +65,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           {isDashboard && <SearchTrigger />}
 
           {/* Support notification bell — Suspense-wrapped, non-blocking */}
-          <SupportNotificationBell />
+          <SupportNotificationBell user={user} />
 
           <ThemeToggle />
 

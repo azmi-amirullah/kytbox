@@ -58,6 +58,7 @@ export default async function LandingPage() {
 
     if (profile) {
       userData = {
+        id: user.id,
         username: profile.username,
         email: user?.email,
         avatar_url: profile.avatar_url,

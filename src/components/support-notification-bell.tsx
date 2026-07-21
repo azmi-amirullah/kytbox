@@ -23,21 +23,43 @@ function BellSkeleton() {
   );
 }
 
-async function BellContent() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return <BellSkeleton />;
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-  const isAdmin = userRoleSchema.parse(profile?.role) === 'admin';
+interface SupportNotificationBellProps {
+  user?: {
+    id?: string;
+    role?: string | null;
+  } | null;
+}
+
+async function BellContent({ user: userProp }: SupportNotificationBellProps) {
+  let userId = userProp?.id;
+  let role = userProp?.role;
+
+  if (userProp === null) {
+    return <BellSkeleton />;
+  }
+
+  if (!userId) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return <BellSkeleton />;
+    userId = user.id;
+
+    if (role === undefined) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      role = profile?.role;
+    }
+  }
+
+  const isAdmin = userRoleSchema.parse(role) === 'admin';
 
   const { needsAttentionCount } = await getSupportTicketSummary(
-    user.id,
+    userId,
     isAdmin,
   );
 
@@ -77,10 +99,14 @@ async function BellContent() {
   );
 }
 
-export function SupportNotificationBell() {
+export function SupportNotificationBell({ user }: SupportNotificationBellProps) {
+  if (user === null) {
+    return <BellSkeleton />;
+  }
+
   return (
     <Suspense fallback={<BellSkeleton />}>
-      <BellContent />
+      <BellContent user={user} />
     </Suspense>
   );
 }

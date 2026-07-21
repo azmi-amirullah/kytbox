@@ -23,6 +23,7 @@ export default async function LegalLayout({
 
     if (profile) {
       userData = {
+        id: user.id,
         username: profile.username,
         email: user.email,
         avatar_url: profile.avatar_url,
@@ -36,8 +37,8 @@ export default async function LegalLayout({
     <div className='min-h-screen flex flex-col bg-background relative overflow-hidden'>
       {/* Background Pattern */}
       <div className='absolute inset-0 z-0 opacity-30 pointer-events-none'>
-        <div className='absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[100px]' />
-        <div className='absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-blue-500/10 blur-[100px]' />
+        <div className='absolute top-[-20%] right-[-10%] w-150 h-150 rounded-full bg-primary/10 blur-[100px]' />
+        <div className='absolute bottom-[-20%] left-[-10%] w-150 h-150 rounded-full bg-blue-500/10 blur-[100px]' />
       </div>
 
       {/* Header */}
