@@ -763,13 +763,13 @@ useEffect(() => {
 - CTA button: `hover:scale-105 transition-transform` + glow pulse
 
 **Acceptance Criteria:**
-- [ ] Hero section is visually stunning on first load
-- [ ] Scroll animations trigger smoothly (no jank)
-- [ ] Responsive: mobile-first, looks great at 320px
-- [ ] Dark mode works (gradient adjusts)
-- [ ] CTA buttons link to `/signup`
-- [ ] Page loads fast (< 2s LCP) — no heavy images, CSS-only effects
-- [ ] Accessible: proper heading hierarchy, sufficient contrast
+- [x] Hero section is visually stunning on first load
+- [x] Scroll animations trigger smoothly (no jank)
+- [x] Responsive: mobile-first, looks great at 320px
+- [x] Dark mode works (gradient adjusts)
+- [x] CTA buttons link to `/signup`
+- [x] Page loads fast (< 2s LCP) — no heavy images, CSS-only effects
+- [x] Accessible: proper heading hierarchy, sufficient contrast
 
 #### 2. Cashflow: Entry Filters (Category/Type)
 
@@ -781,9 +781,9 @@ useEffect(() => {
 - `src/features/cashflow/components/CashflowDetail.tsx` — Add category and type select dropdowns.
 
 **Acceptance Criteria:**
-- [ ] Dropdowns for type (All/Income/Expense) and category (All + unique categories).
-- [ ] Filters are multi-criteria (combine with search query and date filter).
-- [ ] Clear filters action.
+- [x] Dropdowns for type (All/Income/Expense) and category (All + unique categories).
+- [x] Filters are multi-criteria (combine with search query and date filter).
+- [x] Clear filters action.
 
 ---
 

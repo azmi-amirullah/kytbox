@@ -64,6 +64,13 @@ import BudgetManager from './BudgetManager';
 import { DateFilter } from './DateFilter';
 import { Input } from '@/components/ui/input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   filterEntriesByDate,
   resolveFilterRange,
   type DateFilterState,
@@ -121,6 +128,26 @@ export default function CashflowDetail({
   // ── Search query ─────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
 
+  // ── Type / Category filters ────────────────────────────────────────────────
+  const [selectedType, setSelectedType] = useState<'all' | 'income' | 'expense'>('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const uniqueCategories = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of entries) {
+      if (e.category) set.add(e.category);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [entries]);
+
+  const hasActiveFilters = selectedType !== 'all' || selectedCategory !== 'all' || searchQuery.trim() !== '';
+
+  function clearAllFilters() {
+    setSelectedType('all');
+    setSelectedCategory('all');
+    setSearchQuery('');
+  }
+
   // ── Date filter ──────────────────────────────────────────────────────────────
   const [filterState, setFilterState] = useState<DateFilterState>({
     preset: 'all-time',
@@ -129,14 +156,22 @@ export default function CashflowDetail({
 
   const filteredEntries = useMemo(() => {
     const range = resolveFilterRange(filterState);
-    const dateFiltered = filterEntriesByDate(entries, range);
-    if (!searchQuery.trim()) return dateFiltered;
+    let filtered = filterEntriesByDate(entries, range);
 
-    const query = searchQuery.toLowerCase().trim();
-    return dateFiltered.filter((entry) =>
-      entry.description.toLowerCase().includes(query)
-    );
-  }, [entries, filterState, searchQuery]);
+    if (selectedType !== 'all') {
+      filtered = filtered.filter((e) => e.type === selectedType);
+    }
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter((e) => e.category === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((e) =>
+        e.description.toLowerCase().includes(query)
+      );
+    }
+    return filtered;
+  }, [entries, filterState, selectedType, selectedCategory, searchQuery]);
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Client-side pagination ─────────────────────────────────────────────────────
@@ -150,10 +185,12 @@ export default function CashflowDetail({
     pageSize: PageSizeOption;
     forFilter: DateFilterState;
     forSearch: string;
-  }>({ page: 1, pageSize: 10, forFilter: filterState, forSearch: searchQuery });
+    forType: string;
+    forCategory: string;
+  }>({ page: 1, pageSize: 10, forFilter: filterState, forSearch: searchQuery, forType: selectedType, forCategory: selectedCategory });
 
   const currentPage =
-    pageInfo.forFilter === filterState && pageInfo.forSearch === searchQuery
+    pageInfo.forFilter === filterState && pageInfo.forSearch === searchQuery && pageInfo.forType === selectedType && pageInfo.forCategory === selectedCategory
       ? pageInfo.page
       : 1;
   const pageSize = pageInfo.pageSize;
@@ -164,11 +201,13 @@ export default function CashflowDetail({
       pageSize: prev.pageSize,
       forFilter: filterState,
       forSearch: searchQuery,
+      forType: selectedType,
+      forCategory: selectedCategory,
     }));
   }
 
   function changePageSize(size: PageSizeOption) {
-    setPageInfo({ page: 1, pageSize: size, forFilter: filterState, forSearch: searchQuery });
+    setPageInfo({ page: 1, pageSize: size, forFilter: filterState, forSearch: searchQuery, forType: selectedType, forCategory: selectedCategory });
   }
 
   const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize));
@@ -804,25 +843,75 @@ export default function CashflowDetail({
       {/* Projections View — always uses unfiltered entries (recurring logic is time-aware) */}
       <ProjectionsView entries={entries} currency={currency} />
 
-      {/* Search Input */}
+      {/* Search + Filters */}
       {entries.length > 0 && (
-        <div className='relative flex items-center max-w-sm w-full'>
-          <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground' />
-          <Input
-            placeholder='Search entries...'
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className='pl-9 pr-9 bg-card'
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className='absolute right-3 text-muted-foreground hover:text-foreground focus:outline-none'
-              aria-label='Clear search'
-            >
-              <LuX className='w-4 h-4' />
-            </button>
-          )}
+        <div className='flex flex-col gap-3 w-full sm:flex-row sm:items-center'>
+          {/* Search Input */}
+          <div className='relative flex items-center w-full sm:max-w-xs'>
+            <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground' />
+            <Input
+              placeholder='Search entries...'
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className='pl-9 pr-9 bg-card w-full'
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className='absolute right-3 text-muted-foreground hover:text-foreground focus:outline-none'
+                aria-label='Clear search'
+              >
+                <LuX className='w-4 h-4' />
+              </button>
+            )}
+          </div>
+
+          {/* Select Dropdowns Wrapper */}
+          <div className='flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1'>
+            <div className={cn(
+              "grid gap-3 w-full sm:flex sm:w-auto",
+              uniqueCategories.length > 0 ? "grid-cols-2" : "grid-cols-1"
+            )}>
+              <Select value={selectedType} onValueChange={(v) => setSelectedType(v as 'all' | 'income' | 'expense')}>
+                <SelectTrigger className='bg-card w-full sm:w-[140px]'>
+                  <SelectValue placeholder='Type' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>All Types</SelectItem>
+                  <SelectItem value='income'>Income</SelectItem>
+                  <SelectItem value='expense'>Expense</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {uniqueCategories.length > 0 && (
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className='bg-card w-full sm:w-[160px]'>
+                    <SelectValue placeholder='Category' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>All Categories</SelectItem>
+                    {uniqueCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {hasActiveFilters && (
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={clearAllFilters}
+                className='gap-1.5 text-muted-foreground hover:text-foreground w-full sm:w-auto justify-center sm:justify-start'
+              >
+                <LuX className='w-3.5 h-3.5' />
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -841,8 +930,8 @@ export default function CashflowDetail({
             <p className='text-sm mb-4'>
               {entries.length === 0
                 ? 'No entries yet. Add your first transaction.'
-                : searchQuery.trim()
-                ? `No entries match "${searchQuery}".`
+                : hasActiveFilters
+                ? 'No entries match your filters.'
                 : 'No entries match the selected date range.'}
             </p>
             {entries.length === 0 ? (
@@ -855,14 +944,14 @@ export default function CashflowDetail({
                 Add Entry
               </Button>
             ) : (
-              searchQuery.trim() && (
+              hasActiveFilters && (
                 <Button
-                  onClick={() => setSearchQuery('')}
+                  onClick={clearAllFilters}
                   variant='outline'
                   className='gap-2'
                 >
                   <LuX className='w-4 h-4' />
-                  Clear Search
+                  Clear Filters
                 </Button>
               )
             )}
