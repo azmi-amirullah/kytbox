@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
@@ -7,8 +8,9 @@ import { cookies } from 'next/headers';
  * Fast-path auth checker for public/marketing pages.
  * Inspects request cookies first. If no Supabase session cookies exist,
  * returns { user: null, profile: null, supabase: null } instantly with 0ms network latency.
+ * Wrapped in React.cache to guarantee zero redundant calls per request lifecycle.
  */
-export async function getOptionalUserAndProfile() {
+export const getOptionalUserAndProfile = cache(async () => {
   const cookieStore = await cookies();
   const allCookies = cookieStore.getAll();
 
@@ -36,7 +38,7 @@ export async function getOptionalUserAndProfile() {
     .single();
 
   return { user, profile, supabase };
-}
+});
 
 export async function getAuthenticatedUserAndProfile() {
   await connection();

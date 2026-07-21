@@ -27,8 +27,14 @@ import { Metadata } from 'next'
 import { siteConfig } from '@/config/site'
 import pkg from '../../../package.json'
 
-import { HeroTextCycler } from './components/HeroTextCycler'
 import { ScrollReveal } from './components/ScrollReveal'
+
+const HeroTextCycler = dynamic(
+  () => import('./components/HeroTextCycler').then((mod) => mod.HeroTextCycler),
+  {
+    loading: () => <span className='text-primary'>Share your links</span>,
+  },
+)
 
 const BioMockup = dynamic(
   () => import('./components/FeatureMockups').then((mod) => mod.BioMockup),
