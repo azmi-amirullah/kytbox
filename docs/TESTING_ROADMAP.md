@@ -27,10 +27,10 @@ Testing a moving target is a waste of time, but shipping a broken core is a wast
 - [x] **Date Filtering**: Verify edge cases for custom date ranges (leap years, month boundaries).
 
 ### 3. Core Product Lifecycles (High)
-- [x] **Bio CRUD**: Create link/folder -> Edit -> Move -> Delete -> Verify Public visibility.
-- [x] **Nested Management**: Add, edit, delete, move, and drag-sort links *inside* folders -> Verify Public visibility.
-- [ ] **Support System**: Create support message -> Verify admin receives -> Reply -> User receives.
-- [ ] **Cashflow CRUD**: Create entry -> Edit -> Delete -> Verify Summary updates.
+- [x] **Bio CRUD**: Create link/folder -> Edit -> Move -> Delete -> Verify Public visibility (`tests/e2e/bio.test.ts`).
+- [x] **Nested Management**: Add, edit, delete, move, and drag-sort links *inside* folders -> Verify Public visibility (`tests/e2e/folder-logic.test.ts`).
+- [ ] **Support System (`tests/e2e/support.test.ts`)**: Create support ticket -> Verify user dashboard -> Send reply message -> Check `<SupportNotificationBell />` count & read state.
+- [ ] **Cashflow CRUD (`tests/e2e/cashflow.test.ts`)**: Create cashflow book -> Add Income/Expense entries -> Verify calculation math -> Test search bar & multi-criteria type/category filtering -> Cleanup test entries.
 
 ### 4. Advanced Interaction & Analytics (Medium)
 - [ ] **Drag & Drop**: Reorder items via handle (Root & Inside Folders) -> Verify Public order visibility.

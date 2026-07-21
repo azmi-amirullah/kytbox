@@ -41,28 +41,36 @@ async function BellContent() {
     isAdmin,
   );
 
+  const hasUnread = needsAttentionCount > 0;
+
   return (
     <Link
       href={isAdmin ? '/support-admin' : '/support'}
       className={cn(
         buttonVariants({ variant: 'outline', size: 'icon' }),
-        'relative h-8 w-8 md:h-9 md:w-9 rounded-full',
+        'relative h-8 w-8 md:h-9 md:w-9 rounded-full transition-all duration-200 hover:scale-105',
+        hasUnread && 'border-destructive/40 bg-destructive/5 text-destructive shadow-sm shadow-destructive/15'
       )}
       aria-label={
-        needsAttentionCount > 0
-          ? `${needsAttentionCount} support tickets need attention`
-          : 'Support — no tickets pending'
+        hasUnread
+          ? `${needsAttentionCount} support ticket${needsAttentionCount === 1 ? '' : 's'} need attention`
+          : 'Support — no pending tickets'
       }
       title={
-        needsAttentionCount > 0
+        hasUnread
           ? `${needsAttentionCount} ticket${needsAttentionCount === 1 ? '' : 's'} awaiting reply`
           : 'No tickets pending'
       }
     >
-      <LuBell className='h-4 w-4' />
-      {needsAttentionCount > 0 && (
-        <span className='absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground animate-in fade-in-0 zoom-in-50'>
-          {needsAttentionCount > 99 ? '99+' : needsAttentionCount}
+      <LuBell className={cn('h-4 w-4 transition-transform duration-200 group-hover:rotate-12', hasUnread && 'text-destructive')} aria-hidden='true' />
+      {hasUnread && (
+        <span className='absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center'>
+          {/* Subtle pulse aura ring */}
+          <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75' aria-hidden='true' />
+          {/* Badge pill */}
+          <span className='relative inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground shadow-sm animate-in fade-in-0 zoom-in-50' aria-hidden='true'>
+            {needsAttentionCount > 99 ? '99+' : needsAttentionCount}
+          </span>
         </span>
       )}
     </Link>

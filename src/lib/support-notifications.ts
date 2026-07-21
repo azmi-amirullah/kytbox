@@ -1,7 +1,6 @@
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
-import { userRoleSchema } from '@/lib/validation.schemas';
 
 /**
  * Returns count of active support tickets that need attention.
@@ -23,8 +22,11 @@ export async function getSupportTicketSummary(
     .from('support_tickets')
     .select(`
       id,
+      user_id,
+      status,
       support_messages (
-        profiles!support_messages_sender_id_fkey(role),
+        id,
+        sender_id,
         support_message_reads(reader_id)
       )
     `)
@@ -45,37 +47,38 @@ export async function getSupportTicketSummary(
 
   let needsAttentionCount = 0;
   for (const ticket of tickets) {
+    const isOwnTicket = ticket.user_id === userId;
     const messages = ticket.support_messages || [];
     const lastMsgRaw = Array.isArray(messages) ? messages[0] : messages;
 
-    let lastMsg = null;
-    if (lastMsgRaw) {
-      const profiles = Array.isArray(lastMsgRaw.profiles)
-        ? lastMsgRaw.profiles[0]
-        : lastMsgRaw.profiles;
-      const role = userRoleSchema.parse(profiles?.role);
-      
-      const rawReads = lastMsgRaw.support_message_reads || [];
-      const readsArray = Array.isArray(rawReads) ? rawReads : [rawReads];
-
-      lastMsg = {
-        role,
-        reads: readsArray,
-      };
+    if (!lastMsgRaw) {
+      if (isAdmin && !isOwnTicket) {
+        needsAttentionCount++;
+      }
+      continue;
     }
 
+    const senderId = lastMsgRaw.sender_id;
+    const rawReads = lastMsgRaw.support_message_reads || [];
+    const readsArray = Array.isArray(rawReads) ? rawReads : [rawReads];
+    const userHasRead = readsArray.some((r) => r.reader_id === userId);
+
+    const isLastMessageFromCustomer = senderId === ticket.user_id;
+
     if (isAdmin) {
-      // Admin: needs attention if last message was NOT from an admin (or no messages)
-      if (!lastMsg || lastMsg.role !== 'admin') {
+      // For Admins:
+      // 1. Any open ticket where customer sent last message needs admin attention in queue
+      // 2. Admin's own ticket where support agent replied and owner hasn't read it
+      if (isLastMessageFromCustomer) {
+        needsAttentionCount++;
+      } else if (isOwnTicket && !userHasRead) {
         needsAttentionCount++;
       }
     } else {
-      // User: needs attention if last message was from admin AND user hasn't read it
-      if (lastMsg && lastMsg.role === 'admin') {
-        const userHasRead = lastMsg.reads.some((r) => r.reader_id === userId);
-        if (!userHasRead) {
-          needsAttentionCount++;
-        }
+      // For Regular Users:
+      // Needs attention if support replied (!isLastMessageFromCustomer) AND user hasn't read it
+      if (isOwnTicket && !isLastMessageFromCustomer && !userHasRead) {
+        needsAttentionCount++;
       }
     }
   }

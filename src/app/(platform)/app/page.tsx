@@ -2,8 +2,6 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import Link from 'next/link';
 import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
 import { KYTBOX_APPS } from '@/config/apps';
-import { getSupportTicketSummary } from '@/lib/support-notifications';
-import { userRoleSchema } from '@/lib/validation.schemas';
 import { QuickStats } from './components/QuickStats';
 import { QuickActions } from './components/QuickActions';
 import { ActivityFeed } from './components/ActivityFeed';
@@ -29,14 +27,11 @@ export default async function AppHomePage() {
     .eq('id', user.id)
     .single();
 
-  const isAdmin = userRoleSchema.parse(profile?.role) === 'admin';
-
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   // Fetch all dashboard stats in parallel (single batch)
-  const [supportRes, clicksRes, cashflowsRes, tasksRes, activityRes] = await Promise.all([
-    getSupportTicketSummary(user.id, isAdmin),
+  const [clicksRes, cashflowsRes, tasksRes, activityRes] = await Promise.all([
     supabase
       .from('link_events')
       .select('id, links!inner(user_id)', { count: 'exact', head: true })
@@ -54,7 +49,6 @@ export default async function AppHomePage() {
     supabase.rpc('get_recent_activity', { p_user_id: user.id, p_limit: 10 }),
   ]);
 
-  const { needsAttentionCount } = supportRes;
   const clicksCount = clicksRes.count || 0;
   const cashflowBalance = (cashflowsRes.data || []).reduce(
     (acc, curr) => acc + (Number(curr.balance) || 0),
@@ -150,64 +144,25 @@ export default async function AppHomePage() {
               Help
             </h2>
             <Link
-              href={isAdmin ? '/support-admin' : SUPPORT_SECTION.href}
-              className={`
-                group relative p-6 rounded-2xl border transition-all duration-200 hover:shadow-md cursor-pointer block
-                ${
-                  needsAttentionCount > 0
-                    ? 'bg-orange-50 border-orange-200 hover:border-orange-300 dark:bg-orange-950/20 dark:border-orange-900/50 dark:hover:border-orange-800/80'
-                    : 'bg-card hover:border-primary/25'
-                }
-              `}
+              href={SUPPORT_SECTION.href}
+              className='group relative p-6 rounded-2xl border bg-card transition-all duration-200 hover:border-primary/25 hover:shadow-md cursor-pointer block'
             >
               <div className='flex items-start gap-4'>
-                <div
-                  className={`p-3 rounded-xl ${
-                    needsAttentionCount > 0
-                      ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400'
-                      : SUPPORT_SECTION.color
-                  }`}
-                >
+                <div className={`p-3 rounded-xl ${SUPPORT_SECTION.color}`}>
                   <SUPPORT_SECTION.icon className='w-6 h-6' />
                 </div>
                 <div className='flex-1 min-w-0'>
-                  <h3
-                    className={`font-semibold text-base ${
-                      needsAttentionCount > 0 ? 'text-orange-900 dark:text-orange-100' : ''
-                    }`}
-                  >
-                    {isAdmin ? 'Support Queue' : SUPPORT_SECTION.name}
+                  <h3 className='font-semibold text-base'>
+                    {SUPPORT_SECTION.name}
                   </h3>
-                  <p
-                    className={`text-xs mt-1 leading-normal ${
-                      needsAttentionCount > 0
-                        ? 'text-orange-700/80 dark:text-orange-300/80'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    {needsAttentionCount > 0
-                      ? isAdmin
-                        ? `${needsAttentionCount} support tickets need attention`
-                        : `${needsAttentionCount} unread updates from support`
-                      : SUPPORT_SECTION.description}
+                  <p className='text-xs text-muted-foreground mt-1 leading-normal'>
+                    {SUPPORT_SECTION.description}
                   </p>
                 </div>
               </div>
               <div className='flex items-center justify-between mt-4 pt-4 border-t border-border/40'>
-                {needsAttentionCount > 0 ? (
-                  <span className='text-[10px] font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/40 px-2 py-0.5 rounded-full'>
-                    Needs Action
-                  </span>
-                ) : (
-                  <span className='text-xs text-muted-foreground'>Open a ticket</span>
-                )}
-                <LuArrowRight
-                  className={`w-4 h-4 transition-all group-hover:translate-x-1 ${
-                    needsAttentionCount > 0
-                      ? 'text-orange-500 group-hover:text-orange-600 dark:text-orange-400 dark:group-hover:text-orange-300'
-                      : 'text-muted-foreground group-hover:text-primary'
-                  }`}
-                />
+                <span className='text-xs text-muted-foreground'>Open a ticket</span>
+                <LuArrowRight className='w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
               </div>
             </Link>
           </div>
