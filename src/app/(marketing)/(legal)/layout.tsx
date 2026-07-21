@@ -1,37 +1,25 @@
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
-import { createClient } from '@/lib/supabase/server';
+import { getOptionalUserAndProfile } from '@/lib/auth';
 
 export default async function LegalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  const { user, profile } = await getOptionalUserAndProfile();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let userData = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('username, avatar_url, display_name, role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile) {
-      userData = {
-        id: user.id,
-        username: profile.username,
-        email: user.email,
-        avatar_url: profile.avatar_url,
-        display_name: profile.display_name,
-        role: profile.role,
-      };
-    }
-  }
+  const userData =
+    user && profile
+      ? {
+          id: user.id,
+          username: profile.username,
+          email: user.email,
+          avatar_url: profile.avatar_url,
+          display_name: profile.display_name,
+          role: profile.role,
+        }
+      : null;
 
   return (
     <div className='min-h-screen flex flex-col bg-background relative overflow-hidden'>

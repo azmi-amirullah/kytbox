@@ -19,12 +19,11 @@ import {
 } from 'react-icons/lu';
 import { SiGithub, SiLinkedin } from 'react-icons/si';
 
-import { createClient } from '@/lib/supabase/server';
+import { getOptionalUserAndProfile } from '@/lib/auth';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { Metadata } from 'next';
 import { siteConfig } from '@/config/site';
-import { connection } from 'next/server';
 import pkg from '../../../package.json';
 
 import { HeroTextCycler } from './components/HeroTextCycler';
@@ -41,32 +40,19 @@ export const metadata: Metadata = {
 };
 
 export default async function LandingPage() {
-  await connection();
-  const supabase = await createClient();
+  const { user, profile } = await getOptionalUserAndProfile();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let userData = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('username, avatar_url, display_name, role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile) {
-      userData = {
-        id: user.id,
-        username: profile.username,
-        email: user?.email,
-        avatar_url: profile.avatar_url,
-        display_name: profile.display_name,
-        role: profile.role,
-      };
-    }
-  }
+  const userData =
+    user && profile
+      ? {
+          id: user.id,
+          username: profile.username,
+          email: user.email,
+          avatar_url: profile.avatar_url,
+          display_name: profile.display_name,
+          role: profile.role,
+        }
+      : null;
 
   const ctaHref = userData ? '/app' : '/signup';
 
