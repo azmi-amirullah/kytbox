@@ -4,8 +4,6 @@ import {
   LuArrowRight,
   LuShieldCheck,
   LuZap,
-  LuFingerprint,
-  LuSmartphone,
   LuFileDown,
   LuGlobe,
   LuPalette,
@@ -16,6 +14,8 @@ import {
   LuGripVertical,
   LuHeart,
   LuLightbulb,
+  LuSparkles,
+  LuCommand,
 } from 'react-icons/lu';
 import { SiGithub, SiLinkedin } from 'react-icons/si';
 
@@ -276,32 +276,32 @@ export default async function LandingPage() {
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               {[
                 {
+                  icon: LuSparkles,
+                  bgClass: 'bg-blue-500/10 group-hover:bg-blue-500/20',
+                  textClass: 'text-blue-500',
+                  title: 'Unified Workspace',
+                  desc: 'Bio links, cashflow tracking, and todo lists — all under one single account.',
+                },
+                {
                   icon: LuZap,
                   bgClass: 'bg-emerald-500/10 group-hover:bg-emerald-500/20',
                   textClass: 'text-emerald-500',
-                  title: 'Always Free',
-                  desc: 'No paywalls, no premium tiers, no surprise charges. Every feature is free, forever.',
+                  title: '100% Free',
+                  desc: 'No credit card required, no paywalls, no hidden catches. Full access to every app.',
                 },
                 {
                   icon: LuShieldCheck,
                   bgClass: 'bg-purple-500/10 group-hover:bg-purple-500/20',
                   textClass: 'text-purple-500',
                   title: 'Your Data, Your Rules',
-                  desc: 'No tracking pixels, no ads, no selling your data. What you put in stays yours.',
+                  desc: 'No tracking pixels, no ads, no selling your data. What you create stays yours.',
                 },
                 {
-                  icon: LuSmartphone,
-                  bgClass: 'bg-blue-500/10 group-hover:bg-blue-500/20',
-                  textClass: 'text-blue-500',
-                  title: 'Works Everywhere',
-                  desc: 'Desktop, tablet, phone. One seamless experience that adapts to any screen.',
-                },
-                {
-                  icon: LuFingerprint,
+                  icon: LuCommand,
                   bgClass: 'bg-orange-500/10 group-hover:bg-orange-500/20',
                   textClass: 'text-orange-500',
-                  title: 'Instant & Snappy',
-                  desc: 'Sub-second page loads, real-time updates, zero spinners. Built for speed.',
+                  title: 'Built for Velocity',
+                  desc: 'Fast page loads, smart search, and instant state sync across your workspace.',
                 },
               ].map(({ icon: Icon, bgClass, textClass, title, desc }, i) => (
                 <ScrollReveal key={title} delay={i * 0.08}>
