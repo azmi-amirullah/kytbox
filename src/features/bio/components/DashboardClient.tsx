@@ -167,6 +167,8 @@ export default function DashboardClient({
               setLocalRootTotalLinks={setLocalRootTotalLinks}
               totalViews={totalViews}
               isLoading={isLoading}
+              username={profile?.username}
+              publicUrl={publicUrl}
             />
           </TabsContent>
 

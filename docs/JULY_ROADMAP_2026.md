@@ -844,13 +844,13 @@ const pngDataUrl = await QRCode.toDataURL(
 ```
 
 **Acceptance Criteria:**
-- [ ] "QR Code" button on Bio dashboard opens modal
-- [ ] QR code scans correctly to `kytbox.com/{username}`
-- [ ] Custom foreground/background colors
-- [ ] SVG download works (right filename: `kytbox-{username}-qr.svg`)
-- [ ] PNG download works at 1024x1024
-- [ ] Default colors match user's active theme
-- [ ] Modal is accessible (focus trap, Escape closes)
+- [x] "QR Code" button on Bio dashboard opens modal
+- [x] QR code scans correctly to `kytbox.com/{username}`
+- [x] Custom foreground/background colors
+- [x] SVG download works (right filename: `kytbox-{username}-qr.svg`)
+- [x] PNG download works at 1024x1024
+- [x] Default colors match user's active theme
+- [x] Modal is accessible (focus trap, Escape closes)
 
 ---
 

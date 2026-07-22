@@ -13,10 +13,12 @@ import {
   LuPlus,
   LuLoader,
   LuType,
+  LuQrCode,
 } from 'react-icons/lu';
 import LinkList from './LinkList';
 import LinkModal from './LinkModal';
 import HeaderModal from './HeaderModal';
+import QRCodeModal from './QRCodeModal';
 import StatsCard from './StatsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +36,8 @@ interface LinksTabContentProps {
   localRootTotalLinks: number;
   setLocalRootTotalLinks: React.Dispatch<React.SetStateAction<number>>;
   isLoading?: boolean;
+  username?: string | null;
+  publicUrl?: string;
 }
 
 export default function LinksTabContent({
@@ -47,6 +51,8 @@ export default function LinksTabContent({
   localRootTotalLinks,
   setLocalRootTotalLinks,
   isLoading,
+  username,
+  publicUrl,
 }: LinksTabContentProps) {
   const searchParams = useSearchParams();
   const action = searchParams.get('action');
@@ -56,6 +62,7 @@ export default function LinksTabContent({
   const [folderCounts, setFolderCounts] = useState<Record<string, number>>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(action === 'add');
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
+  const [isQRCodeModalOpen, setIsQRCodeModalOpen] = useState(false);
   const [prevAction, setPrevAction] = useState(action);
 
   if (action !== prevAction) {
@@ -237,6 +244,15 @@ export default function LinksTabContent({
                 variant='outline'
                 size='sm'
                 className='font-medium shadow-sm mr-2'
+                onClick={() => setIsQRCodeModalOpen(true)}
+              >
+                <LuQrCode className='w-4 h-4 mr-2' />
+                QR Code
+              </Button>
+              <Button
+                variant='outline'
+                size='sm'
+                className='font-medium shadow-sm mr-2'
                 onClick={() => setIsHeaderModalOpen(true)}
               >
                 <LuType className='w-4 h-4 mr-2' />
@@ -267,11 +283,17 @@ export default function LinksTabContent({
                   await refreshCurrentView();
                 }}
               />
+              <QRCodeModal
+                username={username}
+                publicUrl={publicUrl}
+                open={isQRCodeModalOpen}
+                onOpenChange={setIsQRCodeModalOpen}
+              />
             </>
           )}
         </div>
         <CardContent className='p-0'>
-          <div className='p-4 sm:p-6 min-h-[400px]'>
+          <div className='p-4 sm:p-6 min-h-100'>
             <LinkList
               links={links}
               setLinks={setLinks}
@@ -289,7 +311,7 @@ export default function LinksTabContent({
                   variant='outline' 
                   onClick={handleLoadMore} 
                   disabled={isLoadingMore}
-                  className='min-w-[140px] shadow-sm'
+                  className='min-w-35 shadow-sm'
                 >
                   {isLoadingMore ? (
                     <>
