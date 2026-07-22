@@ -43,30 +43,32 @@ export default function QRCodeModal({
   const [fgColor, setFgColor] = useState('#000000');
   const [bgColor, setBgColor] = useState('#ffffff');
   const [svgContent, setSvgContent] = useState<string>('');
-  const [pngDataUrl, setPngDataUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isDownloadingPng, setIsDownloadingPng] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+
+  // Validate hex color format (e.g. #000, #000000)
+  const isValidHex = (color: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color.trim());
 
   const generateQRCode = useCallback(async () => {
     if (!targetUrl) return;
+    
+    // Ensure colors are valid hex before attempting generation
+    const validFg = isValidHex(fgColor) ? fgColor.trim() : '#000000';
+    const validBg = isValidHex(bgColor) ? bgColor.trim() : '#ffffff';
+
     setIsGenerating(true);
     try {
       const svg = await QRCode.toString(targetUrl, {
         type: 'svg',
-        color: { dark: fgColor, light: bgColor },
+        color: { dark: validFg, light: validBg },
         width: 320,
         margin: 2,
       });
-      const png = await QRCode.toDataURL(targetUrl, {
-        width: 1024,
-        color: { dark: fgColor, light: bgColor },
-        margin: 2,
-      });
       setSvgContent(svg);
-      setPngDataUrl(png);
     } catch (err) {
       console.error('Failed to generate QR code:', err);
-      toast.error('Failed to generate QR code');
+      // Don't toast error if user is actively typing an incomplete hex color
     } finally {
       setIsGenerating(false);
     }
@@ -94,15 +96,32 @@ export default function QRCodeModal({
     toast.success('SVG QR Code downloaded!');
   };
 
-  const handleDownloadPNG = () => {
-    if (!pngDataUrl) return;
-    const a = document.createElement('a');
-    a.href = pngDataUrl;
-    a.download = `${fileBaseName}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast.success('PNG QR Code (1024x1024) downloaded!');
+  const handleDownloadPNG = async () => {
+    if (!targetUrl) return;
+    setIsDownloadingPng(true);
+    try {
+      const validFg = isValidHex(fgColor) ? fgColor.trim() : '#000000';
+      const validBg = isValidHex(bgColor) ? bgColor.trim() : '#ffffff';
+      
+      const png = await QRCode.toDataURL(targetUrl, {
+        width: 1024,
+        color: { dark: validFg, light: validBg },
+        margin: 2,
+      });
+
+      const a = document.createElement('a');
+      a.href = png;
+      a.download = `${fileBaseName}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success('PNG QR Code (1024x1024) downloaded!');
+    } catch (err) {
+      console.error('Failed to generate PNG QR code:', err);
+      toast.error('Failed to generate PNG QR code');
+    } finally {
+      setIsDownloadingPng(false);
+    }
   };
 
   const handleCopyLink = () => {
@@ -226,11 +245,11 @@ export default function QRCodeModal({
             <Button
               type='button'
               onClick={handleDownloadPNG}
-              disabled={!pngDataUrl || isGenerating}
+              disabled={!targetUrl || isGenerating || isDownloadingPng}
               className='w-full sm:w-1/2 gap-2 text-xs font-medium shadow-sm'
             >
               <LuDownload className='w-4 h-4' />
-              Download PNG
+              {isDownloadingPng ? 'Generating...' : 'Download PNG'}
             </Button>
           </DialogFooter>
         </div>
