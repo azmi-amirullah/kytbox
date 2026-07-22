@@ -4,17 +4,13 @@ import { LuBell } from 'react-icons/lu';
 import { getSupportTicketSummary } from '@/lib/support-notifications';
 import { createClient } from '@/lib/supabase/server';
 import { userRoleSchema } from '@/lib/validation.schemas';
-import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 function BellSkeleton() {
   return (
     <Link
       href='/support'
-      className={cn(
-        buttonVariants({ variant: 'outline', size: 'icon' }),
-        'relative h-8 w-8 md:h-9 md:w-9 rounded-full',
-      )}
+      className='flex items-center justify-center relative h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-secondary/40 border border-border/80 text-foreground hover:bg-secondary/80 transition-all shrink-0'
       aria-label='Support'
       title='Support'
     >
@@ -69,8 +65,7 @@ async function BellContent({ user: userProp }: SupportNotificationBellProps) {
     <Link
       href={isAdmin ? '/support-admin' : '/support'}
       className={cn(
-        buttonVariants({ variant: 'outline', size: 'icon' }),
-        'relative h-8 w-8 md:h-9 md:w-9 rounded-full transition-all duration-200 hover:scale-105',
+        'flex items-center justify-center relative h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-secondary/40 border border-border/80 text-foreground hover:bg-secondary/80 transition-all shrink-0',
         hasUnread && 'border-destructive/40 bg-destructive/5 text-destructive shadow-sm shadow-destructive/15'
       )}
       aria-label={

@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { LuLogOut, LuSettings, LuShield } from 'react-icons/lu';
+import { LuLogOut, LuSettings, LuShield, LuSun, LuMoon } from 'react-icons/lu';
+import { useTheme } from 'next-themes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,16 +28,17 @@ interface UserNavProps {
 
 export function UserNav({ user }: UserNavProps) {
   const avatarUrl = user.avatar_url || null;
+  const { resolvedTheme, setTheme } = useTheme();
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant='ghost'
-          className='relative h-8 w-8 rounded-full'
+          className='relative h-8 w-8 sm:h-9 sm:w-9 rounded-full p-0 shrink-0'
           aria-label='User menu'
         >
-          <Avatar className='h-8 w-8 ring-2 ring-border'>
+          <Avatar className='h-8 w-8 sm:h-9 sm:w-9 ring-1 ring-border/80'>
             {avatarUrl && (
               <AvatarImage
                 src={avatarUrl}
@@ -77,6 +79,20 @@ export function UserNav({ user }: UserNavProps) {
               Settings
             </DropdownMenuItem>
           </Link>
+          <DropdownMenuItem
+            className='cursor-pointer'
+            onSelect={(e) => {
+              e.preventDefault();
+              setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+            }}
+          >
+            {resolvedTheme === 'dark' ? (
+              <LuSun className='mr-2 h-4 w-4 text-amber-500' />
+            ) : (
+              <LuMoon className='mr-2 h-4 w-4 text-slate-700' />
+            )}
+            <span>{resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <form action={logout} className='w-full'>

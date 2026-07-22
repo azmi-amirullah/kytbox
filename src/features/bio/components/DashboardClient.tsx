@@ -249,19 +249,6 @@ export default function DashboardClient({
           />
         </div>
       </div>
-
-      {/* Mobile Preview FAB */}
-      {!isLoading && (
-        <div className='lg:hidden fixed bottom-6 right-3 z-60'>
-          <Link
-            href={publicUrl}
-            target='_blank'
-            className='flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg font-bold text-sm'
-          >
-            <LuEye className='w-4 h-4' /> Preview
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { BrandLogo } from '@/components/brand-logo';
 import { UserNav } from '@/components/user-nav';
 import { SupportNotificationBell } from '@/components/support-notification-bell';
@@ -44,30 +43,27 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           </Link>
         )}
 
-        <div className='flex items-center gap-3 md:gap-4'>
-          {/* Dashboard-specific: Public URL link */}
-          {!isLanding && !isAuth && user && publicUrl && (
-            <>
-              <a
-                href={publicUrl}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='hidden md:flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-secondary/50 hover:bg-secondary text-secondary-foreground transition-all group'
-              >
-                <span>{user.username}</span>
-                <LuExternalLink className='w-3 h-3 group-hover:translate-x-0.5 transition-transform' />
-              </a>
-              <div className='h-6 w-px bg-border hidden md:block' />
-            </>
-          )}
-
+        <div className='flex items-center gap-2 sm:gap-3 md:gap-4'>
           {/* Search Trigger Button — Only for dashboard */}
           {isDashboard && <SearchTrigger />}
 
+          {/* Dashboard-specific: Public URL link (After search, before notification) */}
+          {!isLanding && !isAuth && user && publicUrl && (
+            <a
+              href={publicUrl}
+              target='_blank'
+              rel='noopener noreferrer'
+              title='View Public Profile'
+              aria-label='View Public Profile'
+              className='flex items-center justify-center gap-1.5 h-8 w-8 sm:h-9 sm:w-auto px-0 sm:px-3 text-xs font-medium text-foreground bg-secondary/40 border border-border/80 rounded-full hover:bg-secondary/80 transition-all group shrink-0'
+            >
+              <span className='hidden sm:inline'>{user.username}</span>
+              <LuExternalLink className='w-4 h-4 stroke-[1.75] text-primary shrink-0' />
+            </a>
+          )}
+
           {/* Support notification bell — Suspense-wrapped, non-blocking */}
           <SupportNotificationBell user={user} />
-
-          <ThemeToggle />
 
           {/* Auth state handling - Hide on Auth pages */}
           {!isAuth &&

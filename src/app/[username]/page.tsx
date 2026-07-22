@@ -37,8 +37,26 @@ export async function generateMetadata({ params }: PublicProfilePageProps) {
   const { username } = await params;
   const profile = await getProfileByUsername(username);
 
+  const title = profile?.display_name ? `${profile.display_name} (@${username})` : `@${username}`;
+  const description = profile?.bio || `Check out ${username}'s bio page and links on Kytbox.`;
+  const avatarUrl = profile?.avatar_url || undefined;
+
   return {
-    title: profile?.display_name || `@${username}`,
-    description: profile?.bio || `Check out ${username}'s links`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://kytbox.com/${username}`,
+      siteName: 'Kytbox',
+      type: 'profile',
+      images: avatarUrl ? [{ url: avatarUrl, alt: `${username}'s avatar` }] : [],
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      images: avatarUrl ? [avatarUrl] : [],
+    },
   };
 }
