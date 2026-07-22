@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand-logo';
 import { UserNav } from '@/components/user-nav';
-import { SupportNotificationBell } from '@/components/support-notification-bell';
+import { NotificationCenter } from '@/features/notifications/components/NotificationCenter';
 import { Button } from '@/components/ui/button';
 import { LuExternalLink } from 'react-icons/lu';
 import { SearchTrigger } from '@/components/search-trigger';
@@ -62,8 +62,8 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
             </a>
           )}
 
-          {/* Support notification bell — Suspense-wrapped, non-blocking */}
-          <SupportNotificationBell user={user} />
+          {/* Unified Notification Center */}
+          <NotificationCenter user={user} />
 
           {/* Auth state handling - Hide on Auth pages */}
           {!isAuth &&

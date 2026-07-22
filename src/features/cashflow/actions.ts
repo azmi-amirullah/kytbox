@@ -15,12 +15,67 @@ import {
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { mapBudgetToDTO } from '@/lib/mappers';
+import { createNotification } from '@/features/notifications/actions';
 
 // Extracts user_id from Supabase joined relation (e.g. cashflows(user_id))
 const joinedOwnerSchema = z
   .object({ user_id: z.string() })
   .nullish()
   .transform((v) => v?.user_id);
+
+async function checkBudgetThresholds(
+  supabase: SupabaseClient<Database>,
+  cashflowId: string,
+  category: string,
+  userId: string,
+) {
+  if (!category) return;
+
+  const { data: budget } = await supabase
+    .from('cashflow_budgets')
+    .select('amount')
+    .eq('cashflow_id', cashflowId)
+    .eq('category', category)
+    .single();
+
+  if (!budget || budget.amount <= 0) return;
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+  const { data: entries } = await supabase
+    .from('cashflow_entries')
+    .select('amount')
+    .eq('cashflow_id', cashflowId)
+    .eq('category', category)
+    .eq('type', 'expense')
+    .gte('date', monthStart)
+    .lte('date', monthEnd);
+
+  const totalSpent = (entries || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const ratio = totalSpent / budget.amount;
+
+  if (ratio >= 1.0) {
+    const overage = (totalSpent - budget.amount).toFixed(2);
+    await createNotification({
+      userId,
+      type: 'budget_exceeded',
+      title: 'Budget Exceeded 🔴',
+      body: `${category} is over budget by $${overage}`,
+      linkUrl: `/cashflow/${cashflowId}`,
+    });
+  } else if (ratio >= 0.8) {
+    const percentage = Math.round(ratio * 100);
+    await createNotification({
+      userId,
+      type: 'budget_warning',
+      title: 'Budget Warning ⚠️',
+      body: `${category} reached ${percentage}% of $${budget.amount} budget`,
+      linkUrl: `/cashflow/${cashflowId}`,
+    });
+  }
+}
 
 export async function createCashflow(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUser();
@@ -228,6 +283,10 @@ export async function addEntry(formData: FormData) {
   if (error) {
     console.error('Failed to add entry:', error);
     return { error: error.message };
+  }
+
+  if (type === 'expense' && category) {
+    await checkBudgetThresholds(supabase, cashflowId, category, user.id);
   }
 
   revalidatePath('/cashflow');
@@ -460,6 +519,8 @@ export async function upsertBudget(formData: FormData) {
     console.error('Failed to upsert budget:', error);
     return { error: error.message };
   }
+
+  await checkBudgetThresholds(supabase, cashflowId, category, user.id);
 
   revalidatePath('/cashflow');
   return { success: true };

@@ -520,6 +520,7 @@ For implementation details and coverage status, see: [Loading States Documentati
 - [Bio Documentation](./link-in-bio.md)
 - [Cashflow Documentation](./cashflow.md)
 - [List Documentation](./list.md)
+- [Notification Documentation](./NOTIFICATIONS.md)
 - [Monetization Strategy](./MONETIZATION.md)
 - [Pre-Monetization Improvements](./PRE_MONETIZATION_IMPROVEMENTS.md)
 

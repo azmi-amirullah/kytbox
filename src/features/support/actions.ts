@@ -50,6 +50,8 @@ export async function createTicket(prevState: State, formData: FormData) {
   redirect(`/support/${ticketId}`);
 }
 
+import { createNotification } from '@/features/notifications/actions';
+
 export async function replyToTicket(
   ticketId: string,
   prevState: State,
@@ -97,6 +99,22 @@ export async function replyToTicket(
 
     if (statusError) {
       console.error('Error auto-updating ticket status:', statusError);
+    }
+
+    const { data: ticket } = await supabase
+      .from('support_tickets')
+      .select('user_id, subject')
+      .eq('id', ticketId)
+      .single();
+
+    if (ticket && ticket.user_id !== user.id) {
+      await createNotification({
+        userId: ticket.user_id,
+        type: 'support_reply',
+        title: 'Support replied',
+        body: `Re: ${ticket.subject}`,
+        linkUrl: `/support/${ticketId}`,
+      });
     }
   }
 

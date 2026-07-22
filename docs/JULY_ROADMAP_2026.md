@@ -924,15 +924,15 @@ NotificationCenter
 ```
 
 **Acceptance Criteria:**
-- [ ] Bell in header shows unread count
-- [ ] Dropdown shows last 20 notifications grouped by today/earlier
-- [ ] Clicking a notification navigates to `link_url` and marks as read
-- [ ] "Mark all read" button works
-- [ ] Support admin reply creates a notification for the user
-- [ ] Budget threshold (80%, 100%) creates notification for cashflow owner
-- [ ] Notifications respect RLS (users see only their own)
-- [ ] Empty state when no notifications
-- [ ] Polling: re-fetch every 60 seconds (or use Supabase realtime)
+- [x] Bell in header shows unread count
+- [x] Dropdown shows last 20 notifications grouped by today/earlier
+- [x] Clicking a notification navigates to `link_url` and marks as read
+- [x] "Mark all read" button works
+- [x] Support admin reply creates a notification for the user
+- [x] Budget threshold (80%, 100%) creates notification for cashflow owner
+- [x] Notifications respect RLS (users see only their own)
+- [x] Empty state when no notifications
+- [x] Polling: re-fetch every 60 seconds (or use Supabase realtime)
 
 ---
 
