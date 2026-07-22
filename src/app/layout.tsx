@@ -81,8 +81,8 @@ export const metadata: Metadata = {
     creator: '@azmi_amirullah',
   },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
+    icon: '/icon.png',
+    shortcut: '/favicon.png',
     apple: '/apple-touch-icon.png',
   },
 };
