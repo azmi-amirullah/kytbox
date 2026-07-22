@@ -1,19 +1,19 @@
-'use client';
+'use client'
 
-import Image from 'next/image';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import type { ThemeConfig } from '@/lib/theme/theme.types';
+import Image from 'next/image'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
+import type { ThemeConfig } from '@/lib/theme/theme.types'
 
 interface ProfileHeaderProps {
   profile: {
-    username: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    bio: string | null;
-  };
-  theme: ThemeConfig;
-  isLoading?: boolean;
+    username: string
+    display_name: string | null
+    avatar_url: string | null
+    bio: string | null
+  }
+  theme: ThemeConfig
+  isLoading?: boolean
 }
 
 export default function ProfileHeader({
@@ -21,7 +21,7 @@ export default function ProfileHeader({
   theme,
   isLoading,
 }: ProfileHeaderProps) {
-  const { colors } = theme;
+  const { colors } = theme
 
   return (
     <div className='flex flex-col items-center w-full animate-in fade-in zoom-in-95 duration-700 fill-mode-both mb-4'>
@@ -78,7 +78,7 @@ export default function ProfileHeader({
             {profile.bio && (
               <p
                 className={cn(
-                  'mx-auto leading-relaxed text-lg md:text-xl max-w-[340px] md:max-w-xl text-balance',
+                  'mx-auto leading-relaxed text-lg md:text-xl max-w-85 md:max-w-xl text-balance',
                   colors.textSecondary,
                 )}
               >
@@ -89,5 +89,5 @@ export default function ProfileHeader({
         )}
       </div>
     </div>
-  );
+  )
 }

@@ -174,7 +174,7 @@ const LinkItemContent = memo(function LinkItemContent({
       </div>
 
       {/* Link Info */}
-      <div className='flex-1 min-w-0 ml-1'>
+      <div className='flex-1 min-w-0 ml-1 flex flex-col justify-center self-center'>
         <div className='flex flex-wrap items-center gap-2'>
           <h3
             className={cn(
@@ -211,20 +211,22 @@ const LinkItemContent = memo(function LinkItemContent({
             </span>
           )}
         </div>
-        <div className='flex flex-wrap items-center gap-2 mt-1'>
-          {getScheduleBadge()}
-          {!link.is_folder && !link.is_header && (
-            <a
-              href={link.url}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-xs text-muted-foreground truncate hover:text-primary transition-colors hover:underline block'
-              onClick={(e) => e.stopPropagation()}
-            >
-              {link.url}
-            </a>
-          )}
-        </div>
+        {(!!getScheduleBadge() || (!link.is_folder && !link.is_header && !!link.url)) && (
+          <div className='flex flex-wrap items-center gap-2 mt-1'>
+            {getScheduleBadge()}
+            {!link.is_folder && !link.is_header && (
+              <a
+                href={link.url}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='text-xs text-muted-foreground truncate hover:text-primary transition-colors hover:underline block'
+                onClick={(e) => e.stopPropagation()}
+              >
+                {link.url}
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Stats */}
