@@ -29,10 +29,13 @@ export default function QRCodeModal({
   open,
   onOpenChange,
 }: QRCodeModalProps) {
-  const origin =
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : 'https://kytbox.com';
+  const [origin, setOrigin] = useState<string>('https://kytbox.com');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
   const targetUrl = publicUrl?.startsWith('http')
     ? publicUrl
@@ -47,15 +50,20 @@ export default function QRCodeModal({
   const [isDownloadingPng, setIsDownloadingPng] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Validate hex color format (e.g. #000, #000000)
-  const isValidHex = (color: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color.trim());
+  // Normalize hex color format (auto-prefix '#' if omitted by user, e.g. '7C3AED' -> '#7C3AED')
+  const normalizeHex = (color: string, fallback: string): string => {
+    const trimmed = color.trim();
+    if (!trimmed) return fallback;
+    const prefixed = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(prefixed) ? prefixed : fallback;
+  };
+
+  const validFg = normalizeHex(fgColor, '#000000');
+  const validBg = normalizeHex(bgColor, '#ffffff');
+  const isSameColor = validFg.toLowerCase() === validBg.toLowerCase();
 
   const generateQRCode = useCallback(async () => {
     if (!targetUrl) return;
-    
-    // Ensure colors are valid hex before attempting generation
-    const validFg = isValidHex(fgColor) ? fgColor.trim() : '#000000';
-    const validBg = isValidHex(bgColor) ? bgColor.trim() : '#ffffff';
 
     setIsGenerating(true);
     try {
@@ -68,11 +76,10 @@ export default function QRCodeModal({
       setSvgContent(svg);
     } catch (err) {
       console.error('Failed to generate QR code:', err);
-      // Don't toast error if user is actively typing an incomplete hex color
     } finally {
       setIsGenerating(false);
     }
-  }, [targetUrl, fgColor, bgColor]);
+  }, [targetUrl, validFg, validBg]);
 
   useEffect(() => {
     if (open) {
@@ -100,9 +107,6 @@ export default function QRCodeModal({
     if (!targetUrl) return;
     setIsDownloadingPng(true);
     try {
-      const validFg = isValidHex(fgColor) ? fgColor.trim() : '#000000';
-      const validBg = isValidHex(bgColor) ? bgColor.trim() : '#ffffff';
-      
       const png = await QRCode.toDataURL(targetUrl, {
         width: 1024,
         color: { dark: validFg, light: validBg },
@@ -175,7 +179,7 @@ export default function QRCodeModal({
             ) : svgContent ? (
               <div
                 className='w-48 h-48 flex items-center justify-center rounded-lg overflow-hidden shadow-sm'
-                style={{ backgroundColor: bgColor }}
+                style={{ backgroundColor: validBg }}
                 dangerouslySetInnerHTML={{ __html: svgContent }}
               />
             ) : (
@@ -195,7 +199,7 @@ export default function QRCodeModal({
                 <input
                   type='color'
                   id='qr-fg-color'
-                  value={fgColor}
+                  value={validFg}
                   onChange={(e) => setFgColor(e.target.value)}
                   className='w-8 h-8 rounded border border-border cursor-pointer p-0 bg-transparent'
                 />
@@ -216,7 +220,7 @@ export default function QRCodeModal({
                 <input
                   type='color'
                   id='qr-bg-color'
-                  value={bgColor}
+                  value={validBg}
                   onChange={(e) => setBgColor(e.target.value)}
                   className='w-8 h-8 rounded border border-border cursor-pointer p-0 bg-transparent'
                 />
@@ -229,6 +233,12 @@ export default function QRCodeModal({
               </div>
             </div>
           </div>
+
+          {isSameColor && (
+            <p className='text-[11px] text-amber-500 font-medium text-center mb-4 bg-amber-500/10 py-1.5 px-2 rounded border border-amber-500/20'>
+              ⚠️ Foreground and background colors are identical. The QR code will be unreadable.
+            </p>
+          )}
 
           {/* Download Action Buttons */}
           <DialogFooter className='flex-col sm:flex-row gap-2'>
