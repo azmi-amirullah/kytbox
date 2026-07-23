@@ -1,17 +1,17 @@
-'use client';
+'use client'
 
-import { useState, useTransition, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { useState, useTransition, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,13 +21,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu'
 import {
   LuPlus,
   LuPencil,
@@ -45,48 +45,51 @@ import {
   LuChevronsRight,
   LuSearch,
   LuX,
-} from 'react-icons/lu';
-import { toast } from 'react-toastify';
+} from 'react-icons/lu'
+import { toast } from 'react-toastify'
 import type {
   CashflowDTO,
   CashflowEntryDTO,
   CashflowBudgetDTO,
-} from '@/types/dto';
-import { formatCurrencyCompact } from '@/lib/currency';
-import { deleteCashflow, deleteEntry, generateRecurringEntries } from '../actions';
-import CashflowModal from './CashflowModal';
-import EntryModal from './EntryModal';
-import ShareModal from './ShareModal';
-import { CashflowCharts } from './CashflowCharts';
-import { ProjectionsView } from './ProjectionsView';
-import { subscribeToPublicCashflow, removeShare } from '../actions';
-import BudgetManager from './BudgetManager';
-import { DateFilter } from './DateFilter';
-import { Input } from '@/components/ui/input';
+} from '@/types/dto'
+import { formatCurrencyCompact } from '@/lib/currency'
+import {
+  deleteCashflow,
+  deleteEntry,
+  generateRecurringEntries,
+} from '../actions'
+import CashflowModal from './CashflowModal'
+import EntryModal from './EntryModal'
+import ShareModal from './ShareModal'
+import { CashflowCharts } from './CashflowCharts'
+import { ProjectionsView } from './ProjectionsView'
+import { subscribeToPublicCashflow, removeShare } from '../actions'
+import BudgetManager from './BudgetManager'
+import { DateFilter } from './DateFilter'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 import {
   filterEntriesByDate,
   resolveFilterRange,
   type DateFilterState,
-} from '../math';
-import { cn } from '@/lib/utils';
-
+} from '../math'
+import { cn } from '@/lib/utils'
 
 interface CashflowDetailProps {
-  cashflow: CashflowDTO;
-  entries: CashflowEntryDTO[];
-  budgets: CashflowBudgetDTO[];
-  currency: string | null;
-  currentUserId?: string;
-  initialUserRole?: 'owner' | 'edit' | 'read' | 'public';
-  initialShareId?: string | null;
-  initialHasShare?: boolean;
+  cashflow: CashflowDTO
+  entries: CashflowEntryDTO[]
+  budgets: CashflowBudgetDTO[]
+  currency: string | null
+  currentUserId?: string
+  initialUserRole?: 'owner' | 'edit' | 'read' | 'public'
+  initialShareId?: string | null
+  initialHasShare?: boolean
 }
 
 export default function CashflowDetail({
@@ -99,101 +102,115 @@ export default function CashflowDetail({
   initialShareId = null,
   initialHasShare = false,
 }: CashflowDetailProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isEntryModalOpen, setIsEntryModalOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
     null,
-  );
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+  )
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null)
   const [isDeletingEntryId, setIsDeletingEntryId] = useState<string | null>(
     null,
-  );
+  )
 
-
-  const isOwner = currentUserId === cashflow.user_id;
+  const isOwner = currentUserId === cashflow.user_id
 
   // Initialize state from server props
-  const [hasShare, setHasShare] = useState(initialHasShare);
-  const [shareId, setShareId] = useState<string | null>(initialShareId);
+  const [hasShare, setHasShare] = useState(initialHasShare)
+  const [shareId, setShareId] = useState<string | null>(initialShareId)
   const [userRole] = useState<'owner' | 'edit' | 'read' | 'public'>(
     isOwner ? 'owner' : initialUserRole,
-  );
+  )
 
   // ── Search query ─────────────────────────────────────────────────────────────
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('')
 
   // ── Type / Category filters ────────────────────────────────────────────────
-  const [selectedType, setSelectedType] = useState<'all' | 'income' | 'expense'>('all');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedType, setSelectedType] = useState<
+    'all' | 'income' | 'expense'
+  >('all')
+  const [selectedCategory, setSelectedCategory] = useState('all')
 
   const uniqueCategories = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>()
     for (const e of entries) {
-      if (e.category) set.add(e.category);
+      if (e.category) set.add(e.category)
     }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [entries]);
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [entries])
 
-  const hasActiveFilters = selectedType !== 'all' || selectedCategory !== 'all' || searchQuery.trim() !== '';
+  const hasActiveFilters =
+    selectedType !== 'all' ||
+    selectedCategory !== 'all' ||
+    searchQuery.trim() !== ''
 
   function clearAllFilters() {
-    setSelectedType('all');
-    setSelectedCategory('all');
-    setSearchQuery('');
+    setSelectedType('all')
+    setSelectedCategory('all')
+    setSearchQuery('')
   }
 
   // ── Date filter ──────────────────────────────────────────────────────────────
   const [filterState, setFilterState] = useState<DateFilterState>({
     preset: 'all-time',
     custom: { from: null, to: null },
-  });
+  })
 
   const filteredEntries = useMemo(() => {
-    const range = resolveFilterRange(filterState);
-    let filtered = filterEntriesByDate(entries, range);
+    const range = resolveFilterRange(filterState)
+    let filtered = filterEntriesByDate(entries, range)
 
     if (selectedType !== 'all') {
-      filtered = filtered.filter((e) => e.type === selectedType);
+      filtered = filtered.filter((e) => e.type === selectedType)
     }
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter((e) => e.category === selectedCategory);
+      filtered = filtered.filter((e) => e.category === selectedCategory)
     }
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+      const query = searchQuery.toLowerCase().trim()
       filtered = filtered.filter((e) =>
-        e.description.toLowerCase().includes(query)
-      );
+        e.description.toLowerCase().includes(query),
+      )
     }
-    return filtered;
-  }, [entries, filterState, selectedType, selectedCategory, searchQuery]);
+    return filtered
+  }, [entries, filterState, selectedType, selectedCategory, searchQuery])
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Client-side pagination ─────────────────────────────────────────────────────
-  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
-  type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
+  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
+  type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 
   // Store page, pageSize, filterState, and searchQuery reference together so filter or search changes
   // reset the page to 1 in a single render pass — no refs, no effects.
   const [pageInfo, setPageInfo] = useState<{
-    page: number;
-    pageSize: PageSizeOption;
-    forFilter: DateFilterState;
-    forSearch: string;
-    forType: string;
-    forCategory: string;
-  }>({ page: 1, pageSize: 10, forFilter: filterState, forSearch: searchQuery, forType: selectedType, forCategory: selectedCategory });
+    page: number
+    pageSize: PageSizeOption
+    forFilter: DateFilterState
+    forSearch: string
+    forType: string
+    forCategory: string
+  }>({
+    page: 1,
+    pageSize: 10,
+    forFilter: filterState,
+    forSearch: searchQuery,
+    forType: selectedType,
+    forCategory: selectedCategory,
+  })
 
   const currentPage =
-    pageInfo.forFilter === filterState && pageInfo.forSearch === searchQuery && pageInfo.forType === selectedType && pageInfo.forCategory === selectedCategory
+    pageInfo.forFilter === filterState &&
+    pageInfo.forSearch === searchQuery &&
+    pageInfo.forType === selectedType &&
+    pageInfo.forCategory === selectedCategory
       ? pageInfo.page
-      : 1;
-  const pageSize = pageInfo.pageSize;
+      : 1
+  const pageSize = pageInfo.pageSize
 
   function goToPage(next: number | ((p: number) => number)) {
     setPageInfo((prev) => ({
@@ -203,35 +220,42 @@ export default function CashflowDetail({
       forSearch: searchQuery,
       forType: selectedType,
       forCategory: selectedCategory,
-    }));
+    }))
   }
 
   function changePageSize(size: PageSizeOption) {
-    setPageInfo({ page: 1, pageSize: size, forFilter: filterState, forSearch: searchQuery, forType: selectedType, forCategory: selectedCategory });
+    setPageInfo({
+      page: 1,
+      pageSize: size,
+      forFilter: filterState,
+      forSearch: searchQuery,
+      forType: selectedType,
+      forCategory: selectedCategory,
+    })
   }
 
-  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize))
   const paginatedEntries = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredEntries.slice(start, start + pageSize);
-  }, [filteredEntries, currentPage, pageSize]);
+    const start = (currentPage - 1) * pageSize
+    return filteredEntries.slice(start, start + pageSize)
+  }, [filteredEntries, currentPage, pageSize])
 
   // Stable 7-slot pagination: ALWAYS render exactly 7 <Button> elements (for
   // totalPages > 7). Using the slot INDEX as the React key means React never
   // destroys and recreates a DOM node when content changes — it only updates
   // props on the same existing element. Ellipsis slots are disabled buttons
   // showing '…' so the element type is always the same at every position.
-  type PaginationSlot = { kind: 'page'; page: number } | { kind: 'ellipsis' };
+  type PaginationSlot = { kind: 'page'; page: number } | { kind: 'ellipsis' }
 
   function getPaginationSlots(): PaginationSlot[] {
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, i) => ({
         kind: 'page' as const,
         page: i + 1,
-      }));
+      }))
     }
 
-    const e: PaginationSlot = { kind: 'ellipsis' };
+    const e: PaginationSlot = { kind: 'ellipsis' }
 
     // Left zone: currentPage is near the start — layout is always identical
     // within this zone, so no structural change on page 1→2→3→4.
@@ -244,7 +268,7 @@ export default function CashflowDetail({
         { kind: 'page', page: 5 },
         e,
         { kind: 'page', page: totalPages },
-      ];
+      ]
     }
 
     // Right zone: currentPage is near the end — mirror of left zone.
@@ -257,7 +281,7 @@ export default function CashflowDetail({
         { kind: 'page', page: totalPages - 2 },
         { kind: 'page', page: totalPages - 1 },
         { kind: 'page', page: totalPages },
-      ];
+      ]
     }
 
     // Middle zone: currentPage is far from both edges.
@@ -269,268 +293,311 @@ export default function CashflowDetail({
       { kind: 'page', page: currentPage + 1 },
       e,
       { kind: 'page', page: totalPages },
-    ];
+    ]
   }
   // ────────────────────────────────────────────────────────────────────────────────
 
-  const canEdit = isOwner || userRole === 'edit';
+  const canEdit = isOwner || userRole === 'edit'
 
-  const [isGeneratingRecurring, setIsGeneratingRecurring] = useState(false);
-  const [isGeneratingPast, setIsGeneratingPast] = useState(false);
+  const [isGeneratingRecurring, setIsGeneratingRecurring] = useState(false)
+  const [isGeneratingPast, setIsGeneratingPast] = useState(false)
 
   const recurringStats = useMemo(() => {
-    const emptyMonthsList: string[] = [];
-    if (userRole !== 'owner') return { dueNowCount: 0, upcomingCount: 0, pastMissingCount: 0, pastMonthsList: emptyMonthsList, currentMonthName: '' };
+    const emptyMonthsList: string[] = []
+    if (userRole !== 'owner')
+      return {
+        dueNowCount: 0,
+        upcomingCount: 0,
+        pastMissingCount: 0,
+        pastMonthsList: emptyMonthsList,
+        currentMonthName: '',
+      }
 
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const todayDay = now.getDate();
-    const currentMonthStart = new Date(currentYear, currentMonth, 1);
-    const currentMonthName = `${now.toLocaleDateString('en-US', { month: 'long' })} ${now.getFullYear()}`;
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+    const todayDay = now.getDate()
+    const currentMonthStart = new Date(currentYear, currentMonth, 1)
+    const currentMonthName = `${now.toLocaleDateString('en-US', { month: 'long' })} ${now.getFullYear()}`
 
     // Group all entries by description + type (case-insensitive) to find the absolute latest entry of each series
-    const latestSeriesMap = new Map<string, typeof entries[number]>();
+    const latestSeriesMap = new Map<string, (typeof entries)[number]>()
     for (const entry of entries) {
-      const key = `${entry.description.trim().toLowerCase()}|${entry.type}`;
-      const existing = latestSeriesMap.get(key);
+      const key = `${entry.description.trim().toLowerCase()}|${entry.type}`
+      const existing = latestSeriesMap.get(key)
       if (!existing || entry.date > existing.date) {
-        latestSeriesMap.set(key, entry);
+        latestSeriesMap.set(key, entry)
       }
     }
-    const uniqueRecurring = Array.from(latestSeriesMap.values()).filter((e) => e.is_recurring);
+    const uniqueRecurring = Array.from(latestSeriesMap.values()).filter(
+      (e) => e.is_recurring,
+    )
 
-    if (uniqueRecurring.length === 0) return { dueNowCount: 0, upcomingCount: 0, pastMissingCount: 0, pastMonthsList: emptyMonthsList, currentMonthName };
+    if (uniqueRecurring.length === 0)
+      return {
+        dueNowCount: 0,
+        upcomingCount: 0,
+        pastMissingCount: 0,
+        pastMonthsList: emptyMonthsList,
+        currentMonthName,
+      }
 
     // Get all entries for the current month
     const existingThisMonth = entries.filter((e) => {
-      const [year, month] = e.date.split('-').map(Number);
-      return year === currentYear && month - 1 === currentMonth;
-    });
+      const [year, month] = e.date.split('-').map(Number)
+      return year === currentYear && month - 1 === currentMonth
+    })
 
     const existingSet = new Set(
-      existingThisMonth.map((e) => `${e.description.trim().toLowerCase()}|${e.type}`)
-    );
+      existingThisMonth.map(
+        (e) => `${e.description.trim().toLowerCase()}|${e.type}`,
+      ),
+    )
 
     // Create a lookup for past entries to see what is missing in past months
     const pastExistingSet = new Set(
       entries
         .filter((e) => {
-          const [year, month] = e.date.split('-').map(Number);
-          return year < currentYear || (year === currentYear && month - 1 < currentMonth);
+          const [year, month] = e.date.split('-').map(Number)
+          return (
+            year < currentYear ||
+            (year === currentYear && month - 1 < currentMonth)
+          )
         })
         .map((e) => {
-          const [year, month] = e.date.split('-').map(Number);
-          return `${year}|${month - 1}|${e.description.trim().toLowerCase()}|${e.type}`;
-        })
-    );
+          const [year, month] = e.date.split('-').map(Number)
+          return `${year}|${month - 1}|${e.description.trim().toLowerCase()}|${e.type}`
+        }),
+    )
 
-    let dueNowCount = 0;
-    let upcomingCount = 0;
-    let pastMissingCount = 0;
-    const pastMonthsSet = new Set<string>();
+    let dueNowCount = 0
+    let upcomingCount = 0
+    let pastMissingCount = 0
+    const pastMonthsSet = new Set<string>()
 
     for (const entry of uniqueRecurring) {
-      const [entryYear, entryMonthNumber, entryDay] = entry.date.split('-').map(Number);
+      const [entryYear, entryMonthNumber, entryDay] = entry.date
+        .split('-')
+        .map(Number)
 
       // 1. Check current month status (due now vs upcoming)
       const startedInOrBeforeCurrentMonth =
         entryYear < currentYear ||
-        (entryYear === currentYear && entryMonthNumber - 1 <= currentMonth);
+        (entryYear === currentYear && entryMonthNumber - 1 <= currentMonth)
 
       const isAnniversaryMonth =
         entry.recurrence_interval !== 'yearly' ||
-        (entryMonthNumber - 1) === currentMonth;
+        entryMonthNumber - 1 === currentMonth
 
       if (startedInOrBeforeCurrentMonth && isAnniversaryMonth) {
-        const key = `${entry.description.trim().toLowerCase()}|${entry.type}`;
+        const key = `${entry.description.trim().toLowerCase()}|${entry.type}`
         if (!existingSet.has(key)) {
-          const lastDayOfCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-          const targetDay = Math.min(entryDay, lastDayOfCurrentMonth);
+          const lastDayOfCurrentMonth = new Date(
+            currentYear,
+            currentMonth + 1,
+            0,
+          ).getDate()
+          const targetDay = Math.min(entryDay, lastDayOfCurrentMonth)
 
           if (targetDay > todayDay) {
-            upcomingCount++;
+            upcomingCount++
           } else {
-            dueNowCount++;
+            dueNowCount++
           }
         }
       }
 
       // 2. Check past months status
-      const tempDate = new Date(entryYear, entryMonthNumber - 1, 1);
+      const tempDate = new Date(entryYear, entryMonthNumber - 1, 1)
       while (tempDate < currentMonthStart) {
-        const y = tempDate.getFullYear();
-        const m = tempDate.getMonth();
+        const y = tempDate.getFullYear()
+        const m = tempDate.getMonth()
 
         // Check if yearly and anniversary
-        if (entry.recurrence_interval === 'yearly' && (entryMonthNumber - 1) !== m) {
-          tempDate.setMonth(tempDate.getMonth() + 1);
-          continue;
+        if (
+          entry.recurrence_interval === 'yearly' &&
+          entryMonthNumber - 1 !== m
+        ) {
+          tempDate.setMonth(tempDate.getMonth() + 1)
+          continue
         }
 
-        const key = `${y}|${m}|${entry.description.trim().toLowerCase()}|${entry.type}`;
+        const key = `${y}|${m}|${entry.description.trim().toLowerCase()}|${entry.type}`
         if (!pastExistingSet.has(key)) {
-          pastMissingCount++;
-          const monthName = tempDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-          pastMonthsSet.add(monthName);
+          pastMissingCount++
+          const monthName = tempDate.toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric',
+          })
+          pastMonthsSet.add(monthName)
         }
-        tempDate.setMonth(tempDate.getMonth() + 1);
+        tempDate.setMonth(tempDate.getMonth() + 1)
       }
     }
 
-    return { dueNowCount, upcomingCount, pastMissingCount, pastMonthsList: Array.from(pastMonthsSet), currentMonthName };
-  }, [entries, userRole]);
+    return {
+      dueNowCount,
+      upcomingCount,
+      pastMissingCount,
+      pastMonthsList: Array.from(pastMonthsSet),
+      currentMonthName,
+    }
+  }, [entries, userRole])
 
   async function handleGenerateRecurring() {
-    setIsGeneratingRecurring(true);
+    setIsGeneratingRecurring(true)
     try {
-      const now = new Date();
+      const now = new Date()
       const result = await generateRecurringEntries(
         cashflow.id,
         now.getFullYear(),
-        now.getMonth()
-      );
+        now.getMonth(),
+      )
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else if (result.generated !== undefined) {
         if (result.generated > 0) {
-          toast.success(`Generated ${result.generated} recurring ${result.generated === 1 ? 'entry' : 'entries'}`);
-          router.refresh();
+          toast.success(
+            `Generated ${result.generated} recurring ${result.generated === 1 ? 'entry' : 'entries'}`,
+          )
+          router.refresh()
         } else {
-          toast.info('No recurring entries to generate');
+          toast.info('No recurring entries to generate')
         }
       }
     } catch (err) {
-      console.error('Error generating recurring entries:', err);
-      toast.error('An unexpected error occurred');
+      console.error('Error generating recurring entries:', err)
+      toast.error('An unexpected error occurred')
     } finally {
       setTimeout(() => {
-        setIsGeneratingRecurring(false);
-      }, 1000);
+        setIsGeneratingRecurring(false)
+      }, 1000)
     }
   }
 
   async function handleGeneratePast() {
-    setIsGeneratingPast(true);
+    setIsGeneratingPast(true)
     try {
       const result = await generateRecurringEntries(
         cashflow.id,
         undefined,
         undefined,
-        true
-      );
+        true,
+      )
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else if (result.generated !== undefined) {
         if (result.generated > 0) {
-          toast.success(`Generated ${result.generated} past recurring ${result.generated === 1 ? 'entry' : 'entries'}`);
-          router.refresh();
+          toast.success(
+            `Generated ${result.generated} past recurring ${result.generated === 1 ? 'entry' : 'entries'}`,
+          )
+          router.refresh()
         } else {
-          toast.info('No past recurring entries to generate');
+          toast.info('No past recurring entries to generate')
         }
       }
     } catch (err) {
-      console.error('Error generating past recurring entries:', err);
-      toast.error('An unexpected error occurred');
+      console.error('Error generating past recurring entries:', err)
+      toast.error('An unexpected error occurred')
     } finally {
       setTimeout(() => {
-        setIsGeneratingPast(false);
-      }, 1000);
+        setIsGeneratingPast(false)
+      }, 1000)
     }
   }
 
   // Calculate stats from filtered entries
   const income = filteredEntries
     .filter((e) => e.type === 'income')
-    .reduce((sum, e) => sum + Number(e.amount), 0);
+    .reduce((sum, e) => sum + Number(e.amount), 0)
   const expense = filteredEntries
     .filter((e) => e.type === 'expense')
-    .reduce((sum, e) => sum + Number(e.amount), 0);
-  const balance = income - expense;
+    .reduce((sum, e) => sum + Number(e.amount), 0)
+  const balance = income - expense
 
   async function handleDeleteCashflow() {
-    setIsDeleting(true);
+    setIsDeleting(true)
     startTransition(async () => {
-      const result = await deleteCashflow(cashflow.id);
+      const result = await deleteCashflow(cashflow.id)
       if (result.error) {
-        toast.error('Failed to delete cashflow');
-        setIsDeleting(false);
-        setDeleteDialogOpen(false);
+        toast.error('Failed to delete cashflow')
+        setIsDeleting(false)
+        setDeleteDialogOpen(false)
       } else {
-        setDeleteDialogOpen(false);
-        toast.success('Cashflow deleted');
-        router.push('/cashflow');
+        setDeleteDialogOpen(false)
+        toast.success('Cashflow deleted')
+        router.push('/cashflow')
       }
-    });
+    })
   }
 
   async function handleDeleteEntry(entryId: string) {
-    setIsDeletingEntryId(entryId);
+    setIsDeletingEntryId(entryId)
     startTransition(async () => {
-      const result = await deleteEntry(entryId);
+      const result = await deleteEntry(entryId)
       if (result.error) {
-        toast.error('Failed to delete entry');
-        setIsDeletingEntryId(null);
-        setDeletingEntryId(null);
+        toast.error('Failed to delete entry')
+        setIsDeletingEntryId(null)
+        setDeletingEntryId(null)
       } else {
-        setDeletingEntryId(null);
-        toast.success('Entry deleted');
-        router.refresh();
+        setDeletingEntryId(null)
+        toast.success('Entry deleted')
+        router.refresh()
         // Keep isDeletingEntryId true to prevent flicker before refresh updates UI
       }
-    });
+    })
   }
 
   async function handleBookmark() {
     startTransition(async () => {
       if (hasShare && shareId) {
         // Remove bookmark
-        const result = await removeShare(shareId);
+        const result = await removeShare(shareId)
         if (result.error) {
-          toast.error(result.error);
+          toast.error(result.error)
         } else {
-          toast.success('Removed from dashboard');
-          setHasShare(false);
-          setShareId(null);
-          router.refresh();
+          toast.success('Removed from dashboard')
+          setHasShare(false)
+          setShareId(null)
+          router.refresh()
         }
       } else {
         // Add bookmark
-        const result = await subscribeToPublicCashflow(cashflow.id);
+        const result = await subscribeToPublicCashflow(cashflow.id)
         if (result.error) {
-          toast.error(result.error);
+          toast.error(result.error)
         } else {
-          toast.success('Added to your dashboard');
-          setHasShare(true);
+          toast.success('Added to your dashboard')
+          setHasShare(true)
           if (result.data) {
-            setShareId(result.data.id);
+            setShareId(result.data.id)
           }
-          router.refresh();
+          router.refresh()
         }
       }
-    });
+    })
   }
 
   function openEditEntry(entry: CashflowEntryDTO) {
-    setEditingEntry(entry);
-    setIsEntryModalOpen(true);
+    setEditingEntry(entry)
+    setIsEntryModalOpen(true)
   }
 
   function openAddEntry() {
-    setEditingEntry(null);
-    setIsEntryModalOpen(true);
+    setEditingEntry(null)
+    setIsEntryModalOpen(true)
   }
 
   function handleEntrySuccess() {
     startTransition(() => {
-      router.refresh();
-    });
+      router.refresh()
+    })
   }
 
   function handleExportCSV() {
     if (filteredEntries.length === 0) {
-      toast.info('No entries to export');
-      return;
+      toast.info('No entries to export')
+      return
     }
 
     const headers = [
@@ -542,7 +609,7 @@ export default function CashflowDetail({
       'Currency',
       'Recurring',
       'Frequency',
-    ];
+    ]
     const rows = filteredEntries.map((e) => [
       e.date,
       e.type,
@@ -552,47 +619,50 @@ export default function CashflowDetail({
       currency || '',
       e.is_recurring ? 'Yes' : 'No',
       e.recurrence_interval || '',
-    ]);
+    ])
 
     const csvContent = [
       headers.join(','),
       ...rows.map((row) => row.join(',')),
-    ].join('\n');
+    ].join('\n')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
 
-    let dateSuffix = 'all-time';
+    let dateSuffix = 'all-time'
     if (filterState.preset !== 'all-time' && filterState.preset !== 'custom') {
-      dateSuffix = filterState.preset;
+      dateSuffix = filterState.preset
     } else if (filterState.preset === 'custom') {
       if (filterState.custom.from && filterState.custom.to) {
-        dateSuffix = `${filterState.custom.from}_to_${filterState.custom.to}`;
+        dateSuffix = `${filterState.custom.from}_to_${filterState.custom.to}`
       } else if (filterState.custom.from) {
-        dateSuffix = `from_${filterState.custom.from}`;
+        dateSuffix = `from_${filterState.custom.from}`
       } else if (filterState.custom.to) {
-        dateSuffix = `to_${filterState.custom.to}`;
+        dateSuffix = `to_${filterState.custom.to}`
       }
     }
 
-    const safeTitle = cashflow.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const filename = `export-${safeTitle}-${dateSuffix}.csv`;
+    const safeTitle = cashflow.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    const filename = `export-${safeTitle}-${dateSuffix}.csv`
 
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    link.setAttribute('href', url)
+    link.setAttribute('download', filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
       <div>
-        <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
+        <nav
+          aria-label='breadcrumb'
+          className='flex items-center gap-1 text-sm text-muted-foreground mb-2'
+        >
           <Link href='/app' className='hover:text-foreground transition-colors'>
             Kytbox
           </Link>
@@ -604,7 +674,10 @@ export default function CashflowDetail({
             Cashflow
           </Link>
           <span className='text-muted-foreground'>/</span>
-          <span aria-current='page' className='text-foreground font-medium truncate max-w-50'>
+          <span
+            aria-current='page'
+            className='text-foreground font-medium truncate max-w-50'
+          >
             {cashflow.title}
           </span>
         </nav>
@@ -640,8 +713,8 @@ export default function CashflowDetail({
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
-                        setIsDeleting(false);
-                        setDeleteDialogOpen(true);
+                        setIsDeleting(false)
+                        setDeleteDialogOpen(true)
                       }}
                       className='text-destructive focus:text-destructive cursor-pointer'
                     >
@@ -704,54 +777,62 @@ export default function CashflowDetail({
 
       {/* Recurring Entry Generation Banner */}
       {(() => {
-        const { dueNowCount, upcomingCount, pastMissingCount, pastMonthsList, currentMonthName } = recurringStats;
-        const totalPastAndDueCount = pastMissingCount + dueNowCount;
-        if (totalPastAndDueCount === 0 && upcomingCount === 0) return null;
+        const {
+          dueNowCount,
+          upcomingCount,
+          pastMissingCount,
+          pastMonthsList,
+          currentMonthName,
+        } = recurringStats
+        const totalPastAndDueCount = pastMissingCount + dueNowCount
+        if (totalPastAndDueCount === 0 && upcomingCount === 0) return null
 
         const formatMonthsList = (months: string[]) => {
-          const groups: Record<string, string[]> = {};
+          const groups: Record<string, string[]> = {}
           for (const m of months) {
-            const [monthName, year] = m.split(' ');
+            const [monthName, year] = m.split(' ')
             if (!groups[year]) {
-              groups[year] = [];
+              groups[year] = []
             }
-            groups[year].push(monthName);
+            groups[year].push(monthName)
           }
           return Object.entries(groups)
             .map(([year, monthNames]) => {
               if (monthNames.length === 1) {
-                return `${monthNames[0]} (${year})`;
+                return `${monthNames[0]} (${year})`
               }
-              return `${monthNames.join(', ')} (${year})`;
+              return `${monthNames.join(', ')} (${year})`
             })
-            .join(', ');
-        };
-
-        // Combine past months and current month if current month has due entries
-        const displayMonths = [...pastMonthsList];
-        if (dueNowCount > 0) {
-          displayMonths.push(currentMonthName);
+            .join(', ')
         }
 
-        const pastMonthsStr = formatMonthsList(displayMonths);
-        const [curMonth, curYear] = currentMonthName.split(' ');
-        const currentMonthDisplay = `${curMonth} (${curYear})`;
+        // Combine past months and current month if current month has due entries
+        const displayMonths = [...pastMonthsList]
+        if (dueNowCount > 0) {
+          displayMonths.push(currentMonthName)
+        }
 
-        let titleText = '';
-        let subtextText = '';
+        const pastMonthsStr = formatMonthsList(displayMonths)
+        const [curMonth, curYear] = currentMonthName.split(' ')
+        const currentMonthDisplay = `${curMonth} (${curYear})`
+
+        let titleText = ''
+        let subtextText = ''
 
         if (totalPastAndDueCount > 0) {
-          const entryWord = totalPastAndDueCount === 1 ? 'entry is' : 'entries are';
-          titleText = `${totalPastAndDueCount} recurring ${entryWord} missing or due for ${pastMonthsStr}`;
+          const entryWord =
+            totalPastAndDueCount === 1 ? 'entry is' : 'entries are'
+          titleText = `${totalPastAndDueCount} recurring ${entryWord} missing or due for ${pastMonthsStr}`
           if (upcomingCount > 0) {
-            subtextText = `Catch up on missed transactions for ${pastMonthsStr}. You can also generate upcoming entries early.`;
+            subtextText = `Catch up on missed transactions for ${pastMonthsStr}. You can also generate upcoming entries early.`
           } else {
-            subtextText = `Catch up on missed transactions for ${pastMonthsStr}.`;
+            subtextText = `Catch up on missed transactions for ${pastMonthsStr}.`
           }
         } else if (upcomingCount > 0) {
-          const entryWord = upcomingCount === 1 ? 'entry is' : 'entries are';
-          titleText = `${upcomingCount} upcoming recurring ${entryWord} ready for ${currentMonthDisplay}`;
-          subtextText = 'No entries are due today, but you can generate upcoming entries early.';
+          const entryWord = upcomingCount === 1 ? 'entry is' : 'entries are'
+          titleText = `${upcomingCount} upcoming recurring ${entryWord} ready for ${currentMonthDisplay}`
+          subtextText =
+            'No entries are due today, but you can generate upcoming entries early.'
         }
 
         return (
@@ -764,9 +845,7 @@ export default function CashflowDetail({
                 <p className='font-semibold text-sm text-foreground'>
                   {titleText}
                 </p>
-                <p className='text-xs text-muted-foreground'>
-                  {subtextText}
-                </p>
+                <p className='text-xs text-muted-foreground'>{subtextText}</p>
               </div>
             </div>
             <div className='flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 self-start md:self-center w-full md:w-auto justify-end'>
@@ -802,7 +881,7 @@ export default function CashflowDetail({
               )}
             </div>
           </div>
-        );
+        )
       })()}
 
       {/* Summary Stats */}
@@ -868,15 +947,20 @@ export default function CashflowDetail({
 
           {/* Select Dropdowns Wrapper */}
           <div className='flex flex-wrap items-center gap-3 w-full sm:w-auto sm:flex-1'>
-            <div className={cn(
-              "grid gap-3 w-full sm:flex sm:w-auto",
-              uniqueCategories.length > 0 ? "grid-cols-2" : "grid-cols-1"
-            )}>
-              <Select value={selectedType} onValueChange={(v) => {
-                if (v === 'all' || v === 'income' || v === 'expense') {
-                  setSelectedType(v);
-                }
-              }}>
+            <div
+              className={cn(
+                'grid gap-3 w-full sm:flex sm:w-auto',
+                uniqueCategories.length > 0 ? 'grid-cols-2' : 'grid-cols-1',
+              )}
+            >
+              <Select
+                value={selectedType}
+                onValueChange={(v) => {
+                  if (v === 'all' || v === 'income' || v === 'expense') {
+                    setSelectedType(v)
+                  }
+                }}
+              >
                 <SelectTrigger className='bg-card w-full sm:w-35'>
                   <SelectValue placeholder='Type' />
                 </SelectTrigger>
@@ -888,7 +972,10 @@ export default function CashflowDetail({
               </Select>
 
               {uniqueCategories.length > 0 && (
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                >
                   <SelectTrigger className='bg-card w-full sm:w-40'>
                     <SelectValue placeholder='Category' />
                   </SelectTrigger>
@@ -935,8 +1022,8 @@ export default function CashflowDetail({
               {entries.length === 0
                 ? 'No entries yet. Add your first transaction.'
                 : hasActiveFilters
-                ? 'No entries match your filters.'
-                : 'No entries match the selected date range.'}
+                  ? 'No entries match your filters.'
+                  : 'No entries match the selected date range.'}
             </p>
             {entries.length === 0 ? (
               <Button
@@ -993,12 +1080,12 @@ export default function CashflowDetail({
                           {(() => {
                             const [year, month, day] = entry.date
                               .split('-')
-                              .map(Number);
-                            const date = new Date(year, month - 1, day);
+                              .map(Number)
+                            const date = new Date(year, month - 1, day)
                             return date.toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
-                            });
+                            })
                           })()}
                         </TableCell>
                         <TableCell className='border-r border-border/30'>
@@ -1057,8 +1144,8 @@ export default function CashflowDetail({
                                 size='icon'
                                 className='h-8 w-8 text-destructive hover:text-destructive'
                                 onClick={() => {
-                                  setIsDeletingEntryId(null);
-                                  setDeletingEntryId(entry.id);
+                                  setIsDeletingEntryId(null)
+                                  setDeletingEntryId(entry.id)
                                 }}
                               >
                                 <LuTrash2 className='w-4 h-4' />
@@ -1093,13 +1180,13 @@ export default function CashflowDetail({
                               {(() => {
                                 const [year, month, day] = entry.date
                                   .split('-')
-                                  .map(Number);
-                                const date = new Date(year, month - 1, day);
+                                  .map(Number)
+                                const date = new Date(year, month - 1, day)
                                 return date.toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric',
-                                });
+                                })
                               })()}
                             </span>
                             <span
@@ -1156,8 +1243,8 @@ export default function CashflowDetail({
                                 size='icon'
                                 className='h-8 w-8 text-destructive hover:bg-destructive/10'
                                 onClick={() => {
-                                  setIsDeletingEntryId(null);
-                                  setDeletingEntryId(entry.id);
+                                  setIsDeletingEntryId(null)
+                                  setDeletingEntryId(entry.id)
                                 }}
                               >
                                 {isDeletingEntryId === entry.id ? (
@@ -1196,9 +1283,9 @@ export default function CashflowDetail({
                   <select
                     value={pageSize}
                     onChange={(e) => {
-                      const num = Number(e.target.value);
-                      const size = PAGE_SIZE_OPTIONS.find((n) => n === num);
-                      if (size !== undefined) changePageSize(size);
+                      const num = Number(e.target.value)
+                      const size = PAGE_SIZE_OPTIONS.find((n) => n === num)
+                      if (size !== undefined) changePageSize(size)
                     }}
                     className='h-6 rounded border border-border bg-background px-1.5 text-[11px] text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring'
                     aria-label='Entries per page'
@@ -1362,8 +1449,8 @@ export default function CashflowDetail({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
-                e.preventDefault();
-                handleDeleteCashflow();
+                e.preventDefault()
+                handleDeleteCashflow()
               }}
               disabled={isPending}
               className='bg-destructive text-white hover:bg-destructive/90 min-w-25'
@@ -1398,11 +1485,11 @@ export default function CashflowDetail({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
-                e.preventDefault();
-                const id = deletingEntryId;
+                e.preventDefault()
+                const id = deletingEntryId
                 if (id) {
-                  setIsDeletingEntryId(id);
-                  handleDeleteEntry(id);
+                  setIsDeletingEntryId(id)
+                  handleDeleteEntry(id)
                 }
               }}
               disabled={!!isDeletingEntryId}
@@ -1421,5 +1508,5 @@ export default function CashflowDetail({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }
