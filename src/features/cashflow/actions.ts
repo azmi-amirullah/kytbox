@@ -396,6 +396,10 @@ export async function updateEntry(entryId: string, formData: FormData) {
     return { error: error.message };
   }
 
+  if (type === 'expense' && category) {
+    await checkBudgetThresholds(supabase, entry.cashflow_id, category, user.id);
+  }
+
   revalidatePath('/cashflow');
   return { success: true };
 }
@@ -1139,6 +1143,17 @@ export async function generateRecurringEntries(
     if (insertError) {
       console.error('Failed to insert recurring entries:', insertError);
       return { error: 'Failed to generate entries' };
+    }
+
+    const expenseCategories: string[] = [];
+    for (const e of toInsert) {
+      if (e.type === 'expense' && e.category) {
+        expenseCategories.push(e.category);
+      }
+    }
+
+    for (const cat of new Set(expenseCategories)) {
+      await checkBudgetThresholds(supabase, cashflowId, cat, user.id);
     }
   }
 
