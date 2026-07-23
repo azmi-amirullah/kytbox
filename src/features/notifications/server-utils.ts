@@ -1,9 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createNotificationSchema, type CreateNotificationInput } from './schemas';
 
 /**
  * Internal server helper to create a notification for a user.
  * NOT exposed as a public 'use server' action RPC endpoint to prevent client endpoint spoofing.
+ * Uses service role admin client to allow server-side cross-user notifications (e.g., support replies).
  */
 export async function createNotification(
   input: CreateNotificationInput,
@@ -15,7 +16,7 @@ export async function createNotification(
     }
 
     const { userId, type, title, body, linkUrl } = parsed.data;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase.from('notifications').insert({
       user_id: userId,

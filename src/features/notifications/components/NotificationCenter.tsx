@@ -80,6 +80,9 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
     let isMounted = true
 
     const loadNotifications = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        return
+      }
       const res = await getNotifications()
       if (isMounted && !res.error) {
         setNotifications(res.notifications)
@@ -111,7 +114,11 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
 
     setOpen(false)
 
-    if (item.link_url) {
+    if (
+      item.link_url &&
+      item.link_url.startsWith('/') &&
+      !item.link_url.startsWith('//')
+    ) {
       router.push(item.link_url)
     }
   }

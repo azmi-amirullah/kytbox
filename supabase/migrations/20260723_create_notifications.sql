@@ -35,7 +35,8 @@ CREATE POLICY "Users delete own notifications"
   ON notifications FOR DELETE
   USING (auth.uid() = user_id);
 
--- System or authenticated users can insert notifications (e.g. support replies, budget triggers)
-CREATE POLICY "Users or system insert notifications"
+-- System or authenticated users can insert notifications for themselves; cross-user/system notifications use service role
+CREATE POLICY "Users insert own notifications"
   ON notifications FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (auth.uid() = user_id);
+
