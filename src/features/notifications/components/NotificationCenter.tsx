@@ -94,9 +94,22 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
 
     const interval = setInterval(loadNotifications, 60000)
 
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        loadNotifications()
+      }
+    }
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
+
     return () => {
       isMounted = false
       clearInterval(interval)
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
     }
   }, [userId])
 

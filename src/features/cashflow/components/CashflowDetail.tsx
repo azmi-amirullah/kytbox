@@ -604,7 +604,7 @@ export default function CashflowDetail({
             Cashflow
           </Link>
           <span className='text-muted-foreground'>/</span>
-          <span aria-current='page' className='text-foreground font-medium truncate max-w-[200px]'>
+          <span aria-current='page' className='text-foreground font-medium truncate max-w-50'>
             {cashflow.title}
           </span>
         </nav>
@@ -872,8 +872,12 @@ export default function CashflowDetail({
               "grid gap-3 w-full sm:flex sm:w-auto",
               uniqueCategories.length > 0 ? "grid-cols-2" : "grid-cols-1"
             )}>
-              <Select value={selectedType} onValueChange={(v) => setSelectedType(v as 'all' | 'income' | 'expense')}>
-                <SelectTrigger className='bg-card w-full sm:w-[140px]'>
+              <Select value={selectedType} onValueChange={(v) => {
+                if (v === 'all' || v === 'income' || v === 'expense') {
+                  setSelectedType(v);
+                }
+              }}>
+                <SelectTrigger className='bg-card w-full sm:w-35'>
                   <SelectValue placeholder='Type' />
                 </SelectTrigger>
                 <SelectContent>
@@ -885,7 +889,7 @@ export default function CashflowDetail({
 
               {uniqueCategories.length > 0 && (
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className='bg-card w-full sm:w-[160px]'>
+                  <SelectTrigger className='bg-card w-full sm:w-40'>
                     <SelectValue placeholder='Category' />
                   </SelectTrigger>
                   <SelectContent>
@@ -964,15 +968,15 @@ export default function CashflowDetail({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className='w-[80px] border-r border-border/40'>
+                      <TableHead className='w-20 border-r border-border/40'>
                         Date
                       </TableHead>
-                      <TableHead className='w-[100px] border-r border-border/40'>
+                      <TableHead className='w-25 border-r border-border/40'>
                         Type
                       </TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead className='text-right'>Amount</TableHead>
-                      <TableHead className='w-[80px]'></TableHead>
+                      <TableHead className='w-20'></TableHead>
                     </TableRow>
                   </TableHeader>
                   <motion.tbody
@@ -1362,7 +1366,7 @@ export default function CashflowDetail({
                 handleDeleteCashflow();
               }}
               disabled={isPending}
-              className='bg-destructive text-white hover:bg-destructive/90 min-w-[100px]'
+              className='bg-destructive text-white hover:bg-destructive/90 min-w-25'
             >
               {isDeleting ? (
                 <div className='flex items-center gap-2'>
@@ -1402,7 +1406,7 @@ export default function CashflowDetail({
                 }
               }}
               disabled={!!isDeletingEntryId}
-              className='bg-destructive text-white hover:bg-destructive/90 min-w-[80px]'
+              className='bg-destructive text-white hover:bg-destructive/90 min-w-20'
             >
               {isDeletingEntryId ? (
                 <div className='flex items-center gap-2'>

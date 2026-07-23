@@ -50,7 +50,7 @@ export async function createTicket(prevState: State, formData: FormData) {
   redirect(`/support/${ticketId}`);
 }
 
-import { createNotification } from '@/features/notifications/server-utils';
+import { createNotification } from '@/features/notifications';
 
 export async function replyToTicket(
   ticketId: string,

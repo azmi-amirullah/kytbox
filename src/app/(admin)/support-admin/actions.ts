@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-import { createNotification } from '@/features/notifications/server-utils';
+import { createNotification } from '@/features/notifications';
 
 export async function updateTicketStatus(
   ticketId: string,

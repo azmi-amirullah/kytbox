@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand-logo';
 import { UserNav } from '@/components/user-nav';
-import { NotificationCenter } from '@/features/notifications/components/NotificationCenter';
+import { NotificationCenter } from '@/features/notifications';
 import { Button } from '@/components/ui/button';
 import { LuExternalLink } from 'react-icons/lu';
 import { SearchTrigger } from '@/components/search-trigger';
