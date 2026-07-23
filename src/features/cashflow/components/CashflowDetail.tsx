@@ -1078,10 +1078,10 @@ export default function CashflowDetail({
                       <TableRow key={entry.id}>
                         <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
                           {(() => {
-                            const [year, month, day] = entry.date
+                            const [eYear, eMonth, eDay] = entry.date
                               .split('-')
                               .map(Number)
-                            const date = new Date(year, month - 1, day)
+                            const date = new Date(eYear, eMonth - 1, eDay)
                             return date.toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
@@ -1178,10 +1178,10 @@ export default function CashflowDetail({
                           <div className='flex items-center gap-2'>
                             <span className='text-xs text-muted-foreground font-medium'>
                               {(() => {
-                                const [year, month, day] = entry.date
+                                const [eYear, eMonth, eDay] = entry.date
                                   .split('-')
                                   .map(Number)
-                                const date = new Date(year, month - 1, day)
+                                const date = new Date(eYear, eMonth - 1, eDay)
                                 return date.toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',

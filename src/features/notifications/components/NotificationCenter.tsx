@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   LuBell,
   LuMessageSquare,
@@ -75,28 +75,29 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
 
   const userId = user?.id
 
+  const loadNotifications = useCallback(async (isMountedRef: { current: boolean }) => {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+      return
+    }
+    const res = await getNotifications()
+    if (isMountedRef.current && !res.error) {
+      setNotifications(res.notifications)
+      setUnreadCount(res.unreadCount)
+    }
+  }, [])
+
   useEffect(() => {
     if (!userId) return
-    let isMounted = true
+    const isMountedRef = { current: true }
 
-    const loadNotifications = async () => {
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
-        return
-      }
-      const res = await getNotifications()
-      if (isMounted && !res.error) {
-        setNotifications(res.notifications)
-        setUnreadCount(res.unreadCount)
-      }
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadNotifications(isMountedRef)
 
-    loadNotifications()
-
-    const interval = setInterval(loadNotifications, 60000)
+    const interval = setInterval(() => loadNotifications(isMountedRef), 60000)
 
     const handleVisibilityChange = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        loadNotifications()
+        loadNotifications(isMountedRef)
       }
     }
 
@@ -105,13 +106,13 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
     }
 
     return () => {
-      isMounted = false
+      isMountedRef.current = false
       clearInterval(interval)
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityChange)
       }
     }
-  }, [userId])
+  }, [userId, loadNotifications])
 
   const handleNotificationClick = async (item: NotificationDTO) => {
     if (!item.read_at) {
