@@ -73,8 +73,10 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
 
+  const userId = user?.id
+
   useEffect(() => {
-    if (!user) return
+    if (!userId) return
     let isMounted = true
 
     const loadNotifications = async () => {
@@ -93,7 +95,7 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
       isMounted = false
       clearInterval(interval)
     }
-  }, [user])
+  }, [userId])
 
   const handleNotificationClick = async (item: NotificationDTO) => {
     if (!item.read_at) {

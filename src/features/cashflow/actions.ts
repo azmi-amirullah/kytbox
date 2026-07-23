@@ -15,7 +15,7 @@ import {
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { mapBudgetToDTO } from '@/lib/mappers';
-import { createNotification } from '@/features/notifications/actions';
+import { createNotification } from '@/features/notifications/server-utils';
 
 // Extracts user_id from Supabase joined relation (e.g. cashflows(user_id))
 const joinedOwnerSchema = z
