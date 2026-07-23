@@ -115,6 +115,9 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
 
   const handleNotificationClick = async (item: NotificationDTO) => {
     if (!item.read_at) {
+      const prevNotifications = [...notifications]
+      const prevUnreadCount = unreadCount
+
       // Optimistic update
       setNotifications((prev) =>
         prev.map((n) =>
@@ -122,7 +125,12 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
         ),
       )
       setUnreadCount((prev) => Math.max(0, prev - 1))
-      await markAsRead(item.id)
+
+      const res = await markAsRead(item.id)
+      if (res && !res.success) {
+        setNotifications(prevNotifications)
+        setUnreadCount(prevUnreadCount)
+      }
     }
 
     setOpen(false)
@@ -138,6 +146,9 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
 
   const handleMarkAllRead = async () => {
     setLoading(true)
+    const prevNotifications = [...notifications]
+    const prevUnreadCount = unreadCount
+
     setNotifications((prev) =>
       prev.map((n) => ({
         ...n,
@@ -145,7 +156,12 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
       })),
     )
     setUnreadCount(0)
-    await markAllAsRead()
+
+    const res = await markAllAsRead()
+    if (res && !res.success) {
+      setNotifications(prevNotifications)
+      setUnreadCount(prevUnreadCount)
+    }
     setLoading(false)
   }
 

@@ -35,8 +35,6 @@ CREATE POLICY "Users delete own notifications"
   ON notifications FOR DELETE
   USING (auth.uid() = user_id);
 
--- System or authenticated users can insert notifications for themselves; cross-user/system notifications use service role
-CREATE POLICY "Users insert own notifications"
-  ON notifications FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+-- Notifications are created exclusively via server-side service role (createAdminClient) to prevent client spoofing.
+-- No public INSERT policy is granted to authenticated role.
 

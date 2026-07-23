@@ -56,7 +56,22 @@ async function checkBudgetThresholds(
   const totalSpent = (entries || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
   const ratio = totalSpent / budget.amount;
 
-  if (ratio >= 1.0) {
+  const targetType = ratio >= 1.0 ? 'budget_exceeded' : ratio >= 0.8 ? 'budget_warning' : null;
+  if (!targetType) return;
+
+  const { data: existing } = await supabase
+    .from('notifications')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('type', targetType)
+    .eq('link_url', `/cashflow/${cashflowId}`)
+    .ilike('body', `%${category}%`)
+    .gte('created_at', monthStart)
+    .limit(1);
+
+  if (existing && existing.length > 0) return;
+
+  if (targetType === 'budget_exceeded') {
     const overage = (totalSpent - budget.amount).toFixed(2);
     await createNotification({
       userId,
@@ -65,7 +80,7 @@ async function checkBudgetThresholds(
       body: `${category} is over budget by $${overage}`,
       linkUrl: `/cashflow/${cashflowId}`,
     });
-  } else if (ratio >= 0.8) {
+  } else if (targetType === 'budget_warning') {
     const percentage = Math.round(ratio * 100);
     await createNotification({
       userId,
