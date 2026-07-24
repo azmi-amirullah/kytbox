@@ -55,9 +55,7 @@ export default function ProfileLinks({
   // Sync state if initialLinks prop changes (e.g. from server-side navigation or dashboard pagination)
   useEffect(() => {
     setLocalTotalLinks(totalLinks);
-    if (initialLinks.length > 0) {
-      setLinks(initialLinks);
-    }
+    setLinks(initialLinks);
   }, [initialLinks, totalLinks]);
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);

@@ -37,6 +37,7 @@ describe('isAllowedOrigin', () => {
   it('accepts localhost in development', () => {
     vi.stubEnv('NODE_ENV', 'development');
     expect(isAllowedOrigin('http://localhost:3000')).toBe(true);
+    expect(isAllowedOrigin('http://app.localhost:3000')).toBe(true);
     expect(isAllowedOrigin('http://127.0.0.1:3000')).toBe(true);
   });
 
@@ -47,12 +48,30 @@ describe('isAllowedOrigin', () => {
 });
 
 describe('getSafeOrigin', () => {
-  it('returns normalized allowed origin', () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('returns normalized allowed origin in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
     expect(getSafeOrigin('https://kytbox.com/')).toBe('https://kytbox.com');
   });
 
-  it('falls back to site URL for disallowed origin', () => {
+  it('falls back to site URL for disallowed origin in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
     expect(getSafeOrigin('https://evil.com')).toBe('https://kytbox.com');
     expect(getSafeOrigin(null)).toBe('https://kytbox.com');
+  });
+
+  it('returns allowed local origins in development', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(getSafeOrigin('http://localhost:3000/')).toBe('http://localhost:3000');
+    expect(getSafeOrigin('http://app.localhost:3000/')).toBe('http://app.localhost:3000');
+  });
+
+  it('falls back to localhost for disallowed origin in development', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(getSafeOrigin('https://evil.com')).toBe('http://localhost:3000');
+    expect(getSafeOrigin(null)).toBe('http://localhost:3000');
   });
 });

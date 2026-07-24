@@ -124,6 +124,7 @@ export default function ProfileView({
 
         {/* Links List */}
         <ProfileLinks
+          key={profile.id}
           links={links}
           username={profile.username}
           profileId={profile.id}

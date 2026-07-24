@@ -13,7 +13,11 @@ export function isAllowedOrigin(origin: string): boolean {
   if (!isProd) {
     try {
       const { hostname } = new URL(normalizedOrigin);
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.endsWith('.localhost')
+      ) {
         return true;
       }
     } catch {
