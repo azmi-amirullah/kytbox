@@ -50,11 +50,9 @@ export async function proxy(request: NextRequest) {
       const baseHost = hostname.replace(`:${request.nextUrl.port}`, '').replace(/^www\./, '');
       const targetHost = `app.${baseHost}${port}`;
 
-      if (hostname !== targetHost && !hostname.startsWith('app.')) {
-        const appUrl = new URL(request.nextUrl.toString());
-        appUrl.host = targetHost;
-        return NextResponse.redirect(appUrl);
-      }
+      const appUrl = new URL(request.nextUrl.toString());
+      appUrl.host = targetHost;
+      return NextResponse.redirect(appUrl);
     }
   }
 
@@ -109,7 +107,9 @@ export async function proxy(request: NextRequest) {
           }[],
         ) {
           const cookieDomain =
-            process.env.NODE_ENV === 'production' ? '.kytbox.com' : undefined;
+            env.NODE_ENV === 'production'
+              ? `.${new URL(env.NEXT_PUBLIC_SITE_URL).hostname.replace(/^www\./, '')}`
+              : undefined;
 
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),

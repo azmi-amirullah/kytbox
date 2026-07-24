@@ -147,8 +147,7 @@ export async function getPublicProfileData(
   if (!profile) return null;
 
   // Get links for this specific user using cached function
-  // count is the total number of active root links (cached alongside the links query)
-  const { data: rawRootLinks, count: cachedCount } = await getCachedPublicLinks(profile.id, username);
+  const { data: rawRootLinks } = await getCachedPublicLinks(profile.id, username);
 
   const now = new Date();
   const typedLinks = rawRootLinks
@@ -180,6 +179,6 @@ export async function getPublicProfileData(
         .parse(profile.custom_theme),
     },
     links: typedLinks,
-    totalLinks: cachedCount ?? typedLinks.length,
+    totalLinks: typedLinks.length,
   };
 }

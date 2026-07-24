@@ -50,7 +50,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/screenshots/') ||
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.svg') ||
-    url.pathname.endsWith('.json')
+    url.pathname === '/manifest.json'
   ) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {

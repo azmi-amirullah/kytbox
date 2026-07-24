@@ -18,13 +18,19 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   images: {
-    formats: ['image/avif', 'image/webp'],
+    formats: ['image/webp'], // AVIF encoding takes 3-4s on first request; avatar uses Supabase transform instead
     qualities: [60, 75],
+    minimumCacheTTL: 86400, // Cache optimized images for 24h (survives across deployments)
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '*.supabase.co',
         pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/render/image/public/**', // Supabase image transformation endpoint
       },
     ],
   },

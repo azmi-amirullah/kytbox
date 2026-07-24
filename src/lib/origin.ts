@@ -11,11 +11,13 @@ export function isAllowedOrigin(origin: string): boolean {
   const normalizedOrigin = origin.replace(/\/$/, '');
 
   if (!isProd) {
-    if (
-      normalizedOrigin.includes('localhost') ||
-      normalizedOrigin.includes('127.0.0.1')
-    ) {
-      return true;
+    try {
+      const { hostname } = new URL(normalizedOrigin);
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return true;
+      }
+    } catch {
+      // malformed origin — deny
     }
   }
 

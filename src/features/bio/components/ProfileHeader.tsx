@@ -3,6 +3,18 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import type { ThemeConfig } from '@/lib/theme/theme.types'
 
+/**
+ * Transform a Supabase storage URL to use their image transformation endpoint.
+ * This serves a pre-sized image from Supabase CDN, eliminating the
+ * Next.js AVIF encoding step that causes ~4s LCP delay on first request.
+ */
+function toSupabaseRenderUrl(url: string, width: number): string {
+  if (!url.includes('/storage/v1/object/public/')) return url
+  return url
+    .replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+    + `?width=${width}&quality=60&format=webp&resize=cover`
+}
+
 interface ProfileHeaderProps {
   profile: {
     username: string
@@ -34,15 +46,15 @@ export default function ProfileHeader({
             )}
           >
             <Image
-              src={profile.avatar_url}
+              src={toSupabaseRenderUrl(profile.avatar_url, 160)}
               alt={profile.display_name || profile.username || 'Avatar'}
               fill
               sizes='(max-width: 768px) 112px, (max-width: 1024px) 128px, 160px'
               className='object-cover'
-              quality={60}
               priority={true}
               fetchPriority='high'
               loading='eager'
+              unoptimized
             />
           </div>
         ) : (
