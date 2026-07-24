@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
@@ -5,6 +6,16 @@ import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { userRoleSchema } from '@/lib/validation.schemas';
 import { redirect } from 'next/navigation';
 import { PlatformOverlays } from '@/components/platform-overlays';
+import { siteConfig } from '@/config/site';
+
+export const metadata: Metadata = {
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Kytbox App',
+  },
+};
 
 export default async function PlatformLayout({
   children,
@@ -32,7 +43,7 @@ export default async function PlatformLayout({
       <Header
         variant='dashboard'
         user={userData}
-        publicUrl={`/${profile.username}`}
+        publicUrl={`${siteConfig.url}/${profile.username}`}
       />
       <main className='relative z-20 flex-1 w-full pt-16'>{children}</main>
       <PlatformOverlays hasCompletedOnboarding={profile.has_completed_onboarding} />

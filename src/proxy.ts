@@ -16,6 +16,48 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', cspHeaderValue);
 
+  const hostname = request.headers.get('host') || '';
+  const isAppSubdomain = hostname.startsWith('app.');
+
+  // 1. If on app subdomain (app.kytbox.com or app.localhost):
+  if (isAppSubdomain) {
+    if (pathname === '/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/app';
+      return NextResponse.redirect(url);
+    }
+  } else {
+    // 2. If on root apex domain (kytbox.com or localhost):
+    // Redirect platform routes AND auth routes to app subdomain so login is saved on app subdomain
+    const platformRoutes = [
+      '/app',
+      '/bio',
+      '/list',
+      '/onboarding',
+      '/settings',
+      '/support',
+      '/support-admin',
+      '/update-password',
+      '/login',
+      '/signup',
+    ];
+    const isPlatformRoute =
+      platformRoutes.some(matchesRoute) || pathname === '/cashflow';
+
+    if (isPlatformRoute) {
+      // Determine app subdomain host
+      const port = request.nextUrl.port ? `:${request.nextUrl.port}` : '';
+      const baseHost = hostname.replace(`:${request.nextUrl.port}`, '').replace(/^www\./, '');
+      const targetHost = `app.${baseHost}${port}`;
+
+      if (hostname !== targetHost && !hostname.startsWith('app.')) {
+        const appUrl = new URL(request.nextUrl.toString());
+        appUrl.host = targetHost;
+        return NextResponse.redirect(appUrl);
+      }
+    }
+  }
+
   // Protected routes - require authentication
   const protectedPaths = [
     '/app',
@@ -66,6 +108,9 @@ export async function proxy(request: NextRequest) {
             options?: CookieOptions;
           }[],
         ) {
+          const cookieDomain =
+            process.env.NODE_ENV === 'production' ? '.kytbox.com' : undefined;
+
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
@@ -77,7 +122,10 @@ export async function proxy(request: NextRequest) {
             cspHeaderValue,
           );
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              ...(cookieDomain ? { domain: cookieDomain } : {}),
+            }),
           );
         },
       },
@@ -89,14 +137,24 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect routes
-  if (isProtectedRoute && !user) {
+  // Helper to construct app subdomain URL
+  const getAppSubdomainUrl = (targetPath: string) => {
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+    url.pathname = targetPath;
+    if (!hostname.startsWith('app.')) {
+      const port = request.nextUrl.port ? `:${request.nextUrl.port}` : '';
+      const baseHost = hostname.replace(`:${request.nextUrl.port}`, '').replace(/^www\./, '');
+      url.host = `app.${baseHost}${port}`;
+    }
+    return url;
+  };
+
+  // Protect routes — redirect unauthenticated users to /login on app subdomain
+  if (isProtectedRoute && !user) {
+    return NextResponse.redirect(getAppSubdomainUrl('/login'));
   }
 
-  // Redirect logged-in users away from auth pages
+  // Redirect logged-in users away from auth pages directly to /app on app subdomain
   if (isAuthRoute && user) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -105,9 +163,7 @@ export async function proxy(request: NextRequest) {
       .single();
 
     if (profile) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/app';
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(getAppSubdomainUrl('/app'));
     }
   }
 

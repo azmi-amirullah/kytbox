@@ -975,11 +975,11 @@ NotificationCenter
 - Basic service worker: precache root HTML shell, CSS, JS bundles
 
 **Acceptance Criteria:**
-- [ ] Lighthouse mobile score ≥ 90 for public profile
-- [ ] LCP < 1.5s on 4G throttle
-- [ ] PWA install prompt appears on mobile Chrome/Safari
-- [ ] App opens in standalone mode after install
-- [ ] Correct icon and theme color
+- [x] Lighthouse mobile score ≥ 90 for public profile
+- [x] LCP < 1.5s on 4G throttle
+- [x] PWA install prompt appears on mobile Chrome/Safari
+- [x] App opens in standalone mode after install
+- [x] Correct icon and theme color
 
 ---
 

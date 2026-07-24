@@ -8,19 +8,28 @@ export function isAllowedOrigin(origin: string): boolean {
   if (!origin) return false;
 
   const isProd = env.NODE_ENV === 'production';
-  const allowedOrigins = [
-    env.NEXT_PUBLIC_SITE_URL,
-    !isProd && 'http://localhost:3000',
-    !isProd && 'http://127.0.0.1:3000',
-  ].filter((url): url is string => typeof url === 'string');
-
-  // Normalize origin (remove trailing slash)
   const normalizedOrigin = origin.replace(/\/$/, '');
 
-  return allowedOrigins.some((allowed) => {
-    const normalizedAllowed = allowed.replace(/\/$/, '');
-    return normalizedOrigin === normalizedAllowed;
-  });
+  if (!isProd) {
+    if (
+      normalizedOrigin.includes('localhost') ||
+      normalizedOrigin.includes('127.0.0.1')
+    ) {
+      return true;
+    }
+  }
+
+  const siteUrl = (env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com').replace(/\/$/, '');
+  const siteDomain = siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '');
+
+  if (
+    normalizedOrigin === siteUrl ||
+    normalizedOrigin.endsWith(`.${siteDomain}`)
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -29,7 +38,10 @@ export function isAllowedOrigin(origin: string): boolean {
  * Ensures the result is always an absolute URL prefix to prevent relative redirect issues.
  */
 export function getSafeOrigin(origin: string | null): string {
-  const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
+  const isProd = env.NODE_ENV === 'production';
+  const siteUrl = isProd
+    ? env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com'
+    : 'http://localhost:3000';
 
   if (origin && isAllowedOrigin(origin)) {
     return origin.replace(/\/$/, '');

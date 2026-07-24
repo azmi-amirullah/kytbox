@@ -39,6 +39,7 @@ export default function ProfileHeader({
               src={profile.avatar_url}
               alt={profile.display_name || profile.username || 'Avatar'}
               fill
+              sizes='(max-width: 768px) 112px, (max-width: 1024px) 128px, 160px'
               className='object-cover'
               priority
             />

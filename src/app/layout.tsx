@@ -7,6 +7,7 @@ import { ToastProvider } from '@/components/toast-provider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { headers } from 'next/headers';
+import { PwaRegister } from '@/components/pwa-register';
 import './globals.css';
 
 import { siteConfig } from '@/config/site';
@@ -35,6 +36,8 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
   display: 'swap',
 });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -95,6 +98,14 @@ export default function RootLayout({
 
   return (
     <html lang='en' suppressHydrationWarning>
+      <head>
+        {supabaseUrl && (
+          <>
+            <link rel='preconnect' href={supabaseUrl} crossOrigin='anonymous' />
+            <link rel='dns-prefetch' href={supabaseUrl} />
+          </>
+        )}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -109,6 +120,7 @@ export default function RootLayout({
           </Suspense>
           <Suspense fallback={null}>{children}</Suspense>
           <ToastProvider />
+          <PwaRegister />
         </ThemeProvider>
       </body>
     </html>

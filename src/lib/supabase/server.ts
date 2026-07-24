@@ -16,8 +16,13 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
+            const cookieDomain =
+              process.env.NODE_ENV === 'production' ? '.kytbox.com' : undefined;
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
+              cookieStore.set(name, value, {
+                ...options,
+                ...(cookieDomain ? { domain: cookieDomain } : {}),
+              }),
             );
           } catch {
             // Server Component - setAll only available in Server Actions or Route Handlers

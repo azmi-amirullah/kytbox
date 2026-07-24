@@ -3,9 +3,9 @@ import { BrandLogo } from '@/components/brand-logo';
 import { UserNav } from '@/components/user-nav';
 import { NotificationCenter } from '@/features/notifications';
 import { Button } from '@/components/ui/button';
-import { LuExternalLink } from 'react-icons/lu';
 import { SearchTrigger } from '@/components/search-trigger';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LuExternalLink } from 'react-icons/lu';
 
 interface UserData {
   id?: string;
@@ -62,8 +62,8 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
             </a>
           )}
 
-          {/* Unified Notification Center */}
-          <NotificationCenter user={user} />
+          {/* Unified Notification Center — Only for logged in users */}
+          {user && <NotificationCenter user={user} />}
 
           {/* Auth state handling - Hide on Auth pages */}
           {!isAuth &&
