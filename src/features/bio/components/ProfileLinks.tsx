@@ -240,7 +240,7 @@ export default function ProfileLinks({
     return (
       <div className='w-full space-y-4'>
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className='w-full rounded-lg h-[60px]' />
+          <Skeleton key={i} className='w-full rounded-lg h-15' />
         ))}
       </div>
     );
@@ -331,7 +331,7 @@ export default function ProfileLinks({
           visibleLinks.length === 0 ? (
             <div className='w-full space-y-4 py-4'>
               {[1, 2].map((i) => (
-                <Skeleton key={i} className='w-full rounded-lg h-[60px]' />
+                <Skeleton key={i} className='w-full rounded-lg h-15' />
               ))}
             </div>
           ) : activeLinks.length > 0 ? (

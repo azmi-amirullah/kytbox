@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
@@ -106,7 +104,7 @@ export default function ProfileView({
       )}
       style={customStyles}
     >
-      <div className='flex flex-col items-center min-h-full w-full max-w-[680px] mx-auto px-8 pt-16 pb-12 '>
+      <div className='flex flex-col items-center min-h-full w-full max-w-170 mx-auto px-8 pt-16 pb-12 '>
         {/* Header (Avatar, Name, Bio) */}
         <ProfileHeader
           profile={profile}
