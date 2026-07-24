@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import { createStaticClient } from '@/lib/supabase/server';
 import { trackProfileView } from '@/lib/tracking';
 import { getPublicProfileData, ProfileView } from '@/features/bio';
 import { getProfileByUsername } from '@/lib/data-cache';
@@ -12,9 +11,8 @@ export default async function PublicProfilePage({
   params,
 }: PublicProfilePageProps) {
   const { username } = await params;
-  const supabase = createStaticClient();
 
-  const data = await getPublicProfileData(supabase, username);
+  const data = await getPublicProfileData(username);
   if (!data) {
     notFound();
   }

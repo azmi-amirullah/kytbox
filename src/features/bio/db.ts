@@ -141,26 +141,16 @@ export async function getBioDashboardData(
 }
 
 export async function getPublicProfileData(
-  supabase: SupabaseClient<Database>,
   username: string
 ): Promise<PublicProfileData | null> {
   const profile = await getProfileByUsername(username);
   if (!profile) return null;
 
   // Get links for this specific user using cached function
-  const rootLinksResult = await getCachedPublicLinks(profile.id, username);
-  const rawRootLinks = rootLinksResult.data || [];
+  // count is the total number of active root links (cached alongside the links query)
+  const { data: rawRootLinks, count: cachedCount } = await getCachedPublicLinks(profile.id, username);
 
   const now = new Date();
-  const { count: validTotalLinks } = await supabase
-    .from('links')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', profile.id)
-    .eq('is_active', true)
-    .is('parent_id', null)
-    .or(`scheduled_at.is.null,scheduled_at.lte.${now.toISOString()}`)
-    .or(`expires_at.is.null,expires_at.gte.${now.toISOString()}`);
-
   const typedLinks = rawRootLinks
     .filter((link) => {
       if (link.scheduled_at && new Date(link.scheduled_at) > now) return false;
@@ -190,6 +180,6 @@ export async function getPublicProfileData(
         .parse(profile.custom_theme),
     },
     links: typedLinks,
-    totalLinks: validTotalLinks ?? 0,
+    totalLinks: cachedCount ?? typedLinks.length,
   };
 }
