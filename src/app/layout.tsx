@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ClientTopLoader } from '@/components/client-top-loader';
 import { Suspense } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
-import { ToastProvider } from '@/components/toast-provider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { headers } from 'next/headers';
@@ -11,6 +11,11 @@ import { PwaRegister } from '@/components/pwa-register';
 import './globals.css';
 
 import { siteConfig } from '@/config/site';
+
+const ToastProvider = dynamic(
+  () => import('@/components/toast-provider').then((mod) => mod.ToastProvider),
+  { ssr: false },
+);
 
 async function NoncedProviders() {
   const headersList = await headers();
