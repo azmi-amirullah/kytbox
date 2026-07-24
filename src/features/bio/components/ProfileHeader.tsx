@@ -22,7 +22,7 @@ export default function ProfileHeader({
   const { colors } = theme
 
   return (
-    <div className='flex flex-col items-center w-full animate-in fade-in zoom-in-95 duration-700 fill-mode-both mb-4'>
+    <div className='flex flex-col items-center w-full animate-in fade-in zoom-in-95 duration-200 fill-mode-both mb-4'>
       <div className='relative inline-block mb-6'>
         {isLoading ? (
           <Skeleton className='w-28 h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full' />
