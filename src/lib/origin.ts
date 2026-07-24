@@ -29,10 +29,9 @@ export function isAllowedOrigin(origin: string): boolean {
   let siteDomain = '';
   try {
     const hostname = new URL(siteUrl).hostname;
-    const parts = hostname.split('.');
-    siteDomain = parts.length > 2 ? parts.slice(-2).join('.') : hostname.replace(/^www\./, '');
+    siteDomain = hostname.replace(/^(?:www\.|app\.)/, '');
   } catch {
-    siteDomain = siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+    siteDomain = siteUrl.replace(/^https?:\/\//, '').replace(/^(?:www\.|app\.)/, '').split('/')[0];
   }
 
   try {
@@ -67,8 +66,7 @@ export function getCookieDomain(): string | undefined {
       return undefined;
     }
 
-    const parts = hostname.split('.');
-    const apexDomain = parts.length > 2 ? parts.slice(-2).join('.') : hostname.replace(/^www\./, '');
+    const apexDomain = hostname.replace(/^(?:www\.|app\.)/, '');
 
     return `.${apexDomain}`;
   } catch {
