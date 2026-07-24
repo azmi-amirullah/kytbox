@@ -24,14 +24,6 @@ export default async function PublicProfilePage({
 
   return (
     <div className='flex flex-col min-h-screen'>
-      {data.profile.avatar_url && (
-        <link
-          rel='preload'
-          as='image'
-          href={data.profile.avatar_url}
-          fetchPriority='high'
-        />
-      )}
       <ProfileView
         profile={data.profile}
         links={data.links}
