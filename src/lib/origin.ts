@@ -31,7 +31,11 @@ export function isAllowedOrigin(origin: string): boolean {
 
   try {
     const { hostname } = new URL(normalizedOrigin);
-    if (hostname === siteDomain || hostname.endsWith(`.${siteDomain}`)) {
+    if (
+      hostname === siteDomain ||
+      hostname === `app.${siteDomain}` ||
+      hostname === `www.${siteDomain}`
+    ) {
       return true;
     }
   } catch {
@@ -39,6 +43,28 @@ export function isAllowedOrigin(origin: string): boolean {
   }
 
   return false;
+}
+
+/**
+ * Safely resolves the cookie domain for production cross-subdomain authentication.
+ * Returns undefined if in development or if the domain is localhost/IP address.
+ */
+export function getCookieDomain(): string | undefined {
+  if (env.NODE_ENV !== 'production') return undefined;
+
+  try {
+    const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
+    const hostname = new URL(siteUrl).hostname.replace(/^www\./, '');
+
+    const isIP = /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
+    if (!hostname.includes('.') || isIP || hostname === 'localhost') {
+      return undefined;
+    }
+
+    return `.${hostname}`;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -58,3 +84,4 @@ export function getSafeOrigin(origin: string | null): string {
 
   return siteUrl.replace(/\/$/, '');
 }
+

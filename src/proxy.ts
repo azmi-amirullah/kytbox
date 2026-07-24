@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/env';
 import { buildCspHeader } from '@/lib/csp';
+import { getCookieDomain } from '@/lib/origin';
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -106,10 +107,7 @@ export async function proxy(request: NextRequest) {
             options?: CookieOptions;
           }[],
         ) {
-          const cookieDomain =
-            env.NODE_ENV === 'production'
-              ? `.${new URL(env.NEXT_PUBLIC_SITE_URL).hostname.replace(/^www\./, '')}`
-              : undefined;
+          const cookieDomain = getCookieDomain();
 
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
@@ -156,15 +154,7 @@ export async function proxy(request: NextRequest) {
 
   // Redirect logged-in users away from auth pages directly to /app on app subdomain
   if (isAuthRoute && user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-
-    if (profile) {
-      return NextResponse.redirect(getAppSubdomainUrl('/app'));
-    }
+    return NextResponse.redirect(getAppSubdomainUrl('/app'));
   }
 
   return supabaseResponse;
