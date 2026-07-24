@@ -17,7 +17,9 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             const cookieDomain =
-              process.env.NODE_ENV === 'production' ? '.kytbox.com' : undefined;
+              env.NODE_ENV === 'production'
+                ? `.${new URL(env.NEXT_PUBLIC_SITE_URL).hostname.replace(/^www\./, '')}`
+                : undefined;
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, {
                 ...options,

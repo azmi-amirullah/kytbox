@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { trackProfileView } from '@/lib/tracking';
 import { getPublicProfileData, ProfileView } from '@/features/bio';
 import { getProfileByUsername } from '@/lib/data-cache';
+import { siteConfig } from '@/config/site';
 
 interface PublicProfilePageProps {
   params: Promise<{ username: string }>;
@@ -45,7 +46,7 @@ export async function generateMetadata({ params }: PublicProfilePageProps) {
     openGraph: {
       title,
       description,
-      url: `https://kytbox.com/${username}`,
+      url: `${siteConfig.url}/${username}`,
       siteName: 'Kytbox',
       type: 'profile',
       images: avatarUrl ? [{ url: avatarUrl, alt: `${username}'s avatar` }] : [],
