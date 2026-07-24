@@ -22,13 +22,20 @@ export function isAllowedOrigin(origin: string): boolean {
   }
 
   const siteUrl = (env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com').replace(/\/$/, '');
-  const siteDomain = siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '');
+  let siteDomain = '';
+  try {
+    siteDomain = new URL(siteUrl).hostname.replace(/^www\./, '');
+  } catch {
+    siteDomain = siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  }
 
-  if (
-    normalizedOrigin === siteUrl ||
-    normalizedOrigin.endsWith(`.${siteDomain}`)
-  ) {
-    return true;
+  try {
+    const { hostname } = new URL(normalizedOrigin);
+    if (hostname === siteDomain || hostname.endsWith(`.${siteDomain}`)) {
+      return true;
+    }
+  } catch {
+    // malformed origin
   }
 
   return false;

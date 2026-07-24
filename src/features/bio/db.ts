@@ -179,6 +179,6 @@ export async function getPublicProfileData(
         .parse(profile.custom_theme),
     },
     links: typedLinks,
-    totalLinks: typedLinks.length,
+    totalLinks: typedLinks.length + (rawRootLinks.length >= 50 ? 1 : 0),
   };
 }

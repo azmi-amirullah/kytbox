@@ -14,7 +14,6 @@ import { siteConfig } from '@/config/site';
 
 const ToastProvider = dynamic(
   () => import('@/components/toast-provider').then((mod) => mod.ToastProvider),
-  { ssr: false },
 );
 
 async function NoncedProviders() {
