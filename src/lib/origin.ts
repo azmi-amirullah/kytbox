@@ -24,7 +24,9 @@ export function isAllowedOrigin(origin: string): boolean {
   const siteUrl = (env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com').replace(/\/$/, '');
   let siteDomain = '';
   try {
-    siteDomain = new URL(siteUrl).hostname.replace(/^www\./, '');
+    const hostname = new URL(siteUrl).hostname;
+    const parts = hostname.split('.');
+    siteDomain = parts.length > 2 ? parts.slice(-2).join('.') : hostname.replace(/^www\./, '');
   } catch {
     siteDomain = siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
   }
@@ -54,14 +56,17 @@ export function getCookieDomain(): string | undefined {
 
   try {
     const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
-    const hostname = new URL(siteUrl).hostname.replace(/^www\./, '');
+    const hostname = new URL(siteUrl).hostname;
 
     const isIP = /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
     if (!hostname.includes('.') || isIP || hostname === 'localhost') {
       return undefined;
     }
 
-    return `.${hostname}`;
+    const parts = hostname.split('.');
+    const apexDomain = parts.length > 2 ? parts.slice(-2).join('.') : hostname.replace(/^www\./, '');
+
+    return `.${apexDomain}`;
   } catch {
     return undefined;
   }

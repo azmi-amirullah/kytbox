@@ -113,7 +113,7 @@ export async function proxy(request: NextRequest) {
             request.cookies.set(name, value),
           );
           supabaseResponse = NextResponse.next({
-            request: { headers: requestHeaders },
+            request,
           });
           supabaseResponse.headers.set(
             'Content-Security-Policy',
