@@ -12,7 +12,7 @@ function toSupabaseRenderUrl(url: string, width: number): string {
   if (!url.includes('/storage/v1/object/public/')) return url
   return url
     .replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
-    + `?width=${width}&quality=60&format=webp&resize=cover`
+    + `?width=${width}&height=${width}&quality=60&format=webp&resize=cover`
 }
 
 interface ProfileHeaderProps {
