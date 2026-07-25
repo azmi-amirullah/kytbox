@@ -18,7 +18,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   images: {
-    formats: ['image/webp'],
+    formats: ['image/avif', 'image/webp'],
     qualities: [60, 75],
     minimumCacheTTL: 86400, // Cache optimized images for 24h (survives across deployments)
     remotePatterns: [
