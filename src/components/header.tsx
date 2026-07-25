@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand-logo';
 import { UserNav } from '@/components/user-nav';
@@ -72,16 +73,16 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
             ) : user ? (
               <div className='flex items-center gap-4'>
                 {(isLanding || isLegal) && (
-                  <Link href='/app'>
+                  <a href='/app'>
                     <Button>Dashboard</Button>
-                  </Link>
+                  </a>
                 )}
                 <UserNav user={user} />
               </div>
             ) : (
-              <Link href='/login'>
+              <a href='/login'>
                 <Button>Log in</Button>
-              </Link>
+              </a>
             ))}
         </div>
       </div>

@@ -1,10 +1,10 @@
-'use client';
+/* eslint-disable @next/next/no-html-link-for-pages */
+'use client'
 
-import Link from 'next/link';
-import { LuLogOut, LuSettings, LuShield, LuSun, LuMoon } from 'react-icons/lu';
-import { useTheme } from 'next-themes';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { LuLogOut, LuSettings, LuShield, LuSun, LuMoon } from 'react-icons/lu'
+import { useTheme } from 'next-themes'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,22 +13,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { logout } from '@/features/auth';
+} from '@/components/ui/dropdown-menu'
+import { logout } from '@/features/auth'
 
 interface UserNavProps {
   user: {
-    username: string;
-    email?: string;
-    avatar_url?: string | null;
-    display_name?: string | null;
-    role?: string | null;
-  };
+    username: string
+    email?: string
+    avatar_url?: string | null
+    display_name?: string | null
+    role?: string | null
+  }
 }
 
 export function UserNav({ user }: UserNavProps) {
-  const avatarUrl = user.avatar_url || null;
-  const { resolvedTheme, setTheme } = useTheme();
+  const avatarUrl = user.avatar_url || null
+  const { resolvedTheme, setTheme } = useTheme()
 
   return (
     <DropdownMenu modal={false}>
@@ -66,24 +66,24 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {user.role === 'admin' && (
-            <Link href='/support-admin'>
+            <a href='/support-admin'>
               <DropdownMenuItem className='cursor-pointer text-blue-600 font-semibold focus:text-blue-600 focus:bg-blue-50 dark:focus:bg-blue-950/30'>
                 <LuShield className='mr-2 h-4 w-4' />
                 Admin Dashboard
               </DropdownMenuItem>
-            </Link>
+            </a>
           )}
-          <Link href='/settings'>
+          <a href='/settings'>
             <DropdownMenuItem className='cursor-pointer'>
               <LuSettings className='mr-2 h-4 w-4' />
               Settings
             </DropdownMenuItem>
-          </Link>
+          </a>
           <DropdownMenuItem
             className='cursor-pointer'
             onSelect={(e) => {
-              e.preventDefault();
-              setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+              e.preventDefault()
+              setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
             }}
           >
             {resolvedTheme === 'dark' ? (
@@ -105,5 +105,5 @@ export function UserNav({ user }: UserNavProps) {
         </form>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
