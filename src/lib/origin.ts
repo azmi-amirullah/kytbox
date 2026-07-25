@@ -7,7 +7,7 @@ import { env } from '@/env';
 export function isAllowedOrigin(origin: string): boolean {
   if (!origin) return false;
 
-  const isProd = env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production';
   const normalizedOrigin = origin.replace(/\/$/, '');
 
   if (!isProd) {
@@ -55,7 +55,7 @@ export function isAllowedOrigin(origin: string): boolean {
  * Returns undefined if in development or if the domain is localhost/IP address.
  */
 export function getCookieDomain(): string | undefined {
-  if (env.NODE_ENV !== 'production') return undefined;
+  if (process.env.NODE_ENV !== 'production') return undefined;
 
   try {
     const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
@@ -80,7 +80,7 @@ export function getCookieDomain(): string | undefined {
  * Ensures the result is always an absolute URL prefix to prevent relative redirect issues.
  */
 export function getSafeOrigin(origin: string | null): string {
-  const isProd = env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production';
   const siteUrl = isProd
     ? env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com'
     : 'http://localhost:3000';

@@ -2,22 +2,74 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/env';
 import { buildCspHeader } from '@/lib/csp';
-import { getCookieDomain } from '@/lib/origin';
+import { getCookieDomain, isAllowedOrigin } from '@/lib/origin';
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const matchesRoute = (route: string) =>
     pathname === route || pathname.startsWith(`${route}/`);
 
+  const origin = request.headers.get('origin') || '';
+  const isAllowedCors = origin && isAllowedOrigin(origin);
+
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Rsc, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Next-Url, Content-Type, Authorization, x-nonce, sentry-trace, baggage',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+
+  const applyCorsHeaders = (res: NextResponse) => {
+    if (isAllowedCors) {
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        res.headers.set(key, value);
+      });
+    }
+    return res;
+  };
+
+  if (request.method === 'OPTIONS' && isAllowedCors) {
+    return new NextResponse(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }
+
+  const hostname = request.headers.get('host') || '';
+  const proto = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
+  const scheme = `${proto}://`;
+  const port = request.nextUrl.port ? `:${request.nextUrl.port}` : '';
+  const cleanHost = hostname.replace(`:${request.nextUrl.port}`, '').replace(/^www\./, '').replace(/^app\./, '');
+
+  const allowedOrigins = [
+    `${scheme}${cleanHost}${port}`,
+    `${scheme}app.${cleanHost}${port}`,
+  ];
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl) {
+    try {
+      const siteOrigin = new URL(siteUrl).origin;
+      const siteHost = new URL(siteUrl).hostname;
+      const cleanSiteHost = siteHost.replace(/^www\./, '').replace(/^app\./, '');
+      const siteAppOrigin = `${new URL(siteUrl).protocol}//app.${cleanSiteHost}`;
+      allowedOrigins.push(siteOrigin);
+      allowedOrigins.push(siteAppOrigin);
+    } catch {
+      // Ignore invalid URL format
+    }
+  }
+
+  const uniqueAllowedOrigins = Array.from(new Set(allowedOrigins));
+
   // CSP nonce — generated per-request, applied to ALL routes
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-  const cspHeaderValue = buildCspHeader(nonce);
+  const cspHeaderValue = buildCspHeader(nonce, uniqueAllowedOrigins);
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', cspHeaderValue);
 
-  const hostname = request.headers.get('host') || '';
   const isAppSubdomain = hostname.startsWith('app.');
 
   // 1. If on app subdomain (app.kytbox.com or app.localhost):
@@ -25,7 +77,7 @@ export async function proxy(request: NextRequest) {
     if (pathname === '/') {
       const url = request.nextUrl.clone();
       url.pathname = '/app';
-      return NextResponse.redirect(url);
+      return applyCorsHeaders(NextResponse.redirect(url));
     }
   } else {
     // 2. If on root apex domain (kytbox.com or localhost):
@@ -53,7 +105,7 @@ export async function proxy(request: NextRequest) {
 
       const appUrl = new URL(request.nextUrl.toString());
       appUrl.host = targetHost;
-      return NextResponse.redirect(appUrl);
+      return applyCorsHeaders(NextResponse.redirect(appUrl));
     }
   }
 
@@ -83,7 +135,7 @@ export async function proxy(request: NextRequest) {
       request: { headers: requestHeaders },
     });
     response.headers.set('Content-Security-Policy', cspHeaderValue);
-    return response;
+    return applyCorsHeaders(response);
   }
 
   // Only create Supabase client when needed
@@ -112,8 +164,18 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
+
+          // Copy the updated Cookie header from request.headers to requestHeaders
+          // so that the downstream route has the refreshed cookies AND the security headers (like x-nonce).
+          const cookieHeader = request.headers.get('cookie');
+          if (cookieHeader) {
+            requestHeaders.set('cookie', cookieHeader);
+          } else {
+            requestHeaders.delete('cookie');
+          }
+
           supabaseResponse = NextResponse.next({
-            request,
+            request: { headers: requestHeaders },
           });
           supabaseResponse.headers.set(
             'Content-Security-Policy',
@@ -149,15 +211,15 @@ export async function proxy(request: NextRequest) {
 
   // Protect routes — redirect unauthenticated users to /login on app subdomain
   if (isProtectedRoute && !user) {
-    return NextResponse.redirect(getAppSubdomainUrl('/login'));
+    return applyCorsHeaders(NextResponse.redirect(getAppSubdomainUrl('/login')));
   }
 
   // Redirect logged-in users away from auth pages directly to /app on app subdomain
   if (isAuthRoute && user) {
-    return NextResponse.redirect(getAppSubdomainUrl('/app'));
+    return applyCorsHeaders(NextResponse.redirect(getAppSubdomainUrl('/app')));
   }
 
-  return supabaseResponse;
+  return applyCorsHeaders(supabaseResponse);
 }
 
 export const config = {

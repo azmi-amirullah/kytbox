@@ -15,4 +15,10 @@ describe('buildCspHeader', () => {
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("upgrade-insecure-requests");
   });
+
+  it('includes additional allowed origins in connect-src', () => {
+    const allowed = ['https://app.example.com', 'https://example.com'];
+    const csp = buildCspHeader('nonce', allowed);
+    expect(csp).toContain("connect-src 'self' https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://app.example.com https://example.com;");
+  });
 });

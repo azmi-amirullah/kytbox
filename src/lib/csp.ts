@@ -7,20 +7,22 @@
 
 const isDev = process.env.NODE_ENV === 'development';
 
-export function buildCspHeader(nonce: string): string {
+export function buildCspHeader(nonce: string, allowedOrigins: string[] = []): string {
+  const additionalOrigins = allowedOrigins.length > 0 ? ' ' + allowedOrigins.join(' ') : '';
   const csp = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' https://va.vercel-scripts.com 'sha256-TiyWB4YB4NUrUHDJSqaW0w0OtUb7i0Tddwwo6j0O07c=' 'sha256-HugGj5oR7f2UGBbrPIOJua5vPpKBIJj8354Z6gsKoUQ=' ${isDev ? "'unsafe-eval'" : ''};
+    script-src 'self' 'nonce-${nonce}' https://va.vercel-scripts.com 'sha256-TiyWB4YB4NUrUHDJSqaW0w0OtUb7i0Tddwwo6j0O07c=' 'sha256-HugGj5oR7f2UGBbrPIOJua5vPpKBIJj8354Z6gsKoUQ=' 'sha256-7mu4H06fwDCjmnxxr/xNHyuQC6pLTHr4M2E4jXw5WZs=' ${isDev ? "'unsafe-eval'" : ''};
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://*.supabase.co;
-    font-src 'self';
-    connect-src 'self' https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com;
+    font-src 'self'${additionalOrigins};
+    connect-src 'self' https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com${additionalOrigins};
     frame-ancestors 'none';
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    upgrade-insecure-requests;
+    ${isDev ? '' : 'upgrade-insecure-requests;'}
   `;
 
   return csp.replace(/\s{2,}/g, ' ').trim();
 }
+

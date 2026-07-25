@@ -1,7 +1,7 @@
 import { env } from '@/env';
 
 const baseUrl =
-  env.NODE_ENV === 'production'
+  process.env.NODE_ENV === 'production'
     ? env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com'
     : 'http://localhost:3000';
 

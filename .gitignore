@@ -45,3 +45,4 @@ next-env.d.ts
 
 .agents
 graphify-out
+skills-lock.json
