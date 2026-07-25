@@ -13,7 +13,6 @@ export function PwaRegister() {
               registration.unregister().then((success) => {
                 if (success) {
                   console.log('Unregistered development service worker');
-                  window.location.reload();
                 }
               });
             }

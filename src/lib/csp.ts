@@ -11,7 +11,7 @@ export function buildCspHeader(nonce: string, allowedOrigins: string[] = []): st
   const additionalOrigins = allowedOrigins.length > 0 ? ' ' + allowedOrigins.join(' ') : '';
   const csp = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' https://va.vercel-scripts.com 'sha256-TiyWB4YB4NUrUHDJSqaW0w0OtUb7i0Tddwwo6j0O07c=' 'sha256-HugGj5oR7f2UGBbrPIOJua5vPpKBIJj8354Z6gsKoUQ=' 'sha256-7mu4H06fwDCjmnxxr/xNHyuQC6pLTHr4M2E4jXw5WZs=' ${isDev ? "'unsafe-eval'" : ''};
+    script-src 'self' 'nonce-${nonce}' https://va.vercel-scripts.com ${isDev ? "'unsafe-eval'" : ''};
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://*.supabase.co;
     font-src 'self'${additionalOrigins};

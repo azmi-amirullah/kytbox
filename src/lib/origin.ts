@@ -1,11 +1,34 @@
 import { env } from '@/env';
 
 /**
+ * Helper to safely extract the apex hostname from a site URL string.
+ * Strips leading 'www.' or 'app.' prefixes to determine the root domain.
+ */
+function getApexDomain(urlStr: string): string | null {
+  try {
+    const url = new URL(urlStr.includes('://') ? urlStr : `https://${urlStr}`);
+    const hostname = url.hostname.toLowerCase();
+
+    if (
+      /^\d+\.\d+\.\d+\.\d+$/.test(hostname) ||
+      !hostname.includes('.') ||
+      hostname === 'localhost'
+    ) {
+      return null;
+    }
+
+    return hostname.replace(/^(?:www\.|app\.)/, '');
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Origin validation utility for security-critical redirects.
- * Whitelists the canonical site URL and localhost for development.
+ * Whitelists the canonical site URL, its standard subdomains (app, www), and localhost in dev.
  */
 export function isAllowedOrigin(origin: string): boolean {
-  if (!origin) return false;
+  if (!origin || typeof origin !== 'string') return false;
 
   const isProd = process.env.NODE_ENV === 'production';
   const normalizedOrigin = origin.replace(/\/$/, '');
@@ -21,33 +44,27 @@ export function isAllowedOrigin(origin: string): boolean {
         return true;
       }
     } catch {
-      // malformed origin — deny
+      return false;
     }
   }
 
-  const siteUrl = (env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com').replace(/\/$/, '');
-  let siteDomain = '';
-  try {
-    const hostname = new URL(siteUrl).hostname;
-    siteDomain = hostname.replace(/^(?:www\.|app\.)/, '');
-  } catch {
-    siteDomain = siteUrl.replace(/^https?:\/\//, '').replace(/^(?:www\.|app\.)/, '').split('/')[0];
-  }
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
+  const siteApex = getApexDomain(siteUrl);
+
+  if (!siteApex) return false;
 
   try {
     const { hostname } = new URL(normalizedOrigin);
-    if (
-      hostname === siteDomain ||
-      hostname === `app.${siteDomain}` ||
-      hostname === `www.${siteDomain}`
-    ) {
-      return true;
-    }
-  } catch {
-    // malformed origin
-  }
+    const originHostname = hostname.toLowerCase();
 
-  return false;
+    return (
+      originHostname === siteApex ||
+      originHostname === `app.${siteApex}` ||
+      originHostname === `www.${siteApex}`
+    );
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -57,21 +74,10 @@ export function isAllowedOrigin(origin: string): boolean {
 export function getCookieDomain(): string | undefined {
   if (process.env.NODE_ENV !== 'production') return undefined;
 
-  try {
-    const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
-    const hostname = new URL(siteUrl).hostname;
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
+  const apexDomain = getApexDomain(siteUrl);
 
-    const isIP = /^\d+\.\d+\.\d+\.\d+$/.test(hostname);
-    if (!hostname.includes('.') || isIP || hostname === 'localhost') {
-      return undefined;
-    }
-
-    const apexDomain = hostname.replace(/^(?:www\.|app\.)/, '');
-
-    return `.${apexDomain}`;
-  } catch {
-    return undefined;
-  }
+  return apexDomain ? `.${apexDomain}` : undefined;
 }
 
 /**
@@ -91,4 +97,5 @@ export function getSafeOrigin(origin: string | null): string {
 
   return siteUrl.replace(/\/$/, '');
 }
+
 
