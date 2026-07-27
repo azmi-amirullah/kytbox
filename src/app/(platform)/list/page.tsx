@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import { getListCounts, ListHub } from '@/features/list';
+
+export const metadata: Metadata = {
+  title: 'Lists',
+  robots: { index: false, follow: false },
+};
 
 export default async function ListPage() {
   const counts = await getListCounts();

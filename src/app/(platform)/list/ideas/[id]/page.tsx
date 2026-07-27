@@ -1,11 +1,22 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getListById, getItemsByListId, IdeaDetail } from '@/features/list';
 
+type Params = { params: Promise<{ id: string }> };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { id } = await params;
+  const list = await getListById(id);
+  const title = list?.title ?? 'Ideas';
+  return {
+    title,
+    robots: { index: false, follow: false },
+  };
+}
+
 export default async function IdeaDetailPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+}: Params) {
   const { id } = await params;
   const [list, items] = await Promise.all([
     getListById(id),

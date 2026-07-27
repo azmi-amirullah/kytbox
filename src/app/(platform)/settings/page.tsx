@@ -1,8 +1,14 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { SettingsForm, BackButton } from '@/features/settings';
 import Link from 'next/link';
 import { LuChevronRight } from 'react-icons/lu';
+
+export const metadata: Metadata = {
+  title: 'Settings',
+  robots: { index: false, follow: false },
+};
 
 export default async function SettingsPage() {
   const { user, supabase } = await getAuthenticatedUser();

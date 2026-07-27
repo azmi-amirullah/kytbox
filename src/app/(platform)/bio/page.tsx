@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { getBioDashboardData, DashboardClient, schemasServer } from '@/features/bio';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'Bio Dashboard',
+  robots: { index: false, follow: false },
+};
 
 export default async function BioDashboardPage({
   searchParams,

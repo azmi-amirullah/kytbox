@@ -15,10 +15,11 @@ import {
   LuType,
   LuQrCode,
 } from 'react-icons/lu';
+import dynamic from 'next/dynamic';
 import LinkList from './LinkList';
 import LinkModal from './LinkModal';
 import HeaderModal from './HeaderModal';
-import QRCodeModal from './QRCodeModal';
+const QRCodeModal = dynamic(() => import('./QRCodeModal'), { ssr: false });
 import StatsCard from './StatsCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';

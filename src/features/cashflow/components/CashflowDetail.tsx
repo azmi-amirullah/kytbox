@@ -58,10 +58,14 @@ import {
   deleteEntry,
   generateRecurringEntries,
 } from '../actions'
+import dynamic from 'next/dynamic'
 import CashflowModal from './CashflowModal'
 import EntryModal from './EntryModal'
 import ShareModal from './ShareModal'
-import { CashflowCharts } from './CashflowCharts'
+const CashflowCharts = dynamic(
+  () => import('./CashflowCharts').then((mod) => mod.CashflowCharts),
+  { ssr: false }
+)
 import { ProjectionsView } from './ProjectionsView'
 import { subscribeToPublicCashflow, removeShare } from '../actions'
 import BudgetManager from './BudgetManager'

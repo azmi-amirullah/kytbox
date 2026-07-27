@@ -1,6 +1,7 @@
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
 import { KYTBOX_APPS } from '@/config/apps';
@@ -9,6 +10,11 @@ import { QuickStatsSkeleton } from './components/QuickStatsSkeleton';
 import { QuickActions } from './components/QuickActions';
 import { ActivityFeed } from './components/ActivityFeed';
 import { ActivityFeedSkeleton } from './components/ActivityFeedSkeleton';
+
+export const metadata: Metadata = {
+  title: 'Home',
+  robots: { index: false, follow: false },
+};
 
 const SUPPORT_SECTION = {
   name: 'Support',

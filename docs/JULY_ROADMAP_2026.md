@@ -1008,11 +1008,11 @@ NotificationCenter
 - Document findings + actions taken
 
 **Acceptance Criteria:**
-- [ ] All routes have proper `<title>` and `<meta description>`
-- [ ] Private routes have `noindex`
-- [ ] `[username]` has full Open Graph tags
-- [ ] No client route exceeds 100KB first-load JS
-- [ ] Heavy libraries are code-split
+- [x] All routes have proper `<title>` and `<meta description>`
+- [x] Private routes have `noindex`
+- [x] `[username]` has full Open Graph tags
+- [x] No client route exceeds 100KB first-load JS
+- [x] Heavy libraries are code-split
 
 ---
 

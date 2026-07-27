@@ -34,9 +34,13 @@ import { deleteCashflow } from '../actions';
 import { toggleCashflowInclusion } from '../actions';
 // import type { Cashflow } from '@/types/supabase';
 import { formatCurrencyCompact } from '@/lib/currency';
+import dynamic from 'next/dynamic';
 import CashflowModal from './CashflowModal';
 import ShareModal from './ShareModal';
-import { DashboardCharts } from './DashboardCharts';
+const DashboardCharts = dynamic(
+  () => import('./DashboardCharts').then((mod) => mod.DashboardCharts),
+  { ssr: false }
+);
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 

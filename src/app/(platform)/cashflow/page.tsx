@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { getCashflowDashboardData, CashflowList } from '@/features/cashflow';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'Cashflow',
+  robots: { index: false, follow: false },
+};
 
 export default async function CashflowPage() {
   const { user, supabase } = await getAuthenticatedUser();

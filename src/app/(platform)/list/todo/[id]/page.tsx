@@ -1,11 +1,22 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getListById, getItemsByListId, getColumnsByListId, KanbanBoard } from '@/features/list';
 
+type Params = { params: Promise<{ id: string }> };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { id } = await params;
+  const list = await getListById(id);
+  const title = list?.title ?? 'Board';
+  return {
+    title,
+    robots: { index: false, follow: false },
+  };
+}
+
 export default async function KanbanBoardPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+}: Params) {
   const { id } = await params;
   const [list, columns, items] = await Promise.all([
     getListById(id),

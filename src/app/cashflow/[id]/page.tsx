@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Header } from '@/components/header';
@@ -5,6 +6,25 @@ import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import { getCashflowDetailData, CashflowDetail, schemasServer } from '@/features/cashflow';
 import { connection } from 'next/server';
+
+export async function generateMetadata({
+  params,
+}: CashflowDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('cashflows')
+    .select('title')
+    .eq('id', id)
+    .single();
+
+  const title = data?.title ?? 'Cashflow';
+  return {
+    title,
+    description: `Cashflow tracker — ${title}`,
+    robots: { index: false, follow: false },
+  };
+}
 
 interface CashflowDetailPageProps {
   params: Promise<{ id: string }>;

@@ -1,6 +1,13 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { AnalyticsClient, getAnalyticsData } from '@/features/bio';
+
+export const metadata: Metadata = {
+  title: 'Analytics',
+  description: 'View click analytics for your bio page links.',
+  robots: { index: false, follow: false },
+};
 
 export default async function AnalyticsPage() {
   const { user, supabase } = await getAuthenticatedUser();

@@ -1,12 +1,14 @@
+import type { Metadata } from 'next';
 import { TicketList, schemasServer } from '@/features/support';
 import { Button } from '@/components/ui/button';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { LuPlus } from 'react-icons/lu';
 import Link from 'next/link';
 
-export const metadata = {
-  title: 'Support | Kytbox',
+export const metadata: Metadata = {
+  title: 'Support',
   description: 'Manage your support tickets.',
+  robots: { index: false, follow: false },
 };
 
 export default async function SupportPage() {
