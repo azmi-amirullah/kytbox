@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { z } from 'zod';
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Header } from '@/components/header';
@@ -7,10 +8,19 @@ import { BackgroundBlobs } from '@/components/background-blobs';
 import { getCashflowDetailData, CashflowDetail, schemasServer } from '@/features/cashflow';
 import { connection } from 'next/server';
 
+const cashflowIdSchema = z.uuid();
+
 export async function generateMetadata({
   params,
 }: CashflowDetailPageProps): Promise<Metadata> {
   const { id } = await params;
+  if (!cashflowIdSchema.safeParse(id).success) {
+    return {
+      title: 'Cashflow',
+      description: 'Cashflow tracker',
+      robots: { index: false, follow: false },
+    };
+  }
   const supabase = await createClient();
   const { data } = await supabase
     .from('cashflows')
@@ -34,6 +44,9 @@ export default async function CashflowDetailPage({
   params,
 }: CashflowDetailPageProps) {
   const { id } = await params;
+  if (!cashflowIdSchema.safeParse(id).success) {
+    notFound();
+  }
   await connection();
   const supabase = await createClient();
 
@@ -66,12 +79,13 @@ export default async function CashflowDetailPage({
     );
   } catch (error) {
     if (error instanceof Error && error.message === 'CASHFLOW_NOT_FOUND') {
+      if (!user) redirect('/login');
       notFound();
     }
     throw error;
   }
 
-  const { cashflow, entries, budgets, profile, share } = data;
+  const { cashflow, entries, budgets, goals, profile, share } = data;
 
   // 3. Access Control
   const isPublic = cashflow.is_public;
@@ -127,6 +141,7 @@ export default async function CashflowDetailPage({
           cashflow={cashflow}
           entries={entries}
           budgets={budgets}
+          goals={goals}
           currency={profile?.default_currency ?? null}
           currentUserId={user?.id}
           initialUserRole={initialUserRole}

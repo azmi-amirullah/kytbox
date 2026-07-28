@@ -83,6 +83,7 @@ const baseCashflow: Cashflow = {
 const baseCashflowEntry: CashflowEntry = {
   id: 'entry-1',
   cashflow_id: 'cf-1',
+  goal_id: null,
   description: 'Salary',
   amount: 5000,
   type: 'income',
@@ -310,6 +311,25 @@ describe('mapCashflowEntryToDTO', () => {
     const dto = mapCashflowEntryToDTO(corrupt(baseCashflowEntry, { yearly_calculation: 'invalid' }));
     expect(dto.yearly_calculation).toBeNull();
   });
+  it('uses the current goal title in DTO labels', () => {
+    const entry = {
+      ...baseCashflowEntry,
+      goal_id: 'goal-1',
+      category: 'Goal: Old name',
+    };
+    const dto = mapCashflowEntryToDTO(entry, 'Emergency fund');
+    expect(dto.category).toBe('Goal: Emergency fund');
+  });
+
+  it('hides goal labels when the goal is not accessible', () => {
+    const dto = mapCashflowEntryToDTO({
+      ...baseCashflowEntry,
+      goal_id: 'goal-1',
+      category: 'Goal: Private',
+    });
+    expect(dto.category).toBeNull();
+  });
+
 });
 
 // ==========================================
@@ -361,6 +381,20 @@ describe('mapCashflowWithSummaryToDTO', () => {
     const dto = mapCashflowWithSummaryToDTO({ ...baseSummary, entries: [baseCashflowEntry] });
     expect(dto.entries).toHaveLength(1);
     expect(dto.entries[0].description).toBe('Salary');
+  });
+
+  it('maps goal labels when the summary includes authoritative goal titles', () => {
+    const goalEntry = {
+      ...baseCashflowEntry,
+      goal_id: 'goal-1',
+      category: 'Goal: Old name',
+    };
+    const dto = mapCashflowWithSummaryToDTO(
+      { ...baseSummary, entries: [goalEntry] },
+      new Map([['goal-1', 'Emergency fund']]),
+    );
+
+    expect(dto.entries[0].category).toBe('Goal: Emergency fund');
   });
 
   it('defaults entries to empty array when absent', () => {
@@ -544,4 +578,3 @@ describe('mapListItemToDTO', () => {
     expect(dto.metadata).toEqual({});
   });
 });
-

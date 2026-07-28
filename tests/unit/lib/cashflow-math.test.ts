@@ -12,6 +12,7 @@ const TODAY = new Date('2026-03-15T12:00:00Z');
 const createEntry = (overrides: Partial<CashflowEntryDTO>): CashflowEntryDTO => ({
   id: 'test-id',
   cashflow_id: 'cf-1',
+  goal_id: null,
   description: 'Test Entry',
   amount: 100,
   type: 'expense',

@@ -91,6 +91,7 @@ export async function proxy(request: NextRequest) {
       '/support',
       '/support-admin',
       '/update-password',
+      '/cashflow/goal',
       '/login',
       '/signup',
     ];
@@ -119,9 +120,10 @@ export async function proxy(request: NextRequest) {
     '/support',
     '/support-admin',
     '/update-password',
+    '/cashflow/goal',
   ];
-  // Protect specific paths and EXACTLY '/cashflow' (the private list)
-  // Sub-paths like /cashflow/[id] are handled by the page logic for public access
+  // Protect specific paths and EXACTLY '/cashflow' (the private list).
+  // Cashflow detail pages remain public, while goal detail pages are private.
   const isProtectedRoute =
     protectedPaths.some(matchesRoute) || pathname === '/cashflow';
 

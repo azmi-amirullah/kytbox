@@ -12,6 +12,7 @@ Focus: **Simple, effective personal finance tracking.**
   - **Secure Email Invitations**: Precise access control for external collaborators.
   - **Collaborative Editing**: Full write-access for invited editors on transaction entries.
 - **Dashboard Integration**: "Add to Dashboard" workflow for persistent tracking of shared and public cashflows.
+- **Savings Goals**: Create goals from each cashflow detail page (/cashflow/[id]) and track matching contributions across owned and accessible shared cashflow books.
 
 ## 2. Technical Architecture
 
@@ -54,6 +55,18 @@ Individual transaction records.
 - `description` (text): Context for the transaction.
 - `date` (date): The logical date of the event.
 
+#### cashflow_goals
+
+Savings targets owned by the cashflow owner.
+
+- **cashflow_id** (uuid): The owning cashflow book.
+- **title** (text): The goal name.
+- **target_amount** (numeric): Positive target amount.
+- **deadline** (date, nullable): Optional target date.
+- **is_deleted** (boolean): Soft-archive flag; archived goals are hidden while their contributions remain.
+- **Contributions**: An expense entry in any accessible book the user can edit contributes only when its internal `goal_id` points to the selected goal. The human-readable category remains `Goal: {goal name}` and the source cashflow name is shown in goal cards, detail pages, and the category picker.
+- **Goal ownership**: Each goal belongs to the cashflow where it was created, even when contributions come from another accessible cashflow book.
+
 ### 3.2 User Settings
 
 #### `user_settings`
@@ -94,6 +107,8 @@ Permissions are enforced strictly at the database level via PostgreSQL Row Level
 | **View Entries**         | `cashflow_entries` | Any user with View access to the parent Book                                 |
 | **Manage Shares**        | `cashflow_shares`  | Owner of the Book only                                                       |
 | **Bookmark/Unsubscribe** | `cashflow_shares`  | Authenticated users (Self-management of own records)                         |
+| **View savings goals**    | `cashflow_goals`         | Owner or authenticated user with an explicit `read`/`edit` share; archived goals are owner-only |
+| **Manage savings goals**  | `cashflow_goals`         | Owner of the goal's cashflow only; archive is a soft delete                  |
 
 > [!NOTE]
 > All email-based security checks use `LOWER()` to ensure case-insensitive matching between auth sessions and share records.
@@ -101,6 +116,9 @@ Permissions are enforced strictly at the database level via PostgreSQL Row Level
 ### 4.1 Trigger-Based Column Guard
 
 The `check_cashflow_share_update` trigger prevents privilege escalation by blocking non-owners from modifying restricted columns (`role`, `email`, `created_via_public_access`, `cashflow_id`) on `cashflow_shares`. Users can only self-manage `is_pinned` and `is_included_in_totals`.
+
+Savings goal RLS uses the hardened `is_cashflow_owner(cashflow_id)` helper for owner mutations. Active goals are visible to the owner and authenticated users with an explicit share. Archived goals remain readable only by their owner so PostgreSQL can complete the soft-archive update; application queries exclude archived rows, and public or anonymous viewers receive no goal rows.
+
 
 ### 4.2 Removal Behavior
 
@@ -121,7 +139,13 @@ The `check_cashflow_share_update` trigger prevents privilege escalation by block
 | Unpin from own dashboard   |  N/A  |   ✅ (unpin)   |   ✅ (unpin)   |  ✅ (delete)   |       ❌        |
 | Re-pin after unpin         |  N/A  |       ✅       |       ✅       | ✅ (if public) |       ❌        |
 | Toggle "Include in Totals" |  N/A  |       ✅       |       ✅       |       ✅       |       ❌        |
+| View savings goals         |   ✅   |       ✅       |       ✅       |       ❌       |       ❌        |
+| Create/edit/archive goals  |   ✅   |       ❌       |       ❌       |       ❌       |       ❌        |
+| Add goal contributions     |   ✅   |       ✅       |       ❌       |       ❌       |       ❌        |
 | Modify own `role`          |  N/A  |  ❌ (trigger)  |  ❌ (trigger)  |  ❌ (trigger)  |       ❌        |
+
+> [!NOTE]
+> Savings goals are intentionally private to the goal owner and authenticated users with an explicit share. Public cashflow viewers do not receive goal rows.
 
 > [!IMPORTANT]
 > "Public Guest" refers to an authenticated user who bookmarked a public cashflow. "Unauthenticated" users can only view public cashflows without any interactive features.
@@ -191,6 +215,10 @@ stateDiagram-v2
 - `inviteUser(id, email, role)`: Formal collaboration invitation.
 - `subscribeToPublicCashflow(id)`: Implementation of the "Add to Dashboard" logic.
 - `toggleCashflowInclusion(id, toggle)`: Saves user preference for dashboard stats.
+- **Goal lifecycle**: Goal deletion is a soft archive; it sets `is_deleted` to true and preserves all related cashflow entries.
+- `addGoal(formData)`: Creates an owner-managed savings goal.
+- `updateGoal(formData)`: Updates an owner-managed savings goal.
+- `deleteGoal(goalId, cashflowId)`: Archives an owner-managed savings goal without deleting its entries.
 
 ## 7. Recurring Transactions & Projections [✅ Implemented]
 
@@ -235,7 +263,30 @@ stateDiagram-v2
 
 ---
 
-## 10. Current Implementation Status
+## 10. Savings Goals [✅ Implemented]
+
+- **Cashflow detail location**: Goals are visible and manageable on `/cashflow/[id]`, where they stay scoped to the selected cashflow book.
+- **Archive RLS**: Only the goal's cashflow owner can archive, edit, or restore goal rows. The owner-only archived-row policy exists to support the soft-archive update without exposing archived goals to shared users.
+- **Cross-book contributions**: When adding an entry to an editable cashflow, the Category menu includes available goals and identifies each goal's source cashflow. Selecting one stores the exact category `Goal: {goal name}` and an internal `goal_id` relation, initially setting the entry type to `expense`. Changing the type clears the goal category and relation. The ID is not displayed in the UI.
+- **Progress**: Goal cards and the goal detail route aggregate only the internal goal relation, so renaming, archiving, and recreating similarly named goals cannot reassign historical contributions. Progress totals are computed in the database under RLS.
+- **Archive behavior**: The archive action sets `is_deleted = true`; it never deletes the goal or its related cashflow entries. Archived goals are hidden from active goal views and cannot receive new contributions.
+- **Archived contributions**: Existing entries linked to an archived goal remain editable as transactions. Saving their details preserves the relation; changing their category or type explicitly detaches them.
+- **Permissions**: Users with read or edit access can view goals on a shared cashflow. Only the owner of the goal's cashflow can create, edit, or delete it. Invited editors can add contributions where they can edit entries.
+- **Detail route**: `/cashflow/goal/[goalId]` lists matching contributions with search and month filtering.
+
+---
+
+## 11. Audit Hardening [Implemented]
+
+- **Optional budgets**: Budget threshold checks use `maybeSingle()` because a missing category budget is normal. This prevents expected no-budget lookups from surfacing as PostgREST 406 errors.
+- **CSV export**: Every exported field is quoted and escaped, including commas, quotes, and newlines. User-provided text beginning with spreadsheet formula prefixes is neutralized before download.
+- **Goal route protection**: `/cashflow/goal/[goalId]` is protected at the proxy boundary and covered by the unauthenticated route-protection test.
+- **Notification writes**: Notifications are created by the server-side service-role client only. Public `anon` and `authenticated` INSERT privileges and the broad INSERT policy are revoked by `20260728130000_harden_notification_insert_policy.sql`.
+- **Verification**: The audit fix set passes the unit suite, lint, TypeScript typecheck, production build, and whitespace checks.
+
+---
+
+## 12. Current Implementation Status
 
 ✅ Dashboard, CRUD, Sharing, Bookmarking, Persistence  
 ✅ Visual Charts (Bar, Area, Category Donut)  
@@ -247,9 +298,10 @@ stateDiagram-v2
 ✅ SQL View aggregation (`cashflow_summaries`) — O(N) offloaded to DB  
 ✅ Scalable sharing model with full RLS audit  
 ✅ CSV Export (respects date filter)  
+✅ Savings Goals on `/cashflow/[id]` with cross-book goal contributions
 
 ---
 
 _For loading state details, see [LOADING_STATES.md](./LOADING_STATES.md)_
 
-_Last Updated: July 20, 2026_
+_Last Updated: July 28, 2026_

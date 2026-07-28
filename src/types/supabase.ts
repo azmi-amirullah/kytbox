@@ -59,6 +59,44 @@ export type Database = {
           },
         ]
       }
+      cashflow_goals: {
+        Row: {
+          cashflow_id: string
+          created_at: string | null
+          deadline: string | null
+          id: string
+          is_deleted: boolean
+          target_amount: number
+          title: string
+        }
+        Insert: {
+          cashflow_id: string
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          is_deleted?: boolean
+          target_amount: number
+          title: string
+        }
+        Update: {
+          cashflow_id?: string
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          is_deleted?: boolean
+          target_amount?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'cashflow_goals_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflows'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       cashflow_entries: {
         Row: {
           amount: number
@@ -67,6 +105,7 @@ export type Database = {
           created_at: string | null
           date: string
           description: string
+          goal_id: string | null
           id: string
           is_recurring: boolean | null
           recurrence_interval: string | null
@@ -80,6 +119,7 @@ export type Database = {
           created_at?: string | null
           date?: string
           description: string
+          goal_id?: string | null
           id?: string
           is_recurring?: boolean | null
           recurrence_interval?: string | null
@@ -93,6 +133,7 @@ export type Database = {
           created_at?: string | null
           date?: string
           description?: string
+          goal_id?: string | null
           id?: string
           is_recurring?: boolean | null
           recurrence_interval?: string | null
@@ -112,6 +153,13 @@ export type Database = {
             columns: ['cashflow_id']
             isOneToOne: false
             referencedRelation: 'cashflows'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cashflow_entries_goal_id_fkey'
+            columns: ['goal_id']
+            isOneToOne: false
+            referencedRelation: 'cashflow_goals'
             referencedColumns: ['id']
           },
         ]
@@ -704,6 +752,15 @@ export type Database = {
       }
     }
     Views: {
+      cashflow_goal_progress: {
+        Row: {
+          cashflow_id: string
+          contribution_count: number | null
+          goal_id: string
+          saved_amount: number | null
+        }
+        Relationships: []
+      }
       cashflow_summaries: {
         Row: {
           balance: number | null
@@ -795,6 +852,7 @@ export type Database = {
           created_at: string | null
           date: string
           description: string
+          goal_id: string | null
           id: string
           is_recurring: boolean | null
           recurrence_interval: string | null

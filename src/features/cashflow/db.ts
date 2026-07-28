@@ -2,17 +2,20 @@ import 'server-only';
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
+import { getAccessibleCashflows } from './access';
 import {
   mapCashflowWithSummaryToDTO,
   mapCashflowToDTO,
   mapCashflowEntryToDTO,
   mapBudgetToDTO,
+  mapGoalToDTO,
 } from '@/lib/mappers';
 import type { CashflowEntry } from '@/types/database';
 import type {
   CashflowDTO,
   CashflowEntryDTO,
   CashflowBudgetDTO,
+  CashflowGoalDTO,
   CashflowWithSummaryDTO,
 } from '@/types/dto';
 
@@ -25,6 +28,7 @@ export interface CashflowDetailResult {
   cashflow: CashflowDTO;
   entries: CashflowEntryDTO[];
   budgets: CashflowBudgetDTO[];
+  goals: CashflowGoalDTO[];
 }
 
 /**
@@ -45,12 +49,20 @@ export async function getCashflowDashboardData(
     supabase
       .from('cashflow_shares')
       .select('cashflow_id, is_included_in_totals')
-      .eq('email', email.toLowerCase())
+      .eq('email', email.trim().toLowerCase())
       .eq('is_pinned', true),
   ]);
 
   const profile = profileResult.data;
   const shares = sharesResult.data;
+
+  if (profileResult.error || sharesResult.error) {
+    console.error('cashflow_dashboard_base_lookup_failed', {
+      profile: profileResult.error,
+      shares: sharesResult.error,
+    });
+    throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
+  }
 
   if (!profile) {
     throw new Error('PROFILE_NOT_FOUND');
@@ -74,25 +86,58 @@ export async function getCashflowDashboardData(
     query = query.eq('user_id', userId);
   }
 
-  const { data: cashflowSummariesData } = await query;
+  const { data: cashflowSummariesData, error: cashflowSummariesError } =
+    await query;
+  if (cashflowSummariesError) {
+    console.error('cashflow_dashboard_summary_lookup_failed', cashflowSummariesError);
+    throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
+  }
   const summaryIds: string[] = (cashflowSummariesData || [])
     .map((c) => c.id)
     .filter((id): id is string => Boolean(id));
-
-  // Fetch entries for charts
+  // Fetch entries for dashboard charts
   let entriesData: CashflowEntry[] = [];
 
   if (summaryIds.length > 0) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('cashflow_entries')
       .select(
-        'id, cashflow_id, amount, type, category, date, description, is_recurring, recurrence_interval, yearly_calculation, created_at'
+        'id, cashflow_id, goal_id, amount, type, category, date, description, is_recurring, recurrence_interval, yearly_calculation, created_at'
       )
       .in('cashflow_id', summaryIds)
       .order('date', { ascending: true })
       .order('created_at', { ascending: true })
       .limit(1000);
+    if (error) {
+      console.error('cashflow_dashboard_entry_lookup_failed', error);
+      throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
+    }
     entriesData = data ?? [];
+  }
+
+  const dashboardGoalTitles = new Map<string, string>();
+  const dashboardGoalIds = Array.from(
+    new Set(
+      entriesData
+        .map((entry) => entry.goal_id)
+        .filter((goalId): goalId is string => Boolean(goalId)),
+    ),
+  );
+  if (dashboardGoalIds.length > 0) {
+    const { data: dashboardGoals, error: dashboardGoalsError } = await supabase
+      .from('cashflow_goals')
+      .select('id, title')
+      .in('id', dashboardGoalIds)
+      .eq('is_deleted', false);
+
+    if (dashboardGoalsError) {
+      console.error('cashflow_dashboard_goal_lookup_failed', dashboardGoalsError);
+      throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
+    }
+
+    for (const goal of dashboardGoals ?? []) {
+      dashboardGoalTitles.set(goal.id, goal.title);
+    }
   }
 
   // Group entries by cashflow_id
@@ -108,7 +153,7 @@ export async function getCashflowDashboardData(
     const dto = mapCashflowWithSummaryToDTO({
       ...c,
       entries,
-    });
+    }, dashboardGoalTitles);
     return {
       ...dto,
       isIncluded: c.user_id === userId || (!!c.id && includedShareIds.has(c.id)),
@@ -141,16 +186,42 @@ export async function getCashflowDetailData(
   share: { id: string; role: string; is_pinned: boolean | null } | null;
   budgetsResultData: Database['public']['Tables']['cashflow_budgets']['Row'][] | null;
 }> {
-  // Parallelize: profile, cashflow, entries, share, budgets
-  const [profileResult, cashflowResult, entriesResult, shareResult, budgetsResult] =
-    await Promise.all([
+  // Goal pickers include every owned or explicitly shared book visible to the
+  // current user, not just the book currently being viewed.
+  let queryIds: string[] = [cashflowId];
+  const cashflowTitles = new Map<string, string>();
+  if (userId) {
+    const accessibleCashflows = await getAccessibleCashflows(
+      supabase,
+      userId,
+      userEmail,
+      cashflowId,
+    );
+    for (const accessibleCashflow of accessibleCashflows) {
+      cashflowTitles.set(accessibleCashflow.id, accessibleCashflow.title);
+    }
+    queryIds = Array.from(
+      new Set([cashflowId, ...accessibleCashflows.map((c) => c.id)]),
+    );
+  }
+
+  // Parallelize: profile, cashflow, entries, share, budgets, goals, contributions
+  const [
+    profileResult,
+    cashflowResult,
+    entriesResult,
+    shareResult,
+    budgetsResult,
+    goalsResult,
+    goalProgressResult,
+  ] = await Promise.all([
       userId
         ? supabase
             .from('profiles')
             .select('username, avatar_url, display_name, role, default_currency')
             .eq('id', userId)
             .single()
-        : Promise.resolve({ data: null }),
+        : Promise.resolve({ data: null, error: null }),
       supabase.from('cashflows').select('*').eq('id', cashflowId).single(),
       supabase
         .from('cashflow_entries')
@@ -164,34 +235,97 @@ export async function getCashflowDetailData(
             .from('cashflow_shares')
             .select('id, role, is_pinned')
             .eq('cashflow_id', cashflowId)
-            .eq('email', userEmail.toLowerCase())
+            .eq('email', userEmail.trim().toLowerCase())
             .maybeSingle()
-        : Promise.resolve({ data: null }),
+        : Promise.resolve({ data: null, error: null }),
       userId
         ? supabase
             .from('cashflow_budgets')
             .select('*')
             .eq('cashflow_id', cashflowId)
             .order('category', { ascending: true })
-        : Promise.resolve({ data: null }),
-    ]);
+        : Promise.resolve({ data: null, error: null }),
+      supabase
+        .from('cashflow_goals')
+        .select('*')
+        .in('cashflow_id', queryIds)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('cashflow_goal_progress')
+        .select('cashflow_id, goal_id, saved_amount, contribution_count')
+        .in('cashflow_id', queryIds),
+  ]);
+
+  if (cashflowResult.error) {
+    if (cashflowResult.error.code === 'PGRST116') {
+      throw new Error('CASHFLOW_NOT_FOUND');
+    }
+    console.error('cashflow_detail_base_lookup_failed', cashflowResult.error);
+    throw new Error('CASHFLOW_DETAIL_LOOKUP_FAILED');
+  }
 
   const cashflow = cashflowResult.data;
   if (!cashflow) {
     throw new Error('CASHFLOW_NOT_FOUND');
   }
+  if (entriesResult.error) {
+    console.error('cashflow_entry_lookup_failed', entriesResult.error);
+    throw new Error('CASHFLOW_DETAIL_LOOKUP_FAILED');
+  }
+  if (profileResult.error || shareResult.error || budgetsResult.error) {
+    console.error('cashflow_detail_context_lookup_failed', {
+      profile: profileResult.error,
+      share: shareResult.error,
+      budgets: budgetsResult.error,
+    });
+    throw new Error('CASHFLOW_DETAIL_LOOKUP_FAILED');
+  }
+  if (goalsResult.error || goalProgressResult.error) {
+    console.error('cashflow_goal_detail_lookup_failed', {
+      goals: goalsResult.error,
+      progress: goalProgressResult.error,
+    });
+    throw new Error('CASHFLOW_GOAL_LOOKUP_FAILED');
+  }
+  cashflowTitles.set(cashflow.id, cashflow.title);
 
-  const entries = (entriesResult.data ?? []).map(mapCashflowEntryToDTO);
+  const goalTitlesById = new Map(
+    (goalsResult.data ?? []).map((goal) => [goal.id, goal.title] as const),
+  );
 
+  const entries = (entriesResult.data ?? []).map((entry) =>
+    mapCashflowEntryToDTO(
+      entry,
+      entry.goal_id ? goalTitlesById.get(entry.goal_id) ?? null : undefined,
+    ),
+  );
   // Only map budgets if the user is the owner (budgets are owner-only)
   const budgets = isOwner && budgetsResult?.data
     ? budgetsResult.data.map(mapBudgetToDTO)
     : [];
 
+  const goalProgressById = new Map(
+    (goalProgressResult.data ?? []).map((progress) => [
+      progress.goal_id,
+      progress,
+    ]),
+  );
+  const goals = (goalsResult.data ?? []).map((goal) => {
+    const progress = goalProgressById.get(goal.id);
+    return mapGoalToDTO(
+      goal,
+      cashflowTitles.get(goal.cashflow_id) ?? null,
+      progress?.saved_amount ?? 0,
+      progress?.contribution_count ?? 0,
+    );
+  });
+
   return {
     cashflow: mapCashflowToDTO(cashflow),
     entries,
     budgets,
+    goals,
     profile: profileResult.data,
     share: shareResult.data,
     budgetsResultData: budgetsResult?.data,

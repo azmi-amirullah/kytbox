@@ -38,9 +38,11 @@
   --sidebar-accent-foreground: oklch(0 0 0);
   --sidebar-border: oklch(0.94 0 0);
   --sidebar-ring: oklch(0 0 0);
-  --font-sans: Geist, sans-serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
   --font-serif: Georgia, serif;
-  --font-mono: Geist Mono, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius: 0.5rem;
   --shadow-x: 0px;
   --shadow-y: 1px;
@@ -97,9 +99,11 @@
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.32 0 0);
   --sidebar-ring: oklch(0.72 0 0);
-  --font-sans: Geist, sans-serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
   --font-serif: Georgia, serif;
-  --font-mono: Geist Mono, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius: 0.5rem;
   --shadow-x: 0px;
   --shadow-y: 1px;

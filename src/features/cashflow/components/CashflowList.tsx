@@ -41,8 +41,10 @@ const DashboardCharts = dynamic(
   () => import('./DashboardCharts').then((mod) => mod.DashboardCharts),
   { ssr: false }
 );
+import { CashflowSummaryStats } from './CashflowSummaryStats';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 import type { CashflowWithSummaryDTO } from '@/types/dto';
 
@@ -211,94 +213,44 @@ export default function CashflowList({
       </div>
 
       {/* Summary Stats */}
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-        <div className='bg-card border rounded-xl p-4'>
-          <p className='text-sm text-muted-foreground'>Total Income</p>
-          <p className='text-2xl font-bold text-green-600'>
-            +{formatCurrencyCompact(totalIncome, currency)}
-          </p>
-        </div>
-        <div className='bg-card border rounded-xl p-4'>
-          <p className='text-sm text-muted-foreground'>Total Expense</p>
-          <p className='text-2xl font-bold text-red-600'>
-            -{formatCurrencyCompact(totalExpense, currency)}
-          </p>
-        </div>
-        <div className='bg-card border rounded-xl p-4'>
-          <p className='text-sm text-muted-foreground'>Balance</p>
-          <p
-            className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
-          >
-            {balance >= 0 ? '+' : ''}
-            {formatCurrencyCompact(balance, currency)}
-          </p>
-        </div>
-      </div>
+      <CashflowSummaryStats
+        income={totalIncome}
+        expense={totalExpense}
+        balance={balance}
+        currency={currency}
+      />
 
       {/* Cashflow Sections */}
       {(() => {
         const renderCashflowItem = (cashflow: CashflowWithSummaryDTO) => (
           <div
             key={cashflow.id}
-            onClick={() => router.push(`/cashflow/${cashflow.id}`)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                router.push(`/cashflow/${cashflow.id}`);
-              }
-            }}
-            role='button'
-            tabIndex={0}
-            className='group relative bg-card border rounded-2xl p-4 sm:p-5 hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer'
+            className='group relative bg-card border rounded-2xl p-4 sm:p-5 hover:border-primary/40 hover:shadow-lg transition-all overflow-hidden'
           >
-            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
-              <div className='flex items-center gap-4'>
-                <div className='p-3 rounded-xl bg-emerald-500/10 text-emerald-600'>
-                  <LuWallet className='w-6 h-6' />
-                </div>
-                <div className='min-w-0'>
-                  <h2 className='font-bold text-lg sm:text-xl group-hover:text-primary transition-colors truncate'>
-                    {cashflow.title}
-                  </h2>
-                  <p className='text-xs sm:text-sm text-muted-foreground font-medium'>
-                    {cashflow.entryCount} transactions
-                  </p>
-                </div>
-              </div>
-
-              <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8'>
-                <div className='grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 pt-3 sm:pt-0 border-t sm:border-0'>
-                  <div className='flex flex-col sm:items-end'>
-                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider'>
-                      Income
-                    </span>
-                    <span className='text-sm sm:text-base font-semibold text-green-600'>
-                      +{formatCurrencyCompact(cashflow.income, currency)}
-                    </span>
+            <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full min-w-0'>
+              {/* Title & Icon & Actions Header */}
+              <div className='flex items-center justify-between gap-3 min-w-0 flex-1'>
+                <div className='flex items-center gap-3.5 min-w-0'>
+                  <div className='p-2.5 sm:p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0'>
+                    <LuWallet className='w-5 h-5 sm:w-6 sm:h-6' />
                   </div>
-                  <div className='flex flex-col sm:items-end'>
-                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider'>
-                      Expense
-                    </span>
-                    <span className='text-sm sm:text-base font-semibold text-red-600'>
-                      -{formatCurrencyCompact(cashflow.expense, currency)}
-                    </span>
+                  <div className='min-w-0 flex-1'>
+                    <h2 className='font-bold text-base sm:text-lg lg:text-xl group-hover:text-primary transition-colors truncate'>
+                      <Link
+                        href={`/cashflow/${cashflow.id}`}
+                        className='focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
+                      >
+                        {cashflow.title}
+                      </Link>
+                    </h2>
+                    <p className='text-xs sm:text-sm text-muted-foreground font-medium truncate'>
+                      {cashflow.entryCount} transactions
+                    </p>
                   </div>
                 </div>
 
-                <div className='flex items-center justify-between sm:justify-end gap-4 p-3 sm:p-0 rounded-xl bg-muted/30 sm:bg-transparent'>
-                  <div className='flex flex-col sm:items-end'>
-                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider sm:hidden'>
-                      Balance
-                    </span>
-                    <span
-                      className={`text-lg sm:text-xl font-black tracking-tight ${cashflow.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                    >
-                      {cashflow.balance >= 0 ? '+' : ''}
-                      {formatCurrencyCompact(cashflow.balance, currency)}
-                    </span>
-                  </div>
-
+                {/* Action Menu on Mobile/Tablet */}
+                <div className='lg:hidden shrink-0 flex items-center'>
                   {currentUserId === cashflow.user_id ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger
@@ -311,9 +263,10 @@ export default function CashflowList({
                         <Button
                           variant='ghost'
                           size='icon'
-                          className='h-8 w-8 rounded-full cursor-pointer focus-visible:ring-0 focus-visible:ring-offset-0'
+                          className='h-8 w-8 rounded-full cursor-pointer'
+                          aria-label={'Actions for ' + cashflow.title}
                         >
-                          <LuEllipsisVertical className='w-4 h-4' />
+                          <LuEllipsisVertical className='w-4 h-4' aria-hidden='true' />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -344,33 +297,131 @@ export default function CashflowList({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : (
-                    <div className='flex items-center gap-2'>
-                      <div className='h-6 w-px bg-border mx-1' />
-                      <div
-                        className='flex items-center gap-2 mr-2'
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.stopPropagation();
-                          }
+                    <div
+                      className='flex items-center gap-2'
+                    >
+                      <Switch
+                        id={`include-mobile-${cashflow.id}`}
+                        aria-label={`Include ${cashflow.title} in totals`}
+                        checked={includedSharedIds.has(cashflow.id)}
+                        onCheckedChange={() =>
+                          handleToggleInclusion(cashflow.id)
+                        }
+                        className='scale-75 data-[state=checked]:bg-primary'
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Stats Section: Grid of 3 columns */}
+              <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-border/50 shrink-0 min-w-0'>
+                <div className='grid grid-cols-3 gap-2 sm:gap-4 flex-1 min-w-0'>
+                  {/* Income */}
+                  <div className='flex flex-col min-w-0 lg:items-end'>
+                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate'>
+                      Income
+                    </span>
+                    <span className='text-xs sm:text-sm lg:text-base font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums truncate'>
+                      +{formatCurrencyCompact(cashflow.income, currency)}
+                    </span>
+                  </div>
+
+                  {/* Expense */}
+                  <div className='flex flex-col min-w-0 lg:items-end'>
+                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate'>
+                      Expense
+                    </span>
+                    <span className='text-xs sm:text-sm lg:text-base font-semibold text-rose-600 dark:text-rose-400 tabular-nums truncate'>
+                      -{formatCurrencyCompact(cashflow.expense, currency)}
+                    </span>
+                  </div>
+
+                  {/* Balance */}
+                  <div className='flex flex-col min-w-0 lg:items-end'>
+                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate'>
+                      Balance
+                    </span>
+                    <span
+                      className={cn(
+                        'text-xs sm:text-sm lg:text-base font-black tracking-tight tabular-nums truncate',
+                        cashflow.balance >= 0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-rose-600 dark:text-rose-400'
+                      )}
+                    >
+                      {cashflow.balance >= 0 ? '+' : ''}
+                      {formatCurrencyCompact(cashflow.balance, currency)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Desktop Action Menu */}
+                <div className='hidden lg:flex items-center shrink-0 pl-2'>
+                  {currentUserId === cashflow.user_id ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        asChild
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
                         }}
-                        role='presentation'
                       >
-                        <Switch
-                          id={`include-${cashflow.id}`}
-                          checked={includedSharedIds.has(cashflow.id)}
-                          onCheckedChange={() =>
-                            handleToggleInclusion(cashflow.id)
-                          }
-                          className='scale-75 data-[state=checked]:bg-primary'
-                        />
-                        <Label
-                          htmlFor={`include-${cashflow.id}`}
-                          className='cursor-pointer text-[10px] font-medium text-muted-foreground uppercase tracking-wider'
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 rounded-full cursor-pointer'
+                          aria-label={'Actions for ' + cashflow.title}
                         >
-                          Include
-                        </Label>
-                      </div>
+                          <LuEllipsisVertical className='w-4 h-4' aria-hidden='true' />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align='end'
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                      >
+                        <DropdownMenuItem
+                          className='cursor-pointer'
+                          onClick={(e) => openShare(e, cashflow)}
+                        >
+                          <LuShare2 className='w-3.5 h-3.5 mr-2' />
+                          Share
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className='cursor-pointer'
+                          onClick={(e) => openEdit(e, cashflow)}
+                        >
+                          <LuPencil className='w-3.5 h-3.5 mr-2' />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className='text-destructive focus:text-destructive cursor-pointer'
+                          onClick={(e) => openDelete(e, cashflow)}
+                        >
+                          <LuTrash2 className='w-3.5 h-3.5 mr-2' />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <div
+                      className='flex items-center gap-2'
+                    >
+                      <Switch
+                        id={`include-${cashflow.id}`}
+                        aria-label={`Include ${cashflow.title} in totals`}
+                        checked={includedSharedIds.has(cashflow.id)}
+                        onCheckedChange={() =>
+                          handleToggleInclusion(cashflow.id)
+                        }
+                        className='scale-75 data-[state=checked]:bg-primary'
+                      />
+                      <Label
+                        htmlFor={`include-${cashflow.id}`}
+                        className='cursor-pointer text-[10px] font-medium text-muted-foreground uppercase tracking-wider'
+                      >
+                        Include
+                      </Label>
                     </div>
                   )}
                 </div>

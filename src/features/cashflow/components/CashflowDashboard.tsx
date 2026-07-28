@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LuPlus, LuWallet } from 'react-icons/lu';
 import type { CashflowDTO, CashflowEntryDTO } from '@/types/dto';
+import { CashflowSummaryStats } from './CashflowSummaryStats';
 import CashflowModal from './CashflowModal';
 import CashflowCard from './CashflowCard';
 
@@ -48,29 +49,12 @@ export default function CashflowDashboard({
       </div>
 
       {/* Summary Stats */}
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-        <div className='bg-card border rounded-xl p-4'>
-          <p className='text-sm text-muted-foreground'>Total Income</p>
-          <p className='text-2xl font-bold text-green-600'>
-            +{totalIncome.toLocaleString()}
-          </p>
-        </div>
-        <div className='bg-card border rounded-xl p-4'>
-          <p className='text-sm text-muted-foreground'>Total Expense</p>
-          <p className='text-2xl font-bold text-red-600'>
-            -{totalExpense.toLocaleString()}
-          </p>
-        </div>
-        <div className='bg-card border rounded-xl p-4'>
-          <p className='text-sm text-muted-foreground'>Balance</p>
-          <p
-            className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
-          >
-            {balance >= 0 ? '+' : ''}
-            {balance.toLocaleString()}
-          </p>
-        </div>
-      </div>
+      <CashflowSummaryStats
+        income={totalIncome}
+        expense={totalExpense}
+        balance={balance}
+        currency={currency}
+      />
 
       {/* Cashflow List */}
       {initialCashflows.length === 0 ? (

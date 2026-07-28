@@ -8,6 +8,47 @@
 
 ---
 
+## 📌 Table of Contents & Progress Checklist
+
+- [x] [Day 1 — Command Palette (`Cmd+K` / `Ctrl+K`)](#day-1)
+- [x] [Day 2 — Sunday Rest](#day-2)
+- [x] [Day 3 — Activity Feed Dashboard (`/app` Upgrade)](#day-3)
+- [x] [Day 4 — Bio: Link Scheduling (Start/End Dates)](#day-4)
+- [x] [Day 5 — Bio: Section Headers / Visual Dividers](#day-5)
+- [x] [Day 6 — Cashflow: Recurring Entry Auto-Generation](#day-6)
+- [x] [Day 7 — Bio: Country Analytics Map](#day-7)
+- [x] [Day 8 — Onboarding Tour for New Users](#day-8)
+- [x] [Day 9 — Sunday Rest](#day-9)
+- [x] [Day 10 — Sentry Error Tracking & Cashflow Searchbar](#day-10)
+- [x] [Day 11 — Landing Page Redesign & Cashflow Filters](#day-11)
+- [x] [Day 12 — QR Code Generator for Bio Profiles](#day-12)
+- [x] [Day 13 — Notification Center (Unified Bell)](#day-13)
+- [x] [Day 14 — Public Profile Optimization + PWA Install](#day-14)
+- [x] [Day 15 — SEO Metadata + Bundle Analysis](#day-15)
+- [x] [Day 16 — Sunday Rest](#day-16)
+- [x] [Day 17 — Cashflow: Savings Goals](#day-17)
+- [ ] [Day 18 — Audit Debt Batch (#13–19 from June Audit)](#day-18)
+- [ ] [Day 19 — Dark Mode Shadows + Container Queries + List Polish](#day-19)
+- [ ] [Day 20 — Bio: Analytics Share Card](#day-20)
+- [ ] [Day 21 — Security Lib + List App Unit Tests](#day-21)
+- [ ] [Day 22 — List App E2E Tests](#day-22)
+- [ ] [Day 23 — Sunday Rest](#day-23)
+- [ ] [Day 24 — Support + Cashflow E2E Tests](#day-24)
+- [ ] [Day 25 — Bio DnD + Analytics + Scheduling E2E](#day-25)
+- [ ] [Day 26 — Accessibility Audit (WCAG 2.2)](#day-26)
+- [ ] [Day 27 — Full Build Verification + Type Safety](#day-27)
+- [ ] [Day 28 — Visual Regression Baseline](#day-28)
+- [ ] [Day 29 — Documentation Overhaul](#day-29)
+- [ ] [Day 30 — Sunday Rest](#day-30)
+- [ ] [Day 31 — Bio: Link Quick-Stats + Click Sparklines](#day-31)
+- [ ] [Day 32 — Cashflow: Duplicate Book](#day-32)
+- [ ] [Day 33 — Bio: Content Embedding (YouTube + Spotify)](#day-33)
+- [ ] [Day 34 — 30-Day Retrospective + Next Sprint](#day-34)
+
+
+---
+
+
 ## 📊 Current State Audit (Saturday, July 11, 2026)
 
 ### ✅ What's Strong
@@ -44,6 +85,7 @@
 
 ---
 
+<a id="day-1"></a>
 ### Day 1 — Saturday, Jul 11 | ✨ Feature
 
 #### Command Palette (`Cmd+K` / `Ctrl+K`)
@@ -112,10 +154,12 @@ CommandPalette (client component)
 
 ---
 
+<a id="day-2"></a>
 ### 🔴 Day 2 — Sunday, Jul 12 | 🔴 REST
 
 ---
 
+<a id="day-3"></a>
 ### Day 3 — Monday, Jul 13 | ✨ Feature
 
 #### Activity Feed Dashboard (`/app` Upgrade)
@@ -220,6 +264,7 @@ $$ LANGUAGE sql SECURITY DEFINER;
 
 ---
 
+<a id="day-4"></a>
 ### Day 4 — Tuesday, Jul 14 | ✨ Feature
 
 #### Bio: Link Scheduling (Start/End Dates)
@@ -296,6 +341,7 @@ export const linkScheduleSchema = z.object({
 
 ---
 
+<a id="day-5"></a>
 ### Day 5 — Wednesday, Jul 15 | ✨ Feature
 
 #### Bio: Section Headers / Visual Dividers
@@ -393,6 +439,7 @@ export async function addHeader(title: string, parentId: string | null) {
 
 ---
 
+<a id="day-6"></a>
 ### Day 6 — Thursday, Jul 16 | ✨ Feature
 
 #### Cashflow: Recurring Entry Auto-Generation
@@ -504,6 +551,7 @@ export async function generateRecurringEntries(cashflowId: string) {
 
 ---
 
+<a id="day-7"></a>
 ### Day 7 — Friday, Jul 17 | ✨ Feature
 
 #### Bio: Country Analytics Map
@@ -571,6 +619,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 ---
 
+<a id="day-8"></a>
 ### Day 8 — Saturday, Jul 18 | ✨ Feature
 
 #### Onboarding Tour for New Users
@@ -633,10 +682,12 @@ async function completeOnboarding() {
 
 ---
 
+<a id="day-9"></a>
 ### 🔴 Day 9 — Sunday, Jul 19 | 🔴 REST
 
 ---
 
+<a id="day-10"></a>
 ### Day 10 — Monday, Jul 20 | ✨ Feature
 
 #### 1. Sentry Error Tracking
@@ -716,6 +767,7 @@ useEffect(() => {
 
 ---
 
+<a id="day-11"></a>
 ### Day 11 — Tuesday, Jul 21 | ✨ Feature
 
 #### 1. Landing Page Premium Redesign
@@ -787,6 +839,7 @@ useEffect(() => {
 
 ---
 
+<a id="day-12"></a>
 ### Day 12 — Wednesday, Jul 22 | ✨ Feature
 
 #### QR Code Generator for Bio Profiles
@@ -854,6 +907,7 @@ const pngDataUrl = await QRCode.toDataURL(
 
 ---
 
+<a id="day-13"></a>
 ### Day 13 — Thursday, Jul 23 | ✨ Feature
 
 #### Notification Center (Unified Bell)
@@ -940,6 +994,7 @@ NotificationCenter
 
 ---
 
+<a id="day-14"></a>
 ### Day 14 — Friday, Jul 24 | 🚀 Performance
 
 #### Public Profile Optimization + PWA Install
@@ -983,6 +1038,7 @@ NotificationCenter
 
 ---
 
+<a id="day-15"></a>
 ### Day 15 — Saturday, Jul 25 | 🚀 Performance
 
 #### SEO Metadata + Bundle Analysis
@@ -1016,15 +1072,21 @@ NotificationCenter
 
 ---
 
+<a id="day-16"></a>
 ### 🔴 Day 16 — Sunday, Jul 26 | 🔴 REST
 
 ---
 
+<a id="day-17"></a>
 ### Day 17 — Monday, Jul 27 | ✨ Feature
 
 #### Cashflow: Savings Goals
 
 **Why**: Users track spending but have no way to track **saving toward a goal**. "Save $5000 for vacation by December" with a progress bar = daily retention driver. People open the app to watch their progress grow.
+> [!NOTE]
+> This section began as the Jul 27 implementation plan. The shipped design is now documented in [cashflow.md](./cashflow.md). The original SQL sketch below is retained for planning history; production uses forward migrations for soft archive, the internal `goal_id` relation, database progress aggregation, hardened owner RLS, and owner-only access to archived goals.
+
+
 
 **Database Changes:**
 ```sql
@@ -1050,19 +1112,18 @@ CREATE POLICY "Editor reads goals"
   USING (cashflow_id IN (
     SELECT cashflow_id FROM cashflow_shares
     WHERE LOWER(email) = LOWER(auth.jwt() ->> 'email')
+      AND role IN ('read', 'edit')
   ));
 
 CREATE INDEX idx_cashflow_goals_cashflow ON cashflow_goals(cashflow_id);
 ```
 
-**Progress Calculation** (client-side from existing data):
-```typescript
-// Current saved = total income - total expense (from cashflow_summaries)
-const currentSaved = cashflow.income - cashflow.expense;
-const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
-```
+**Progress Calculation**:
+- A goal is owned by the cashflow book where it was created.
+- A contribution is an expense entry in any editable cashflow book whose category is displayed as `Goal: {goal name}` and whose internal `goal_id` points to the selected goal.
+- Goal cards and the goal detail route aggregate only by `goal_id`; the source cashflow name is shown in the goal UI and the internal ID is never displayed.
 
-**UI: Goal Card (at top of cashflow detail page):**
+**UI: Goal Cards (on cashflow detail pages):**
 ```
 ┌─────────────────────────────────────────┐
 │ 🎯 Save for Vacation                    │
@@ -1079,17 +1140,22 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 - Confetti animation at 100%! 🎉
 
 **Acceptance Criteria:**
-- [ ] "Add Goal" button on cashflow detail page
-- [ ] Goal card shows at top with progress bar
-- [ ] Progress calculated from cashflow balance
-- [ ] Deadline with days remaining
-- [ ] Color-coded pace indicator
-- [ ] Edit/delete goal
-- [ ] Only owner can manage goals (editors can view)
-- [ ] Multiple goals per cashflow supported
+- [x] Goals are visible on the relevant cashflow detail page
+- [x] Archived goals are hidden from active views while preserving their entries
+- [x] Archived goal rows remain owner-only under RLS
+- [x] Add Goal can select any owned cashflow book from /cashflow
+- [x] Entry Category exposes Goal: {goal name} from other cashflow books
+- [x] Goal entries are stored as expenses
+- [x] Progress aggregates matching entries across owned cashflow books
+- [x] Deadline with days remaining
+- [x] Color-coded pace indicator
+- [x] Edit/archive goal is owner-only
+- [x] Invited editors can view goals and add contributions where they can edit entries
+- [x] Multiple goals per cashflow supported
 
 ---
 
+<a id="day-18"></a>
 ### Day 18 — Tuesday, Jul 28 | 🐛 Bugfix
 
 #### Audit Debt Batch (#13–19 from June Audit)
@@ -1127,8 +1193,17 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 - [ ] `npm run build` passes
 - [ ] `npm run lint` passes
 
+#### Cashflow audit follow-up (completed)
+
+- [x] Optional budget lookups treat a missing budget as an expected result and avoid PostgREST 406 responses.
+- [x] CSV export quotes and escapes every field, including arbitrary goal names and spreadsheet-formula-like text.
+- [x] Savings goal detail routes are protected at the proxy boundary and covered by unauthenticated route tests.
+- [x] Notification inserts are restricted to the server-side service-role client through the applied RLS migration.
+- [x] Unit tests, lint, typecheck, production build, and diff checks pass.
+
 ---
 
+<a id="day-19"></a>
 ### Day 19 — Wednesday, Jul 29 | 🔧 Improvement
 
 #### Dark Mode Shadows + Container Queries + List Polish
@@ -1162,6 +1237,7 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 
 ---
 
+<a id="day-20"></a>
 ### Day 20 — Thursday, Jul 30 | ✨ Feature
 
 #### Bio: Analytics Share Card
@@ -1216,6 +1292,7 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 
 ---
 
+<a id="day-21"></a>
 ### Day 21 — Friday, Jul 31 | 🧪 Testing
 
 #### Security Lib + List App Unit Tests
@@ -1246,6 +1323,7 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 
 ---
 
+<a id="day-22"></a>
 ### Day 22 — Saturday, Aug 1 | 🧪 Testing
 
 #### List App E2E Tests
@@ -1269,10 +1347,12 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 
 ---
 
+<a id="day-23"></a>
 ### 🔴 Day 23 — Sunday, Aug 2 | 🔴 REST
 
 ---
 
+<a id="day-24"></a>
 ### Day 24 — Monday, Aug 3 | 🧪 Testing
 
 #### Support + Cashflow E2E Tests
@@ -1291,6 +1371,7 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 
 ---
 
+<a id="day-25"></a>
 ### Day 25 — Tuesday, Aug 4 | 🧪 Testing
 
 #### Bio DnD + Analytics + Scheduling E2E
@@ -1310,6 +1391,7 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 
 ---
 
+<a id="day-26"></a>
 ### Day 26 — Wednesday, Aug 5 | 🧪 Code Review
 
 #### Accessibility Audit (WCAG 2.2)
@@ -1327,6 +1409,7 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 
 ---
 
+<a id="day-27"></a>
 ### Day 27 — Thursday, Aug 6 | 🧪 Code Review
 
 #### Full Build Verification + Type Safety
@@ -1346,6 +1429,7 @@ const progress = Math.min((currentSaved / goal.target_amount) * 100, 100);
 
 ---
 
+<a id="day-28"></a>
 ### Day 28 — Friday, Aug 7 | 🧪 Testing
 
 #### Visual Regression Baseline (Playwright Screenshots)
@@ -1375,6 +1459,7 @@ await expect(page).toHaveScreenshot('bio-dashboard-links.png', {
 
 ---
 
+<a id="day-29"></a>
 ### Day 29 — Saturday, Aug 8 | 🔧 Improvement
 
 #### Documentation Overhaul
@@ -1392,10 +1477,12 @@ await expect(page).toHaveScreenshot('bio-dashboard-links.png', {
 
 ---
 
+<a id="day-30"></a>
 ### 🔴 Day 30 — Sunday, Aug 9 | 🔴 REST
 
 ---
 
+<a id="day-31"></a>
 ### Day 31 — Monday, Aug 10 | ✨ Feature
 
 #### Bio: Link Quick-Stats + Click Sparklines
@@ -1430,6 +1517,7 @@ const { data: clickStats } = await supabase.rpc('get_link_click_trends', {
 
 ---
 
+<a id="day-32"></a>
 ### Day 32 — Tuesday, Aug 11 | ✨ Feature
 
 #### Cashflow: Duplicate Book
@@ -1496,6 +1584,7 @@ export async function duplicateCashflow(cashflowId: string) {
 
 ---
 
+<a id="day-33"></a>
 ### Day 33 — Wednesday, Aug 12 | ✨ Feature
 
 #### Bio: Content Embedding (YouTube + Spotify)
@@ -1544,6 +1633,7 @@ function getEmbedInfo(url: string): { type: 'youtube' | 'spotify'; embedUrl: str
 
 ---
 
+<a id="day-34"></a>
 ### Day 34 — Thursday, Aug 13 | 📋 Planning
 
 #### 30-Day Retrospective + Next Sprint
@@ -1697,4 +1787,4 @@ function getEmbedInfo(url: string): { type: 'youtube' | 'spotify'; embedUrl: str
 
 ---
 
-_Last Updated: July 11, 2026_
+_Last Updated: July 28, 2026_

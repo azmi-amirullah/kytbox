@@ -23,13 +23,10 @@ import { Switch } from '@/components/ui/switch';
 import { LuLoader, LuFileText, LuCalendar, LuRepeat } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { addEntry, updateEntry } from '../actions';
-import type { CashflowEntryDTO } from '@/types/dto';
+import type { CashflowEntryDTO, CashflowGoalDTO } from '@/types/dto';
 import { getCurrencySymbol } from '@/lib/currency';
 import { z } from 'zod';
-import {
-  entryTypeSchema,
-  entryCategorySchema,
-} from '../schemas.client';
+import { entryTypeSchema, entryCategorySchema } from '../schemas.client';
 
 interface EntryModalProps {
   cashflowId: string;
@@ -38,6 +35,7 @@ interface EntryModalProps {
   onOpenChange: (open: boolean) => void;
   currency: string | null;
   onSuccess: () => void;
+  goals?: CashflowGoalDTO[];
 }
 
 export default function EntryModal({
@@ -47,11 +45,18 @@ export default function EntryModal({
   onOpenChange,
   currency,
   onSuccess,
+  goals = [],
 }: EntryModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
+  const entryGoal = entry?.goal_id
+    ? goals.find((goal) => goal.id === entry.goal_id)
+    : undefined;
+  const entryCategory = entryGoal
+    ? `Goal: ${entryGoal.title}`
+    : entryCategorySchema.parse(entry?.category);
 
   const [prevOpen, setPrevOpen] = useState(open);
   const [prevEntry, setPrevEntry] = useState(entry);
@@ -62,8 +67,9 @@ export default function EntryModal({
     entryTypeSchema.parse(entry?.type),
   );
   const [category, setCategory] = useState<string | null>(
-    entryCategorySchema.parse(entry?.category),
+    entryCategory,
   );
+  const [goalId, setGoalId] = useState<string | null>(entry?.goal_id ?? null);
   const [date, setDate] = useState(entry?.date || today);
   const [isRecurring, setIsRecurring] = useState(entry?.is_recurring || false);
   const [recurrenceInterval, setRecurrenceInterval] = useState<
@@ -72,6 +78,9 @@ export default function EntryModal({
   const [yearlyCalculation, setYearlyCalculation] = useState<
     'prorated' | 'exact'
   >(entry?.yearly_calculation || 'prorated');
+  const isArchivedGoal = Boolean(
+    entry?.goal_id && entry.goal_id === goalId && !entryGoal,
+  );
 
   if (open !== prevOpen || entry !== prevEntry) {
     setPrevOpen(open);
@@ -80,7 +89,8 @@ export default function EntryModal({
       setDescription(entry?.description || '');
       setAmount(entry?.amount?.toString() || '');
       setType(entryTypeSchema.parse(entry?.type));
-      setCategory(entryCategorySchema.parse(entry?.category));
+      setCategory(entryCategory);
+      setGoalId(entry?.goal_id ?? null);
       setDate(entry?.date || today);
       setIsRecurring(entry?.is_recurring || false);
       setRecurrenceInterval(entry?.recurrence_interval || 'monthly');
@@ -104,6 +114,7 @@ export default function EntryModal({
     formData.append('amount', amount);
     formData.append('type', type);
     if (category) formData.append('category', category);
+    if (goalId) formData.append('goalId', goalId);
     formData.append('date', date);
     formData.append('is_recurring', isRecurring.toString());
     if (isRecurring) formData.append('recurrence_interval', recurrenceInterval);
@@ -129,9 +140,17 @@ export default function EntryModal({
     }
   }
 
+  const selectedGoalIndex = goals.findIndex((goal) => goal.id === goalId);
+  const categorySelectValue =
+    isArchivedGoal
+      ? 'archived-goal'
+      : selectedGoalIndex >= 0
+        ? `goal-option-${selectedGoalIndex}`
+        : category || 'uncategorized';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-[425px] overflow-hidden p-0 gap-0'>
+      <DialogContent className='sm:max-w-106.25 overflow-hidden p-0 gap-0'>
         <div className='p-6 pb-0'>
           <DialogHeader className='mb-6'>
             <DialogTitle className='text-xl text-center'>
@@ -207,8 +226,11 @@ export default function EntryModal({
 
                     // If the user's changing the type, reset the category to uncategorized,
                     // unless they're currently on 'other' or already uncategorized.
-                    if (newType !== type && category && category !== 'other') {
-                      setCategory(null);
+                    if (newType !== type) {
+                      if (category && category !== 'other') {
+                        setCategory(null);
+                      }
+                      setGoalId(null);
                     }
 
                     setType(newType);
@@ -240,10 +262,20 @@ export default function EntryModal({
                   Category
                 </Label>
                 <Select
-                  value={category || 'uncategorized'}
-                  onValueChange={(v) =>
-                    setCategory(v === 'uncategorized' ? null : v)
-                  }
+                  value={categorySelectValue}
+                  onValueChange={(v) => {
+                    const selectedGoal = goals.find(
+                      (_, index) => `goal-option-${index}` === v,
+                    );
+                    if (selectedGoal) {
+                      setType('expense');
+                      setGoalId(selectedGoal.id);
+                      setCategory(`Goal: ${selectedGoal.title}`);
+                      return;
+                    }
+                    setGoalId(null);
+                    setCategory(v === 'uncategorized' ? null : v);
+                  }}
                 >
                   <SelectTrigger className='bg-background/50 border-input/60'>
                     <SelectValue placeholder='Select a category' />
@@ -276,6 +308,36 @@ export default function EntryModal({
                         <SelectItem value='shopping'>Shopping</SelectItem>
                         <SelectItem value='health'>Health & Fitness</SelectItem>
                         <SelectItem value='other'>Other Expense</SelectItem>
+                        {isArchivedGoal && (
+                          <SelectItem value='archived-goal' disabled>
+                            <span className='text-muted-foreground'>
+                              Archived goal (history preserved)
+                            </span>
+                          </SelectItem>
+                        )}
+                        {goals.length > 0 && (
+                          <>
+                            <div className='h-px bg-border my-1.5' />
+                            <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                              Savings Goals
+                            </div>
+                            {goals.map((g, index) => (
+                              <SelectItem
+                                key={g.id}
+                                value={`goal-option-${index}`}
+                              >
+                                <span className='flex flex-col items-start'>
+                                  <span>Goal: {g.title}</span>
+                                  {g.cashflow_title && (
+                                    <span className='text-[10px] text-muted-foreground'>
+                                      Cashflow: {g.cashflow_title}
+                                    </span>
+                                  )}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
                       </>
                     )}
                   </SelectContent>

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
-import { Geist, Geist_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import { ClientTopLoader } from '@/components/client-top-loader';
 import { Suspense } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -29,15 +29,17 @@ async function NoncedProviders() {
   );
 }
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: './fonts/Geist.woff2',
   variable: '--font-geist-sans',
-  subsets: ['latin'],
+  weight: '100 900',
   display: 'swap',
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: './fonts/GeistMono.woff2',
   variable: '--font-geist-mono',
-  subsets: ['latin'],
+  weight: '100 900',
   display: 'swap',
 });
 
@@ -111,7 +113,9 @@ export default function RootLayout({
         )}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={[geistSans.variable, geistMono.variable, 'antialiased'].join(
+          ' ',
+        )}
       >
         <ThemeProvider
           attribute='class'

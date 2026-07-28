@@ -5,6 +5,7 @@ import type {
   CashflowShare,
   CashflowWithSummary,
   CashflowBudget,
+  CashflowGoal,
   List,
   ListColumn,
   ListItem,
@@ -24,6 +25,7 @@ import type {
   CashflowEntryDTO,
   CashflowShareDTO,
   CashflowBudgetDTO,
+  CashflowGoalDTO,
   CashflowWithSummaryDTO,
   ListDTO,
   ListColumnDTO,
@@ -84,14 +86,26 @@ export function mapCashflowToDTO(row: Cashflow): CashflowDTO {
   };
 }
 
-export function mapCashflowEntryToDTO(row: CashflowEntry): CashflowEntryDTO {
+export function mapCashflowEntryToDTO(
+  row: CashflowEntry,
+  goalTitle?: string | null,
+): CashflowEntryDTO {
+  const category = row.goal_id
+    ? goalTitle
+      ? `Goal: ${goalTitle}`
+      : null
+    : row.category?.startsWith('Goal:')
+      ? null
+      : row.category;
+
   return {
     id: row.id,
     cashflow_id: row.cashflow_id,
+    goal_id: row.goal_id ?? null,
     description: row.description,
     amount: row.amount,
     type: row.type,
-    category: row.category,
+    category,
     date: row.date,
     is_recurring: row.is_recurring ?? false,
     recurrence_interval: recurrenceIntervalSchema
@@ -115,6 +129,7 @@ export function mapCashflowShareToDTO(row: CashflowShare): CashflowShareDTO {
 
 export function mapCashflowWithSummaryToDTO(
   row: CashflowWithSummary,
+  goalTitles?: ReadonlyMap<string, string>,
 ): CashflowWithSummaryDTO {
   return {
     id: row.id!,
@@ -126,7 +141,13 @@ export function mapCashflowWithSummaryToDTO(
     income: Number(row.income ?? 0),
     expense: Number(row.expense ?? 0),
     balance: Number(row.balance ?? 0),
-    entries: row.entries?.map(mapCashflowEntryToDTO) ?? [],
+    entries:
+      row.entries?.map((entry) =>
+        mapCashflowEntryToDTO(
+          entry,
+          entry.goal_id ? goalTitles?.get(entry.goal_id) ?? null : undefined,
+        ),
+      ) ?? [],
   };
 }
 
@@ -137,6 +158,25 @@ export function mapBudgetToDTO(row: CashflowBudget): CashflowBudgetDTO {
     category: row.category,
     amount: Number(row.amount),
     period: 'monthly',
+  };
+}
+
+export function mapGoalToDTO(
+  row: CashflowGoal,
+  cashflowTitle: string | null = null,
+  savedAmount = 0,
+  contributionCount = 0,
+): CashflowGoalDTO {
+  return {
+    id: row.id,
+    cashflow_id: row.cashflow_id,
+    cashflow_title: cashflowTitle,
+    title: row.title,
+    target_amount: Number(row.target_amount),
+    saved_amount: Math.max(0, Number(savedAmount)),
+    contribution_count: Math.max(0, Number(contributionCount)),
+    deadline: row.deadline ?? null,
+    created_at: row.created_at,
   };
 }
 
