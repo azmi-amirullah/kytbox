@@ -5,11 +5,13 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LuChevronLeft, LuChevronRight, LuX } from 'react-icons/lu';
 import { completeOnboardingAction } from '@/app/(platform)/app/actions';
+import { useCommandShortcut } from '@/lib/keyboard-shortcut';
 
 interface TourStep {
   targetId: string;
   title: string;
   description: string;
+  showShortcut?: boolean;
 }
 
 const TOUR_STEPS: TourStep[] = [
@@ -35,8 +37,9 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     targetId: 'tour-search-trigger',
-    title: 'Universal Command Palette ⌘K',
-    description: 'Navigate the entire platform, search files, execute quick actions, and toggle visual modes in milliseconds. Press Cmd+K or Ctrl+K anytime.',
+    title: 'Universal Command Palette',
+    description: 'Navigate the entire platform, search files, execute quick actions, and toggle visual modes in milliseconds.',
+    showShortcut: true,
   },
 ];
 
@@ -46,6 +49,7 @@ interface OnboardingTourProps {
 
 export function OnboardingTour({ hasCompletedOnboarding }: OnboardingTourProps) {
   const pathname = usePathname();
+  const commandShortcut = useCommandShortcut();
   const [isVisible, setIsVisible] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [coords, setCoords] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -302,6 +306,7 @@ export function OnboardingTour({ hasCompletedOnboarding }: OnboardingTourProps) 
               className="text-lg font-bold text-card-foreground tracking-tight"
             >
               {currentStep.title}
+              {currentStep.showShortcut && ' ' + commandShortcut}
             </h3>
             <button
               onClick={handleSkip}
@@ -318,6 +323,7 @@ export function OnboardingTour({ hasCompletedOnboarding }: OnboardingTourProps) 
             className="text-sm text-muted-foreground leading-relaxed mb-6"
           >
             {currentStep.description}
+            {currentStep.showShortcut && ' Press ' + commandShortcut + ' anytime.'}
           </p>
 
           {/* Footer Controls */}
