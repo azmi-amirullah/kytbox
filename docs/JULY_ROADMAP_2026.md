@@ -27,7 +27,7 @@
 - [x] [Day 15 — SEO Metadata + Bundle Analysis](#day-15)
 - [x] [Day 16 — Sunday Rest](#day-16)
 - [x] [Day 17 — Cashflow: Savings Goals](#day-17)
-- [ ] [Day 18 — Audit Debt Batch (#13–19 from June Audit)](#day-18)
+- [x] [Day 18 — Root Global Error Boundary + Audit Debt Verification](#day-18)
 - [ ] [Day 19 — Dark Mode Shadows + Container Queries + List Polish](#day-19)
 - [ ] [Day 20 — Bio: Analytics Share Card](#day-20)
 - [ ] [Day 21 — Security Lib + List App Unit Tests](#day-21)
@@ -1156,28 +1156,37 @@ CREATE INDEX idx_cashflow_goals_cashflow ON cashflow_goals(cashflow_id);
 ---
 
 <a id="day-18"></a>
-### Day 18 — Tuesday, Jul 28 | 🐛 Bugfix
+### Day 18 — Tuesday, Jul 28 | 🐛 Bugfix ✅ Complete
 
-#### Audit Debt Batch (#13–19 from June Audit)
+#### Root Global Error Boundary + Audit Debt Verification
 
-**All items in one day:**
+The original audit batch was already largely resolved by existing architecture and cleanup commits. Day 18 completed the remaining root-level error handling gap and verified the resolved items.
 
-1. **Fix `GlobalError` (#19)**: Rename `src/app/error.tsx` → `src/app/global-error.tsx`. Create new `src/app/error.tsx` without `<html>/<body>`.
+**Completed:**
 
-2. **Add missing `loading.tsx` (#16)**: Create `loading.tsx` in:
-   - `src/app/(auth)/login/`
-   - `src/app/(auth)/signup/`
-   - `src/app/(auth)/forgot-password/`
-   - `src/app/update-password/`
-   - `src/app/[username]/[linkId]/`
+- [x] Added `src/app/global-error.tsx` with its own `<html>` and `<body>` fallback, retry action, and Sentry reporting.
+
+- [x] Kept `src/app/error.tsx` as the segment-level error boundary without duplicate document tags.
+- [x] Confirmed auth and public-profile loading boundaries are inherited from route groups; no duplicate loading files are required. `[username]/[linkId]` is an HTTP Route Handler, not a React page.
+
+**Verification:**
+
+- [x] Confirmed `connection()` is centralized in `getAuthenticatedUser()` and `getAuthenticatedUserAndProfile()`.
+- [x] Confirmed `getAvatarUrl` and manual `isCustomThemeData` guards are removed.
+- [x] Confirmed the server recurrence schema is centralized. The client schema remains a separate `zod/mini` version intentionally for bundle size.
+- [x] Confirmed `support/page.tsx` uses `getAuthenticatedUser()`.
+- [x] `npm test` — 220 tests passed.
+- [x] `npm run lint` — passed.
+- [x] `npm run build` — passed with Next.js 16.1.6.
+
+<!-- The original audit instructions below are retained for traceability and superseded by the verification above.
 
 3. **Add `connection()` (#15)**: Add `await connection()` to top of:
-   - `src/app/(platform)/cashflow/page.tsx`
+- [x] Confirmed `connection()` is centralized in `getAuthenticatedUser()` and `getAuthenticatedUserAndProfile()`.
    - `src/app/(platform)/bio/page.tsx`
    - `src/app/(platform)/settings/page.tsx`
    - `src/app/(platform)/app/page.tsx`
 
-4. **Kill `getAvatarUrl` (#14)**: Delete `src/lib/avatar.ts`. Find all imports, replace with inline `avatarUrl || null`.
 
 5. **Zod for `isCustomThemeData` (#13)**: Replace manual type guard with:
    ```typescript
@@ -1191,15 +1200,9 @@ CREATE INDEX idx_cashflow_goals_cashflow ON cashflow_goals(cashflow_id);
 **Acceptance Criteria:**
 - [ ] All 7 items resolved
 - [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+-- [ ] `npm run lint` passes
+-->
 
-#### Cashflow audit follow-up (completed)
-
-- [x] Optional budget lookups treat a missing budget as an expected result and avoid PostgREST 406 responses.
-- [x] CSV export quotes and escapes every field, including arbitrary goal names and spreadsheet-formula-like text.
-- [x] Savings goal detail routes are protected at the proxy boundary and covered by unauthenticated route tests.
-- [x] Notification inserts are restricted to the server-side service-role client through the applied RLS migration.
-- [x] Unit tests, lint, typecheck, production build, and diff checks pass.
 
 ---
 

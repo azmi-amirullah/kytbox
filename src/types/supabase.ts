@@ -59,44 +59,6 @@ export type Database = {
           },
         ]
       }
-      cashflow_goals: {
-        Row: {
-          cashflow_id: string
-          created_at: string | null
-          deadline: string | null
-          id: string
-          is_deleted: boolean
-          target_amount: number
-          title: string
-        }
-        Insert: {
-          cashflow_id: string
-          created_at?: string
-          deadline?: string | null
-          id?: string
-          is_deleted?: boolean
-          target_amount: number
-          title: string
-        }
-        Update: {
-          cashflow_id?: string
-          created_at?: string
-          deadline?: string | null
-          id?: string
-          is_deleted?: boolean
-          target_amount?: number
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'cashflow_goals_cashflow_id_fkey'
-            columns: ['cashflow_id']
-            isOneToOne: false
-            referencedRelation: 'cashflows'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       cashflow_entries: {
         Row: {
           amount: number
@@ -159,7 +121,59 @@ export type Database = {
             foreignKeyName: 'cashflow_entries_goal_id_fkey'
             columns: ['goal_id']
             isOneToOne: false
+            referencedRelation: 'cashflow_goal_progress'
+            referencedColumns: ['goal_id']
+          },
+          {
+            foreignKeyName: 'cashflow_entries_goal_id_fkey'
+            columns: ['goal_id']
+            isOneToOne: false
             referencedRelation: 'cashflow_goals'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      cashflow_goals: {
+        Row: {
+          cashflow_id: string
+          created_at: string | null
+          deadline: string | null
+          id: string
+          is_deleted: boolean
+          target_amount: number
+          title: string
+        }
+        Insert: {
+          cashflow_id: string
+          created_at?: string | null
+          deadline?: string | null
+          id?: string
+          is_deleted?: boolean
+          target_amount: number
+          title: string
+        }
+        Update: {
+          cashflow_id?: string
+          created_at?: string | null
+          deadline?: string | null
+          id?: string
+          is_deleted?: boolean
+          target_amount?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'cashflow_goals_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflow_summaries'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cashflow_goals_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflows'
             referencedColumns: ['id']
           },
         ]
@@ -754,12 +768,27 @@ export type Database = {
     Views: {
       cashflow_goal_progress: {
         Row: {
-          cashflow_id: string
+          cashflow_id: string | null
           contribution_count: number | null
-          goal_id: string
+          goal_id: string | null
           saved_amount: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'cashflow_goals_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflow_summaries'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cashflow_goals_cashflow_id_fkey'
+            columns: ['cashflow_id']
+            isOneToOne: false
+            referencedRelation: 'cashflows'
+            referencedColumns: ['id']
+          },
+        ]
       }
       cashflow_summaries: {
         Row: {
@@ -908,7 +937,6 @@ export type Database = {
         }[]
       }
       increment_link_click: { Args: { link_id: string }; Returns: undefined }
-      is_cashflow_owner: { Args: { _cashflow_id: string }; Returns: boolean }
       mark_support_messages_read: {
         Args: { p_ticket_id: string }
         Returns: number
@@ -918,7 +946,10 @@ export type Database = {
         Args: { p_column_ids: string[] }
         Returns: undefined
       }
-      reorder_list_items: { Args: { p_item_ids: string[] }; Returns: undefined }
+      reorder_list_items: {
+        Args: { p_item_ids: string[] }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
