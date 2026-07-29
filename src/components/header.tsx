@@ -7,6 +7,7 @@ import { NotificationCenter } from '@/features/notifications'
 import { Button } from '@/components/ui/button'
 import { SearchTrigger } from '@/components/search-trigger'
 import { Skeleton } from '@/components/ui/skeleton'
+import { siteConfig } from '@/config/site'
 import { LuExternalLink } from 'react-icons/lu'
 
 interface UserData {
@@ -29,6 +30,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
   const isDashboard = variant === 'dashboard'
   const isAuth = variant === 'auth'
   const isLegal = variant === 'legal'
+  const brandHref = isAuth ? siteConfig.url : isDashboard ? '/app' : '/'
 
   return (
     <header className='fixed left-0 right-0 top-0 z-50 w-full border-b border-border/80 bg-background/85 backdrop-blur-xl transition-colors duration-200'>
@@ -39,7 +41,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           </HomeBrandLink>
         ) : (
           <Link
-            href={isDashboard ? '/app' : '/'}
+            href={brandHref}
             className='min-h-11 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
             aria-label={isDashboard ? 'Dashboard' : 'Home'}
           >
@@ -102,7 +104,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
               <div className='flex items-center gap-2 sm:gap-4'>
                 {(isLanding || isLegal) && (
                   <Button asChild className='min-h-11 rounded-full px-4'>
-                    <Link href='/app'>Dashboard</Link>
+                    <a href='/app'>Dashboard</a>
                   </Button>
                 )}
                 <UserNav user={user} />

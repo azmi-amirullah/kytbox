@@ -355,15 +355,12 @@ export default async function LandingPage() {
                     <div className='flex items-end justify-between gap-4'>
                       <div>
                         <p className='text-xs text-muted-foreground'>
-                          Current balance
+                          Net Balance
                         </p>
                         <p className='mt-1 text-3xl font-semibold tracking-[-0.06em]'>
                           $4,280
                         </p>
                       </div>
-                      <span className='rounded-full bg-secondary px-2.5 py-1 font-mono text-[0.68rem] font-semibold text-secondary-foreground'>
-                        Illustrative data
-                      </span>
                     </div>
                     <div className='mt-4 rounded-xl border border-border bg-background/60 p-3'>
                       <div className='flex items-center justify-between gap-3'>
