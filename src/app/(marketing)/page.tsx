@@ -1,70 +1,94 @@
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import type { Metadata } from 'next'
 import {
   LuArrowRight,
+  LuArrowUpRight,
+  LuCheck,
+  LuCommand,
+  LuFolderTree,
+  LuLightbulb,
+  LuPiggyBank,
   LuShieldCheck,
   LuZap,
-  LuFileDown,
-  LuGlobe,
-  LuPalette,
-  LuFolderTree,
-  LuChartBar,
-  LuPiggyBank,
-  LuUsers,
-  LuGripVertical,
-  LuHeart,
-  LuLightbulb,
-  LuSparkles,
-  LuCommand,
 } from 'react-icons/lu'
-import { SiGithub, SiLinkedin } from 'react-icons/si'
 
-import dynamic from 'next/dynamic'
-import { getOptionalUserAndProfile } from '@/lib/auth'
-import { Header } from '@/components/header'
+import { Button } from '@/components/ui/button'
 import { Footer } from '@/components/footer'
-import { Metadata } from 'next'
+import { Header } from '@/components/header'
+import { getOptionalUserAndProfile } from '@/lib/auth'
 import { siteConfig } from '@/config/site'
 import pkg from '../../../package.json'
 
 import { ScrollReveal } from './components/ScrollReveal'
+import { WorkspacePreview } from './components/WorkspacePreview'
 
-const HeroTextCycler = dynamic(
-  () => import('./components/HeroTextCycler').then((mod) => mod.HeroTextCycler),
+const modules = [
   {
-    loading: () => <span className='text-primary'>Share your links</span>,
+    title: 'Bio',
+    kicker: 'PUBLIC LINKS',
+    description:
+      'Share your links from a page that feels like you, with themes and analytics built in.',
+    icon: LuFolderTree,
   },
-)
+  {
+    title: 'Cashflow',
+    kicker: 'MONEY IN VIEW',
+    description:
+      'Track income and expenses with a clearer view of your balance.',
+    icon: LuPiggyBank,
+  },
+  {
+    title: 'List',
+    kicker: 'TASKS & IDEAS',
+    description: 'Organize tasks, wishlists, and ideas in one place.',
+    icon: LuLightbulb,
+  },
+]
 
-const BioMockup = dynamic(
-  () => import('./components/FeatureMockups').then((mod) => mod.BioMockup),
+const workflow = [
   {
-    loading: () => (
-      <div className='mx-auto w-55 sm:w-65 h-90 rounded-4xl border border-border/40 bg-card/40 animate-pulse' />
-    ),
+    number: '01',
+    title: 'Bring it together',
+    description:
+      'Keep your public links, cashflow, tasks, wishes, and ideas in one account.',
   },
-)
+  {
+    number: '02',
+    title: 'Use the right tool',
+    description:
+      'Bio, Cashflow, and List each stay focused on the work they are built for.',
+  },
+  {
+    number: '03',
+    title: 'Pick up where you left off',
+    description:
+      'Return to a workspace that is easy to scan and simple to use.',
+  },
+]
 
-const CashflowMockup = dynamic(
-  () => import('./components/FeatureMockups').then((mod) => mod.CashflowMockup),
+const principles = [
   {
-    loading: () => (
-      <div className='mx-auto w-full max-w-80 h-60 rounded-2xl border border-border/40 bg-card/40 animate-pulse' />
-    ),
+    icon: LuShieldCheck,
+    title: 'Private by default',
+    description:
+      'Your workspace is yours. Share deliberately, keep the rest out of the way.',
   },
-)
-
-const ListMockup = dynamic(
-  () => import('./components/FeatureMockups').then((mod) => mod.ListMockup),
   {
-    loading: () => (
-      <div className='mx-auto w-full max-w-90 h-55 rounded-2xl border border-border/40 bg-card/40 animate-pulse' />
-    ),
+    icon: LuCommand,
+    title: 'Fast where it counts',
+    description:
+      'Quick navigation, focused surfaces, and no decorative clutter between you and the work.',
   },
-)
+  {
+    icon: LuZap,
+    title: 'Free to start',
+    description:
+      'The core kit stays open so you can build a useful system before thinking about upgrades.',
+  },
+]
 
 export const metadata: Metadata = {
-  title: `${siteConfig.name} - Your Personal Kit Box`,
+  title: `${siteConfig.name} — Make room for better work`,
   description: siteConfig.description,
 }
 
@@ -86,266 +110,416 @@ export default async function LandingPage() {
   const ctaHref = userData ? '/app' : '/signup'
 
   return (
-    <div className='relative min-h-screen flex flex-col overflow-x-hidden'>
+    <div className='min-h-screen overflow-x-clip bg-background text-foreground'>
+      <a
+        href='#main-content'
+        className='sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-100 focus:rounded-md focus:bg-primary focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-primary-foreground'
+      >
+        Skip to content
+      </a>
+
       <Header variant='landing' user={userData} />
 
-      <main className='flex-1 relative z-10'>
-        {/* ────────────────────── Hero ────────────────────── */}
-        <section className='relative min-h-screen flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden'>
-          {/* Gradient background */}
-          <div className='absolute inset-0 -z-20 bg-linear-to-b from-primary/20 via-primary/5 to-transparent dark:from-primary/10 dark:via-primary/3 dark:to-transparent' />
+      <main id='main-content' className='relative z-10'>
+        <section className='relative isolate overflow-x-clip px-4 pb-16 pt-28 sm:px-6 sm:pb-24 sm:pt-32 lg:min-h-[calc(100svh-4rem)] lg:px-8 lg:pb-4 lg:pt-20'>
+          <div className='marketing-grid pointer-events-none absolute inset-0 -z-20 opacity-55' />
+          <div className='pointer-events-none absolute -right-24 top-32 -z-10 h-72 w-72 rounded-full bg-primary/12 blur-3xl sm:h-96 sm:w-96' />
+          <div className='pointer-events-none absolute -bottom-24 left-1/4 -z-10 h-64 w-64 rounded-full bg-signal/10 blur-3xl' />
 
-          {/* Grid pattern */}
-          <div className='absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-size-[24px_24px] opacity-30' />
-
-          {/* Floating decorative blobs */}
-          <div className='absolute -top-20 -left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-[float_8s_ease-in-out_infinite]' />
-          <div className='absolute top-1/3 -right-16 w-56 h-56 bg-primary/10 rounded-full blur-3xl animate-[float_10s_ease-in-out_infinite_2s]' />
-          <div className='absolute bottom-12 left-1/2 -translate-x-1/2 w-80 h-80 bg-primary/15 rounded-full blur-3xl animate-[float_12s_ease-in-out_infinite_4s]' />
-
-          {/* Bottom smooth fade overlay */}
-          <div className='absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-background to-transparent pointer-events-none -z-5' />
-
-          <div className='max-w-4xl mx-auto text-center space-y-8 relative z-10'>
-            <div className='inline-flex items-center rounded-full border border-primary/30 bg-background/60 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-md shadow-sm'>
-              <span className='mr-2 flex h-2 w-2 rounded-full bg-primary animate-pulse' />
-              Kytbox v{pkg.version.split('.').slice(0, 2).join('.')} Live
-            </div>
-
-            <h1 className='text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-tight'>
-              Your links. Your money.
-              <br className='hidden sm:block' />
-              Your lists. <span className='text-primary'>One platform.</span>
-            </h1>
-
-            <p className='text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed'>
-              <HeroTextCycler />
-            </p>
-            <p className='text-base md:text-lg text-muted-foreground/70'>
-              All in one beautifully simple platform.
-            </p>
-
-            <div className='flex flex-col sm:flex-row items-center justify-center gap-4 pt-4'>
-              <Link href={ctaHref}>
-                <Button
-                  size='lg'
-                  className='h-12 px-8 text-lg group shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all hover:scale-105'
-                >
-                  Get Started Free
-                  <LuArrowRight className='ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform' />
-                </Button>
-              </Link>
-              <span className='text-sm text-muted-foreground'>
-                No credit card required
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* ────────────────── Feature Showcase ────────────────── */}
-
-        {/* Bio */}
-        <section className='py-20 md:py-28 px-6'>
-          <div className='max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center'>
-            <ScrollReveal direction='left'>
-              <BioMockup />
-            </ScrollReveal>
-            <ScrollReveal delay={0.15}>
-              <div className='space-y-6'>
-                <div className='inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gray-600'>
-                  Bio
-                </div>
-                <h2 className='text-3xl sm:text-4xl font-bold tracking-tight'>
-                  Your link-in-bio,{' '}
-                  <span className='text-gray-600'>supercharged</span>
-                </h2>
-                <ul className='space-y-4 text-muted-foreground'>
-                  {[
-                    {
-                      icon: LuFolderTree,
-                      text: 'Nested folders for organized link groups',
-                    },
-                    {
-                      icon: LuPalette,
-                      text: '13+ themes with custom color engine',
-                    },
-                    {
-                      icon: LuChartBar,
-                      text: 'Click analytics with country breakdown',
-                    },
-                  ].map(({ icon: Icon, text }) => (
-                    <li key={text} className='flex items-start gap-3'>
-                      <div className='mt-0.5 p-1.5 rounded-lg bg-primary/10'>
-                        <Icon className='w-4 h-4 text-primary' />
-                      </div>
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* Cashflow */}
-        <section className='py-20 md:py-28 px-6 bg-secondary/5 border-y border-border/30'>
-          <div className='max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center'>
-            <ScrollReveal delay={0.15} className='order-2 md:order-1'>
-              <div className='space-y-6'>
-                <div className='inline-flex items-center gap-2 text-xs font-semibold text-emerald-500 uppercase tracking-widest '>
-                  Cashflow
-                </div>
-                <h2 className='text-3xl sm:text-4xl font-bold tracking-tight'>
-                  Personal finance,{' '}
-                  <span className='text-emerald-500'>simplified</span>
-                </h2>
-                <ul className='space-y-4 text-muted-foreground'>
-                  {[
-                    {
-                      icon: LuChartBar,
-                      text: 'Smart projections & budget tracking',
-                    },
-                    {
-                      icon: LuPiggyBank,
-                      text: 'Recurring entry auto-generation',
-                    },
-                    {
-                      icon: LuUsers,
-                      text: 'Granular ACL sharing with collaborators',
-                    },
-                  ].map(({ icon: Icon, text }) => (
-                    <li key={text} className='flex items-start gap-3'>
-                      <div className='mt-0.5 p-1.5 rounded-lg bg-emerald-500/10'>
-                        <Icon className='w-4 h-4 text-emerald-500' />
-                      </div>
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal direction='right' className='order-1 md:order-2'>
-              <CashflowMockup />
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* List */}
-        <section className='py-20 md:py-28 px-6'>
-          <div className='max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center'>
-            <ScrollReveal direction='left'>
-              <ListMockup />
-            </ScrollReveal>
-            <ScrollReveal delay={0.15}>
-              <div className='space-y-6'>
-                <div className='inline-flex items-center gap-2 text-xs font-semibold text-blue-500 uppercase tracking-widest'>
-                  List
-                </div>
-                <h2 className='text-3xl sm:text-4xl font-bold tracking-tight'>
-                  Organize everything,{' '}
-                  <span className='text-blue-500'>effortlessly</span>
-                </h2>
-                <ul className='space-y-4 text-muted-foreground'>
-                  {[
-                    { icon: LuGripVertical, text: 'Drag & drop Kanban boards' },
-                    { icon: LuHeart, text: 'Wishlists with price tracking' },
-                    { icon: LuLightbulb, text: 'Quick brain dumps for ideas' },
-                  ].map(({ icon: Icon, text }) => (
-                    <li key={text} className='flex items-start gap-3'>
-                      <div className='mt-0.5 p-1.5 rounded-lg bg-blue-500/10'>
-                        <Icon className='w-4 h-4 text-blue-500' />
-                      </div>
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* ────────────────── Stats / Social Proof ────────────────── */}
-        <section className='py-20 md:py-24 px-6 bg-secondary/5 border-y border-border/30'>
-          <ScrollReveal>
-            <div className='max-w-4xl mx-auto text-center mb-12'>
-              <h2 className='text-3xl sm:text-4xl font-bold tracking-tight mb-4'>
-                Built for creators, freelancers, and teams
-              </h2>
-              <p className='text-muted-foreground text-lg max-w-xl mx-auto'>
-                Everything you need to manage your online presence, finances,
-                and productivity.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          <div className='max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4'>
-            {[
-              { value: '13+', label: 'Themes', desc: 'Custom color engine' },
-              { value: '3', label: 'Apps', desc: 'Bio · Cashflow · List' },
-              { value: '100%', label: 'Free', desc: 'No hidden fees' },
-            ].map((stat, i) => (
-              <ScrollReveal key={stat.label} delay={i * 0.1}>
-                <div className='p-6 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl text-center hover:border-primary/30 transition-colors'>
-                  <div className='text-4xl font-extrabold text-primary mb-1'>
-                    {stat.value}
+          <div className='mx-auto max-w-7xl'>
+            <div className='grid items-center gap-14 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:gap-12'>
+              <ScrollReveal>
+                <div className='max-w-2xl'>
+                  <div className='mb-7 inline-flex min-h-9 items-center gap-2 rounded-full border border-primary/20 bg-card/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary shadow-sm backdrop-blur'>
+                    <span
+                      className='h-2 w-2 rounded-full bg-signal'
+                      aria-hidden='true'
+                    />
+                    Kytbox v{pkg.version.split('.').slice(0, 2).join('.')} is
+                    live
                   </div>
-                  <div className='text-sm font-semibold text-foreground mb-0.5'>
-                    {stat.label}
+
+                  <h1 className='max-w-3xl text-[clamp(3.25rem,8vw,7rem)] font-semibold leading-[0.9] tracking-[-0.075em] text-foreground'>
+                    Make room for{' '}
+                    <span className='text-primary'>better work.</span>
+                  </h1>
+
+                  <p className='mt-8 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl'>
+                    Kytbox brings Bio, Cashflow, and List into one calm
+                    workspace — so you spend less time switching between tools.
+                  </p>
+
+                  <div className='mt-9 flex flex-col gap-3 sm:flex-row sm:items-center'>
+                    <Button
+                      asChild
+                      size='lg'
+                      className='min-h-12 rounded-full px-7 text-base shadow-lg shadow-primary/20'
+                    >
+                      <Link href={ctaHref}>
+                        Open your kit
+                        <LuArrowRight className='size-5' aria-hidden='true' />
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant='outline'
+                      size='lg'
+                      className='min-h-12 rounded-full px-7 text-base'
+                    >
+                      <Link href='#platform'>See the system</Link>
+                    </Button>
                   </div>
-                  <div className='text-xs text-muted-foreground'>
-                    {stat.desc}
+
+                  <div className='mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground'>
+                    <span className='inline-flex items-center gap-2'>
+                      <LuCheck
+                        className='size-4 text-primary'
+                        aria-hidden='true'
+                      />
+                      No credit card
+                    </span>
+                    <span className='inline-flex items-center gap-2'>
+                      <LuCheck
+                        className='size-4 text-primary'
+                        aria-hidden='true'
+                      />
+                      Free core tools
+                    </span>
+                    <span className='inline-flex items-center gap-2'>
+                      <LuCheck
+                        className='size-4 text-primary'
+                        aria-hidden='true'
+                      />
+                      Built for real life
+                    </span>
                   </div>
                 </div>
               </ScrollReveal>
-            ))}
+
+              <ScrollReveal direction='right' delay={0.12}>
+                <WorkspacePreview />
+              </ScrollReveal>
+            </div>
+
+            <div className='mt-4 grid gap-5 border-t border-border/80 pt-4 text-sm text-muted-foreground sm:grid-cols-[1fr_auto] sm:items-center'>
+              <p className='max-w-md'>
+                For creators, freelancers, and people with too many tabs open.
+              </p>
+              <div className='flex items-center gap-4 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground/80'>
+                <span>One account</span>
+                <span
+                  className='h-1 w-1 rounded-full bg-signal'
+                  aria-hidden='true'
+                />
+                <span>Three tools</span>
+                <span
+                  className='h-1 w-1 rounded-full bg-signal'
+                  aria-hidden='true'
+                />
+                <span>One workspace</span>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ────────────────── Platform Features Grid ────────────────── */}
-        <section className='py-20 px-6'>
-          <div className='max-w-5xl mx-auto'>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-              {[
-                {
-                  icon: LuSparkles,
-                  bgClass: 'bg-blue-500/10 group-hover:bg-blue-500/20',
-                  textClass: 'text-blue-500',
-                  title: 'Unified Workspace',
-                  desc: 'Bio links, cashflow tracking, and todo lists — all under one single account.',
-                },
-                {
-                  icon: LuZap,
-                  bgClass: 'bg-emerald-500/10 group-hover:bg-emerald-500/20',
-                  textClass: 'text-emerald-500',
-                  title: '100% Free',
-                  desc: 'No credit card required, no paywalls, no hidden catches. Full access to every app.',
-                },
-                {
-                  icon: LuShieldCheck,
-                  bgClass: 'bg-purple-500/10 group-hover:bg-purple-500/20',
-                  textClass: 'text-purple-500',
-                  title: 'Your Data, Your Rules',
-                  desc: 'No tracking pixels, no ads, no selling your data. What you create stays yours.',
-                },
-                {
-                  icon: LuCommand,
-                  bgClass: 'bg-orange-500/10 group-hover:bg-orange-500/20',
-                  textClass: 'text-orange-500',
-                  title: 'Built for Velocity',
-                  desc: 'Fast page loads, smart search, and instant state sync across your workspace.',
-                },
-              ].map(({ icon: Icon, bgClass, textClass, title, desc }, i) => (
-                <ScrollReveal key={title} delay={i * 0.08}>
-                  <div className='p-8 rounded-2xl bg-card border hover:shadow-lg transition-all hover:-translate-y-1 group h-full'>
-                    <div
-                      className={`w-12 h-12 rounded-xl ${bgClass} flex items-center justify-center mb-6 transition-colors`}
-                    >
-                      <Icon className={`w-6 h-6 ${textClass}`} />
+        <section
+          id='platform'
+          className='scroll-mt-16 border-y border-border bg-card/55 px-4 py-20 sm:px-6 sm:py-28 lg:px-8'
+        >
+          <div className='mx-auto max-w-7xl'>
+            <ScrollReveal>
+              <div className='grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:items-end'>
+                <p className='font-mono text-xs font-semibold uppercase tracking-[0.2em] text-primary'>
+                  01 / The kit
+                </p>
+                <div>
+                  <h2 className='max-w-3xl text-4xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-5xl lg:text-6xl'>
+                    Three tools.{' '}
+                    <span className='text-muted-foreground'>
+                      One workspace.
+                    </span>
+                  </h2>
+                  <p className='mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg'>
+                    Use Bio for your links, Cashflow for your money, and List
+                    for tasks, wishlists, and ideas.
+                  </p>
+                </div>
+              </div>
+            </ScrollReveal>
+
+            <div className='marketing-bento mt-12'>
+              <div className='marketing-bento-grid'>
+                <article className='marketing-bento-feature marketing-bento-feature--bio rounded-[1.75rem] border border-primary/15 bg-surface-blue p-6 sm:p-8'>
+                  <div className='flex items-start justify-between gap-6'>
+                    <div>
+                      <div className='mb-5 flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm'>
+                        <LuFolderTree className='size-5' aria-hidden='true' />
+                      </div>
+                      <p className='font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-primary'>
+                        Public links
+                      </p>
+                      <h3 className='mt-3 text-3xl font-semibold tracking-[-0.045em]'>
+                        Bio, with room to grow.
+                      </h3>
+                      <p className='mt-3 max-w-lg leading-7 text-muted-foreground'>
+                        {modules[0].description}
+                      </p>
                     </div>
-                    <h3 className='text-xl font-bold mb-2'>{title}</h3>
-                    <p className='text-muted-foreground leading-relaxed'>
-                      {desc}
+                    <span className='hidden font-mono text-xs text-primary/60 sm:block'>
+                      01
+                    </span>
+                  </div>
+
+                  <div className='mt-10 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end'>
+                    <div className='rounded-2xl border border-border/80 bg-card p-4 shadow-sm'>
+                      <div className='flex items-center gap-3 border-b border-border pb-3'>
+                        <div
+                          className='size-9 rounded-full bg-primary/15'
+                          aria-hidden='true'
+                        />
+                        <div>
+                          <div className='h-2.5 w-24 rounded-full bg-foreground/15' />
+                          <div className='mt-1.5 h-2 w-16 rounded-full bg-foreground/8' />
+                        </div>
+                      </div>
+                      <div className='mt-4 grid gap-2'>
+                        {[
+                          'Work with me',
+                          'Latest project',
+                          'Read my notes',
+                        ].map((label) => (
+                          <div
+                            key={label}
+                            className='flex min-h-10 items-center justify-between rounded-xl border border-border bg-background px-3 text-sm font-medium'
+                          >
+                            <span>{label}</span>
+                            <LuArrowUpRight
+                              className='size-4 text-primary'
+                              aria-hidden='true'
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className='rounded-2xl border border-primary/15 bg-primary/8 p-4 sm:min-w-28'>
+                      <p className='font-mono text-3xl font-semibold tracking-[-0.06em] text-primary'>
+                        13+
+                      </p>
+                      <p className='mt-1 text-xs leading-5 text-muted-foreground'>
+                        themes to make it yours
+                      </p>
+                    </div>
+                  </div>
+                </article>
+
+                <article className='marketing-bento-feature marketing-bento-feature--cashflow rounded-[1.75rem] border border-signal/20 bg-surface-warm p-6 sm:p-8'>
+                  <div className='flex items-start justify-between gap-6'>
+                    <div>
+                      <div className='mb-5 flex size-11 items-center justify-center rounded-2xl bg-signal text-signal-foreground shadow-sm'>
+                        <LuPiggyBank className='size-5' aria-hidden='true' />
+                      </div>
+                      <p className='font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-foreground/70'>
+                        Money in view
+                      </p>
+                      <h3 className='mt-3 text-3xl font-semibold tracking-[-0.045em]'>
+                        Cashflow you can read.
+                      </h3>
+                      <p className='mt-3 leading-7 text-muted-foreground'>
+                        {modules[1].description}
+                      </p>
+                    </div>
+                    <span className='hidden font-mono text-xs text-foreground/45 sm:block'>
+                      02
+                    </span>
+                  </div>
+
+                  <div className='mt-10 rounded-2xl border border-signal/15 bg-card/80 p-4 shadow-sm'>
+                    <div className='flex items-end justify-between gap-4'>
+                      <div>
+                        <p className='text-xs text-muted-foreground'>
+                          Current balance
+                        </p>
+                        <p className='mt-1 text-3xl font-semibold tracking-[-0.06em]'>
+                          --
+                        </p>
+                      </div>
+                      <span className='rounded-full bg-secondary px-2.5 py-1 font-mono text-[0.68rem] font-semibold text-secondary-foreground'>
+                        No entries yet
+                      </span>
+                    </div>
+                    <div className='mt-7 flex h-24 items-center justify-center rounded-xl border border-dashed border-border bg-background/60'>
+                      <p className='text-center text-xs text-muted-foreground'>
+                        Add entries to see your balance here.
+                      </p>
+                    </div>
+                  </div>
+                </article>
+
+                <article className='marketing-bento-feature marketing-bento-feature--list rounded-[1.75rem] border border-white/10 bg-surface-strong p-6 text-white sm:p-8'>
+                  <div className='flex items-start justify-between gap-6'>
+                    <div>
+                      <div className='mb-5 flex size-11 items-center justify-center rounded-2xl bg-white/12 text-white shadow-sm'>
+                        <LuLightbulb className='size-5' aria-hidden='true' />
+                      </div>
+                      <p className='font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/55'>
+                        Tasks & ideas
+                      </p>
+                      <h3 className='mt-3 text-3xl font-semibold tracking-[-0.045em]'>
+                        Lists that get unstuck.
+                      </h3>
+                      <p className='mt-3 max-w-2xl leading-7 text-white/65'>
+                        {modules[2].description}
+                      </p>
+                    </div>
+                    <span className='hidden font-mono text-xs text-white/35 sm:block'>
+                      03
+                    </span>
+                  </div>
+
+                  <div className='mt-10 grid gap-3 sm:grid-cols-3'>
+                    {[
+                      {
+                        title: 'Todo',
+                        items: ['Add a task', 'Plan a project'],
+                      },
+                      {
+                        title: 'Wishlist',
+                        items: ['Save an item', 'Add a want'],
+                      },
+                      {
+                        title: 'Ideas',
+                        items: ['Capture an idea', 'Start a list'],
+                      },
+                    ].map((column) => (
+                      <div
+                        key={column.title}
+                        className='rounded-2xl border border-white/10 bg-white/6 p-3'
+                      >
+                        <div className='flex items-center justify-between text-xs font-semibold text-white/75'>
+                          <span>{column.title}</span>
+                          <span className='font-mono text-white/35'>
+                            {column.items.length}
+                          </span>
+                        </div>
+                        <div className='mt-3 grid gap-2'>
+                          {column.items.map((item) => (
+                            <div
+                              key={item}
+                              className='rounded-xl border border-white/8 bg-white/6 px-3 py-2.5 text-xs text-white/65'
+                            >
+                              {item}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id='workflow'
+          className='scroll-mt-16 px-4 py-20 sm:px-6 sm:py-28 lg:px-8'
+        >
+          <div className='mx-auto max-w-7xl'>
+            <div className='grid gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:gap-24'>
+              <ScrollReveal>
+                <div className='lg:sticky lg:top-28'>
+                  <p className='font-mono text-xs font-semibold uppercase tracking-[0.2em] text-primary'>
+                    02 / The workflow
+                  </p>
+                  <h2 className='mt-6 max-w-lg text-4xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-5xl'>
+                    Less switching.{' '}
+                    <span className='text-muted-foreground'>More signal.</span>
+                  </h2>
+                  <p className='mt-6 max-w-md text-base leading-7 text-muted-foreground sm:text-lg'>
+                    Kytbox keeps the important context close without turning
+                    your workspace into another dashboard to decode.
+                  </p>
+                </div>
+              </ScrollReveal>
+
+              <ol className='divide-y divide-border border-y border-border'>
+                {workflow.map((step, index) => (
+                  <ScrollReveal key={step.number} delay={index * 0.08}>
+                    <li className='grid gap-4 py-8 sm:grid-cols-[5rem_1fr] sm:gap-8 sm:py-10'>
+                      <span className='font-mono text-sm font-semibold text-primary'>
+                        {step.number}
+                      </span>
+                      <div>
+                        <h3 className='text-2xl font-semibold tracking-[-0.035em]'>
+                          {step.title}
+                        </h3>
+                        <p className='mt-3 max-w-xl leading-7 text-muted-foreground'>
+                          {step.description}
+                        </p>
+                      </div>
+                    </li>
+                  </ScrollReveal>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id='principles'
+          className='scroll-mt-16 border-y border-border bg-surface-blue/55 px-4 py-20 sm:px-6 sm:py-28 lg:px-8'
+        >
+          <div className='mx-auto max-w-7xl'>
+            <ScrollReveal>
+              <div className='flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between'>
+                <div>
+                  <p className='font-mono text-xs font-semibold uppercase tracking-[0.2em] text-primary'>
+                    03 / The standard
+                  </p>
+                  <h2 className='mt-6 max-w-2xl text-4xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-5xl'>
+                    Useful first.{' '}
+                    <span className='text-muted-foreground'>Always.</span>
+                  </h2>
+                </div>
+                <p className='max-w-sm leading-7 text-muted-foreground'>
+                  A small set of tools, held to a higher standard than a giant
+                  pile of features.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <div className='mt-12 grid gap-4 md:grid-cols-3'>
+              {principles.map(({ icon: Icon, title, description }, index) => (
+                <ScrollReveal key={title} delay={index * 0.08}>
+                  <article className='h-full rounded-3xl border border-border bg-card p-6 shadow-sm transition-colors duration-200 hover:border-primary/35 sm:p-7'>
+                    <div className='flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
+                      <Icon className='size-5' aria-hidden='true' />
+                    </div>
+                    <h3 className='mt-7 text-xl font-semibold tracking-[-0.03em]'>
+                      {title}
+                    </h3>
+                    <p className='mt-3 leading-7 text-muted-foreground'>
+                      {description}
                     </p>
+                  </article>
+                </ScrollReveal>
+              ))}
+            </div>
+
+            <div className='mt-5 grid gap-4 sm:grid-cols-3'>
+              {[
+                { value: '13+', label: 'themes' },
+                { value: '03', label: 'core tools' },
+                { value: '$0', label: 'to get started' },
+              ].map(({ value, label }, index) => (
+                <ScrollReveal key={label} delay={0.16 + index * 0.08}>
+                  <div className='flex items-baseline justify-between rounded-2xl border border-border/80 bg-background/70 px-5 py-4'>
+                    <span className='font-mono text-3xl font-semibold tracking-[-0.06em] text-primary'>
+                      {value}
+                    </span>
+                    <span className='text-sm text-muted-foreground'>
+                      {label}
+                    </span>
                   </div>
                 </ScrollReveal>
               ))}
@@ -353,91 +527,36 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* ────────────────── Creator Section ────────────────── */}
-        <section className='py-20 md:py-24 px-4 md:px-6 text-center relative'>
+        <section className='px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24 lg:px-8'>
           <ScrollReveal>
-            <div className='max-w-2xl mx-auto p-px md:p-0.5 rounded-4xl bg-linear-to-b from-primary/30 via-primary/5 to-transparent shadow-2xl'>
-              <div className='bg-card/70 backdrop-blur-2xl rounded-[1.95rem] p-8 sm:p-10 md:p-12 border border-white/10 relative overflow-hidden'>
-                <div className='absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-3xl' />
-
-                <div className='w-16 h-16 bg-primary/20 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl shadow-inner relative z-10 rotate-3'>
-                  👨‍💻
+            <div className='relative isolate mx-auto max-w-7xl overflow-hidden rounded-4xl bg-surface-strong px-6 py-12 text-white sm:px-12 sm:py-16 lg:px-16'>
+              <div className='marketing-grid pointer-events-none absolute inset-0 -z-10 opacity-10' />
+              <div className='pointer-events-none absolute -right-24 -top-28 -z-10 h-72 w-72 rounded-full bg-primary/35 blur-3xl' />
+              <div className='grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end'>
+                <div>
+                  <p className='font-mono text-xs font-semibold uppercase tracking-[0.2em] text-white/55'>
+                    Ready when you are
+                  </p>
+                  <h2 className='mt-6 max-w-3xl text-4xl font-semibold leading-[0.95] tracking-[-0.06em] sm:text-6xl'>
+                    Start with one useful tool.
+                  </h2>
+                  <p className='mt-6 max-w-xl text-base leading-7 text-white/65 sm:text-lg'>
+                    Bring one part of your workspace into focus. Add the rest
+                    when you need them.
+                  </p>
                 </div>
-
-                <h2 className='text-3xl sm:text-4xl font-bold mb-4 tracking-tight relative z-10'>
-                  Built by <span className='text-primary'>Azmi</span>
-                </h2>
-
-                <p className='text-muted-foreground mb-10 text-base md:text-lg max-w-md mx-auto leading-relaxed relative z-10'>
-                  I build high-quality, scalable web applications that solve
-                  real-world problems.
-                </p>
-                <div className='flex flex-wrap justify-center gap-3 relative z-10'>
-                  <Button variant='outline' size='sm' asChild>
-                    <a
-                      href={siteConfig.links.creatorGithub}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      <SiGithub className='w-4 h-4 mr-2' />
-                      {siteConfig.labels.github}
-                    </a>
-                  </Button>
-                  <Button variant='outline' size='sm' asChild>
-                    <a
-                      href={siteConfig.links.creatorLinkedin}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      <SiLinkedin className='w-4 h-4 mr-2' />
-                      {siteConfig.labels.linkedin}
-                    </a>
-                  </Button>
-                  <Button variant='outline' size='sm' asChild>
-                    <a
-                      href={siteConfig.links.creatorPortfolio}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      <LuGlobe className='w-4 h-4 mr-2' />
-                      {siteConfig.labels.portfolio}
-                    </a>
-                  </Button>
-                  <Button variant='outline' size='sm' asChild>
-                    <a
-                      href={siteConfig.links.cv}
-                      download='Mohd_Azmi_Amirullah_CV.pdf'
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      <LuFileDown className='w-4 h-4 mr-2' />
-                      {siteConfig.labels.downloadCv}
-                    </a>
-                  </Button>
-                </div>
+                <Button
+                  asChild
+                  size='lg'
+                  className='min-h-12 rounded-full bg-white px-7 text-base text-surface-strong shadow-xl hover:bg-white/90'
+                >
+                  <Link href={ctaHref}>
+                    Create your kit
+                    <LuArrowRight className='size-5' aria-hidden='true' />
+                  </Link>
+                </Button>
               </div>
             </div>
-          </ScrollReveal>
-        </section>
-
-        {/* ────────────────── Bottom CTA ────────────────── */}
-        <section className='py-20 md:py-24 px-6 text-center'>
-          <ScrollReveal>
-            <h2 className='text-3xl sm:text-4xl font-bold tracking-tight mb-4'>
-              Ready to get started?
-            </h2>
-            <p className='text-muted-foreground text-lg mb-8 max-w-md mx-auto'>
-              Create your page in seconds. No credit card required.
-            </p>
-            <Link href={ctaHref}>
-              <Button
-                size='lg'
-                className='h-12 px-10 text-lg shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all hover:scale-105'
-              >
-                Create Your Page
-                <LuArrowRight className='ml-2 w-5 h-5' />
-              </Button>
-            </Link>
           </ScrollReveal>
         </section>
       </main>

@@ -12,17 +12,20 @@ import { ActivityFeed } from './components/ActivityFeed';
 import { ActivityFeedSkeleton } from './components/ActivityFeedSkeleton';
 
 export const metadata: Metadata = {
-  title: 'Home',
+  title: 'Workspace',
   robots: { index: false, follow: false },
 };
 
 const SUPPORT_SECTION = {
   name: 'Support',
-  description: 'Get help from our team',
+  description: 'Get help from the Kytbox team',
   href: '/support',
   icon: LuLifeBuoy,
-  color: 'bg-cyan-500/10 text-cyan-600',
+  color: 'bg-secondary text-secondary-foreground',
 };
+
+const ACTIVE_APPS = KYTBOX_APPS.filter((app) => app.status === 'active');
+const COMING_SOON_APPS = KYTBOX_APPS.filter((app) => app.status === 'coming_soon');
 
 async function AsyncQuickStats({
   userId,
@@ -57,13 +60,13 @@ async function AsyncQuickStats({
     (acc, curr) => acc + (Number(curr.balance) || 0),
     0
   );
-  const activeTasksCount = tasksRes.count || 0;
+  const openItemsCount = tasksRes.count || 0;
 
   return (
     <QuickStats
       clicksCount={clicksCount}
       cashflowBalance={cashflowBalance}
-      activeTasksCount={activeTasksCount}
+      openItemsCount={openItemsCount}
       defaultCurrency={defaultCurrency}
     />
   );
@@ -87,13 +90,16 @@ export default async function AppHomePage() {
   const { user, profile } = await getAuthenticatedUserAndProfile();
 
   return (
-    <div className='max-w-7xl mx-auto px-4 py-8 md:py-12 w-full space-y-8'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>
-          Welcome back, {profile?.display_name || profile?.username}!
+    <div className='mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-8 sm:px-6 md:py-12 lg:px-8'>
+      <div className='max-w-2xl'>
+        <p className='font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary'>
+          Workspace overview
+        </p>
+        <h1 className='mt-4 text-3xl font-semibold tracking-[-0.045em] sm:text-4xl'>
+          Welcome back, {profile?.display_name || profile?.username}.
         </h1>
-        <p className='text-muted-foreground mt-1 text-sm'>
-          Here is what is happening across your workspace today.
+        <p className='mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
+          A clear view of your Bio, Cashflow, and List workspace.
         </p>
       </div>
 
@@ -106,81 +112,68 @@ export default async function AppHomePage() {
       </Suspense>
 
       {/* Apps Section */}
-      <div className='w-full pt-8 border-t'>
-        <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4'>
-          All Apps
-        </h2>
-        <div id='tour-apps-grid' className='grid sm:grid-cols-2 md:grid-cols-3 gap-4'>
-          {KYTBOX_APPS.map((app) => {
+      <section className='w-full border-t border-border/80 pt-8' aria-labelledby='workspace-tools-heading'>
+        <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
+          <div>
+            <h2 id='workspace-tools-heading' className='text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground'>
+              Your workspace
+            </h2>
+            <p className='mt-2 text-sm text-muted-foreground'>Open a tool when you need it.</p>
+          </div>
+          <span className='font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground/70'>03 active tools</span>
+        </div>
+        <div id='tour-apps-grid' className='mt-5 grid gap-3 sm:grid-cols-3'>
+          {ACTIVE_APPS.map((app) => {
             const Icon = app.icon;
-            const isActive = app.status === 'active';
-
             return (
               <Link
                 key={app.id}
                 id={`tour-app-${app.id}`}
-                href={isActive ? app.href : '#'}
-                className={`
-                    group relative p-5 rounded-2xl border bg-card
-                    transition-all duration-200
-                    ${
-                      isActive
-                        ? 'hover:border-primary/25 hover:shadow-md cursor-pointer'
-                        : 'opacity-60 cursor-not-allowed'
-                    }
-                  `}
+                href={app.href}
+                className='group min-h-32 rounded-2xl border border-border/80 bg-card/90 p-4 shadow-sm transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
               >
-                <div className='flex items-start gap-4'>
-                  <div className={`p-2.5 rounded-xl ${app.color}`}>
-                    <Icon className='w-5 h-5' />
-                  </div>
-                  <div className='flex-1 min-w-0'>
-                    <div className='flex items-center gap-2'>
-                      <h3 className='font-semibold text-base truncate'>{app.name}</h3>
-                      {!isActive && (
-                        <span className='text-[9px] uppercase tracking-wider font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded'>
-                          Soon
-                        </span>
-                      )}
+                <div className='flex h-full flex-col gap-5'>
+                  <div className='flex items-center justify-between gap-3'>
+                    <div className={`flex size-9 items-center justify-center rounded-xl ${app.color}`}>
+                      <Icon className='size-4' aria-hidden='true' />
                     </div>
-                    <p className='text-xs text-muted-foreground mt-1 line-clamp-2'>
-                      {app.description}
-                    </p>
+                    <LuArrowRight className='size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary' aria-hidden='true' />
                   </div>
-                  {isActive && (
-                    <LuArrowRight className='w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all self-center' />
-                  )}
+                  <div>
+                    <h3 className='truncate text-sm font-semibold'>{app.name}</h3>
+                    <p className='mt-1 line-clamp-2 text-xs leading-4 text-muted-foreground'>{app.description}</p>
+                  </div>
                 </div>
               </Link>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      <div className='grid md:grid-cols-3 gap-8 items-start pt-8 border-t'>
+      <div className='grid items-start gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]'>
         {/* Left Side: Activity Feed */}
-        <div className='md:col-span-2 space-y-6'>
+        <div className='min-w-0'>
           <Suspense fallback={<ActivityFeedSkeleton />}>
             <AsyncActivityFeed userId={user.id} />
           </Suspense>
         </div>
 
         {/* Right Side: Quick Actions & Help */}
-        <div className='space-y-6'>
+        <div className='space-y-7'>
           <QuickActions />
 
           {/* Support Ticket Section */}
           <div className='w-full'>
-            <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3'>
+            <h2 className='mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground'>
               Help
             </h2>
             <Link
               href={SUPPORT_SECTION.href}
-              className='group relative p-6 rounded-2xl border bg-card transition-all duration-200 hover:border-primary/25 hover:shadow-md cursor-pointer block'
+              className='group relative block rounded-2xl border border-border/80 bg-card/90 p-5 shadow-sm transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-6'
             >
               <div className='flex items-start gap-4'>
-                <div className={`p-3 rounded-xl ${SUPPORT_SECTION.color}`}>
-                  <SUPPORT_SECTION.icon className='w-6 h-6' />
+                <div className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${SUPPORT_SECTION.color}`}>
+                  <SUPPORT_SECTION.icon className='size-6' aria-hidden='true' />
                 </div>
                 <div className='flex-1 min-w-0'>
                   <h3 className='font-semibold text-base'>
@@ -191,15 +184,53 @@ export default async function AppHomePage() {
                   </p>
                 </div>
               </div>
-              <div className='flex items-center justify-between mt-4 pt-4 border-t border-border/40'>
-                <span className='text-xs text-muted-foreground'>Open a ticket</span>
-                <LuArrowRight className='w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all' />
+              <div className='mt-5 flex items-center justify-between border-t border-border/60 pt-4'>
+                <span className='text-xs text-muted-foreground'>Open a support ticket</span>
+                <LuArrowRight className='size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary' aria-hidden='true' />
               </div>
             </Link>
           </div>
         </div>
       </div>
+
+      {COMING_SOON_APPS.length > 0 && (
+        <section className='w-full border-t border-border/80 pt-8' aria-labelledby='coming-soon-heading'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between'>
+            <div>
+              <h2 id='coming-soon-heading' className='text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground'>
+                Coming soon
+              </h2>
+              <p className='mt-2 text-sm text-muted-foreground'>More focused tools are on the way.</p>
+            </div>
+            <span className='font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground/70'>
+              {String(COMING_SOON_APPS.length).padStart(2, '0')} in development
+            </span>
+          </div>
+          <div className='mt-5 grid gap-3 sm:grid-cols-3'>
+            {COMING_SOON_APPS.map((app) => {
+              const Icon = app.icon;
+              return (
+                <div key={app.id} id={`tour-app-${app.id}`} className='min-h-32 max-w-sm rounded-2xl border border-border/70 bg-card/50 p-4 opacity-70' role='group' aria-label={`${app.name} coming soon`}>
+                  <div className='flex h-full flex-col gap-5'>
+                    <div className='flex items-center justify-between gap-3'>
+                      <div className={`flex size-9 items-center justify-center rounded-xl ${app.color}`}>
+                        <Icon className='size-4' aria-hidden='true' />
+                      </div>
+                      <span className='rounded-full bg-muted px-2 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'>
+                        Coming soon
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className='truncate text-sm font-semibold text-muted-foreground'>{app.name}</h3>
+                      <p className='mt-1 line-clamp-2 text-xs leading-4 text-muted-foreground'>{app.description}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
-

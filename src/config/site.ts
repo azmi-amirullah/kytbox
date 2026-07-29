@@ -8,7 +8,7 @@ const baseUrl =
 export const siteConfig = {
   name: 'Kytbox',
   description:
-    'Your personal kit box. One account, multiple tools. Bio, cashflow, lists, tracking & more — all in one place.',
+    'Kytbox brings Bio, Cashflow, and List into one calm workspace - so you spend less time switching between tools.',
   url: baseUrl,
   ogImage: `${baseUrl}/og.png`,
   links: {
@@ -27,4 +27,3 @@ export const siteConfig = {
     downloadCv: 'Download CV',
   },
 };
-

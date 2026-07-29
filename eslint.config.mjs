@@ -32,8 +32,7 @@ const eslintConfig = defineConfig([
       },
     },
     rules: {
-      // 2026 Enterprise Protocol: Accessibility (A11y)
-      ...(jsxA11y.configs?.recommended?.rules || jsxA11y.rules),
+      ...jsxA11y.configs.recommended.rules,
 
       // 2026 Enterprise Protocol: Type Safety
       '@typescript-eslint/no-explicit-any': 'error',
@@ -90,6 +89,8 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    '.agents/**',
+    '.codex/**',
   ]),
 ]);
 

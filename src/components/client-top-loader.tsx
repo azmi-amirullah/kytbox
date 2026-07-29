@@ -14,6 +14,7 @@ export function ClientTopLoader({ nonce }: { nonce: string }) {
       height={3}
       crawl={true}
       showSpinner={false}
+      showForHashAnchor={false}
       easing='ease'
       speed={200}
       shadow='0 0 10px var(--primary),0 0 5px var(--primary)'
