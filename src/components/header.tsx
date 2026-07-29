@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 import Link from 'next/link'
 import { BrandLogo } from '@/components/brand-logo'
 import { HomeBrandLink } from '@/components/home-brand-link'
@@ -32,11 +33,11 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
   return (
     <header className='fixed left-0 right-0 top-0 z-50 w-full border-b border-border/80 bg-background/85 backdrop-blur-xl transition-colors duration-200'>
       <div className='mx-auto flex min-h-16 max-w-7xl items-center gap-6 px-4 sm:px-6'>
-       {isLanding ? (
+        {isLanding ? (
           <HomeBrandLink className='min-h-11 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-           <BrandLogo />
+            <BrandLogo />
           </HomeBrandLink>
-       ) : (
+        ) : (
           <Link
             href={isDashboard ? '/app' : '/'}
             className='min-h-11 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -47,14 +48,26 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
         )}
 
         {isLanding && (
-          <nav className='hidden items-center gap-1 md:flex' aria-label='Primary navigation'>
-            <Link href='#platform' className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+          <nav
+            className='hidden items-center gap-1 md:flex'
+            aria-label='Primary navigation'
+          >
+            <Link
+              href='#platform'
+              className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            >
               Platform
             </Link>
-            <Link href='#workflow' className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+            <Link
+              href='#workflow'
+              className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            >
               Workflow
             </Link>
-            <Link href='#principles' className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+            <Link
+              href='#principles'
+              className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            >
               Principles
             </Link>
           </nav>
@@ -73,7 +86,10 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
               className='flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-secondary/40 px-0 text-xs font-medium text-foreground transition-all hover:bg-secondary/80 sm:min-w-0 sm:px-3'
             >
               <span className='hidden sm:inline'>{user.username}</span>
-              <LuExternalLink className='size-4 shrink-0 text-primary' aria-hidden='true' />
+              <LuExternalLink
+                className='size-4 shrink-0 text-primary'
+                aria-hidden='true'
+              />
             </a>
           )}
 
@@ -95,11 +111,15 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
               <div className='flex items-center gap-1.5 sm:gap-2'>
                 {isLanding && (
                   <Button asChild className='min-h-11 rounded-full px-4'>
-                    <Link href='/signup'>Get started</Link>
+                    <a href='/signup'>Get started</a>
                   </Button>
                 )}
-                <Button asChild variant={isLanding ? 'ghost' : 'default'} className='min-h-11 rounded-full px-4'>
-                  <Link href='/login'>Log in</Link>
+                <Button
+                  asChild
+                  variant={isLanding ? 'ghost' : 'default'}
+                  className='min-h-11 rounded-full px-4'
+                >
+                  <a href='/login'>Log in</a>
                 </Button>
               </div>
             ))}

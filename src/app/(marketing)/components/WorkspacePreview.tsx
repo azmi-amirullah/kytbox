@@ -14,22 +14,46 @@ import {
 const stats = [
   {
     label: 'Bio clicks',
-    value: '--',
+    value: '184',
     description: 'Last 7 days',
     icon: LuMousePointerClick,
     color: 'bg-primary/10 text-primary',
   },
   {
     label: 'Cashflow balance',
-    value: '--',
+    value: '$4,280',
     description: 'Current combined balance',
     icon: LuWallet,
     color: 'bg-accent text-accent-foreground',
   },
   {
     label: 'Open items',
-    value: '--',
+    value: '12',
     description: 'Across your lists',
+    icon: LuListTodo,
+    color: 'bg-secondary text-secondary-foreground',
+  },
+]
+
+const recentActivity = [
+  {
+    label: 'Cashflow balance updated',
+    source: 'Cashflow',
+    value: '$4,280',
+    icon: LuWallet,
+    color: 'bg-accent text-accent-foreground',
+  },
+  {
+    label: 'New link clicked',
+    source: 'Bio',
+    value: '+24 clicks',
+    icon: LuLink2,
+    color: 'bg-primary/10 text-primary',
+  },
+  {
+    label: 'Project checklist updated',
+    source: 'List',
+    value: '3 items',
     icon: LuListTodo,
     color: 'bg-secondary text-secondary-foreground',
   },
@@ -75,7 +99,7 @@ export function WorkspacePreview() {
       >
         <div
           role='img'
-          aria-label='Kytbox workspace preview showing stats, app tools, quick actions, and help'
+          aria-label='Kytbox example workspace preview showing sample stats, recent activity, app tools, quick actions, and help'
         >
           <div className='flex items-center justify-between gap-4 border-b border-border/80 px-4 py-3 text-[0.68rem] font-medium text-muted-foreground sm:px-5'>
             <div className='flex items-center gap-3'>
@@ -201,7 +225,7 @@ export function WorkspacePreview() {
                         Recent activity
                       </h3>
                       <p className='mt-1 text-[0.65rem] text-muted-foreground'>
-                        Across your workspace.
+                        A quick read across your workspace.
                       </p>
                     </div>
                     <LuActivity
@@ -209,11 +233,35 @@ export function WorkspacePreview() {
                       aria-hidden='true'
                     />
                   </div>
-                  <div className='mt-5 rounded-xl border border-dashed border-border bg-background/70 p-4 text-center'>
-                    <p className='text-xs font-semibold'>No activity yet</p>
-                    <p className='mt-1 text-[0.65rem] leading-4 text-muted-foreground'>
-                      Your Bio, Cashflow, and List activity will appear here.
-                    </p>
+                  <div className='mt-4 grid gap-2'>
+                    {recentActivity.map(
+                      ({ label, source, value, icon: Icon, color }) => (
+                        <div
+                          key={label}
+                          className='flex min-w-0 items-center gap-2 rounded-xl border border-border bg-background/70 px-2.5 py-2.5'
+                        >
+                          <span
+                            className={[
+                              'flex size-7 shrink-0 items-center justify-center rounded-lg',
+                              color,
+                            ].join(' ')}
+                          >
+                            <Icon className='size-3.5' aria-hidden='true' />
+                          </span>
+                          <div className='min-w-0 flex-1'>
+                            <p className='truncate text-[0.68rem] font-medium'>
+                              {label}
+                            </p>
+                            <p className='mt-0.5 text-[0.6rem] text-muted-foreground'>
+                              {source}
+                            </p>
+                          </div>
+                          <span className='shrink-0 font-mono text-[0.6rem] font-semibold text-foreground/70'>
+                            {value}
+                          </span>
+                        </div>
+                      ),
+                    )}
                   </div>
                 </div>
 

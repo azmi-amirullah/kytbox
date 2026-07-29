@@ -45,6 +45,24 @@ const modules = [
   },
 ]
 
+const cashflowPreviewEntries = [
+  {
+    label: 'Client payment',
+    value: '+$2,400',
+    tone: 'text-primary',
+  },
+  {
+    label: 'Workspace tools',
+    value: '-$180',
+    tone: 'text-destructive',
+  },
+  {
+    label: 'Rent & utilities',
+    value: '-$1,200',
+    tone: 'text-destructive',
+  },
+]
+
 const workflow = [
   {
     number: '01',
@@ -155,10 +173,10 @@ export default async function LandingPage() {
                       size='lg'
                       className='min-h-12 rounded-full px-7 text-base shadow-lg shadow-primary/20'
                     >
-                      <Link href={ctaHref}>
+                      <a href={ctaHref}>
                         Open your kit
                         <LuArrowRight className='size-5' aria-hidden='true' />
-                      </Link>
+                      </a>
                     </Button>
                     <Button
                       asChild
@@ -340,17 +358,41 @@ export default async function LandingPage() {
                           Current balance
                         </p>
                         <p className='mt-1 text-3xl font-semibold tracking-[-0.06em]'>
-                          --
+                          $4,280
                         </p>
                       </div>
                       <span className='rounded-full bg-secondary px-2.5 py-1 font-mono text-[0.68rem] font-semibold text-secondary-foreground'>
-                        No entries yet
+                        Illustrative data
                       </span>
                     </div>
-                    <div className='mt-7 flex h-24 items-center justify-center rounded-xl border border-dashed border-border bg-background/60'>
-                      <p className='text-center text-xs text-muted-foreground'>
-                        Add entries to see your balance here.
-                      </p>
+                    <div className='mt-4 rounded-xl border border-border bg-background/60 p-3'>
+                      <div className='flex items-center justify-between gap-3'>
+                        <p className='text-xs font-medium text-muted-foreground'>
+                          Recent entries
+                        </p>
+                        <span className='font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground/70'>
+                          Example
+                        </span>
+                      </div>
+                      <div className='mt-3 grid gap-2'>
+                        {cashflowPreviewEntries.map(
+                          ({ label, value, tone }) => (
+                            <div
+                              key={label}
+                              className='flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-card px-2.5 py-2'
+                            >
+                              <span className='truncate text-xs font-medium'>
+                                {label}
+                              </span>
+                              <span
+                                className={`shrink-0 font-mono text-xs font-semibold ${tone}`}
+                              >
+                                {value}
+                              </span>
+                            </div>
+                          ),
+                        )}
+                      </div>
                     </div>
                   </div>
                 </article>
