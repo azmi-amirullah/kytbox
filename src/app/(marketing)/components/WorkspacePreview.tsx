@@ -1,5 +1,4 @@
 import {
-  LuActivity,
   LuArrowRight,
   LuBell,
   LuLifeBuoy,
@@ -37,25 +36,22 @@ const stats = [
 
 const recentActivity = [
   {
-    label: 'Cashflow balance updated',
-    source: 'Cashflow',
-    value: '$4,280',
-    icon: LuWallet,
+    title: 'Client payment',
+    context: 'Income',
+    time: 'about 15 hours ago',
     color: 'bg-accent text-accent-foreground',
   },
   {
-    label: 'New link clicked',
-    source: 'Bio',
-    value: '+24 clicks',
-    icon: LuLink2,
-    color: 'bg-primary/10 text-primary',
+    title: 'Workspace tools',
+    context: 'Expense',
+    time: 'about 18 hours ago',
+    color: 'bg-destructive/10 text-destructive',
   },
   {
-    label: 'Project checklist updated',
-    source: 'List',
-    value: '3 items',
-    icon: LuListTodo,
-    color: 'bg-secondary text-secondary-foreground',
+    title: 'Rent & utilities',
+    context: 'Expense',
+    time: 'about 20 hours ago',
+    color: 'bg-destructive/10 text-destructive',
   },
 ]
 
@@ -219,46 +215,39 @@ export function WorkspacePreview() {
 
               <div className='mt-5 grid gap-3 sm:grid-cols-[1.15fr_0.85fr]'>
                 <div className='rounded-2xl border border-border/80 bg-card p-4 shadow-sm'>
-                  <div className='flex items-center justify-between gap-3'>
-                    <div>
-                      <h3 className='text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground'>
-                        Recent activity
-                      </h3>
-                      <p className='mt-1 text-[0.65rem] text-muted-foreground'>
-                        A quick read across your workspace.
-                      </p>
-                    </div>
-                    <LuActivity
-                      className='size-4 text-muted-foreground'
-                      aria-hidden='true'
-                    />
+                  <div>
+                    <h3 className='text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground'>
+                      Recent activity
+                    </h3>
+                    <p className='mt-1 text-[0.65rem] text-muted-foreground'>
+                      Across Bio, Cashflow, and List.
+                    </p>
                   </div>
-                  <div className='mt-4 grid gap-2'>
+                  <div className='relative ml-2 mt-5 space-y-4 border-l border-border/70 pl-4 sm:space-y-5 sm:pl-5'>
                     {recentActivity.map(
-                      ({ label, source, value, icon: Icon, color }) => (
+                      ({ title, context, time, color }, index) => (
                         <div
-                          key={label}
-                          className='flex min-w-0 items-center gap-2 rounded-xl border border-border bg-background/70 px-2.5 py-2.5'
+                          key={`${title}-${time}-${index}`}
+                          className='group relative'
                         >
-                          <span
-                            className={[
-                              'flex size-7 shrink-0 items-center justify-center rounded-lg',
-                              color,
-                            ].join(' ')}
+                          <div
+                            className={`absolute -left-6.5 top-0.5 flex size-5 items-center justify-center rounded-full border border-border bg-background ${color}`}
                           >
-                            <Icon className='size-3.5' aria-hidden='true' />
-                          </span>
-                          <div className='min-w-0 flex-1'>
-                            <p className='truncate text-[0.68rem] font-medium'>
-                              {label}
-                            </p>
-                            <p className='mt-0.5 text-[0.6rem] text-muted-foreground'>
-                              {source}
-                            </p>
+                            <LuWallet className='size-3' aria-hidden='true' />
                           </div>
-                          <span className='shrink-0 font-mono text-[0.6rem] font-semibold text-foreground/70'>
-                            {value}
-                          </span>
+                          <div className='flex min-w-0 flex-col justify-between gap-1 pl-1 sm:flex-row sm:items-baseline'>
+                            <p className='min-w-0 text-[0.68rem] leading-4'>
+                              <span className='font-medium text-foreground'>
+                                Recorded transaction &quot;{title}&quot;
+                              </span>{' '}
+                              <span className='text-[0.6rem] text-muted-foreground'>
+                                as {context}
+                              </span>
+                            </p>
+                            <span className='whitespace-nowrap text-[0.6rem] text-muted-foreground sm:pl-3'>
+                              {time}
+                            </span>
+                          </div>
                         </div>
                       ),
                     )}

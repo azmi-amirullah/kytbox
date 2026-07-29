@@ -423,7 +423,7 @@ export default async function LandingPage() {
                       },
                       {
                         title: 'Wishlist',
-                        items: ['Save an item', 'Add a want'],
+                        items: ['Add a wishlist', 'Save an item'],
                       },
                       {
                         title: 'Ideas',
