@@ -28,7 +28,7 @@
 - [x] [Day 16 — Sunday Rest](#day-16)
 - [x] [Day 17 — Cashflow: Savings Goals](#day-17)
 - [x] [Day 18 — Root Global Error Boundary + Audit Debt Verification](#day-18)
-- [ ] [Day 19 — Dark Mode Shadows + Container Queries + List Polish](#day-19)
+- [x] [Day 19 — Landing Page + Workspace Dashboard UI Redesign](#day-19)
 - [ ] [Day 20 — Bio: Analytics Share Card](#day-20)
 - [ ] [Day 21 — Security Lib + List App Unit Tests](#day-21)
 - [ ] [Day 22 — List App E2E Tests](#day-22)
@@ -45,39 +45,37 @@
 - [ ] [Day 33 — Bio: Content Embedding (YouTube + Spotify)](#day-33)
 - [ ] [Day 34 — 30-Day Retrospective + Next Sprint](#day-34)
 
-
 ---
-
 
 ## 📊 Current State Audit (Saturday, July 11, 2026)
 
 ### ✅ What's Strong
 
-| Area | Score | Details |
-|---|---|---|
-| **Bio App** | 9/10 | Nested folders, 13 themes + custom engine, link animations (pulse/bounce/glow), sticky search, pagination, drag-and-drop, social icon auto-detect, hybrid sync engine |
-| **Cashflow App** | 9/10 | Charts (bar/area/donut), budgets, projections, recurring transactions, date filtering, CSV export, granular ACL sharing, categories |
-| **List App** | 7/10 | Hub + Todo Kanban + Wishlist + Ideas. DnD within/across columns. 19 components. No empty states, no animations, no column reorder |
-| **Support** | 8/10 | Tickets, admin queue with urgency scoring, read tracking, notification bell |
-| **Security** | 10/10 | CSP with nonce, HSTS, edge auth, rate limiting (auth + actions), IDOR fixed, DTO boundary, origin validation |
-| **Testing** | 6/10 | 6 unit tests (cashflow-math, currency, mappers, support-urgency, username, validation), 4 E2E (auth, bio, folders, security) |
+| Area             | Score | Details                                                                                                                                                               |
+| ---------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bio App**      | 9/10  | Nested folders, 13 themes + custom engine, link animations (pulse/bounce/glow), sticky search, pagination, drag-and-drop, social icon auto-detect, hybrid sync engine |
+| **Cashflow App** | 9/10  | Charts (bar/area/donut), budgets, projections, recurring transactions, date filtering, CSV export, granular ACL sharing, categories                                   |
+| **List App**     | 7/10  | Hub + Todo Kanban + Wishlist + Ideas. DnD within/across columns. 19 components. No empty states, no animations, no column reorder                                     |
+| **Support**      | 8/10  | Tickets, admin queue with urgency scoring, read tracking, notification bell                                                                                           |
+| **Security**     | 10/10 | CSP with nonce, HSTS, edge auth, rate limiting (auth + actions), IDOR fixed, DTO boundary, origin validation                                                          |
+| **Testing**      | 6/10  | 6 unit tests (cashflow-math, currency, mappers, support-urgency, username, validation), 4 E2E (auth, bio, folders, security)                                          |
 
 ### ❌ What's Missing
 
-| Gap | Impact | Notes |
-|---|---|---|
-| No Command Palette | HIGH | Platform has 3 apps, 15+ routes. `cmdk` package installed but unused |
-| Dead `/app` homepage | HIGH | Static app switcher. No daily engagement driver |
-| No link scheduling | HIGH | Creators need time-limited links. Every competitor has this |
-| No section headers | MEDIUM | Bio pages are flat without visual grouping |
-| No recurring auto-gen | HIGH | Cashflow projections show upcoming but don't create entries |
-| Country analytics unused | MEDIUM | `country` + `city` columns exist in `link_events`/`profile_events` but no UI |
-| No onboarding tour | HIGH | New users get no guidance. Drop-off risk |
-| No unified notifications | MEDIUM | Only support bell exists. No budget alerts, no milestone alerts |
-| No error tracking | CRITICAL | Zero prod observability. Sentry needed |
-| No PWA | MEDIUM | No install prompt, no offline shell |
-| Stale docs | HIGH | All docs last updated March 2026 — 4 months behind |
-| 7 pending audit items | MEDIUM | From AUDIT_JUNE_2026.md (#13-20) |
+| Gap                      | Impact   | Notes                                                                        |
+| ------------------------ | -------- | ---------------------------------------------------------------------------- |
+| No Command Palette       | HIGH     | Platform has 3 apps, 15+ routes. `cmdk` package installed but unused         |
+| Dead `/app` homepage     | HIGH     | Static app switcher. No daily engagement driver                              |
+| No link scheduling       | HIGH     | Creators need time-limited links. Every competitor has this                  |
+| No section headers       | MEDIUM   | Bio pages are flat without visual grouping                                   |
+| No recurring auto-gen    | HIGH     | Cashflow projections show upcoming but don't create entries                  |
+| Country analytics unused | MEDIUM   | `country` + `city` columns exist in `link_events`/`profile_events` but no UI |
+| No onboarding tour       | HIGH     | New users get no guidance. Drop-off risk                                     |
+| No unified notifications | MEDIUM   | Only support bell exists. No budget alerts, no milestone alerts              |
+| No error tracking        | CRITICAL | Zero prod observability. Sentry needed                                       |
+| No PWA                   | MEDIUM   | No install prompt, no offline shell                                          |
+| Stale docs               | HIGH     | All docs last updated March 2026 — 4 months behind                           |
+| 7 pending audit items    | MEDIUM   | From AUDIT_JUNE_2026.md (#13-20)                                             |
 
 ---
 
@@ -86,6 +84,7 @@
 ---
 
 <a id="day-1"></a>
+
 ### Day 1 — Saturday, Jul 11 | ✨ Feature
 
 #### Command Palette (`Cmd+K` / `Ctrl+K`)
@@ -95,13 +94,16 @@
 **Database Changes**: None
 
 **Files to Create:**
+
 - `src/components/command-palette.tsx` — Main palette component
 
 **Files to Modify:**
+
 - `src/app/(platform)/layout.tsx` — Mount `<CommandPalette />` inside platform layout
 - `src/components/header.tsx` — Add trigger button (search icon + `⌘K` badge)
 
 **Component Architecture:**
+
 ```
 CommandPalette (client component)
 ├── Dialog (cmdk + Radix Dialog)
@@ -127,6 +129,7 @@ CommandPalette (client component)
 ```
 
 **Keyboard Handling:**
+
 - `Cmd+K` / `Ctrl+K` → open palette
 - `Escape` → close
 - `↑` / `↓` → navigate items
@@ -134,6 +137,7 @@ CommandPalette (client component)
 - Type to fuzzy filter
 
 **Styling:**
+
 - Backdrop blur (`backdrop-blur-sm bg-black/50`)
 - Glass-morphism dialog (`bg-background/95 backdrop-blur-xl border border-border/50`)
 - Framer Motion: slide down + fade in on open
@@ -143,6 +147,7 @@ CommandPalette (client component)
 **Dependencies**: `cmdk` (already installed), `framer-motion` (already installed)
 
 **Acceptance Criteria:**
+
 - [x] `Cmd+K` opens palette from any platform page
 - [x] Fuzzy search filters all items
 - [x] Selecting "Bio Dashboard" navigates to `/bio`
@@ -155,11 +160,13 @@ CommandPalette (client component)
 ---
 
 <a id="day-2"></a>
+
 ### 🔴 Day 2 — Sunday, Jul 12 | 🔴 REST
 
 ---
 
 <a id="day-3"></a>
+
 ### Day 3 — Monday, Jul 13 | ✨ Feature
 
 #### Activity Feed Dashboard (`/app` Upgrade)
@@ -169,15 +176,18 @@ CommandPalette (client component)
 **Database Changes**: None (reads from existing tables)
 
 **Files to Modify:**
+
 - `src/app/(platform)/app/page.tsx` — Replace static cards with activity feed
 - `src/config/apps.ts` — Ensure all apps are registered
 
 **Files to Create:**
+
 - `src/app/(platform)/app/components/ActivityFeed.tsx` — Client component
 - `src/app/(platform)/app/components/QuickStats.tsx` — Stats row
 - `src/app/(platform)/app/components/QuickActions.tsx` — Action buttons
 
 **Page Architecture:**
+
 ```
 AppHomePage (server component)
 ├── Quick Stats Row (3 cards)
@@ -197,32 +207,38 @@ AppHomePage (server component)
 ```
 
 **Server-Side Data Fetching** (all in parallel via `Promise.all`):
+
 ```typescript
-const [bioStats, cashflowBalance, activeTaskCount, recentActivity] = await Promise.all([
-  // Bio: clicks in last 7 days
-  supabase.from('link_events')
-    .select('id', { count: 'exact', head: true })
-    .in('link_id', userLinkIds)
-    .gte('created_at', sevenDaysAgo),
+const [bioStats, cashflowBalance, activeTaskCount, recentActivity] =
+  await Promise.all([
+    // Bio: clicks in last 7 days
+    supabase
+      .from('link_events')
+      .select('id', { count: 'exact', head: true })
+      .in('link_id', userLinkIds)
+      .gte('created_at', sevenDaysAgo),
 
-  // Cashflow: total balance across owned books
-  supabase.from('cashflow_summaries')
-    .select('balance')
-    .eq('user_id', user.id),
+    // Cashflow: total balance across owned books
+    supabase
+      .from('cashflow_summaries')
+      .select('balance')
+      .eq('user_id', user.id),
 
-  // List: active task count
-  supabase.from('list_items')
-    .select('id', { count: 'exact', head: true })
-    .in('list_id', userListIds)
-    .eq('is_completed', false),
+    // List: active task count
+    supabase
+      .from('list_items')
+      .select('id', { count: 'exact', head: true })
+      .in('list_id', userListIds)
+      .eq('is_completed', false),
 
-  // Recent activity: last 10 across all apps
-  // Union of recent links, entries, list_items by created_at
-  supabase.rpc('get_recent_activity', { p_user_id: user.id, p_limit: 10 }),
-]);
+    // Recent activity: last 10 across all apps
+    // Union of recent links, entries, list_items by created_at
+    supabase.rpc('get_recent_activity', { p_user_id: user.id, p_limit: 10 }),
+  ])
 ```
 
 **New RPC Function** (migration):
+
 ```sql
 CREATE OR REPLACE FUNCTION get_recent_activity(p_user_id uuid, p_limit int DEFAULT 10)
 RETURNS TABLE(
@@ -250,11 +266,13 @@ $$ LANGUAGE sql SECURITY DEFINER;
 ```
 
 **Styling:**
+
 - Quick Stats: 3 cards in a row (`grid grid-cols-1 md:grid-cols-3 gap-4`), each with icon + value + label
 - Activity Feed: timeline-style list with relative timestamps ("2 hours ago"), type-colored icons
 - Quick Actions: ghost buttons with icons, hover glow
 
 **Acceptance Criteria:**
+
 - [x] `/app` shows real stats from user's data
 - [x] Activity feed shows last 10 actions across all 3 apps
 - [x] Stats are fetched in parallel (no waterfall)
@@ -265,6 +283,7 @@ $$ LANGUAGE sql SECURITY DEFINER;
 ---
 
 <a id="day-4"></a>
+
 ### Day 4 — Tuesday, Jul 14 | ✨ Feature
 
 #### Bio: Link Scheduling (Start/End Dates)
@@ -272,6 +291,7 @@ $$ LANGUAGE sql SECURITY DEFINER;
 **Why**: Creators need time-limited links. Affiliate deal expires Friday? Link auto-hides Saturday. Event registration closes at midnight? Link disappears. Linktree, Beacons, and Stan Store all have this. Kytbox doesn't. Fix it.
 
 **Database Changes:**
+
 ```sql
 -- Migration: 20260714_add_link_scheduling.sql
 ALTER TABLE links ADD COLUMN scheduled_at timestamptz DEFAULT NULL;
@@ -283,6 +303,7 @@ CREATE INDEX idx_links_schedule ON links(scheduled_at, expires_at)
 ```
 
 **Files to Modify:**
+
 - `src/types/supabase.ts` — Regenerate types
 - `src/types/dto.ts` — Add `scheduled_at` and `expires_at` to link DTO
 - `src/lib/mappers.ts` — Map new fields in `mapLinkToDTO`
@@ -292,12 +313,14 @@ CREATE INDEX idx_links_schedule ON links(scheduled_at, expires_at)
 - `src/lib/data-cache.ts` — Ensure cache respects time-based visibility
 
 **Files to Create/Modify (UI):**
+
 - `src/app/(platform)/bio/components/AddLinkModal.tsx` — Add date pickers
 - `src/app/(platform)/bio/components/LinkItem.tsx` — Show schedule badge
 
 **Public Page Filter Logic** (in `[username]/page.tsx` or data-cache):
+
 ```typescript
-const now = new Date().toISOString();
+const now = new Date().toISOString()
 const { data: links } = await supabase
   .from('links')
   .select('*')
@@ -306,7 +329,7 @@ const { data: links } = await supabase
   .is('parent_id', null)
   .or(`scheduled_at.is.null,scheduled_at.lte.${now}`)
   .or(`expires_at.is.null,expires_at.gte.${now}`)
-  .order('sort_order');
+  .order('sort_order')
 ```
 
 **Dashboard Badge States:**
@@ -318,17 +341,24 @@ const { data: links } = await supabase
 | No schedule | (none) | — |
 
 **Validation Schema:**
+
 ```typescript
-export const linkScheduleSchema = z.object({
-  scheduled_at: z.coerce.date().nullable().catch(null),
-  expires_at: z.coerce.date().nullable().catch(null),
-}).refine(
-  (data) => !data.scheduled_at || !data.expires_at || data.expires_at > data.scheduled_at,
-  { message: 'Expiry must be after start date' }
-);
+export const linkScheduleSchema = z
+  .object({
+    scheduled_at: z.coerce.date().nullable().catch(null),
+    expires_at: z.coerce.date().nullable().catch(null),
+  })
+  .refine(
+    (data) =>
+      !data.scheduled_at ||
+      !data.expires_at ||
+      data.expires_at > data.scheduled_at,
+    { message: 'Expiry must be after start date' },
+  )
 ```
 
 **Acceptance Criteria:**
+
 - [x] User can set start date on a link → link hidden on public page until that date
 - [x] User can set end date → link auto-hides after expiry
 - [x] User can set both → link visible only within the window
@@ -342,6 +372,7 @@ export const linkScheduleSchema = z.object({
 ---
 
 <a id="day-5"></a>
+
 ### Day 5 — Wednesday, Jul 15 | ✨ Feature
 
 #### Bio: Section Headers / Visual Dividers
@@ -349,6 +380,7 @@ export const linkScheduleSchema = z.object({
 **Why**: Users can make folders but can't add **non-clickable visual labels** on their bio page. "🎵 Music", "📱 Social Media", "🔗 My Projects". Simple feature, massive visual impact. Makes any bio page look professionally organized.
 
 **Database Changes:**
+
 ```sql
 -- Migration: 20260715_add_link_headers.sql
 ALTER TABLE links ADD COLUMN is_header boolean NOT NULL DEFAULT false;
@@ -358,6 +390,7 @@ ALTER TABLE links ADD COLUMN is_header boolean NOT NULL DEFAULT false;
 ```
 
 **Files to Modify:**
+
 - `src/types/supabase.ts` — Regenerate
 - `src/types/dto.ts` — Add `is_header` to link DTO
 - `src/lib/mappers.ts` — Map `is_header`
@@ -366,24 +399,26 @@ ALTER TABLE links ADD COLUMN is_header boolean NOT NULL DEFAULT false;
 - `src/app/[username]/components/ProfileLinks.tsx` — Render headers as styled dividers
 
 **Header Display on Public Profile:**
+
 ```tsx
 // Inside ProfileLinks.tsx link rendering loop
 if (link.is_header) {
   return (
-    <div key={link.id} className="w-full py-3">
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-current opacity-20" />
-        <span className="text-sm font-semibold tracking-wide uppercase opacity-70">
+    <div key={link.id} className='w-full py-3'>
+      <div className='flex items-center gap-3'>
+        <div className='h-px flex-1 bg-current opacity-20' />
+        <span className='text-sm font-semibold tracking-wide uppercase opacity-70'>
           {link.title}
         </span>
-        <div className="h-px flex-1 bg-current opacity-20" />
+        <div className='h-px flex-1 bg-current opacity-20' />
       </div>
     </div>
-  );
+  )
 }
 ```
 
 **Dashboard Behavior:**
+
 - Headers appear in the link list alongside regular links
 - Draggable (same as links — they participate in `sort_order`)
 - No URL field, no toggle, no click tracking
@@ -392,12 +427,13 @@ if (link.is_header) {
 - "Add Header" opens a simple modal with just a title field
 
 **Server Action:**
+
 ```typescript
 export async function addHeader(title: string, parentId: string | null) {
-  const { user, supabase } = await getAuthenticatedUser();
+  const { user, supabase } = await getAuthenticatedUser()
   // Validate title
-  const parsed = z.string().trim().min(1).max(100).safeParse(title);
-  if (!parsed.success) return { error: 'Invalid header title' };
+  const parsed = z.string().trim().min(1).max(100).safeParse(title)
+  if (!parsed.success) return { error: 'Invalid header title' }
 
   // Get next sort_order
   const { data: maxOrder } = await supabase
@@ -407,9 +443,9 @@ export async function addHeader(title: string, parentId: string | null) {
     .eq('parent_id', parentId ?? null) // null = root level
     .order('sort_order', { ascending: false })
     .limit(1)
-    .single();
+    .single()
 
-  const nextOrder = (maxOrder?.sort_order ?? -1) + 1;
+  const nextOrder = (maxOrder?.sort_order ?? -1) + 1
 
   await supabase.from('links').insert({
     user_id: user.id,
@@ -420,14 +456,15 @@ export async function addHeader(title: string, parentId: string | null) {
     is_active: true,
     parent_id: parentId,
     sort_order: nextOrder,
-  });
+  })
 
-  updateTag(`profile-${username}`);
-  revalidatePath('/bio');
+  updateTag(`profile-${username}`)
+  revalidatePath('/bio')
 }
 ```
 
 **Acceptance Criteria:**
+
 - [x] "Add Header" button in dashboard creates a section divider
 - [x] Headers render as styled dividers on public profile (title + horizontal lines)
 - [x] Headers are draggable in the dashboard (reorder among links)
@@ -440,6 +477,7 @@ export async function addHeader(title: string, parentId: string | null) {
 ---
 
 <a id="day-6"></a>
+
 ### Day 6 — Thursday, Jul 16 | ✨ Feature
 
 #### Cashflow: Recurring Entry Auto-Generation
@@ -449,6 +487,7 @@ export async function addHeader(title: string, parentId: string | null) {
 **Database Changes**: None (uses existing `cashflow_entries` columns: `recurrence_interval`, `recurrence_calc`)
 
 **Files to Modify:**
+
 - `src/app/(platform)/cashflow/actions.ts` — New `generateRecurringEntries` action
 - `src/app/(platform)/cashflow/[id]/components/CashflowDetail.tsx` — Add "Generate Recurring" button/banner
 
@@ -460,9 +499,10 @@ export async function addHeader(title: string, parentId: string | null) {
 4. Return count of generated entries
 
 **Server Action:**
+
 ```typescript
 export async function generateRecurringEntries(cashflowId: string) {
-  const { user, supabase } = await getAuthenticatedUser();
+  const { user, supabase } = await getAuthenticatedUser()
 
   // Verify ownership
   const { data: cashflow } = await supabase
@@ -470,64 +510,80 @@ export async function generateRecurringEntries(cashflowId: string) {
     .select('id, user_id')
     .eq('id', cashflowId)
     .eq('user_id', user.id)
-    .single();
-  if (!cashflow) return { error: 'Not found' };
+    .single()
+  if (!cashflow) return { error: 'Not found' }
 
   // Get all recurring entries
   const { data: recurring } = await supabase
     .from('cashflow_entries')
     .select('*')
     .eq('cashflow_id', cashflowId)
-    .neq('recurrence_interval', 'none');
+    .neq('recurrence_interval', 'none')
 
-  if (!recurring?.length) return { generated: 0 };
+  if (!recurring?.length) return { generated: 0 }
 
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
 
   // Get all entries this month to check for duplicates
-  const monthStart = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
-  const monthEnd = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+  const monthStart = new Date(currentYear, currentMonth, 1)
+    .toISOString()
+    .split('T')[0]
+  const monthEnd = new Date(currentYear, currentMonth + 1, 0)
+    .toISOString()
+    .split('T')[0]
 
   const { data: existingThisMonth } = await supabase
     .from('cashflow_entries')
     .select('description, type, amount')
     .eq('cashflow_id', cashflowId)
     .gte('date', monthStart)
-    .lte('date', monthEnd);
+    .lte('date', monthEnd)
 
   const existingSet = new Set(
-    (existingThisMonth || []).map(e => `${e.description}|${e.type}|${e.amount}`)
-  );
+    (existingThisMonth || []).map(
+      (e) => `${e.description}|${e.type}|${e.amount}`,
+    ),
+  )
 
   // Generate missing entries
   const toInsert = recurring
-    .filter(entry => !existingSet.has(`${entry.description}|${entry.type}|${entry.amount}`))
-    .map(entry => ({
+    .filter(
+      (entry) =>
+        !existingSet.has(`${entry.description}|${entry.type}|${entry.amount}`),
+    )
+    .map((entry) => ({
       cashflow_id: cashflowId,
       description: entry.description,
       type: entry.type,
       amount: entry.amount,
       category: entry.category,
-      date: new Date(currentYear, currentMonth, Math.min(
-        new Date(entry.date).getDate(),
-        new Date(currentYear, currentMonth + 1, 0).getDate() // handle Feb 30 etc
-      )).toISOString().split('T')[0],
+      date: new Date(
+        currentYear,
+        currentMonth,
+        Math.min(
+          new Date(entry.date).getDate(),
+          new Date(currentYear, currentMonth + 1, 0).getDate(), // handle Feb 30 etc
+        ),
+      )
+        .toISOString()
+        .split('T')[0],
       recurrence_interval: entry.recurrence_interval,
       recurrence_calc: entry.recurrence_calc,
-    }));
+    }))
 
   if (toInsert.length > 0) {
-    await supabase.from('cashflow_entries').insert(toInsert);
+    await supabase.from('cashflow_entries').insert(toInsert)
   }
 
-  revalidatePath(`/cashflow/${cashflowId}`);
-  return { generated: toInsert.length };
+  revalidatePath(`/cashflow/${cashflowId}`)
+  return { generated: toInsert.length }
 }
 ```
 
 **UI:**
+
 - Banner at top of cashflow detail: "🔄 5 recurring entries ready for July 2026" with "Generate" button
 - Banner only shows when there ARE recurring entries missing for current month
 - After generation: success toast "Generated 5 recurring entries"
@@ -535,6 +591,7 @@ export async function generateRecurringEntries(cashflowId: string) {
 - Each generated entry has a small recurrence icon (🔄) badge in the table
 
 **Acceptance Criteria:**
+
 - [x] "Generate Recurring" button appears when recurring entries are missing for current month
 - [x] Clicking generates all missing entries for the current month
 - [x] Duplicate detection: won't re-create if matching entry already exists this month
@@ -552,6 +609,7 @@ export async function generateRecurringEntries(cashflowId: string) {
 ---
 
 <a id="day-7"></a>
+
 ### Day 7 — Friday, Jul 17 | ✨ Feature
 
 #### Bio: Country Analytics Map
@@ -559,6 +617,7 @@ export async function generateRecurringEntries(cashflowId: string) {
 **Why**: The `link_events` and `profile_events` tables already have `country` and `city` columns — the data EXISTS in the database but **zero UI surfaces it**. This is free value sitting unused.
 
 **Database Changes:**
+
 ```sql
 -- New RPC for country aggregation
 CREATE OR REPLACE FUNCTION get_analytics_by_country(
@@ -578,13 +637,16 @@ $$ LANGUAGE sql SECURITY DEFINER;
 ```
 
 **Files to Create:**
+
 - `src/app/(platform)/bio/analytics/components/CountryBreakdown.tsx` — Client component
 
 **Files to Modify:**
+
 - `src/app/(platform)/bio/analytics/page.tsx` — Add country data fetch + render
 - `src/app/(platform)/bio/analytics/actions.ts` — New `getCountryAnalytics` action
 
 **Component Design:**
+
 ```
 CountryBreakdown
 ├── Section Header: "🌍 Visitor Geography"
@@ -598,15 +660,25 @@ CountryBreakdown
 ```
 
 **Country → Flag Emoji Mapping:**
+
 ```typescript
 const COUNTRY_FLAGS: Record<string, string> = {
-  US: '🇺🇸', ID: '🇮🇩', GB: '🇬🇧', MY: '🇲🇾', SG: '🇸🇬',
-  AU: '🇦🇺', JP: '🇯🇵', DE: '🇩🇪', FR: '🇫🇷', IN: '🇮🇳',
+  US: '🇺🇸',
+  ID: '🇮🇩',
+  GB: '🇬🇧',
+  MY: '🇲🇾',
+  SG: '🇸🇬',
+  AU: '🇦🇺',
+  JP: '🇯🇵',
+  DE: '🇩🇪',
+  FR: '🇫🇷',
+  IN: '🇮🇳',
   // ... extend as needed. Fallback: 🌐
-};
+}
 ```
 
 **Acceptance Criteria:**
+
 - [x] Country breakdown table shows on analytics page
 - [x] Sorted by click count descending
 - [x] Flag emoji + country name + count + percentage + visual bar
@@ -620,6 +692,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
 ---
 
 <a id="day-8"></a>
+
 ### Day 8 — Saturday, Jul 18 | ✨ Feature
 
 #### Onboarding Tour for New Users
@@ -627,30 +700,34 @@ const COUNTRY_FLAGS: Record<string, string> = {
 **Why**: New users land on `/app` and see 4 cards. No guidance, no direction, no "what should I do first?". An onboarding tour reduces drop-off and teaches the platform in 30 seconds.
 
 **Database Changes:**
+
 ```sql
 -- Migration: 20260718_add_onboarding_flag.sql
 ALTER TABLE profiles ADD COLUMN has_completed_onboarding boolean NOT NULL DEFAULT false;
 ```
 
 **Files to Create:**
+
 - `src/components/onboarding-tour.tsx` — Tour overlay component
 
 **Files to Modify:**
+
 - `src/app/(platform)/layout.tsx` — Mount `<OnboardingTour />` conditionally
 - `src/types/supabase.ts` — Regenerate
 - `src/app/(platform)/app/page.tsx` — Pass `hasCompletedOnboarding` prop
 
 **Tour Steps (5 steps):**
 
-| Step | Target Element | Content |
-|---|---|---|
-| 1 | App cards | **"Welcome to Kytbox!"** — This is your home. Each card is a different app. |
-| 2 | Bio card | **"Start with Bio"** — Add your links and share your page with the world. |
-| 3 | Cashflow card | **"Track your money"** — Simple personal finance tracking with charts and budgets. |
-| 4 | List card | **"Organize everything"** — Todo boards, wishlists, and idea dumps. |
-| 5 | Header (Cmd+K badge) | **"Pro tip: Cmd+K"** — Press Cmd+K anytime to navigate, search, or create things instantly. |
+| Step | Target Element       | Content                                                                                     |
+| ---- | -------------------- | ------------------------------------------------------------------------------------------- |
+| 1    | App cards            | **"Welcome to Kytbox!"** — This is your home. Each card is a different app.                 |
+| 2    | Bio card             | **"Start with Bio"** — Add your links and share your page with the world.                   |
+| 3    | Cashflow card        | **"Track your money"** — Simple personal finance tracking with charts and budgets.          |
+| 4    | List card            | **"Organize everything"** — Todo boards, wishlists, and idea dumps.                         |
+| 5    | Header (Cmd+K badge) | **"Pro tip: Cmd+K"** — Press Cmd+K anytime to navigate, search, or create things instantly. |
 
 **Implementation Approach:**
+
 - Pure CSS + Framer Motion (NO heavy tour library like `react-joyride`)
 - Spotlight effect: dark overlay with a cutout around the target element
 - Tooltip positioned relative to target with arrow
@@ -659,17 +736,19 @@ ALTER TABLE profiles ADD COLUMN has_completed_onboarding boolean NOT NULL DEFAUL
 - Last step: "Get Started" instead of "Next"
 
 **Dismissal Logic:**
+
 ```typescript
 async function completeOnboarding() {
-  const supabase = createClient();
+  const supabase = createClient()
   await supabase
     .from('profiles')
     .update({ has_completed_onboarding: true })
-    .eq('id', userId);
+    .eq('id', userId)
 }
 ```
 
 **Acceptance Criteria:**
+
 - [x] Tour shows ONLY on first login (when `has_completed_onboarding = false`)
 - [x] 5 steps with spotlight overlay targeting correct elements
 - [x] "Skip" dismisses immediately and marks complete
@@ -683,11 +762,13 @@ async function completeOnboarding() {
 ---
 
 <a id="day-9"></a>
+
 ### 🔴 Day 9 — Sunday, Jul 19 | 🔴 REST
 
 ---
 
 <a id="day-10"></a>
+
 ### Day 10 — Monday, Jul 20 | ✨ Feature
 
 #### 1. Sentry Error Tracking
@@ -695,12 +776,14 @@ async function completeOnboarding() {
 **Why**: When users hit bugs in production, you currently have **zero visibility**. The `console.error` in `error.tsx` writes to the server log that nobody reads. Sentry captures exact errors, stack traces, browser info, user context, and sends real-time alerts. Non-negotiable for any product heading toward real users.
 
 **Files to Create:**
+
 - `sentry.client.config.ts` — Client-side Sentry init
 - `sentry.server.config.ts` — Server-side Sentry init
 - `sentry.edge.config.ts` — Edge runtime Sentry init
 - `next.config.ts` — Wrap with `withSentryConfig`
 
 **Files to Modify:**
+
 - `src/env.ts` — Add `SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT` env vars
 - `src/instrumentation.ts` — Import Sentry server config
 - `src/app/error.tsx` — Add `Sentry.captureException(error)`
@@ -709,9 +792,10 @@ async function completeOnboarding() {
 - `package.json` — Add `@sentry/nextjs` dependency
 
 **Sentry Config:**
+
 ```typescript
 // sentry.client.config.ts
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from '@sentry/nextjs'
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -719,10 +803,11 @@ Sentry.init({
   replaysSessionSampleRate: 0, // no replays (cost)
   replaysOnErrorSampleRate: 1.0, // always replay errors
   environment: process.env.NODE_ENV,
-});
+})
 ```
 
 **Env Validation Addition:**
+
 ```typescript
 // In env.ts
 SENTRY_DSN: z.string().url().optional(),
@@ -732,17 +817,19 @@ SENTRY_PROJECT: z.string().optional(),
 ```
 
 **Error Boundary Integration:**
+
 ```typescript
 // In every error.tsx
 useEffect(() => {
   Sentry.captureException(error, {
     tags: { path: pathname },
     extra: { digest: error.digest },
-  });
-}, [error, pathname]);
+  })
+}, [error, pathname])
 ```
 
 **Acceptance Criteria:**
+
 - [x] Sentry DSN configured via env vars
 - [x] Client errors captured with stack trace + browser info
 - [x] Server errors captured with stack trace + route info
@@ -757,9 +844,11 @@ useEffect(() => {
 **Database Changes**: None.
 
 **Files to Modify:**
+
 - `src/features/cashflow/components/CashflowDetail.tsx` — Add search input and apply case-insensitive description filtering.
 
 **Acceptance Criteria:**
+
 - [x] Search input above transaction list
 - [x] Instant case-insensitive filtering of entries
 - [x] Clean empty state when no results match
@@ -768,6 +857,7 @@ useEffect(() => {
 ---
 
 <a id="day-11"></a>
+
 ### Day 11 — Tuesday, Jul 21 | ✨ Feature
 
 #### 1. Landing Page Premium Redesign
@@ -777,6 +867,7 @@ useEffect(() => {
 **Design Direction**: **Glassmorphism + Gradient + Scroll-triggered Micro-animations**
 
 **Files to Modify:**
+
 - `src/app/(marketing)/page.tsx` — Complete redesign
 - `src/app/(marketing)/loading.tsx` — Update skeleton
 
@@ -809,12 +900,14 @@ useEffect(() => {
    - Existing footer component
 
 **Animations:**
+
 - Hero text: `framer-motion` fade cycle every 3s
 - Feature sections: `whileInView={{ opacity: 1, y: 0 }}` with `initial={{ opacity: 0, y: 40 }}`
 - Decorative blobs: CSS `@keyframes float` with different delays
 - CTA button: `hover:scale-105 transition-transform` + glow pulse
 
 **Acceptance Criteria:**
+
 - [x] Hero section is visually stunning on first load
 - [x] Scroll animations trigger smoothly (no jank)
 - [x] Responsive: mobile-first, looks great at 320px
@@ -830,9 +923,11 @@ useEffect(() => {
 **Database Changes**: None.
 
 **Files to Modify:**
+
 - `src/features/cashflow/components/CashflowDetail.tsx` — Add category and type select dropdowns.
 
 **Acceptance Criteria:**
+
 - [x] Dropdowns for type (All/Income/Expense) and category (All + unique categories).
 - [x] Filters are multi-criteria (combine with search query and date filter).
 - [x] Clear filters action.
@@ -840,6 +935,7 @@ useEffect(() => {
 ---
 
 <a id="day-12"></a>
+
 ### Day 12 — Wednesday, Jul 22 | ✨ Feature
 
 #### QR Code Generator for Bio Profiles
@@ -849,12 +945,15 @@ useEffect(() => {
 **Dependencies**: `qrcode` package (install needed — lightweight, generates SVG/PNG, zero deps)
 
 **Files to Create:**
+
 - `src/app/(platform)/bio/components/QRCodeModal.tsx` — Modal component
 
 **Files to Modify:**
+
 - `src/app/(platform)/bio/components/DashboardClient.tsx` — Add "QR Code" button to header
 
 **Component Design:**
+
 ```
 QRCodeModal
 ├── Header: "Your QR Code"
@@ -871,32 +970,28 @@ QRCodeModal
 ```
 
 **QR Generation:**
+
 ```typescript
-import QRCode from 'qrcode';
+import QRCode from 'qrcode'
 
 // Generate SVG string
-const svgString = await QRCode.toString(
-  `https://kytbox.com/${username}`,
-  {
-    type: 'svg',
-    color: { dark: fgColor, light: bgColor },
-    width: 512,
-    margin: 2,
-  }
-);
+const svgString = await QRCode.toString(`https://kytbox.com/${username}`, {
+  type: 'svg',
+  color: { dark: fgColor, light: bgColor },
+  width: 512,
+  margin: 2,
+})
 
 // Generate PNG data URL for download
-const pngDataUrl = await QRCode.toDataURL(
-  `https://kytbox.com/${username}`,
-  {
-    width: 1024,
-    color: { dark: fgColor, light: bgColor },
-    margin: 2,
-  }
-);
+const pngDataUrl = await QRCode.toDataURL(`https://kytbox.com/${username}`, {
+  width: 1024,
+  color: { dark: fgColor, light: bgColor },
+  margin: 2,
+})
 ```
 
 **Acceptance Criteria:**
+
 - [x] "QR Code" button on Bio dashboard opens modal
 - [x] QR code scans correctly to `kytbox.com/{username}`
 - [x] Custom foreground/background colors
@@ -908,6 +1003,7 @@ const pngDataUrl = await QRCode.toDataURL(
 ---
 
 <a id="day-13"></a>
+
 ### Day 13 — Thursday, Jul 23 | ✨ Feature
 
 #### Notification Center (Unified Bell)
@@ -915,6 +1011,7 @@ const pngDataUrl = await QRCode.toDataURL(
 **Why**: The current support notification bell is isolated to support tickets only. A unified notification system covers budget alerts, click milestones, and support replies — all in one place. Makes the platform feel alive and responsive.
 
 **Database Changes:**
+
 ```sql
 -- Migration: 20260723_create_notifications.sql
 CREATE TABLE notifications (
@@ -944,10 +1041,12 @@ CREATE POLICY "Users update own notifications"
 ```
 
 **Files to Create:**
+
 - `src/components/notification-center.tsx` — Bell + dropdown component
 - `src/app/(platform)/notifications/actions.ts` — Server actions
 
 **Files to Modify:**
+
 - `src/components/header.tsx` — Replace old support bell with unified notification center
 - `src/components/support-notification-bell.tsx` — Deprecate (merge into notification center)
 - `src/app/(platform)/support/actions.ts` — Create notification on admin reply
@@ -955,14 +1054,15 @@ CREATE POLICY "Users update own notifications"
 
 **Notification Triggers:**
 
-| Trigger | Type | Title | Body | Link |
-|---|---|---|---|---|
-| Admin replies to ticket | `support_reply` | "Support replied" | "Re: {ticket subject}" | `/support/{ticketId}` |
-| Budget hits 80% | `budget_warning` | "Budget Warning ⚠️" | "{category} at 80% of ${limit}" | `/cashflow/{id}` |
-| Budget exceeds 100% | `budget_exceeded` | "Budget Exceeded 🔴" | "{category} over by ${amount}" | `/cashflow/{id}` |
-| Bio hits click milestone | `click_milestone` | "Milestone! 🎉" | "Your bio page hit {N} total clicks" | `/bio/analytics` |
+| Trigger                  | Type              | Title                | Body                                 | Link                  |
+| ------------------------ | ----------------- | -------------------- | ------------------------------------ | --------------------- |
+| Admin replies to ticket  | `support_reply`   | "Support replied"    | "Re: {ticket subject}"               | `/support/{ticketId}` |
+| Budget hits 80%          | `budget_warning`  | "Budget Warning ⚠️"  | "{category} at 80% of ${limit}"      | `/cashflow/{id}`      |
+| Budget exceeds 100%      | `budget_exceeded` | "Budget Exceeded 🔴" | "{category} over by ${amount}"       | `/cashflow/{id}`      |
+| Bio hits click milestone | `click_milestone` | "Milestone! 🎉"      | "Your bio page hit {N} total clicks" | `/bio/analytics`      |
 
 **Dropdown UI:**
+
 ```
 NotificationCenter
 ├── Bell Icon + Unread Count Badge (red dot with number)
@@ -978,6 +1078,7 @@ NotificationCenter
 ```
 
 **Acceptance Criteria:**
+
 - [x] Bell in header shows unread count
 - [x] Dropdown shows last 20 notifications grouped by today/earlier
 - [x] Clicking a notification navigates to `link_url` and marks as read
@@ -995,11 +1096,13 @@ NotificationCenter
 ---
 
 <a id="day-14"></a>
+
 ### Day 14 — Friday, Jul 24 | 🚀 Performance
 
 #### Public Profile Optimization + PWA Install
 
 **Tasks (Profile CWV):**
+
 - Run Lighthouse audit on `[username]` page (mobile + desktop)
 - Add `<link rel="preconnect" href="https://{supabase-id}.supabase.co">` to root layout
 - Verify avatar uses `next/image` with proper `sizes` and `priority` attributes
@@ -1009,6 +1112,7 @@ NotificationCenter
 - Target: **LCP < 1.5s, CLS = 0, FID < 100ms**
 
 **Tasks (PWA):**
+
 - Create `public/manifest.json`:
   ```json
   {
@@ -1030,6 +1134,7 @@ NotificationCenter
 - Basic service worker: precache root HTML shell, CSS, JS bundles
 
 **Acceptance Criteria:**
+
 - [x] Lighthouse mobile score ≥ 90 for public profile
 - [x] LCP < 1.5s on 4G throttle
 - [x] PWA install prompt appears on mobile Chrome/Safari
@@ -1039,11 +1144,13 @@ NotificationCenter
 ---
 
 <a id="day-15"></a>
+
 ### Day 15 — Saturday, Jul 25 | 🚀 Performance
 
 #### SEO Metadata + Bundle Analysis
 
 **SEO Tasks:**
+
 - Add `generateMetadata` to all routes missing it:
   - `/cashflow/[id]`: title = cashflow name, description = "Cashflow tracker"
   - `/bio/analytics`: title = "Analytics | Kytbox"
@@ -1056,6 +1163,7 @@ NotificationCenter
 - Verify [sitemap.ts](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/src/app/sitemap.ts) includes all public profiles
 
 **Bundle Analysis Tasks:**
+
 - Install `@next/bundle-analyzer` (dev dependency)
 - Run: `ANALYZE=true npm run build`
 - Identify top 5 largest client chunks
@@ -1064,6 +1172,7 @@ NotificationCenter
 - Document findings + actions taken
 
 **Acceptance Criteria:**
+
 - [x] All routes have proper `<title>` and `<meta description>`
 - [x] Private routes have `noindex`
 - [x] `[username]` has full Open Graph tags
@@ -1073,22 +1182,24 @@ NotificationCenter
 ---
 
 <a id="day-16"></a>
+
 ### 🔴 Day 16 — Sunday, Jul 26 | 🔴 REST
 
 ---
 
 <a id="day-17"></a>
+
 ### Day 17 — Monday, Jul 27 | ✨ Feature
 
 #### Cashflow: Savings Goals
 
 **Why**: Users track spending but have no way to track **saving toward a goal**. "Save $5000 for vacation by December" with a progress bar = daily retention driver. People open the app to watch their progress grow.
+
 > [!NOTE]
 > This section began as the Jul 27 implementation plan. The shipped design is now documented in [cashflow.md](./cashflow.md). The original SQL sketch below is retained for planning history; production uses forward migrations for soft archive, the internal `goal_id` relation, database progress aggregation, hardened owner RLS, and owner-only access to archived goals.
 
-
-
 **Database Changes:**
+
 ```sql
 -- Migration: 20260726_create_cashflow_goals.sql
 CREATE TABLE cashflow_goals (
@@ -1119,11 +1230,13 @@ CREATE INDEX idx_cashflow_goals_cashflow ON cashflow_goals(cashflow_id);
 ```
 
 **Progress Calculation**:
+
 - A goal is owned by the cashflow book where it was created.
 - A contribution is an expense entry in any editable cashflow book whose category is displayed as `Goal: {goal name}` and whose internal `goal_id` points to the selected goal.
 - Goal cards and the goal detail route aggregate only by `goal_id`; the source cashflow name is shown in the goal UI and the internal ID is never displayed.
 
 **UI: Goal Cards (on cashflow detail pages):**
+
 ```
 ┌─────────────────────────────────────────┐
 │ 🎯 Save for Vacation                    │
@@ -1134,12 +1247,14 @@ CREATE INDEX idx_cashflow_goals_cashflow ON cashflow_goals(cashflow_id);
 ```
 
 **Color States:**
+
 - Green progress bar: on track (will hit target before deadline at current pace)
 - Amber: behind pace
 - Red: significantly behind or past deadline
 - Confetti animation at 100%! 🎉
 
 **Acceptance Criteria:**
+
 - [x] Goals are visible on the relevant cashflow detail page
 - [x] Archived goals are hidden from active views while preserving their entries
 - [x] Archived goal rows remain owner-only under RLS
@@ -1156,6 +1271,7 @@ CREATE INDEX idx_cashflow_goals_cashflow ON cashflow_goals(cashflow_id);
 ---
 
 <a id="day-18"></a>
+
 ### Day 18 — Tuesday, Jul 28 | 🐛 Bugfix ✅ Complete
 
 #### Root Global Error Boundary + Audit Debt Verification
@@ -1203,44 +1319,47 @@ The original audit batch was already largely resolved by existing architecture a
 -- [ ] `npm run lint` passes
 -->
 
-
 ---
 
 <a id="day-19"></a>
-### Day 19 — Wednesday, Jul 29 | 🔧 Improvement
 
-#### Dark Mode Shadows + Container Queries + List Polish
+### Day 19 — Wednesday, Jul 29 | ✨ Feature ✅ Complete
 
-**Dark Mode Shadows (#17):**
-- Update `.dark` in `globals.css` — shadows should use lighter blur on dark backgrounds:
-  ```css
-  .dark {
-    --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.4), 0px 1px 2px -1px hsl(0 0% 0% / 0.4);
-    --shadow-md: 0px 2px 6px 0px hsl(0 0% 0% / 0.5), 0px 2px 4px -1px hsl(0 0% 0% / 0.4);
-    /* ... etc with higher opacity for dark mode */
-  }
-  ```
+#### Landing Page + Workspace Dashboard UI Redesign
 
-**Container Queries:**
-- Audit: `ListCard.tsx`, `StatsCard.tsx`, cashflow summary cards
-- Replace `md:` media-query-based layouts with `@container` where component is used in varying-width containers
+**Landing Page (`/`):**
 
-**List App Polish:**
-- Add empty states (Todo: empty board illustration + "Create your first board", Wishlist: shopping bag icon + "Start tracking wishes", Ideas: lightbulb + "Capture your first idea")
-- Framer Motion staggered entrance on grid cards
-- Kanban column horizontal DnD (using `@dnd-kit/sortable` on columns)
-- Wishlist: currency-aware formatting, progress bar for purchased ratio
+- Rebuilt the marketing page around the “Make room for better work” positioning.
+- Added a mobile-first hero, code-native workspace preview, Bio/Cashflow/List product bento, workflow section, principles, closing CTA, and refreshed footer.
+- Added anchor navigation, authenticated/anonymous CTAs, a skip link, sequential headings, and reduced-motion support.
+- Updated site metadata and product copy to match the unified workspace story.
+
+**Workspace Dashboard (`/app`):**
+
+- Reworked the page as an authenticated workspace launchpad with a personalized welcome and clear Bio, Cashflow, and List destinations.
+- Kept stats and activity server-rendered: Bio clicks from the last seven days, combined Cashflow balance, open List items, and a recent-activity timeline.
+- Added honest empty activity state, explicit quick actions, a Support help card, and a separate non-interactive Track “Coming soon” state.
+- Preserved the existing header utilities, onboarding IDs, and responsive top-header navigation.
+
+**Shared UI and design system:**
+
+- Added `design-system/kytbox/MASTER.md` plus page-specific guidance for the home and workspace surfaces.
+- Refined semantic theme tokens, global marketing-grid and bento container utilities, 320px minimum layout support, touch targets, focus states, and reduced-motion behavior.
+- Refreshed the shared header, footer, brand logo, app descriptions, and workspace preview components.
 
 **Acceptance Criteria:**
-- [ ] Dark mode shadows look natural (not identical to light)
-- [ ] Card components use `@container` where appropriate
-- [ ] All 3 List sub-apps have proper empty states
-- [ ] Kanban columns are horizontally reorderable
-- [ ] Wishlist shows progress bar and formatted prices
+
+- [x] Landing page presents the unified Bio, Cashflow, and List workspace with responsive sections and working CTAs
+- [x] `/app` shows data-backed stats, active tools, recent activity, quick actions, help, and coming-soon tools
+- [x] Marketing preview uses static placeholders and empty states; it does not expose or imply real user data
+- [x] Layouts support mobile-first rendering from 320px with container-aware bento behavior
+- [x] Keyboard focus, skip navigation, semantic landmarks, and reduced-motion behavior are covered
+- [x] Shared design-system guidance documents the new visual language and component rules
 
 ---
 
 <a id="day-20"></a>
+
 ### Day 20 — Thursday, Jul 30 | ✨ Feature
 
 #### Bio: Analytics Share Card
@@ -1250,9 +1369,11 @@ The original audit batch was already largely resolved by existing architecture a
 **Implementation**: Client-side Canvas API (no server rendering needed)
 
 **Files to Create:**
+
 - `src/app/(platform)/bio/analytics/components/ShareCardGenerator.tsx`
 
 **Canvas Layout (1080x1080 for Instagram):**
+
 ```
 ┌──────────────────────────────┐
 │        (gradient bg)          │
@@ -1272,6 +1393,7 @@ The original audit batch was already largely resolved by existing architecture a
 ```
 
 **Generation Flow:**
+
 1. User clicks "Share Stats" button on analytics page
 2. Modal opens with preview of the card
 3. Card auto-populates with current analytics data
@@ -1280,6 +1402,7 @@ The original audit batch was already largely resolved by existing architecture a
 6. "Copy to Clipboard" → uses `navigator.clipboard.write()` with Blob
 
 **Acceptance Criteria:**
+
 - [ ] "Share Stats" button on analytics page
 - [ ] Generated image is 1080x1080 (Instagram-optimized)
 - [ ] Shows: username, total clicks, top link, top country, date range
@@ -1296,28 +1419,30 @@ The original audit batch was already largely resolved by existing architecture a
 ---
 
 <a id="day-21"></a>
+
 ### Day 21 — Friday, Jul 31 | 🧪 Testing
 
 #### Security Lib + List App Unit Tests
 
 **Security Unit Tests:**
 
-| File | Tests |
-|---|---|
+| File        | Tests                                                                                                                                                          |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `origin.ts` | ✓ Allows valid URLs (https://example.com), ✗ Rejects `javascript:alert()`, ✗ Rejects `data:text/html`, ✓ Allows whitelisted origins, ✗ Rejects non-whitelisted |
-| `ip.ts` | ✓ Prioritizes `x-vercel-forwarded-for`, ✗ Falls back to `x-forwarded-for`, ✓ Handles missing headers, ✓ Returns first IP from comma-separated list |
-| `csp.ts` | ✓ Includes nonce in script-src, ✗ No `unsafe-inline` in script-src, ✓ `frame-ancestors: 'none'`, ✓ `form-action: 'self'` |
+| `ip.ts`     | ✓ Prioritizes `x-vercel-forwarded-for`, ✗ Falls back to `x-forwarded-for`, ✓ Handles missing headers, ✓ Returns first IP from comma-separated list             |
+| `csp.ts`    | ✓ Includes nonce in script-src, ✗ No `unsafe-inline` in script-src, ✓ `frame-ancestors: 'none'`, ✓ `form-action: 'self'`                                       |
 
 **List Unit Tests:**
 
-| Test | Validates |
-|---|---|
-| `mapListToDTO` | Correct field mapping, `type` parsed via Zod, `item_count` coerced to number |
-| `mapListColumnToDTO` | `is_done_column` boolean coercion, `sort_order` default |
-| `mapListItemToDTO` | `metadata` parsed via Zod record, `column_id` nullable |
-| Wishlist metadata | Price parsing, currency validation, URL validation, null handling |
+| Test                 | Validates                                                                    |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `mapListToDTO`       | Correct field mapping, `type` parsed via Zod, `item_count` coerced to number |
+| `mapListColumnToDTO` | `is_done_column` boolean coercion, `sort_order` default                      |
+| `mapListItemToDTO`   | `metadata` parsed via Zod record, `column_id` nullable                       |
+| Wishlist metadata    | Price parsing, currency validation, URL validation, null handling            |
 
 **List Server Action Audit Checklist:**
+
 - [ ] Every mutation validates input via Zod
 - [ ] Every mutation checks user ownership
 - [ ] Rate limiting active (via `getAuthenticatedUserWithRateLimit`)
@@ -1327,6 +1452,7 @@ The original audit batch was already largely resolved by existing architecture a
 ---
 
 <a id="day-22"></a>
+
 ### Day 22 — Saturday, Aug 1 | 🧪 Testing
 
 #### List App E2E Tests
@@ -1351,21 +1477,25 @@ The original audit batch was already largely resolved by existing architecture a
 ---
 
 <a id="day-23"></a>
+
 ### 🔴 Day 23 — Sunday, Aug 2 | 🔴 REST
 
 ---
 
 <a id="day-24"></a>
+
 ### Day 24 — Monday, Aug 3 | 🧪 Testing
 
 #### Support + Cashflow E2E Tests
 
 **Support E2E:**
+
 - Login as user → Create ticket (subject + message + category) → Verify appears in list
 - Login as admin → Navigate to `/support-admin` → Ticket in queue → Reply
 - Login as user → Unread badge on notification bell → Open ticket → Message visible → Badge clears
 
 **Cashflow E2E:**
+
 - Create cashflow → Add income entry ($1000) → Summary shows $1000 income
 - Add expense entry ($300, category: Food) → Summary shows $700 balance
 - Edit expense to $500 → Summary updates to $500 balance
@@ -1375,19 +1505,23 @@ The original audit batch was already largely resolved by existing architecture a
 ---
 
 <a id="day-25"></a>
+
 ### Day 25 — Tuesday, Aug 4 | 🧪 Testing
 
 #### Bio DnD + Analytics + Scheduling E2E
 
 **Drag & Drop E2E:**
+
 - Bio: Reorder 3 links via drag-and-drop → Navigate to public profile → Same order visible
 - Kanban: Move card from "Todo" → "Completed" → Card shows completed state
 
 **Analytics E2E:**
+
 - Navigate to public profile → Click a link → Verify redirect works
 - Navigate to `/bio/analytics` → Click count incremented for that link
 
 **Scheduling E2E:**
+
 - Create link with `scheduled_at` = tomorrow → Public profile: link NOT visible
 - Create link with `expires_at` = yesterday → Public profile: link NOT visible
 - Create link with no schedule → Public profile: link visible
@@ -1395,24 +1529,26 @@ The original audit batch was already largely resolved by existing architecture a
 ---
 
 <a id="day-26"></a>
+
 ### Day 26 — Wednesday, Aug 5 | 🧪 Code Review
 
 #### Accessibility Audit (WCAG 2.2)
 
 **Audit Areas:**
 
-| Area | What to Check |
-|---|---|
+| Area                    | What to Check                                                                                                                           |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | **Keyboard Navigation** | Tab through: Bio dashboard, Kanban board, Cashflow forms, Command Palette, Settings. All interactive elements reachable? Focus visible? |
-| **ARIA Roles** | Buttons have `role="button"`, modals have `role="dialog"`, tabs have `role="tablist"/"tab"`, command palette has `role="combobox"` |
-| **Color Contrast** | All text meets 4.5:1 ratio (AA) in light, dark, and custom themes. Use browser devtools contrast checker |
-| **Focus Indicators** | All focusable elements have visible `:focus-visible` ring. No `outline: none` without replacement |
-| **Screen Reader** | Navigate with VoiceOver/NVDA. All content announced correctly? Images have alt text? |
-| **Motion** | `prefers-reduced-motion` respected? Disable animations when OS setting is on |
+| **ARIA Roles**          | Buttons have `role="button"`, modals have `role="dialog"`, tabs have `role="tablist"/"tab"`, command palette has `role="combobox"`      |
+| **Color Contrast**      | All text meets 4.5:1 ratio (AA) in light, dark, and custom themes. Use browser devtools contrast checker                                |
+| **Focus Indicators**    | All focusable elements have visible `:focus-visible` ring. No `outline: none` without replacement                                       |
+| **Screen Reader**       | Navigate with VoiceOver/NVDA. All content announced correctly? Images have alt text?                                                    |
+| **Motion**              | `prefers-reduced-motion` respected? Disable animations when OS setting is on                                                            |
 
 ---
 
 <a id="day-27"></a>
+
 ### Day 27 — Thursday, Aug 6 | 🧪 Code Review
 
 #### Full Build Verification + Type Safety
@@ -1433,6 +1569,7 @@ The original audit batch was already largely resolved by existing architecture a
 ---
 
 <a id="day-28"></a>
+
 ### Day 28 — Friday, Aug 7 | 🧪 Testing
 
 #### Visual Regression Baseline (Playwright Screenshots)
@@ -1440,6 +1577,7 @@ The original audit batch was already largely resolved by existing architecture a
 Capture the "golden state" so future CSS changes don't silently break layouts.
 
 **Screenshot Targets:**
+
 - Public profile — light theme
 - Public profile — dark theme
 - Bio dashboard — links tab
@@ -1452,22 +1590,25 @@ Capture the "golden state" so future CSS changes don't silently break layouts.
 - Landing page — above fold
 
 **Configuration:**
+
 ```typescript
 // In each test
 await expect(page).toHaveScreenshot('bio-dashboard-links.png', {
   maxDiffPixels: 100, // Allow minor anti-aliasing differences
-  fullPage: false,     // Viewport only
-});
+  fullPage: false, // Viewport only
+})
 ```
 
 ---
 
 <a id="day-29"></a>
+
 ### Day 29 — Saturday, Aug 8 | 🔧 Improvement
 
 #### Documentation Overhaul
 
 **Files to Update:**
+
 - [Kytbox.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/Kytbox.md) — Add List app, Command Palette, Notifications to implementation status
 - [link-in-bio.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/link-in-bio.md) — Add: link scheduling, section headers, QR code, country analytics, share card, content embeds
 - [cashflow.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/cashflow.md) — Add: recurring auto-generation, savings goals, duplicate book
@@ -1475,17 +1616,20 @@ await expect(page).toHaveScreenshot('bio-dashboard-links.png', {
 - [LOADING_STATES.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/LOADING_STATES.md) — Add new routes to coverage matrix
 
 **Files to Create:**
+
 - `docs/AUDIT_AUG_2026.md` — Full codebase re-audit with post-sprint scores
 - Update all "Last Updated" timestamps to August 2026
 
 ---
 
 <a id="day-30"></a>
+
 ### 🔴 Day 30 — Sunday, Aug 9 | 🔴 REST
 
 ---
 
 <a id="day-31"></a>
+
 ### Day 31 — Monday, Aug 10 | ✨ Feature
 
 #### Bio: Link Quick-Stats + Click Sparklines
@@ -1493,10 +1637,12 @@ await expect(page).toHaveScreenshot('bio-dashboard-links.png', {
 **Why**: Users shouldn't need to navigate to `/bio/analytics` just to see which links perform. Show mini click stats directly on each link row in the Bio dashboard.
 
 **Implementation:**
+
 - Fetch last 14 days of click data per link (grouped by day) during page load
 - Display on each link row: click count badge + trend indicator
 
 **Visual:**
+
 ```
 ┌──────────────────────────────────────────────┐
 │ 🔗 Instagram  [↗ 23 clicks]  [toggle] [⋮]  │
@@ -1506,21 +1652,24 @@ await expect(page).toHaveScreenshot('bio-dashboard-links.png', {
 ```
 
 **Trend Indicators:**
+
 - ↗ Green: more clicks this week than last week
 - ↘ Red: fewer clicks this week than last week
 - → Gray: roughly the same (within 10% difference)
 
 **Data Fetching** (add to bio page server query):
+
 ```typescript
 const { data: clickStats } = await supabase.rpc('get_link_click_trends', {
   p_user_id: user.id,
-});
+})
 // Returns: [{ link_id, this_week: 23, last_week: 15 }, ...]
 ```
 
 ---
 
 <a id="day-32"></a>
+
 ### Day 32 — Tuesday, Aug 11 | ✨ Feature
 
 #### Cashflow: Duplicate Book
@@ -1528,28 +1677,40 @@ const { data: clickStats } = await supabase.rpc('get_link_click_trends', {
 **Why**: Users want to reuse a cashflow structure for a new month or project without rebuilding from scratch. Common pattern: "July Budget" → duplicate → "August Budget".
 
 **Server Action:**
+
 ```typescript
 export async function duplicateCashflow(cashflowId: string) {
-  const { user, supabase } = await getAuthenticatedUser();
+  const { user, supabase } = await getAuthenticatedUser()
 
   // Fetch original
   const { data: original } = await supabase
-    .from('cashflows').select('*').eq('id', cashflowId).eq('user_id', user.id).single();
-  if (!original) return { error: 'Not found' };
+    .from('cashflows')
+    .select('*')
+    .eq('id', cashflowId)
+    .eq('user_id', user.id)
+    .single()
+  if (!original) return { error: 'Not found' }
 
   // Create copy
   const { data: newCashflow } = await supabase
     .from('cashflows')
-    .insert({ user_id: user.id, title: `${original.title} (Copy)`, is_public: false })
-    .select().single();
+    .insert({
+      user_id: user.id,
+      title: `${original.title} (Copy)`,
+      is_public: false,
+    })
+    .select()
+    .single()
 
   // Copy entries (shift dates to current month)
   const { data: entries } = await supabase
-    .from('cashflow_entries').select('*').eq('cashflow_id', cashflowId);
+    .from('cashflow_entries')
+    .select('*')
+    .eq('cashflow_id', cashflowId)
 
   if (entries?.length) {
-    const now = new Date();
-    const shifted = entries.map(e => ({
+    const now = new Date()
+    const shifted = entries.map((e) => ({
       cashflow_id: newCashflow.id,
       description: e.description,
       amount: e.amount,
@@ -1558,36 +1719,54 @@ export async function duplicateCashflow(cashflowId: string) {
       recurrence_interval: e.recurrence_interval,
       recurrence_calc: e.recurrence_calc,
       date: shiftToCurrentMonth(e.date, now),
-    }));
-    await supabase.from('cashflow_entries').insert(shifted);
+    }))
+    await supabase.from('cashflow_entries').insert(shifted)
   }
 
   // Copy budgets
   const { data: budgets } = await supabase
-    .from('cashflow_budgets').select('*').eq('cashflow_id', cashflowId);
+    .from('cashflow_budgets')
+    .select('*')
+    .eq('cashflow_id', cashflowId)
   if (budgets?.length) {
-    await supabase.from('cashflow_budgets').insert(
-      budgets.map(b => ({ cashflow_id: newCashflow.id, category: b.category, amount: b.amount }))
-    );
+    await supabase
+      .from('cashflow_budgets')
+      .insert(
+        budgets.map((b) => ({
+          cashflow_id: newCashflow.id,
+          category: b.category,
+          amount: b.amount,
+        })),
+      )
   }
 
   // Copy goals
   const { data: goals } = await supabase
-    .from('cashflow_goals').select('*').eq('cashflow_id', cashflowId);
+    .from('cashflow_goals')
+    .select('*')
+    .eq('cashflow_id', cashflowId)
   if (goals?.length) {
-    await supabase.from('cashflow_goals').insert(
-      goals.map(g => ({ cashflow_id: newCashflow.id, title: g.title, target_amount: g.target_amount, deadline: g.deadline }))
-    );
+    await supabase
+      .from('cashflow_goals')
+      .insert(
+        goals.map((g) => ({
+          cashflow_id: newCashflow.id,
+          title: g.title,
+          target_amount: g.target_amount,
+          deadline: g.deadline,
+        })),
+      )
   }
 
-  revalidatePath('/cashflow');
-  return { id: newCashflow.id };
+  revalidatePath('/cashflow')
+  return { id: newCashflow.id }
 }
 ```
 
 ---
 
 <a id="day-33"></a>
+
 ### Day 33 — Wednesday, Aug 12 | ✨ Feature
 
 #### Bio: Content Embedding (YouTube + Spotify)
@@ -1595,27 +1774,42 @@ export async function duplicateCashflow(cashflowId: string) {
 **Why**: Instead of just a clickable link, users who add a YouTube/Spotify URL get an **inline player** on their public bio page. Visitors watch/listen without leaving the page. Increases time-on-page dramatically.
 
 **Detection Logic:**
+
 ```typescript
-function getEmbedInfo(url: string): { type: 'youtube' | 'spotify'; embedUrl: string } | null {
+function getEmbedInfo(
+  url: string,
+): { type: 'youtube' | 'spotify'; embedUrl: string } | null {
   // YouTube: youtube.com/watch?v=X or youtu.be/X
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
-  if (ytMatch) return { type: 'youtube', embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}` };
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
+  if (ytMatch)
+    return {
+      type: 'youtube',
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}`,
+    }
 
   // Spotify: open.spotify.com/track/X or /album/X or /playlist/X
-  const spMatch = url.match(/open\.spotify\.com\/(track|album|playlist)\/([\w]+)/);
-  if (spMatch) return { type: 'spotify', embedUrl: `https://open.spotify.com/embed/${spMatch[1]}/${spMatch[2]}` };
+  const spMatch = url.match(
+    /open\.spotify\.com\/(track|album|playlist)\/([\w]+)/,
+  )
+  if (spMatch)
+    return {
+      type: 'spotify',
+      embedUrl: `https://open.spotify.com/embed/${spMatch[1]}/${spMatch[2]}`,
+    }
 
-  return null;
+  return null
 }
 ```
 
 **CSP Update** (in `csp.ts`):
+
 ```diff
 -  frame-src 'none';
 +  frame-src https://www.youtube.com https://open.spotify.com;
 ```
 
 **Public Profile Rendering:**
+
 ```tsx
 {embed && link.display_mode === 'embed' ? (
   <div className="w-full rounded-xl overflow-hidden">
@@ -1637,6 +1831,7 @@ function getEmbedInfo(url: string): { type: 'youtube' | 'spotify'; embedUrl: str
 ---
 
 <a id="day-34"></a>
+
 ### Day 34 — Thursday, Aug 13 | 📋 Planning
 
 #### 30-Day Retrospective + Next Sprint
@@ -1652,14 +1847,14 @@ function getEmbedInfo(url: string): { type: 'youtube' | 'spotify'; embedUrl: str
 
 ## 📊 Summary
 
-| Category | Days | Highlights |
-|---|---|---|
-| ✨ **Feature** | 16 | Cmd+K, Activity Feed, Link Scheduling, Section Headers, Recurring Auto-Gen, Country Analytics, Onboarding Tour, Sentry, Landing Redesign, QR Code, Notifications, Savings Goals, Share Card, Link Stats, Cashflow Duplicate, Embeds |
-| 🚀 **Performance** | 2 | Public profile CWV + PWA, SEO + bundle analysis |
-| 🐛 **Bugfix** | 1 | Audit debt batch (7 items in 1 day) |
-| 🔧 **Improvement** | 2 | Dark shadows + List polish, Docs overhaul |
-| 🧪 **Testing** | 7 | Security libs, List E2E, Support+Cashflow E2E, Bio DnD E2E, A11y audit, Build verification, Visual regression |
-| 📋 **Planning** | 1 | Retrospective |
+| Category           | Days | Highlights                                                                                                                                                                                                                                      |
+| ------------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✨ **Feature**     | 17   | Cmd+K, Activity Feed, Link Scheduling, Section Headers, Recurring Auto-Gen, Country Analytics, Onboarding Tour, Sentry, Landing + Workspace Redesign, QR Code, Notifications, Savings Goals, Share Card, Link Stats, Cashflow Duplicate, Embeds |
+| 🚀 **Performance** | 2    | Public profile CWV + PWA, SEO + bundle analysis                                                                                                                                                                                                 |
+| 🐛 **Bugfix**      | 1    | Audit debt batch (7 items in 1 day)                                                                                                                                                                                                             |
+| 🔧 **Improvement** | 1    | Docs overhaul                                                                                                                                                                                                                                   |
+| 🧪 **Testing**     | 7    | Security libs, List E2E, Support+Cashflow E2E, Bio DnD E2E, A11y audit, Build verification, Visual regression                                                                                                                                   |
+| 📋 **Planning**    | 1    | Retrospective                                                                                                                                                                                                                                   |
 
 ---
 
@@ -1672,122 +1867,122 @@ function getEmbedInfo(url: string): { type: 'youtube' | 'spotify'; embedUrl: str
 
 ### 🔗 Bio App
 
-| Idea | Description | Impact | Effort |
-|---|---|---|---|
-| **Custom Link Thumbnails** | Auto-fetch favicons from URLs + manual upload override. Makes bio look professional | 🔥🔥 | ~3h |
-| **SEO Metadata Editor** | Custom `<title>` + `<meta description>` per profile. Critical for affiliate SEO creators | 🔥🔥🔥 | ~3h |
-| **Lead Capture Form** | Simple email collection widget on bio page. Creators value owned email lists over social followers | 🔥🔥🔥 | ~4h |
-| **Link A/B Testing** | Show 2 versions of a link (different titles/positions), track which gets more clicks. Data-driven optimization | 🔥🔥 | ~5h |
-| **Sensitive Content Warning** | Blur a link until clicked + age gate toggle. Required for certain affiliate/adult content niches | 🔥 | ~2h |
-| **Link Expiry Countdown** | Display a visible countdown timer on expiring links ("Expires in 2h 30m"). Creates urgency on public page | 🔥🔥 | ~2h |
-| **Custom Domain** | Map `links.yourdomain.com` to their Kytbox bio. Major Pro feature for serious creators | 🔥🔥🔥 | ~6h |
-| **Testimonials Widget** | Display customer reviews/testimonials on bio page. Social proof for freelancers selling services | 🔥🔥 | ~3h |
-| **Pin Important Links** | Sticky "pinned" links at top that don't move during folder navigation or search | 🔥 | ~2h |
-| **Bio Page Password Protection** | Password-protect entire bio page or specific folders. For exclusive content | 🔥 | ~3h |
-| **Custom CSS Editor** | Power users write their own CSS for full customization beyond themes. Pro-only | 🔥 | ~3h |
-| **Bio Music Player** | Persistent audio player widget (not embed). Auto-play a track when visitors land on the page | 🔥 | ~4h |
-| **Link Click Heatmap** | Visual heatmap showing which links get clicked most by position on the page | 🔥🔥 | ~4h |
-| **Contact Form Widget** | Embeddable contact form on bio page. Messages go to support inbox or email | 🔥🔥 | ~3h |
-| **Bio Page Views Counter** | Display "X,XXX profile views" publicly on the bio page. Social proof | 🔥 | ~1h |
-| **Animated Link Previews** | Hover/tap shows a mini preview of the destination URL (like Twitter card preview) | 🔥 | ~4h |
-| **Multi-page Bio** | Multiple bio pages per user (personal, business, portfolio). Switch via subdomain or path | 🔥🔥 | ~6h |
+| Idea                             | Description                                                                                                    | Impact | Effort |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------ | ------ |
+| **Custom Link Thumbnails**       | Auto-fetch favicons from URLs + manual upload override. Makes bio look professional                            | 🔥🔥   | ~3h    |
+| **SEO Metadata Editor**          | Custom `<title>` + `<meta description>` per profile. Critical for affiliate SEO creators                       | 🔥🔥🔥 | ~3h    |
+| **Lead Capture Form**            | Simple email collection widget on bio page. Creators value owned email lists over social followers             | 🔥🔥🔥 | ~4h    |
+| **Link A/B Testing**             | Show 2 versions of a link (different titles/positions), track which gets more clicks. Data-driven optimization | 🔥🔥   | ~5h    |
+| **Sensitive Content Warning**    | Blur a link until clicked + age gate toggle. Required for certain affiliate/adult content niches               | 🔥     | ~2h    |
+| **Link Expiry Countdown**        | Display a visible countdown timer on expiring links ("Expires in 2h 30m"). Creates urgency on public page      | 🔥🔥   | ~2h    |
+| **Custom Domain**                | Map `links.yourdomain.com` to their Kytbox bio. Major Pro feature for serious creators                         | 🔥🔥🔥 | ~6h    |
+| **Testimonials Widget**          | Display customer reviews/testimonials on bio page. Social proof for freelancers selling services               | 🔥🔥   | ~3h    |
+| **Pin Important Links**          | Sticky "pinned" links at top that don't move during folder navigation or search                                | 🔥     | ~2h    |
+| **Bio Page Password Protection** | Password-protect entire bio page or specific folders. For exclusive content                                    | 🔥     | ~3h    |
+| **Custom CSS Editor**            | Power users write their own CSS for full customization beyond themes. Pro-only                                 | 🔥     | ~3h    |
+| **Bio Music Player**             | Persistent audio player widget (not embed). Auto-play a track when visitors land on the page                   | 🔥     | ~4h    |
+| **Link Click Heatmap**           | Visual heatmap showing which links get clicked most by position on the page                                    | 🔥🔥   | ~4h    |
+| **Contact Form Widget**          | Embeddable contact form on bio page. Messages go to support inbox or email                                     | 🔥🔥   | ~3h    |
+| **Bio Page Views Counter**       | Display "X,XXX profile views" publicly on the bio page. Social proof                                           | 🔥     | ~1h    |
+| **Animated Link Previews**       | Hover/tap shows a mini preview of the destination URL (like Twitter card preview)                              | 🔥     | ~4h    |
+| **Multi-page Bio**               | Multiple bio pages per user (personal, business, portfolio). Switch via subdomain or path                      | 🔥🔥   | ~6h    |
 
 ---
 
 ### 💰 Cashflow App
 
-| Idea | Description | Impact | Effort |
-|---|---|---|---|
-| **Receipt/Attachment Upload** | Upload receipt photos per entry. Critical for freelancers doing tax records | 🔥🔥🔥 | ~3h |
-| **Split Transactions** | One payment → multiple categories (grocery bill = food + cleaning). Accurate budgeting | 🔥🔥 | ~3h |
-| **Bulk Edit/Delete** | Select multiple entries → change category, delete, or shift dates. Power user quality of life | 🔥🔥 | ~3h |
-| **Custom Tags/Labels** | Beyond categories. "Client A", "Project X", "Tax Deductible". Flexible cross-category filtering | 🔥🔥 | ~3h |
-| **Monthly Comparison View** | Side-by-side comparison of two months. "This month vs last month" with diff highlighting | 🔥🔥🔥 | ~4h |
-| **CSV/Bank Import** | Import transactions from bank CSV exports. Removes the biggest barrier: manual data entry | 🔥🔥🔥 | ~4h |
-| **PDF Report Export** | Generate a formatted PDF summary (income, expense, charts, budgets). For accountants/tax filing | 🔥🔥 | ~4h |
-| **Expense Splitting** | Splitwise-style shared expenses. "Alice owes Bob $20 for dinner". Track debts between people | 🔥🔥 | ~6h |
-| **Net Worth Tracker** | Track total assets + liabilities across all cashflow books. Running net worth graph over time | 🔥🔥 | ~4h |
-| **Currency Conversion** | Multi-currency cashflows with auto-conversion rates. For travelers and expats | 🔥 | ~5h |
-| **Cashflow Sharing via Public Link** | Like sharing a Google Sheet — send a link, recipient views/edits without needing an account | 🔥🔥 | ~4h |
-| **Cashflow Templates** | Pre-built templates: "Freelancer Monthly", "Household Budget", "Project Budget". Quick start | 🔥🔥 | ~2h |
-| **Financial Insights** | AI-generated insights: "Your food spending is 30% higher than last month", "You saved $200 more" | 🔥🔥🔥 | ~4h |
-| **Debt Snowball/Avalanche Tracker** | Track multiple debts with payoff strategies. Popular personal finance feature | 🔥🔥 | ~5h |
+| Idea                                 | Description                                                                                      | Impact | Effort |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ | ------ | ------ |
+| **Receipt/Attachment Upload**        | Upload receipt photos per entry. Critical for freelancers doing tax records                      | 🔥🔥🔥 | ~3h    |
+| **Split Transactions**               | One payment → multiple categories (grocery bill = food + cleaning). Accurate budgeting           | 🔥🔥   | ~3h    |
+| **Bulk Edit/Delete**                 | Select multiple entries → change category, delete, or shift dates. Power user quality of life    | 🔥🔥   | ~3h    |
+| **Custom Tags/Labels**               | Beyond categories. "Client A", "Project X", "Tax Deductible". Flexible cross-category filtering  | 🔥🔥   | ~3h    |
+| **Monthly Comparison View**          | Side-by-side comparison of two months. "This month vs last month" with diff highlighting         | 🔥🔥🔥 | ~4h    |
+| **CSV/Bank Import**                  | Import transactions from bank CSV exports. Removes the biggest barrier: manual data entry        | 🔥🔥🔥 | ~4h    |
+| **PDF Report Export**                | Generate a formatted PDF summary (income, expense, charts, budgets). For accountants/tax filing  | 🔥🔥   | ~4h    |
+| **Expense Splitting**                | Splitwise-style shared expenses. "Alice owes Bob $20 for dinner". Track debts between people     | 🔥🔥   | ~6h    |
+| **Net Worth Tracker**                | Track total assets + liabilities across all cashflow books. Running net worth graph over time    | 🔥🔥   | ~4h    |
+| **Currency Conversion**              | Multi-currency cashflows with auto-conversion rates. For travelers and expats                    | 🔥     | ~5h    |
+| **Cashflow Sharing via Public Link** | Like sharing a Google Sheet — send a link, recipient views/edits without needing an account      | 🔥🔥   | ~4h    |
+| **Cashflow Templates**               | Pre-built templates: "Freelancer Monthly", "Household Budget", "Project Budget". Quick start     | 🔥🔥   | ~2h    |
+| **Financial Insights**               | AI-generated insights: "Your food spending is 30% higher than last month", "You saved $200 more" | 🔥🔥🔥 | ~4h    |
+| **Debt Snowball/Avalanche Tracker**  | Track multiple debts with payoff strategies. Popular personal finance feature                    | 🔥🔥   | ~5h    |
 
 ---
 
 ### 📋 List App
 
-| Idea | Description | Impact | Effort |
-|---|---|---|---|
-| **Due Dates + Reminders** | Deadlines on Todo cards. "Due Friday" badge, overdue = red. Push/email reminders | 🔥🔥🔥 | ~4h |
-| **Priority Levels** | Low/Medium/High/Urgent flags on cards. Color-coded borders, sortable by priority | 🔥🔥 | ~2h |
-| **Card Attachments** | Upload images/files to cards. Screenshots, mockups, reference documents | 🔥🔥 | ~3h |
-| **Board Templates** | Pre-built templates: Sprint Board, Weekly Planner, Content Calendar, Bug Tracker, Wedding Planning | 🔥🔥🔥 | ~3h |
-| **Calendar View** | View Todo cards with due dates on a calendar grid. Monthly/weekly toggle | 🔥🔥 | ~5h |
-| **Assign to Collaborators** | When sharing is added — assign cards to specific people. "@alice handle this" | 🔥🔥 | ~4h |
-| **Wishlist Price Alerts** | Auto-scrape price from `purchase_url`. Notify when price drops below threshold | 🔥🔥🔥 | ~6h |
-| **Import from Trello/Notion** | JSON/CSV import for users migrating from competitor tools. Reduces switching cost | 🔥🔥 | ~4h |
-| **Subtasks/Checklist** | Cards have sub-items. "Deploy feature" → ☐ Write code ☐ Write tests ☐ Deploy | 🔥🔥🔥 | ~3h |
-| **Card Comments** | Comment thread on each card. Discussion when boards are shared with team | 🔥 | ~3h |
-| **Recurring Tasks** | "Every Monday: Review PRs". Auto-creates cards on schedule | 🔥🔥 | ~4h |
-| **Archiving** | Archive completed boards instead of deleting. Searchable history of past projects | 🔥 | ~2h |
-| **Wishlist Price Comparison** | Compare prices across multiple stores for the same item. Link multiple URLs per wish item | 🔥 | ~3h |
-| **List Sharing with ACL** | Share lists with read/edit permissions (like Cashflow sharing model). Collaborative todo boards | 🔥🔥🔥 | ~5h |
-| **Kanban WIP Limits** | Set maximum cards per column. "In Progress: max 3". Enforces focus | 🔥 | ~2h |
+| Idea                          | Description                                                                                        | Impact | Effort |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- | ------ | ------ |
+| **Due Dates + Reminders**     | Deadlines on Todo cards. "Due Friday" badge, overdue = red. Push/email reminders                   | 🔥🔥🔥 | ~4h    |
+| **Priority Levels**           | Low/Medium/High/Urgent flags on cards. Color-coded borders, sortable by priority                   | 🔥🔥   | ~2h    |
+| **Card Attachments**          | Upload images/files to cards. Screenshots, mockups, reference documents                            | 🔥🔥   | ~3h    |
+| **Board Templates**           | Pre-built templates: Sprint Board, Weekly Planner, Content Calendar, Bug Tracker, Wedding Planning | 🔥🔥🔥 | ~3h    |
+| **Calendar View**             | View Todo cards with due dates on a calendar grid. Monthly/weekly toggle                           | 🔥🔥   | ~5h    |
+| **Assign to Collaborators**   | When sharing is added — assign cards to specific people. "@alice handle this"                      | 🔥🔥   | ~4h    |
+| **Wishlist Price Alerts**     | Auto-scrape price from `purchase_url`. Notify when price drops below threshold                     | 🔥🔥🔥 | ~6h    |
+| **Import from Trello/Notion** | JSON/CSV import for users migrating from competitor tools. Reduces switching cost                  | 🔥🔥   | ~4h    |
+| **Subtasks/Checklist**        | Cards have sub-items. "Deploy feature" → ☐ Write code ☐ Write tests ☐ Deploy                       | 🔥🔥🔥 | ~3h    |
+| **Card Comments**             | Comment thread on each card. Discussion when boards are shared with team                           | 🔥     | ~3h    |
+| **Recurring Tasks**           | "Every Monday: Review PRs". Auto-creates cards on schedule                                         | 🔥🔥   | ~4h    |
+| **Archiving**                 | Archive completed boards instead of deleting. Searchable history of past projects                  | 🔥     | ~2h    |
+| **Wishlist Price Comparison** | Compare prices across multiple stores for the same item. Link multiple URLs per wish item          | 🔥     | ~3h    |
+| **List Sharing with ACL**     | Share lists with read/edit permissions (like Cashflow sharing model). Collaborative todo boards    | 🔥🔥🔥 | ~5h    |
+| **Kanban WIP Limits**         | Set maximum cards per column. "In Progress: max 3". Enforces focus                                 | 🔥     | ~2h    |
 
 ---
 
 ### 🏗️ Platform-Level
 
-| Idea | Description | Impact | Effort |
-|---|---|---|---|
-| **Two-Factor Auth (2FA)** | TOTP-based 2FA via authenticator app. Security feature that builds trust before enterprise | 🔥🔥🔥 | ~4h |
-| **Export All Data (GDPR)** | One-click download all user data as JSON/ZIP. Legal requirement for EU users | 🔥🔥🔥 | ~3h |
-| **Browser Extension** | Quick-add links to Bio from any webpage. Right-click → "Add to Kytbox Bio" | 🔥🔥 | ~6h |
-| **Telegram/Discord Bot** | Add cashflow entries or check bio stats from chat. `/add expense 50 food` | 🔥🔥 | ~5h |
-| **API Access + Webhooks** | Public developer API for integrations. Webhooks for "link clicked", "entry added" events | 🔥🔥 | ~6h |
-| **Multi-language UI (i18n)** | Indonesian, Malay, Japanese, etc. Unlocks non-English markets. Use `next-intl` or similar | 🔥🔥🔥 | ~8h |
-| **Mobile App (Capacitor)** | Wrap PWA as native iOS/Android app via Capacitor. App Store / Play Store presence | 🔥🔥🔥 | ~8h |
-| **Team Workspaces** | Multiple users, one workspace. Shared cashflows, shared boards, role-based access control | 🔥🔥🔥 | ~10h |
-| **Keyboard Shortcuts Guide** | `?` key opens full shortcut reference overlay. Power user feature, low effort | 🔥 | ~1h |
-| **Global Search** | Search across ALL apps — links, entries, cards, tickets. Results grouped by app type | 🔥🔥🔥 | ~4h |
-| **Changelog Page** | `/changelog` — public page showing latest updates. Builds user trust and transparency | 🔥🔥 | ~2h |
-| **Public Roadmap** | `/roadmap` — voteable public roadmap. Users suggest + vote on features. Builds community | 🔥🔥 | ~4h |
-| **Referral System** | "Invite friends, get perks." Viral growth loop. Track referral codes + reward system | 🔥🔥🔥 | ~5h |
-| **Dark/Light per App** | Dashboard in dark mode, bio page in custom theme. Independent preferences per context | 🔥 | ~2h |
-| **Session Management** | View active sessions, revoke sessions remotely. Security + trust feature | 🔥🔥 | ~3h |
-| **Account Deletion** | Self-service account deletion with grace period. Required for app store compliance | 🔥🔥🔥 | ~2h |
-| **Email Notifications** | Opt-in email digests: weekly analytics summary, budget alerts, new support replies | 🔥🔥 | ~4h |
-| **OAuth: Apple + GitHub** | Additional OAuth providers beyond Google. Apple required for iOS app store | 🔥🔥 | ~3h |
+| Idea                         | Description                                                                                | Impact | Effort |
+| ---------------------------- | ------------------------------------------------------------------------------------------ | ------ | ------ |
+| **Two-Factor Auth (2FA)**    | TOTP-based 2FA via authenticator app. Security feature that builds trust before enterprise | 🔥🔥🔥 | ~4h    |
+| **Export All Data (GDPR)**   | One-click download all user data as JSON/ZIP. Legal requirement for EU users               | 🔥🔥🔥 | ~3h    |
+| **Browser Extension**        | Quick-add links to Bio from any webpage. Right-click → "Add to Kytbox Bio"                 | 🔥🔥   | ~6h    |
+| **Telegram/Discord Bot**     | Add cashflow entries or check bio stats from chat. `/add expense 50 food`                  | 🔥🔥   | ~5h    |
+| **API Access + Webhooks**    | Public developer API for integrations. Webhooks for "link clicked", "entry added" events   | 🔥🔥   | ~6h    |
+| **Multi-language UI (i18n)** | Indonesian, Malay, Japanese, etc. Unlocks non-English markets. Use `next-intl` or similar  | 🔥🔥🔥 | ~8h    |
+| **Mobile App (Capacitor)**   | Wrap PWA as native iOS/Android app via Capacitor. App Store / Play Store presence          | 🔥🔥🔥 | ~8h    |
+| **Team Workspaces**          | Multiple users, one workspace. Shared cashflows, shared boards, role-based access control  | 🔥🔥🔥 | ~10h   |
+| **Keyboard Shortcuts Guide** | `?` key opens full shortcut reference overlay. Power user feature, low effort              | 🔥     | ~1h    |
+| **Global Search**            | Search across ALL apps — links, entries, cards, tickets. Results grouped by app type       | 🔥🔥🔥 | ~4h    |
+| **Changelog Page**           | `/changelog` — public page showing latest updates. Builds user trust and transparency      | 🔥🔥   | ~2h    |
+| **Public Roadmap**           | `/roadmap` — voteable public roadmap. Users suggest + vote on features. Builds community   | 🔥🔥   | ~4h    |
+| **Referral System**          | "Invite friends, get perks." Viral growth loop. Track referral codes + reward system       | 🔥🔥🔥 | ~5h    |
+| **Dark/Light per App**       | Dashboard in dark mode, bio page in custom theme. Independent preferences per context      | 🔥     | ~2h    |
+| **Session Management**       | View active sessions, revoke sessions remotely. Security + trust feature                   | 🔥🔥   | ~3h    |
+| **Account Deletion**         | Self-service account deletion with grace period. Required for app store compliance         | 🔥🔥🔥 | ~2h    |
+| **Email Notifications**      | Opt-in email digests: weekly analytics summary, budget alerts, new support replies         | 🔥🔥   | ~4h    |
+| **OAuth: Apple + GitHub**    | Additional OAuth providers beyond Google. Apple required for iOS app store                 | 🔥🔥   | ~3h    |
 
 ---
 
 ### 💵 Monetization (When Ready)
 
-| Idea | Description | Impact | Effort |
-|---|---|---|---|
-| **`canAccess()` Feature Gate** | Utility function to check user tier before showing Pro features | 🔥🔥🔥 | ~1h |
-| **Lemon Squeezy Integration** | Payment processing via MoR. Subscriptions table, webhook handler, pg_cron cleanup | 🔥🔥🔥 | ~8h |
-| **Upgrade UI + Paywalls** | "Upgrade to Pro" buttons, feature comparison modal, smooth checkout redirect | 🔥🔥🔥 | ~4h |
-| **Usage Analytics Dashboard** | Admin page showing MRR, churn rate, conversion rate, active users, revenue by plan | 🔥🔥 | ~4h |
-| **Trial Period** | 14-day free trial of Pro features. Auto-downgrade after expiry. Email reminder at day 12 | 🔥🔥 | ~3h |
-| **Pricing Page** | `/pricing` — public pricing comparison page. Free vs Pro feature matrix | 🔥🔥🔥 | ~3h |
+| Idea                           | Description                                                                              | Impact | Effort |
+| ------------------------------ | ---------------------------------------------------------------------------------------- | ------ | ------ |
+| **`canAccess()` Feature Gate** | Utility function to check user tier before showing Pro features                          | 🔥🔥🔥 | ~1h    |
+| **Lemon Squeezy Integration**  | Payment processing via MoR. Subscriptions table, webhook handler, pg_cron cleanup        | 🔥🔥🔥 | ~8h    |
+| **Upgrade UI + Paywalls**      | "Upgrade to Pro" buttons, feature comparison modal, smooth checkout redirect             | 🔥🔥🔥 | ~4h    |
+| **Usage Analytics Dashboard**  | Admin page showing MRR, churn rate, conversion rate, active users, revenue by plan       | 🔥🔥   | ~4h    |
+| **Trial Period**               | 14-day free trial of Pro features. Auto-downgrade after expiry. Email reminder at day 12 | 🔥🔥   | ~3h    |
+| **Pricing Page**               | `/pricing` — public pricing comparison page. Free vs Pro feature matrix                  | 🔥🔥🔥 | ~3h    |
 
 ---
 
 ### 📊 Infrastructure (When Scale Demands)
 
-| Idea | Description | Impact | Effort |
-|---|---|---|---|
-| **Load/Stress Testing** | k6 or Artillery — simulate 1000 concurrent users on public profiles | 🔥🔥 | ~3h |
-| **Domain-Driven Feature Folders Refactor** | Move to vertical slice feature folders for better code organization at scale | 🔥🔥 | ~10h+ |
-| **Visual Regression CI** | Auto-compare Playwright screenshots on every PR. Catch CSS regressions automatically | 🔥🔥 | ~3h |
-| **Staging Environment** | Separate Supabase project + Vercel preview branch for pre-prod testing | 🔥🔥🔥 | ~4h |
-| **Database Read Replicas** | When query load justifies it. Read from replica, write to primary. Supabase supports this | 🔥 | ~4h |
-| **Edge Functions** | Move heavy/frequent queries to Supabase Edge Functions for lower global latency | 🔥 | ~4h |
-| **Rate Limit Dashboard** | Admin view of rate limit hits. See who's being throttled and why | 🔥 | ~2h |
-| **Automated DB Backups** | Scheduled Supabase backups with point-in-time recovery testing | 🔥🔥🔥 | ~2h |
+| Idea                                       | Description                                                                               | Impact | Effort |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------- | ------ | ------ |
+| **Load/Stress Testing**                    | k6 or Artillery — simulate 1000 concurrent users on public profiles                       | 🔥🔥   | ~3h    |
+| **Domain-Driven Feature Folders Refactor** | Move to vertical slice feature folders for better code organization at scale              | 🔥🔥   | ~10h+  |
+| **Visual Regression CI**                   | Auto-compare Playwright screenshots on every PR. Catch CSS regressions automatically      | 🔥🔥   | ~3h    |
+| **Staging Environment**                    | Separate Supabase project + Vercel preview branch for pre-prod testing                    | 🔥🔥🔥 | ~4h    |
+| **Database Read Replicas**                 | When query load justifies it. Read from replica, write to primary. Supabase supports this | 🔥     | ~4h    |
+| **Edge Functions**                         | Move heavy/frequent queries to Supabase Edge Functions for lower global latency           | 🔥     | ~4h    |
+| **Rate Limit Dashboard**                   | Admin view of rate limit hits. See who's being throttled and why                          | 🔥     | ~2h    |
+| **Automated DB Backups**                   | Scheduled Supabase backups with point-in-time recovery testing                            | 🔥🔥🔥 | ~2h    |
 
 ---
 
-_Last Updated: July 28, 2026_
+_Last Updated: July 29, 2026_
