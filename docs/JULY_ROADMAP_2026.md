@@ -29,7 +29,7 @@
 - [x] [Day 17 — Cashflow: Savings Goals](#day-17)
 - [x] [Day 18 — Root Global Error Boundary + Audit Debt Verification](#day-18)
 - [x] [Day 19 — Landing Page + Workspace Dashboard UI Redesign](#day-19)
-- [ ] [Day 20 — Bio: Analytics Share Card](#day-20)
+- [x] [Day 20 — Bio: Analytics Share Card](#day-20)
 - [ ] [Day 21 — Security Lib + List App Unit Tests](#day-21)
 - [ ] [Day 22 — List App E2E Tests](#day-22)
 - [ ] [Day 23 — Sunday Rest](#day-23)
@@ -1399,18 +1399,16 @@ The original audit batch was already largely resolved by existing architecture a
 3. Card auto-populates with current analytics data
 4. User can choose color scheme (matches their bio theme)
 5. "Download PNG" → triggers Canvas → PNG download
-6. "Copy to Clipboard" → uses `navigator.clipboard.write()` with Blob
 
 **Acceptance Criteria:**
 
-- [ ] "Share Stats" button on analytics page
-- [ ] Generated image is 1080x1080 (Instagram-optimized)
-- [ ] Shows: username, total clicks, top link, top country, date range
-- [ ] "Powered by Kytbox" watermark at bottom
-- [ ] Download as PNG
-- [ ] Copy to clipboard
-- [ ] Theme-aware colors
-- [ ] Preview in modal before download
+- [x] "Share Stats" button on analytics page
+- [x] Generated image is 1080x1080 (Instagram-optimized)
+- [x] Shows: username, total clicks, top link, top country, date range
+- [x] "Powered by Kytbox" watermark at bottom
+- [x] Download as PNG
+- [x] Theme-aware colors
+- [x] Preview in modal before download
 
 ---
 

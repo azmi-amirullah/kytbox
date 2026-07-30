@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition, useRef } from 'react';
+import type { ComponentType } from 'react';
 import Link from 'next/link';
 import {
   LuMousePointer2,
@@ -26,18 +27,36 @@ import {
   getDateRangeLabel,
 } from '@/components/analytics/DateRangePicker';
 import type { DateRange, AnalyticsData } from '@/types/analytics';
+import type { CustomThemeData } from '@/lib/theme';
 import { getAnalyticsData } from '../actions';
 import StatsCard from './StatsCard';
 import CountryBreakdown from './CountryBreakdown';
 
+export interface AnalyticsShareCardProps {
+  data: AnalyticsData;
+  username: string;
+  themeName?: string | null;
+  customTheme?: CustomThemeData | null;
+  dateRange: DateRange;
+  isDisabled?: boolean;
+}
+
 interface AnalyticsClientProps {
   initialData: AnalyticsData;
   isLoading?: boolean;
+  username?: string;
+  themeName?: string | null;
+  customTheme?: CustomThemeData | null;
+  shareCardGenerator?: ComponentType<AnalyticsShareCardProps>;
 }
 
 export default function AnalyticsClient({
   initialData,
   isLoading,
+  username,
+  themeName,
+  customTheme,
+  shareCardGenerator,
 }: AnalyticsClientProps) {
   const [range, setRange] = useState<DateRange>('24h');
   const [selectedLink, setSelectedLink] = useState<string>('all');
@@ -83,6 +102,7 @@ export default function AnalyticsClient({
   const topReferer = data.topReferer || 'Direct';
   const userLinks = data.userLinks;
   const countries = data.countries || [];
+  const ShareCard = shareCardGenerator;
 
   return (
     <div className='space-y-4 md:space-y-6'>
@@ -124,9 +144,19 @@ export default function AnalyticsClient({
         </div>
 
         <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3'>
+          {ShareCard && username ? (
+            <ShareCard
+              data={data}
+              username={username}
+              themeName={themeName}
+              customTheme={customTheme}
+              dateRange={range}
+              isDisabled={isActuallyLoading}
+            />
+          ) : null}
           <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:ml-auto w-full sm:w-auto'>
             {/* Link Filter */}
-            <div className='w-full sm:w-[220px]'>
+            <div className='w-full sm:w-55'>
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -145,7 +175,7 @@ export default function AnalyticsClient({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className='w-[calc(100vw-32px)] sm:w-[220px]'
+                  className='w-[calc(100vw-32px)] sm:w-55'
                   align='end'
                 >
                   <DropdownMenuItem
@@ -331,7 +361,7 @@ export default function AnalyticsClient({
                             </span>
                           </div>
                         </td>
-                        <td className='p-3 md:p-4 text-muted-foreground truncate max-w-[200px] hidden md:table-cell'>
+                        <td className='p-3 md:p-4 text-muted-foreground truncate max-w-50 hidden md:table-cell'>
                           {link.url}
                         </td>
                         <td className='p-3 md:p-4 text-right font-medium'>
