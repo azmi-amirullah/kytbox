@@ -6,6 +6,8 @@
 **Priority**: Feature > Performance > Stability > Security > Code Quality
 **Philosophy**: Ship features first. Money later. Build a product people can't stop using before asking them to pay.
 
+> This is a dated planning record. Completed sections preserve the implementation plan as written; use the current feature documentation and source tree for canonical paths.
+
 ---
 
 ## 📌 Table of Contents & Progress Checklist
@@ -1610,7 +1612,7 @@ await expect(page).toHaveScreenshot('bio-dashboard-links.png', {
 - [Kytbox.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/Kytbox.md) — Add List app, Command Palette, Notifications to implementation status
 - [link-in-bio.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/link-in-bio.md) — Add: link scheduling, section headers, QR code, country analytics, share card, content embeds
 - [cashflow.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/cashflow.md) — Add: recurring auto-generation, savings goals, duplicate book
-- [TESTING_ROADMAP.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/TESTING_ROADMAP.md) — Update coverage matrix, mark completed items
+- [TESTING_ROADMAP.md](./TESTING_ROADMAP.md) — Update coverage matrix, mark completed items
 - [LOADING_STATES.md](file:///c:/Users/Azmi/Documents/Azmi/Project/ukit/docs/LOADING_STATES.md) — Add new routes to coverage matrix
 
 **Files to Create:**

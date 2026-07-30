@@ -392,15 +392,15 @@ Rule:
 
 ### 2) App Dashboards (Where Work Happens)
 
-Each app gets its own dashboard under `/app/{app}`.
+Each app gets its own dashboard under its canonical app route. `/app` remains the platform home and app switcher.
 
 Examples:
 
-- `/app/bio`
-- `/app/cashflow`
-- `/app/list`
-- `/app/track`
-- `/app/lookup` (only if this app exists)
+- `/bio`
+- `/cashflow`
+- `/list`
+- `/track` (future app)
+- `/lookup` (future app)
 
 App dashboards own:
 
@@ -445,7 +445,7 @@ Logged-in:
 - `/bio/analytics` → Bio analytics
 - `/cashflow` → Cashflow dashboard
 - `/settings` → Account settings
-- `/app/lookup` → Lookup (Search)
+- `/lookup` → Lookup (Search, when implemented)
 
 Public:
 
@@ -460,7 +460,7 @@ Public:
 - Do not mix app data across dashboards
 - Do not put app settings under `/app/settings`
 - Do not allow editing on public routes
-- Do not index `/app/*` (must be private)
+- Do not index private app routes (must be private)
 
 ## Status
 
@@ -470,7 +470,7 @@ Rule: This document defines how Kytbox works
 
 ---
 
-_Last Updated: March 11, 2026_
+_Last Updated: July 30, 2026_
 
 ## Implementation Status
 
@@ -479,16 +479,16 @@ _Last Updated: March 11, 2026_
 | Section | Feature                            | Status  |
 | ------- | ---------------------------------- | ------- |
 | §4.1    | Public route `/{username}`         | ✅ Done |
-| §4.2    | Private routes `/app/*`            | ✅ Done |
+| §4.2    | Platform shell `/app` and private app routes | ✅ Done |
 | §4.2    | Support routes `/support*`         | ✅ Done |
 | §5      | Reserved usernames                 | ✅ Done |
 | §6      | Username format (a-z, 0-9, hyphen) | ✅ Done |
 | §6      | No auto-numbering on duplicate     | ✅ Done |
 | §6      | Case-insensitive, stored lowercase | ✅ Done |
 | §11     | Platform shell at `/app`           | ✅ Done |
-| §11     | Bio dashboard at `/app/bio`        | ✅ Done |
+| §11     | Bio dashboard at `/bio`             | ✅ Done |
 | §11     | Settings at `/settings`            | ✅ Done |
-| §11     | robots.txt blocking `/app/*`       | ✅ Done |
+| §11     | robots.txt blocking private app routes | ✅ Done |
 | §8      | Custom High-Performance Themes     | ✅ Done |
 | §12.4   | High-Performance Page Caching      | ✅ Done |
 | §12.4   | `'use cache'` Implementation       | ✅ Done |
@@ -519,10 +519,9 @@ For implementation details and coverage status, see: [Loading States Documentati
 
 - [Bio Documentation](./link-in-bio.md)
 - [Cashflow Documentation](./cashflow.md)
-- [List Documentation](./list.md)
-- [Notification Documentation](./NOTIFICATIONS.md)
+- [List Documentation](./feature/list.md)
+- [Notification Documentation](./feature/NOTIFICATIONS.md)
 - [Monetization Strategy](./MONETIZATION.md)
-- [Pre-Monetization Improvements](./PRE_MONETIZATION_IMPROVEMENTS.md)
 
 ### 12.3 Complete Route Reference
 
@@ -559,9 +558,9 @@ All page routes in Kytbox with their rendering type and auth requirements:
 
 When scaling requires further performance improvements, consider these options:
 
-Implemented and active in [next.config.ts](file:///next.config.ts).
+Implemented and active in [next.config.ts](../next.config.ts).
 
-Implemented and active in [data-cache.ts](file:///src/lib/data-cache.ts) for profile and link data.
+Implemented and active in [data-cache.ts](../src/lib/data-cache.ts) for profile and link data.
 
 #### Database Optimization
 

@@ -148,33 +148,23 @@ src/
 │   │   └── loading.tsx
 │   ├── (platform)/                # Platform routes group (shared layout)
 │   │   ├── layout.tsx             # Platform shell with header
-│   │   ├── app/                   # Platform shell with app switcher
-│   │   │   └── page.tsx
-│   │   ├── bio/                   # Bio dashboard
-│   │   │   ├── page.tsx
-│   │   │   ├── actions.ts
-│   │   │   ├── components/
-│   │   │   └── analytics/
-│   │   │       ├── page.tsx
-│   │   │       ├── actions.ts
-│   │   │       └── components/
-│   │   ├── settings/              # Account settings
-│   │   │   ├── page.tsx
-│   │   │   ├── SettingsForm.tsx
-│   │   │   └── actions.ts
-│   │   └── cashflow/              # Cashflow dashboard
-│   │       ├── page.tsx
-│   │       ├── actions.ts
-│   │       └── components/
+│   │   ├── app/page.tsx           # Platform shell with app switcher
+│   │   ├── bio/page.tsx           # Bio dashboard
+│   │   ├── bio/analytics/page.tsx # Bio analytics dashboard
+│   │   ├── cashflow/page.tsx      # Cashflow dashboard
+│   │   ├── list/                  # List app routes
+│   │   ├── settings/page.tsx      # Account settings
+│   │   └── support/               # User support routes
 │   ├── (auth)/                    # Auth pages (shared auth layout)
 │   │   ├── login/page.tsx
 │   │   ├── signup/page.tsx
 │   │   ├── forgot-password/page.tsx
-│   │   ├── layout.tsx
-│   │   └── actions.ts             # Auth + username check actions
+│   │   └── layout.tsx
 │   ├── cashflow/[id]/             # Public cashflow detail (outside platform)
 │   │   ├── page.tsx
 │   │   └── loading.tsx
+│   ├── cashflow/goal/[goalId]/    # Private goal detail
+│   │   └── page.tsx
 │   ├── onboarding/page.tsx        # OAuth username completion
 │   ├── auth/callback/route.ts     # Magic link & OAuth handler
 │   ├── update-password/page.tsx
@@ -182,10 +172,17 @@ src/
 │   │   ├── page.tsx               # Public profile
 │   │   └── [linkId]/route.ts      # Click tracking redirect
 │   └── layout.tsx                 # Root layout
+├── features/
+│   ├── auth/                      # Auth actions and schemas
+│   ├── bio/                       # Bio actions, DB access, and components
+│   ├── cashflow/                  # Cashflow actions, DB access, and components
+│   ├── list/                      # List actions, schemas, and components
+│   ├── notifications/             # Notification actions and UI
+│   ├── settings/                  # Settings actions and components
+│   └── support/                   # Support actions and components
 ├── components/
 │   ├── skeletons/                 # Reusable skeleton components
-│   │   └── platform-header-skeleton.tsx
-│   └── ui/                        # shadcn/ui components
+│   └── ui/                        # Shared shadcn/ui components
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts
@@ -193,13 +190,13 @@ src/
 │   ├── username.ts                # Username validation & reserved list
 │   ├── avatar.ts
 │   └── utils.ts
-├── proxy.ts                       # Next.js 16 middleware
+├── proxy.ts                       # Next.js 16 proxy
 └── types/supabase.ts
 ```
 
 ### Server Actions
 
-#### Auth Actions (`src/app/(auth)/actions.ts`)
+#### Auth Actions (`src/features/auth/actions.ts`)
 
 | Action                   | Description                       |
 | :----------------------- | :-------------------------------- |
@@ -210,7 +207,7 @@ src/
 | `updatePassword`         | Update user password              |
 | `checkUsernameAvailable` | Check username for signup form    |
 
-#### Bio Actions (`src/app/(platform)/bio/actions.ts`)
+#### Bio Actions (`src/features/bio/actions.ts`)
 
 | Action             | Description                            |
 | :----------------- | :------------------------------------- |
@@ -222,7 +219,7 @@ src/
 | `createFolder`     | Create a new nested directory folder   |
 | `moveToFolder`     | Move a link into or out of a folder    |
 
-#### Settings Actions (`src/app/(platform)/settings/actions.ts`)
+#### Settings Actions (`src/features/settings/actions.ts`)
 
 | Action          | Description                           |
 | :-------------- | :------------------------------------ |
@@ -277,7 +274,7 @@ See `src/lib/username.ts` for full list.
 - **User ID Checks**: All CRUD operations verify `user_id` ownership
 - **Avatar Validation**: Image type and 2MB size limit
 - **Username Validation**: Kytbox-compliant format, reserved name blocking
-- **Route Protection**: `proxy.ts` protects `/app/*` routes
+- **Route Protection**: `proxy.ts` protects private platform routes, including `/app`, `/bio`, `/cashflow`, `/list`, `/settings`, and `/support`; `/cashflow/[id]` remains a mixed public/shared route.
 
 ## 7. Current Status
 
@@ -312,7 +309,7 @@ See `src/lib/username.ts` for full list.
 
 **Implementation**:
 
-- **Auto-detection**: `social-icons.tsx` utility detects platform from URL hostname
+- **Auto-detection**: `src/components/ui/social-icons.tsx` detects platforms from URL hostnames
 - **Supported Platforms**: Instagram, Twitter/X, Facebook, LinkedIn, GitHub, YouTube, TikTok, Spotify, Twitch, Discord, Telegram, WhatsApp, Snapchat, Pinterest, Medium, Reddit, Behance, Dribbble
 - **Special Protocols**: Email (`mailto:`), Phone (`tel:`), SMS (`sms:`)
 - **Fallback**: Generic globe icon for unrecognized links
@@ -321,7 +318,7 @@ See `src/lib/username.ts` for full list.
 
 ## 9. Analytics Features (Implemented)
 
-### Dashboard (`/app/bio/analytics`)
+### Dashboard (`/bio/analytics`)
 
 - **Charts**:
   - **Lifetime View**: Shows monthly buckets starting from the first recorded click (dynamic start date).
@@ -335,7 +332,7 @@ See `src/lib/username.ts` for full list.
 - **UX & Performance (Zero-Jank)**:
   - **Unified Skeletons**: Uses actual client components with `isLoading` props to ensure 100% layout match during loading.
   - **Instant Render**: Recharts animations disabled to prevent empty space flashes during data hydration.
-  - **Hydration Guards**: Charts and theme toggles use strict `mounted` states to avoid DOM measurement errors on load.
+  - **Loading State**: `AnalyticsClient` combines initial loading and transition-pending state, passing the result into shared stat cards and country breakdown components.
   - **Consistency**: Analytics stats cards use standard `rounded-2xl` and `text-sm` typography to match the main Bio dashboard.
 - **Lifetime Labels**: Dynamically shows "Month Year - Month Year" or single month if range is small.
 
@@ -397,4 +394,4 @@ See `src/lib/username.ts` for full list.
 - **Custom Domain support** — deferred.
 - **Advanced SEO metadata editor** — Pro feature, deferred.
 
-_Last Updated: July 20, 2026_
+_Last Updated: July 30, 2026_

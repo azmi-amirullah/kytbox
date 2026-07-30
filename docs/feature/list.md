@@ -5,7 +5,7 @@ The List app is the third core module in Kytbox (following Bio and Cashflow). It
 2. **Wishlist**: Price-tracking wishlists.
 3. **Ideas**: Simple, frictionless brain dumps.
 
-This app is primarily for private use but supports simple public sharing via an `is_public` toggle.
+This app is primarily for private use. List records support a simple `is_public` toggle, while dedicated public list routes remain a future surface.
 
 ---
 
@@ -51,7 +51,7 @@ The app uses Supabase Row Level Security (RLS) matching the Cashflow pattern:
 - **Public Read**: If a list's `is_public` flag is `true`, anyone can read it (guests).
 
 ### Frontend Routing
-All routes are protected by the Edge Proxy middleware (except public views in the future).
+All current routes are protected by the Next.js Proxy (except future public views).
 - `/list`: Hub
 - `/list/todo` & `/list/todo/[id]`: Kanban grids and boards
 - `/list/wishlist` & `/list/wishlist/[id]`: Wishlist grids and details
@@ -82,3 +82,5 @@ The app exclusively uses Next.js Server Actions for database mutations.
 ### Column Actions (`column-actions.ts`)
 - `addColumn` / `updateColumn` / `deleteColumn`: Kanban column CRUD.
 - `toggleDoneColumn`: Marks a column as the "done" column and batch-updates all its items to `is_completed = true`.
+
+_Last Updated: July 30, 2026_

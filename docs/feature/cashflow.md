@@ -28,8 +28,8 @@ The Cashflow app follows a clean separation of concerns between **Ownership**, *
 
 The application uses a hybrid routing model where `/cashflow/[id]` serves as both a private management view and a public shared surface.
 
-- **Private Dashboard (`/cashflow`)**: Protected at the **Middleware layer** (`proxy.ts`). Redirects guests to login via an exact-match rule.
-- **Detail View (`/cashflow/[id]`)**: Resolution logic determines the user's role (Owner, Editor, Viewer, or Unauthorized) based on Supabase Auth and the `cashflow_shares` registry. Middleware allows sub-paths through, letting the page-level logic decide access.
+- **Private Dashboard (`/cashflow`)**: Protected at the **Proxy layer** (`src/proxy.ts`). Redirects guests to login via an exact-match rule.
+- **Detail View (`/cashflow/[id]`)**: Resolution logic determines the user's role (Owner, Editor, Viewer, or Unauthorized) based on Supabase Auth and the `cashflow_shares` registry. The Proxy allows this mixed-access sub-path through, letting the page-level logic decide access.
 - **Error Boundaries**: A specialized `cashflow/error.tsx` provides "Smart Recovery"—offering the Support Page to logged-in users and Email Support to guests.
 
 ## 3. Database Schema (Supabase)
@@ -270,6 +270,7 @@ stateDiagram-v2
 - **Cross-book contributions**: When adding an entry to an editable cashflow, the Category menu includes available goals and identifies each goal's source cashflow. Selecting one stores the exact category `Goal: {goal name}` and an internal `goal_id` relation, initially setting the entry type to `expense`. Changing the type clears the goal category and relation. The ID is not displayed in the UI.
 - **Progress**: Goal cards and the goal detail route aggregate only the internal goal relation, so renaming, archiving, and recreating similarly named goals cannot reassign historical contributions. Progress totals are computed in the database under RLS.
 - **Archive behavior**: The archive action sets `is_deleted = true`; it never deletes the goal or its related cashflow entries. Archived goals are hidden from active goal views and cannot receive new contributions.
+- **Archive confirmation**: The GoalCard archive action opens the shared accessible confirmation dialog. Cancel is the safe default, and the dialog remains open while the archive request is pending so failures can be retried.
 - **Archived contributions**: Existing entries linked to an archived goal remain editable as transactions. Saving their details preserves the relation; changing their category or type explicitly detaches them.
 - **Permissions**: Users with read or edit access can view goals on a shared cashflow. Only the owner of the goal's cashflow can create, edit, or delete it. Invited editors can add contributions where they can edit entries.
 - **Detail route**: `/cashflow/goal/[goalId]` lists matching contributions with search and month filtering.
@@ -304,4 +305,4 @@ stateDiagram-v2
 
 _For loading state details, see [LOADING_STATES.md](./LOADING_STATES.md)_
 
-_Last Updated: July 28, 2026_
+_Last Updated: July 30, 2026_

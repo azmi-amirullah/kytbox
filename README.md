@@ -5,7 +5,8 @@ A personal utility platform designed for speed and simplicity.
 ## Core Apps
 
 - **Bio**: Share all your important links in one beautiful, minimalist page.
-- **List**: (Coming Soon) Manage todo lists, wishlists, and ideas.
+- **Cashflow**: Track personal and shared cashflows, budgets, projections, and savings goals.
+- **List**: Manage todo lists, wishlists, and ideas.
 - **Track**: (Coming Soon) Vehicle and service tracking.
 - **ID**: (Coming Soon) Caller and number lookup.
 
@@ -21,3 +22,4 @@ A personal utility platform designed for speed and simplicity.
 - [Kytbox Platform Specs](docs/Kytbox.md)
 - [Kytbox Bio Details](docs/link-in-bio.md)
 - [Kytbox Cashflow Details](docs/cashflow.md)
+- [Kytbox List Details](docs/feature/list.md)

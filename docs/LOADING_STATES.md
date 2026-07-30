@@ -6,7 +6,7 @@ This document tracks the technical implementation of streaming SSR and unified s
 
 As of Next.js 16, Kytbox follows a **Performance-First Strategy** to balance speed with stability.
 
-1.  **Shell Integrity**: The Root Layout [layout.tsx](file:///src/app/layout.tsx) wraps children in a `<Suspense fallback={null}>`. This keeps the static shell stable and ensures that `NextTopLoader` is the primary indicator during navigation.
+1.  **Shell Integrity**: The Root Layout [layout.tsx](../src/app/layout.tsx) wraps children in a `<Suspense fallback={null}>`. This keeps the static shell stable and ensures that `NextTopLoader` is the primary indicator during navigation.
 2.  **Segment-Level Skeletons**: To prevent "blank flashes" caused by the null root fallback, **every dynamic segment should have a `loading.tsx`**. This is a project convention to ensure that while the page streams, the user sees a stable skeleton instead of a blank space.
 3.  **Elite Coverage**: We have implemented `loading.tsx` skeletons for **all application URLs** (Platform, Admin, Account, Public) to guarantee that every transition feels branded and stable.
 4.  **Granular Streaming**: Use `<Suspense>` within components for non-critical sections (like charts) to allow the main shell to hydrate instantly.
@@ -83,24 +83,19 @@ Components using `useSearchParams` can trigger a Suspense fallback during hydrat
 
 - **Fix**: Identify the active tab/state in the server-side `page.tsx`.
 - **Action**: Pass the initial state as a **Prop** to the client component.
-- [DashboardClient.tsx](<file:///src/app/(platform)/bio/components/DashboardClient.tsx>) uses this pattern for the `activeTab`.
+- [DashboardClient.tsx](../src/features/bio/components/DashboardClient.tsx) uses this pattern for the `activeTab`.
 
-### 2. The Hydration Guard (`mounted` state)
+### 2. Shared Analytics Loading State
 
-Responsive components (like Recharts) often need to measure the DOM. If they render too early, they might show an empty space.
+Analytics combines initial loading and transition-pending state so the dashboard can keep its layout stable while data changes.
 
-- **Pattern**: Use a `mounted` state in `useEffect` to keep the skeleton visible until the client is fully hydrated and ready to measure.
-- [AnalyticsChart.tsx](file:///src/components/analytics/AnalyticsChart.tsx) implementation:
+- [AnalyticsClient.tsx](../src/features/bio/components/AnalyticsClient.tsx) implementation:
 
 ```tsx
-const [mounted, setMounted] = useState(false);
-useEffect(() => {
-  const timer = setTimeout(() => setMounted(true), 0);
-  return () => clearTimeout(timer);
-}, []);
-
-const showSkeleton = isLoading || !mounted;
+const isActuallyLoading = isLoading || isPending;
 ```
+
+The derived state is passed to shared statistic cards and the country breakdown so loading and refresh states use the same skeleton layout.
 
 ### 3. Zero-Flash Hydration (Public Pages)
 
@@ -108,13 +103,13 @@ On public-facing pages that are server-rendered with a theme (like the Bio profi
 
 - **Rule**: If the page is server-rendered and the content is static/themed, **do not** use a hydration guard for the entire layout.
 - **Action**: Render the themed HTML immediately. The client will hydrate in the background without switching back to a skeleton.
-- [ProfileView.tsx](file:///src/app/[username]/components/ProfileView.tsx) follows this pattern.
+- [ProfileView.tsx](../src/features/bio/components/ProfileView.tsx) follows this pattern.
 
 ## Reusable Components
 
 ### `StatsCard`
 
-The [StatsCard](<file:///src/app/(platform)/bio/components/StatsCard.tsx>) is the primary stat driver. It supports:
+The [StatsCard](../src/features/bio/components/StatsCard.tsx) is the primary stat driver. It supports:
 
 - `isLoading`: Shows internal skeleton for label and value.
 - `hideSecondaryIcon`: Removes large decorative icons for more compact dashboards (like Analytics).
@@ -126,3 +121,5 @@ The [StatsCard](<file:///src/app/(platform)/bio/components/StatsCard.tsx>) is th
 2.  **Prop-Driven Skeletons**: Pass `isLoading` down the tree. Avoid `if (loading) return <Skeleton />` at the top level to keep the layout shell intact.
 3.  **No Spinning Icons**: Use defined skeletons that hint at the final component structure.
 4.  **Clean Transitions**: Prioritize `NextTopLoader` and `Skeleton` for all states.
+
+_Last Updated: July 30, 2026_
