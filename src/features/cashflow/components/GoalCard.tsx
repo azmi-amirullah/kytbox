@@ -6,6 +6,16 @@ import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   FiTarget,
   FiPlus,
   FiEdit2,
@@ -44,6 +54,8 @@ export default function GoalCard({
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<CashflowGoalDTO | null>(null)
+  const [archiveDialogGoal, setArchiveDialogGoal] =
+    useState<CashflowGoalDTO | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   if (!cashflowId) return null
@@ -58,20 +70,35 @@ export default function GoalCard({
     setModalOpen(true)
   }
 
-  async function handleDelete(goal: CashflowGoalDTO) {
-    if (!confirm('Archive this savings goal? Contributions and history will be kept.')) return
+  function requestArchive(goal: CashflowGoalDTO) {
+    setArchiveDialogGoal(goal)
+  }
+
+  async function handleArchive(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    if (!archiveDialogGoal || deletingId) return
+
+    const goal = archiveDialogGoal
     setDeletingId(goal.id)
 
-    const result = await deleteGoal(goal.id, goal.cashflow_id)
-    setDeletingId(null)
+    try {
+      const result = await deleteGoal(goal.id, goal.cashflow_id)
 
-    if (result?.error) {
-      toast.error(result.error)
-    } else {
+      if (result?.error) {
+        toast.error(result.error)
+        return
+      }
+
+      setArchiveDialogGoal(null)
       toast.success('Savings goal archived')
       startTransition(() => {
         router.refresh()
       })
+    } catch (error) {
+      console.error('Failed to archive savings goal:', error)
+      toast.error('Failed to archive savings goal')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -253,7 +280,7 @@ export default function GoalCard({
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleDelete(goal)
+                            requestArchive(goal)
                           }}
                           disabled={deletingId === goal.id}
                           className='p-1 text-muted-foreground hover:text-destructive transition-colors rounded cursor-pointer'
@@ -339,6 +366,35 @@ export default function GoalCard({
         currency={currency}
         cashflows={cashflows}
       />
+
+      <AlertDialog
+        open={archiveDialogGoal !== null}
+        onOpenChange={(open) => {
+          if (!open && !deletingId) setArchiveDialogGoal(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive savings goal?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Archive &quot;{archiveDialogGoal?.title}&quot;? Contributions and
+              history will be kept.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingId !== null}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleArchive}
+              disabled={deletingId !== null}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            >
+              {deletingId !== null ? 'Archiving...' : 'Archive goal'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
