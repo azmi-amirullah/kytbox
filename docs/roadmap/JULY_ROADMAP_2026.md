@@ -32,7 +32,7 @@
 - [x] [Day 18 — Root Global Error Boundary + Audit Debt Verification](#day-18)
 - [x] [Day 19 — Landing Page + Workspace Dashboard UI Redesign](#day-19)
 - [x] [Day 20 — Bio: Analytics Share Card](#day-20)
-- [ ] [Day 21 — Security Lib + List App Unit Tests](#day-21)
+- [x] [Day 21 — List Action Hardening + Security Regression Tests](#day-21)
 - [ ] [Day 22 — List App E2E Tests](#day-22)
 - [ ] [Day 23 — Sunday Rest](#day-23)
 - [ ] [Day 24 — Support + Cashflow E2E Tests](#day-24)
@@ -1422,32 +1422,35 @@ The original audit batch was already largely resolved by existing architecture a
 
 ### Day 21 — Friday, Jul 31 | 🧪 Testing
 
-#### Security Lib + List App Unit Tests
+#### List Action Hardening + Security Regression Tests
 
-**Security Unit Tests:**
+**Goal**: Verify mutation boundaries and data integrity before starting List E2E coverage. Existing DTO and schema tests remain regression coverage; this day does not duplicate them.
 
-| File        | Tests                                                                                                                                                          |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `origin.ts` | ✓ Allows valid URLs (https://example.com), ✗ Rejects `javascript:alert()`, ✗ Rejects `data:text/html`, ✓ Allows whitelisted origins, ✗ Rejects non-whitelisted |
-| `ip.ts`     | ✓ Prioritizes `x-vercel-forwarded-for`, ✗ Falls back to `x-forwarded-for`, ✓ Handles missing headers, ✓ Returns first IP from comma-separated list             |
-| `csp.ts`    | ✓ Includes nonce in script-src, ✗ No `unsafe-inline` in script-src, ✓ `frame-ancestors: 'none'`, ✓ `form-action: 'self'`                                       |
+**Security-library regression coverage:**
 
-**List Unit Tests:**
+- [x] Origin validation covers allowed hosts, development localhost behavior, malformed origins, and unsafe protocols.
+- [x] IP extraction covers trusted-header precedence, comma-separated values, whitespace, and missing headers.
+- [x] CSP assertions inspect individual directives: nonce-backed `script-src`, no `unsafe-inline` in `script-src`, `frame-ancestors: 'none'`, and `form-action: 'self'`.
 
-| Test                 | Validates                                                                    |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `mapListToDTO`       | Correct field mapping, `type` parsed via Zod, `item_count` coerced to number |
-| `mapListColumnToDTO` | `is_done_column` boolean coercion, `sort_order` default                      |
-| `mapListItemToDTO`   | `metadata` parsed via Zod record, `column_id` nullable                       |
-| Wishlist metadata    | Price parsing, currency validation, URL validation, null handling            |
+**List server-action hardening:**
 
-**List Server Action Audit Checklist:**
+- [x] Every mutating action validates IDs and payloads with the feature's Zod schemas.
+- [x] Every mutating action uses `getAuthenticatedUserWithRateLimit`; Supabase RLS remains defense in depth.
+- [x] List, item, and column mutations verify ownership before changing data.
+- [x] Item and column reorder operations reject IDs belonging to another list.
+- [x] `deleteColumn` refuses to remove the final column.
+- [x] Moving an item validates that the destination column belongs to the item's list.
 
-- [ ] Every mutation validates input via Zod
-- [ ] Every mutation checks user ownership
-- [ ] Rate limiting active (via `getAuthenticatedUserWithRateLimit`)
-- [ ] `deleteColumn` verifies at least 1 column remains
-- [ ] `moveItem` syncs `is_completed` with destination column's `is_done_column`
+**Intentional completion behavior:**
+
+- [x] Moving an item into a done column sets `is_completed = true`.
+- [x] Moving an item out of a done column does not undo completion; completion is sticky until explicitly toggled.
+- [x] The destination column is resolved server-side; the client-provided done-column flag is not authoritative.
+
+**Definition of done:**
+
+- [x] Regression tests cover invalid inputs, ownership boundaries, cross-list assignments, rate-limit entry, last-column protection, and sticky completion.
+- [x] `npm test`, `npm run lint`, TypeScript, and the production build pass.
 
 ---
 

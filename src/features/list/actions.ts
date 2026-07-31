@@ -1,17 +1,31 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUserWithRateLimit } from '@/lib/auth-with-rate-limit';
+import type { Database } from '@/types/supabase';
 import type { ListDTO, ListItemDTO, ListType, ListColumnDTO } from '@/types/dto';
-import { z } from 'zod';
 import {
   createListSchema,
-  updateListSchema,
   createListItemSchema,
-  listItemSchema,
   listTypeSchema,
   wishlistMetadataSchema,
-  listColumnSchema,
+  addColumnActionSchema,
+  listColumnIdSchema,
+  listIdSchema,
+  listItemIdSchema,
+  moveItemSchema,
+  moveItemToListSchema,
+  reorderColumnsSchema,
+  reorderItemsSchema,
+  seedDefaultColumnsSchema,
+  toggleDoneColumnSchema,
+  toggleItemSchema,
+  toggleListPublicSchema,
+  updateColumnSchema,
+  updateItemActionSchema,
+  updateListActionSchema,
 } from './schemas.server';
 import {
   mapListToDTO,
@@ -23,17 +37,125 @@ import {
 /** Sentinel title for the per-user hidden "New Idea" list */
 const NEW_IDEA_LIST_TITLE = '__new_idea__';
 
+type ServerSupabaseClient = SupabaseClient<Database>;
+
+type OwnedList = {
+  id: string;
+  type: ListType;
+};
+
+type OwnedItem = {
+  id: string;
+  listId: string;
+  listType: ListType;
+};
+
+type OwnedColumn = {
+  id: string;
+  listId: string;
+  isDoneColumn: boolean;
+};
+
+async function getOwnedList(
+  supabase: ServerSupabaseClient,
+  userId: string,
+  listId: string,
+): Promise<OwnedList | null> {
+  const { data, error } = await supabase
+    .from('lists')
+    .select('id, type')
+    .eq('id', listId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    type: listTypeSchema.catch('todo').parse(data.type),
+  };
+}
+
+async function getOwnedItem(
+  supabase: ServerSupabaseClient,
+  userId: string,
+  itemId: string,
+): Promise<OwnedItem | null> {
+  const { data, error } = await supabase
+    .from('list_items')
+    .select('id, list_id')
+    .eq('id', itemId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const list = await getOwnedList(supabase, userId, data.list_id);
+  return list
+    ? { id: data.id, listId: data.list_id, listType: list.type }
+    : null;
+}
+
+async function getOwnedColumn(
+  supabase: ServerSupabaseClient,
+  userId: string,
+  columnId: string,
+): Promise<OwnedColumn | null> {
+  const { data, error } = await supabase
+    .from('list_columns')
+    .select('id, list_id, is_done_column')
+    .eq('id', columnId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const list = await getOwnedList(supabase, userId, data.list_id);
+  return list
+    ? {
+        id: data.id,
+        listId: data.list_id,
+        isDoneColumn: data.is_done_column,
+      }
+    : null;
+}
+
+async function allItemsBelongToList(
+  supabase: ServerSupabaseClient,
+  listId: string,
+  itemIds: string[],
+): Promise<boolean> {
+  if (new Set(itemIds).size !== itemIds.length) return false;
+
+  const { data, error } = await supabase
+    .from('list_items')
+    .select('id')
+    .eq('list_id', listId)
+    .in('id', itemIds);
+
+  return !error && data?.length === itemIds.length;
+}
+
+async function allColumnsBelongToList(
+  supabase: ServerSupabaseClient,
+  listId: string,
+  columnIds: string[],
+): Promise<boolean> {
+  if (new Set(columnIds).size !== columnIds.length) return false;
+
+  const { data, error } = await supabase
+    .from('list_columns')
+    .select('id')
+    .eq('list_id', listId)
+    .in('id', columnIds);
+
+  return !error && data?.length === columnIds.length;
+}
+
 // ==========================================
 // LIST-LEVEL ACTIONS
 // ==========================================
 
 export async function createList(formData: FormData) {
-  const supabase = await createClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !userData.user) {
-    return { error: 'Unauthorized' };
-  }
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
 
   const payload = {
     title: String(formData.get('title') || ''),
@@ -49,7 +171,7 @@ export async function createList(formData: FormData) {
   const { data, error } = await supabase
     .from('lists')
     .insert({
-      user_id: userData.user.id,
+      user_id: user.id,
       title: parsed.data.title,
       type: parsed.data.type,
       description: parsed.data.description || null,
@@ -80,17 +202,20 @@ export async function createList(formData: FormData) {
 }
 
 export async function updateList(listId: string, formData: FormData) {
-  const supabase = await createClient();
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
 
   const payload = {
     title: String(formData.get('title') || ''),
     description: formData.get('description') ? String(formData.get('description')) : undefined,
   };
 
-  const parsed = updateListSchema.safeParse(payload);
+  const parsed = updateListActionSchema.safeParse({ ...payload, listId });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Invalid input' };
   }
+
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId);
+  if (!ownedList) return { error: 'List not found' };
 
   const { error } = await supabase
     .from('lists')
@@ -98,7 +223,8 @@ export async function updateList(listId: string, formData: FormData) {
       title: parsed.data.title,
       description: parsed.data.description || null,
     })
-    .eq('id', listId);
+    .eq('id', parsed.data.listId)
+    .eq('user_id', user.id);
 
   if (error) {
     return { error: 'Failed to update list' };
@@ -109,12 +235,20 @@ export async function updateList(listId: string, formData: FormData) {
 }
 
 export async function deleteList(listId: string) {
-  const supabase = await createClient();
+  const parsed = listIdSchema.safeParse(listId);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data);
+  if (!ownedList) return { error: 'List not found' };
 
   const { error } = await supabase
     .from('lists')
     .delete()
-    .eq('id', listId);
+    .eq('id', parsed.data)
+    .eq('user_id', user.id);
 
   if (error) {
     return { error: 'Failed to delete list' };
@@ -125,14 +259,22 @@ export async function deleteList(listId: string) {
 }
 
 export async function toggleListPublic(listId: string, isPublic: boolean) {
-  const supabase = await createClient();
+  const parsed = toggleListPublicSchema.safeParse({ listId, isPublic });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId);
+  if (!ownedList) return { error: 'List not found' };
 
   const { error } = await supabase
     .from('lists')
     .update({
-      is_public: isPublic,
+      is_public: parsed.data.isPublic,
     })
-    .eq('id', listId);
+    .eq('id', parsed.data.listId)
+    .eq('user_id', user.id);
 
   if (error) {
     return { error: 'Failed to update list visibility' };
@@ -147,12 +289,9 @@ export async function toggleListPublic(listId: string, isPublic: boolean) {
 // ==========================================
 
 export async function addItem(formData: FormData) {
-  const supabase = await createClient();
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
 
   const listId = String(formData.get('listId') || '');
-  const { data: listData } = await supabase.from('lists').select('type').eq('id', listId).single();
-  
-  if (!listData) return { error: 'List not found' };
 
   const payload = {
     listId,
@@ -166,6 +305,16 @@ export async function addItem(formData: FormData) {
     return { error: parsed.error.issues[0]?.message || 'Invalid input' };
   }
 
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId);
+  if (!ownedList) return { error: 'List not found' };
+
+  if (parsed.data.columnId) {
+    const ownedColumn = await getOwnedColumn(supabase, user.id, parsed.data.columnId);
+    if (!ownedColumn || ownedColumn.listId !== parsed.data.listId) {
+      return { error: 'Column not found' };
+    }
+  }
+
   const { data: itemsData } = await supabase
     .from('list_items')
     .select('sort_order')
@@ -176,7 +325,7 @@ export async function addItem(formData: FormData) {
   const nextSortOrder = itemsData && itemsData.length > 0 ? itemsData[0].sort_order + 1024 : 1024;
 
   let metadata = null;
-  if (listData.type === 'wishlist') {
+  if (ownedList.type === 'wishlist') {
     const metaPayload = {
       price: formData.get('price'),
       currency: formData.get('currency'),
@@ -210,31 +359,23 @@ export async function addItem(formData: FormData) {
 }
 
 export async function updateItem(itemId: string, formData: FormData) {
-  const supabase = await createClient();
-
-  const { data: itemData } = await supabase.from('list_items').select('list_id, lists(type)').eq('id', itemId).single();
-  if (!itemData) return { error: 'Item not found' };
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
 
   const payload = {
     title: String(formData.get('title') || ''),
     description: formData.get('description') ? String(formData.get('description')) : undefined,
   };
 
-  const parsed = listItemSchema.safeParse(payload);
+  const parsed = updateItemActionSchema.safeParse({ ...payload, itemId });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Invalid input' };
   }
 
-  // Bypass the deep nested array inference issues
-  const listsRelSchema = z.union([
-    z.object({ type: z.string() }),
-    z.array(z.object({ type: z.string() }))
-  ]).catch({ type: 'todo' });
-  const listsRel = listsRelSchema.parse(itemData.lists);
-  const listType = Array.isArray(listsRel) ? listsRel[0]?.type : listsRel?.type;
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId);
+  if (!ownedItem) return { error: 'Item not found' };
 
   let metadata: { [key: string]: unknown } | null | undefined = undefined;
-  if (listType === 'wishlist') {
+  if (ownedItem.listType === 'wishlist') {
     const metaPayload = {
       price: formData.get('price'),
       currency: formData.get('currency'),
@@ -257,7 +398,8 @@ export async function updateItem(itemId: string, formData: FormData) {
   const { error } = await supabase
     .from('list_items')
     .update(updatePayload)
-    .eq('id', itemId);
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', ownedItem.listId);
 
   if (error) {
     return { error: 'Failed to update item' };
@@ -268,12 +410,20 @@ export async function updateItem(itemId: string, formData: FormData) {
 }
 
 export async function toggleItem(itemId: string, isCompleted: boolean) {
-  const supabase = await createClient();
+  const parsed = toggleItemSchema.safeParse({ itemId, isCompleted });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId);
+  if (!ownedItem) return { error: 'Item not found' };
 
   const { error } = await supabase
     .from('list_items')
-    .update({ is_completed: isCompleted })
-    .eq('id', itemId);
+    .update({ is_completed: parsed.data.isCompleted })
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', ownedItem.listId);
 
   if (error) {
     return { error: 'Failed to toggle item' };
@@ -284,12 +434,20 @@ export async function toggleItem(itemId: string, isCompleted: boolean) {
 }
 
 export async function deleteItem(itemId: string) {
-  const supabase = await createClient();
+  const parsed = listItemIdSchema.safeParse(itemId);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data);
+  if (!ownedItem) return { error: 'Item not found' };
 
   const { error } = await supabase
     .from('list_items')
     .delete()
-    .eq('id', itemId);
+    .eq('id', parsed.data)
+    .eq('list_id', ownedItem.listId);
 
   if (error) {
     return { error: 'Failed to delete item' };
@@ -300,8 +458,25 @@ export async function deleteItem(itemId: string) {
 }
 
 export async function reorderItems(listId: string, itemIds: string[]) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc('reorder_list_items', { p_item_ids: itemIds });
+  const parsed = reorderItemsSchema.safeParse({ listId, itemIds });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId);
+  if (!ownedList) return { error: 'List not found' };
+
+  const itemsBelongToList = await allItemsBelongToList(
+    supabase,
+    parsed.data.listId,
+    parsed.data.itemIds,
+  );
+  if (!itemsBelongToList) return { error: 'Invalid item selection' };
+
+  const { error } = await supabase.rpc('reorder_list_items', {
+    p_item_ids: parsed.data.itemIds,
+  });
   if (error) return { error: 'Failed to reorder items' };
 
   revalidatePath('/list');
@@ -314,25 +489,44 @@ export async function moveItem(
   sortOrder: number,
   isDoneColumn: boolean,
 ) {
-  const supabase = await createClient();
+  const parsed = moveItemSchema.safeParse({
+    itemId,
+    columnId,
+    sortOrder,
+    isDoneColumn,
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId);
+  const ownedColumn = await getOwnedColumn(supabase, user.id, parsed.data.columnId);
+
+  if (!ownedItem || !ownedColumn || ownedColumn.listId !== ownedItem.listId) {
+    return { error: 'Item or column not found' };
+  }
 
   const updatePayload: {
     column_id: string;
     sort_order: number;
     is_completed?: boolean;
   } = {
-    column_id: columnId,
-    sort_order: sortOrder,
+    column_id: parsed.data.columnId,
+    sort_order: parsed.data.sortOrder,
   };
 
-  if (isDoneColumn) {
+  // Completion is intentionally sticky: leaving a done column does not undo completion.
+  // The destination column is authoritative; do not trust the client flag for this.
+  if (ownedColumn.isDoneColumn) {
     updatePayload.is_completed = true;
   }
 
   const { error } = await supabase
     .from('list_items')
     .update(updatePayload)
-    .eq('id', itemId);
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', ownedItem.listId);
 
   if (error) {
     return { error: 'Failed to move item' };
@@ -410,14 +604,12 @@ export async function getItemsByListId(
 
 /** Find or create the hidden "New Idea" list for standalone ideas */
 export async function getOrCreateNewIdeaList(): Promise<ListDTO | null> {
-  const supabase = await createClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) return null;
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
 
   const { data: lists, error: selectError } = await supabase
     .from('lists')
     .select('*')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', user.id)
     .eq('type', 'idea')
     .eq('title', NEW_IDEA_LIST_TITLE)
     .order('created_at', { ascending: true });
@@ -448,7 +640,7 @@ export async function getOrCreateNewIdeaList(): Promise<ListDTO | null> {
   const { data: created, error } = await supabase
     .from('lists')
     .insert({
-      user_id: userData.user.id,
+      user_id: user.id,
       title: NEW_IDEA_LIST_TITLE,
       type: 'idea',
       is_public: false,
@@ -469,21 +661,21 @@ export async function getNewIdeaItems(): Promise<ListItemDTO[]> {
 
 /** Move an item from one list to another */
 export async function moveItemToList(itemId: string, targetListId: string) {
-  const supabase = await createClient();
-
-  const parsed = z.object({
-    itemId: z.uuid({ message: 'Invalid item ID' }),
-    targetListId: z.uuid({ message: 'Invalid target list ID' }),
-  }).safeParse({ itemId, targetListId });
-
+  const parsed = moveItemToListSchema.safeParse({ itemId, targetListId });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Invalid input' };
   }
 
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId);
+  const ownedTargetList = await getOwnedList(supabase, user.id, parsed.data.targetListId);
+  if (!ownedItem || !ownedTargetList) return { error: 'Item or list not found' };
+
   const { error } = await supabase
     .from('list_items')
     .update({ list_id: parsed.data.targetListId, column_id: null })
-    .eq('id', parsed.data.itemId);
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', ownedItem.listId);
 
   if (error) {
     return { error: 'Failed to move item' };
@@ -507,10 +699,17 @@ const DEFAULT_COLUMNS = [
 export async function seedDefaultColumns(
   listId: string,
 ): Promise<ListColumnDTO[]> {
-  const supabase = await createClient();
+  const parsed = seedDefaultColumnsSchema.safeParse({ listId });
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || 'Invalid input');
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId);
+  if (!ownedList) throw new Error('List not found');
 
   const columnsToInsert = DEFAULT_COLUMNS.map((col) => ({
-    list_id: listId,
+    list_id: parsed.data.listId,
     title: col.title,
     sort_order: col.sort_order,
     is_done_column: col.is_done_column,
@@ -544,17 +743,19 @@ export async function getColumnsByListId(
 }
 
 export async function addColumn(listId: string, title: string) {
-  const parsed = listColumnSchema.safeParse({ title });
+  const parsed = addColumnActionSchema.safeParse({ listId, title });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Invalid column title' };
   }
 
-  const supabase = await createClient();
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId);
+  if (!ownedList) return { error: 'List not found' };
 
   const { data: cols } = await supabase
     .from('list_columns')
     .select('sort_order')
-    .eq('list_id', listId)
+    .eq('list_id', parsed.data.listId)
     .order('sort_order', { ascending: false })
     .limit(1);
 
@@ -563,7 +764,7 @@ export async function addColumn(listId: string, title: string) {
   const { data, error } = await supabase
     .from('list_columns')
     .insert({
-      list_id: listId,
+      list_id: parsed.data.listId,
       title: parsed.data.title,
       sort_order: nextOrder,
       is_done_column: false,
@@ -580,17 +781,20 @@ export async function addColumn(listId: string, title: string) {
 }
 
 export async function updateColumn(columnId: string, title: string) {
-  const parsed = listColumnSchema.safeParse({ title });
+  const parsed = updateColumnSchema.safeParse({ columnId, title });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Invalid column title' };
   }
 
-  const supabase = await createClient();
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedColumn = await getOwnedColumn(supabase, user.id, parsed.data.columnId);
+  if (!ownedColumn) return { error: 'Column not found' };
 
   const { error } = await supabase
     .from('list_columns')
     .update({ title: parsed.data.title })
-    .eq('id', columnId);
+    .eq('id', parsed.data.columnId)
+    .eq('list_id', ownedColumn.listId);
 
   if (error) {
     return { error: 'Failed to update column' };
@@ -601,21 +805,29 @@ export async function updateColumn(columnId: string, title: string) {
 }
 
 export async function deleteColumn(columnId: string) {
-  const supabase = await createClient();
+  const parsed = listColumnIdSchema.safeParse(columnId);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedColumn = await getOwnedColumn(supabase, user.id, parsed.data);
+  if (!ownedColumn) return { error: 'Column not found' };
 
   // Validate it's not the last column
-  const { data: col } = await supabase.from('list_columns').select('list_id').eq('id', columnId).single();
-  if (col) {
-    const { count } = await supabase.from('list_columns').select('*', { count: 'exact', head: true }).eq('list_id', col.list_id);
-    if (count !== null && count <= 1) {
-      return { error: 'Cannot delete the last column' };
-    }
+  const { count } = await supabase
+    .from('list_columns')
+    .select('*', { count: 'exact', head: true })
+    .eq('list_id', ownedColumn.listId);
+  if (count !== null && count <= 1) {
+    return { error: 'Cannot delete the last column' };
   }
 
   const { error } = await supabase
     .from('list_columns')
     .delete()
-    .eq('id', columnId);
+    .eq('id', parsed.data)
+    .eq('list_id', ownedColumn.listId);
 
   if (error) {
     return { error: 'Failed to delete column' };
@@ -626,8 +838,25 @@ export async function deleteColumn(columnId: string) {
 }
 
 export async function reorderColumns(listId: string, columnIds: string[]) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc('reorder_list_columns', { p_column_ids: columnIds });
+  const parsed = reorderColumnsSchema.safeParse({ listId, columnIds });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId);
+  if (!ownedList) return { error: 'List not found' };
+
+  const columnsBelongToList = await allColumnsBelongToList(
+    supabase,
+    parsed.data.listId,
+    parsed.data.columnIds,
+  );
+  if (!columnsBelongToList) return { error: 'Invalid column selection' };
+
+  const { error } = await supabase.rpc('reorder_list_columns', {
+    p_column_ids: parsed.data.columnIds,
+  });
   if (error) return { error: 'Failed to reorder columns' };
 
   revalidatePath('/list');
@@ -635,12 +864,20 @@ export async function reorderColumns(listId: string, columnIds: string[]) {
 }
 
 export async function toggleDoneColumn(columnId: string, isDoneColumn: boolean) {
-  const supabase = await createClient();
+  const parsed = toggleDoneColumnSchema.safeParse({ columnId, isDoneColumn });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit();
+  const ownedColumn = await getOwnedColumn(supabase, user.id, parsed.data.columnId);
+  if (!ownedColumn) return { error: 'Column not found' };
 
   const { error } = await supabase
     .from('list_columns')
-    .update({ is_done_column: isDoneColumn })
-    .eq('id', columnId);
+    .update({ is_done_column: parsed.data.isDoneColumn })
+    .eq('id', parsed.data.columnId)
+    .eq('list_id', ownedColumn.listId);
 
   if (error) {
     return { error: 'Failed to update column' };

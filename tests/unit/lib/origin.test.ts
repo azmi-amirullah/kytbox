@@ -46,9 +46,28 @@ describe('isAllowedOrigin', () => {
     expect(isAllowedOrigin('http://127.0.0.1:3000')).toBe(true);
   });
 
+  it('rejects unsafe protocols for localhost in development', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(isAllowedOrigin('javascript://localhost:3000')).toBe(false);
+    expect(isAllowedOrigin('data://localhost:3000')).toBe(false);
+  });
+
   it('rejects external malicious domains', () => {
     expect(isAllowedOrigin('https://malicious.com')).toBe(false);
     expect(isAllowedOrigin('https://kytbox.com.evil.com')).toBe(false);
+  });
+
+  it('rejects unsafe protocols and non-origin URL components', () => {
+    expect(isAllowedOrigin('javascript://kytbox.com')).toBe(false);
+    expect(isAllowedOrigin('data://kytbox.com')).toBe(false);
+    expect(isAllowedOrigin('https://kytbox.com/path')).toBe(false);
+    expect(isAllowedOrigin('https://kytbox.com/?next=/app')).toBe(false);
+  });
+
+  it('requires the configured production protocol and port', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isAllowedOrigin('http://kytbox.com')).toBe(false);
+    expect(isAllowedOrigin('https://kytbox.com:444')).toBe(false);
   });
 
   it('accepts multi-segment site URLs correctly', () => {

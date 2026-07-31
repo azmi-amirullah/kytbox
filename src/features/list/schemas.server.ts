@@ -2,6 +2,10 @@ import { z } from 'zod';
 
 export const listTypeSchema = z.enum(['todo', 'wishlist', 'idea']);
 
+export const listIdSchema = z.uuid({ message: 'Invalid list ID' });
+export const listItemIdSchema = z.uuid({ message: 'Invalid item ID' });
+export const listColumnIdSchema = z.uuid({ message: 'Invalid column ID' });
+
 export const createListSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(100, 'Title too long'),
   type: listTypeSchema,
@@ -23,8 +27,88 @@ export const listItemSchema = z.object({
 });
 
 export const createListItemSchema = listItemSchema.extend({
-  listId: z.uuid({ message: 'Invalid list ID' }),
+  listId: listIdSchema,
   columnId: z.string().uuid().optional().or(z.literal('')),
+});
+
+export const updateListActionSchema = updateListSchema.extend({
+  listId: listIdSchema,
+});
+
+export const toggleListPublicSchema = z.object({
+  listId: listIdSchema,
+  isPublic: z.boolean(),
+});
+
+export const updateItemActionSchema = listItemSchema.extend({
+  itemId: listItemIdSchema,
+});
+
+export const toggleItemSchema = z.object({
+  itemId: listItemIdSchema,
+  isCompleted: z.boolean(),
+});
+
+export const reorderItemsSchema = z.object({
+  listId: listIdSchema,
+  itemIds: z
+    .array(listItemIdSchema)
+    .min(1)
+    .max(500)
+    .superRefine((itemIds, context) => {
+      if (new Set(itemIds).size !== itemIds.length) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Item IDs must be unique',
+        });
+      }
+    }),
+});
+
+export const moveItemSchema = z.object({
+  itemId: listItemIdSchema,
+  columnId: listColumnIdSchema,
+  sortOrder: z.number().finite(),
+  isDoneColumn: z.boolean(),
+});
+
+export const moveItemToListSchema = z.object({
+  itemId: listItemIdSchema,
+  targetListId: listIdSchema,
+});
+
+export const seedDefaultColumnsSchema = z.object({
+  listId: listIdSchema,
+});
+
+export const addColumnActionSchema = listColumnSchema.extend({
+  listId: listIdSchema,
+});
+
+export const updateColumnSchema = z.object({
+  columnId: listColumnIdSchema,
+  title: listColumnSchema.shape.title,
+});
+
+export const reorderColumnsSchema = z.object({
+  listId: listIdSchema,
+  columnIds: z
+    .array(listColumnIdSchema)
+    .min(1)
+    .max(100)
+    .superRefine((columnIds, context) => {
+      if (new Set(columnIds).size !== columnIds.length) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Column IDs must be unique',
+        });
+      }
+    }),
+});
+
+export const toggleDoneColumnSchema = z.object({
+  columnId: listColumnIdSchema,
+  isDoneColumn: z.boolean(),
 });
 
 export const wishlistMetadataSchema = z.object({

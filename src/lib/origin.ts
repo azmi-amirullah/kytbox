@@ -35,11 +35,12 @@ export function isAllowedOrigin(origin: string): boolean {
 
   if (!isProd) {
     try {
-      const { hostname } = new URL(normalizedOrigin);
+      const { hostname, protocol } = new URL(normalizedOrigin);
       if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname.endsWith('.localhost')
+        ['http:', 'https:'].includes(protocol) &&
+        (hostname === 'localhost' ||
+          hostname === '127.0.0.1' ||
+          hostname.endsWith('.localhost'))
       ) {
         return true;
       }
@@ -54,8 +55,23 @@ export function isAllowedOrigin(origin: string): boolean {
   if (!siteApex) return false;
 
   try {
-    const { hostname } = new URL(normalizedOrigin);
-    const originHostname = hostname.toLowerCase();
+    const parsedOrigin = new URL(normalizedOrigin);
+    const siteOrigin = new URL(
+      siteUrl.includes('://') ? siteUrl : `https://${siteUrl}`,
+    );
+
+    if (
+      !['http:', 'https:'].includes(parsedOrigin.protocol) ||
+      parsedOrigin.pathname !== '/' ||
+      parsedOrigin.search ||
+      parsedOrigin.hash ||
+      parsedOrigin.protocol !== siteOrigin.protocol ||
+      parsedOrigin.port !== siteOrigin.port
+    ) {
+      return false;
+    }
+
+    const originHostname = parsedOrigin.hostname.toLowerCase();
 
     return (
       originHostname === siteApex ||
@@ -97,5 +113,3 @@ export function getSafeOrigin(origin: string | null): string {
 
   return siteUrl.replace(/\/$/, '');
 }
-
-

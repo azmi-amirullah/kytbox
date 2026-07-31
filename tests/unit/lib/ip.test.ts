@@ -21,7 +21,7 @@ describe('getIp', () => {
 
   it('falls back to x-real-ip', async () => {
     const mockHeaders = new Headers();
-    mockHeaders.set('x-real-ip', '198.51.100.1');
+    mockHeaders.set('x-real-ip', ' 198.51.100.1 ');
     mockHeaders.set('x-forwarded-for', '192.0.2.1');
 
     vi.mocked(headers).mockResolvedValue(mockHeaders);

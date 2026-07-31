@@ -4,6 +4,9 @@ import {
   listColumnSchema,
   wishlistMetadataSchema,
   createListItemSchema,
+  moveItemSchema,
+  reorderColumnsSchema,
+  reorderItemsSchema,
 } from '@/features/list/schemas.server';
 
 describe('List Server Schemas', () => {
@@ -100,6 +103,39 @@ describe('List Server Schemas', () => {
         title: 'Task Item',
       });
       expect(validResult.success).toBe(true);
+    });
+  });
+
+  describe('mutation schemas', () => {
+    it('requires UUIDs and a finite sort order for item moves', () => {
+      const result = moveItemSchema.safeParse({
+        itemId: 'not-an-id',
+        columnId: 'not-an-id',
+        sortOrder: Number.NaN,
+        isDoneColumn: false,
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects duplicate item IDs during reorder', () => {
+      const itemId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+      const result = reorderItemsSchema.safeParse({
+        listId: 'a47ac10b-58cc-4372-a567-0e02b2c3d479',
+        itemIds: [itemId, itemId],
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects duplicate column IDs during reorder', () => {
+      const columnId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+      const result = reorderColumnsSchema.safeParse({
+        listId: 'a47ac10b-58cc-4372-a567-0e02b2c3d479',
+        columnIds: [columnId, columnId],
+      });
+
+      expect(result.success).toBe(false);
     });
   });
 });

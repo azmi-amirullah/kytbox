@@ -10,9 +10,16 @@ describe('buildCspHeader', () => {
 
   it('sets standard security rules', () => {
     const csp = buildCspHeader('nonce');
+    const scriptSrc = csp
+      .split(';')
+      .find((directive) => directive.trim().startsWith('script-src'));
+
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain("form-action 'self'");
+    expect(scriptSrc).toBeDefined();
+    expect(scriptSrc).not.toContain("'unsafe-inline'");
     expect(csp).toContain("upgrade-insecure-requests");
   });
 
