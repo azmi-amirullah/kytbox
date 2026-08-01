@@ -1,5 +1,6 @@
 import { test as setup, expect } from '@playwright/test';
 import path from 'path';
+import fs from 'fs';
 
 const authFile = path.join(__dirname, '../../playwright/.auth/user.json');
 
@@ -13,6 +14,11 @@ const authFile = path.join(__dirname, '../../playwright/.auth/user.json');
  *   E2E_TEST_PASSWORD
  */
 setup('authenticate', async ({ page }) => {
+  // Reuse cached session if user.json already exists on disk
+  if (fs.existsSync(authFile)) {
+    return;
+  }
+
   const email = process.env.E2E_TEST_EMAIL;
   const password = process.env.E2E_TEST_PASSWORD;
 

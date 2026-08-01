@@ -64,7 +64,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath('/', 'layout');
-  redirect('/app');
+  return { success: true };
 }
 
 export async function signup(formData: FormData) {
@@ -145,12 +145,15 @@ export async function signup(formData: FormData) {
   // If session exists, user is immediately logged in (email verification disabled)
   if (data?.session) {
     revalidatePath('/', 'layout');
-    redirect('/app');
+    return { success: true, redirectUrl: '/app' };
   }
 
   // Email verification required - redirect to login with message
   await setEmailCooldown(ip);
-  redirect('/login?message=Check your email to confirm your account');
+  return {
+    success: true,
+    redirectUrl: '/login?message=Check your email to confirm your account',
+  };
 }
 
 export async function logout() {

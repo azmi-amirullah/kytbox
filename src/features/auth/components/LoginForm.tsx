@@ -30,6 +30,7 @@ import { createClient } from '@/lib/supabase/client';
 function LoginContent() {
   const searchParams = useSearchParams();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -42,12 +43,16 @@ function LoginContent() {
       }
       const result = await login(formData);
       if (result?.error) return { error: result.error };
-      return { error: null }; // redirect fires, this never returns
+      if (result?.success) {
+        setIsRedirecting(true);
+        window.location.href = '/app';
+      }
+      return { error: null };
     },
     { error: null },
   );
 
-  const isLoading = isPending || isGoogleLoading;
+  const isLoading = isPending || isGoogleLoading || isRedirecting;
 
   // Get message from URL params and save to state, then clear URL
   useEffect(() => {

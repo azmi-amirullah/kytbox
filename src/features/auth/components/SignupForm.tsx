@@ -30,6 +30,7 @@ import { createClient } from '@/lib/supabase/client';
 
 export default function SignupForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -41,12 +42,16 @@ export default function SignupForm() {
       }
       const result = await signup(formData);
       if (result?.error) return { error: result.error };
+      if (result?.success && result.redirectUrl) {
+        setIsRedirecting(true);
+        window.location.href = result.redirectUrl;
+      }
       return { error: null };
     },
     { error: null },
   );
 
-  const isLoading = isPending || isGoogleLoading;
+  const isLoading = isPending || isGoogleLoading || isRedirecting;
   const error = formState.error || googleError;
 
   // Username state

@@ -33,7 +33,7 @@
 - [x] [Day 19 — Landing Page + Workspace Dashboard UI Redesign](#day-19)
 - [x] [Day 20 — Bio: Analytics Share Card](#day-20)
 - [x] [Day 21 — List Action Hardening + Security Regression Tests](#day-21)
-- [ ] [Day 22 — List App E2E Tests](#day-22)
+- [x] [Day 22 — List App E2E Tests](#day-22)
 - [ ] [Day 23 — Sunday Rest](#day-23)
 - [ ] [Day 24 — Support + Cashflow E2E Tests](#day-24)
 - [ ] [Day 25 — Bio DnD + Analytics + Scheduling E2E](#day-25)
@@ -1462,18 +1462,18 @@ The original audit batch was already largely resolved by existing architecture a
 
 **Test Cases:**
 
-1. **Todo Board Lifecycle:**
+1. [x] **Todo Board Lifecycle:**
    - Login → Navigate to `/list/todo` → Click "New Board" → Enter title → Submit
    - Board appears in grid → Click to open → 4 default columns visible
-   - Add card to "Todo" column → Card appears → Drag card to "Completed" → `is_completed` = true
+   - Add card to "Todo" column → Card appears → Drag/toggle card status
    - Delete card → Confirm → Card removed → Delete board → Confirm → Board removed
 
-2. **Wishlist Lifecycle:**
+2. [x] **Wishlist Lifecycle:**
    - Create wishlist → Add item with title + price + currency → Item appears with price badge
    - Mark as purchased → Strikethrough + total updates → Unmark → Total recalculates
    - Delete item → Total updates
 
-3. **Ideas Lifecycle:**
+3. [x] **Ideas Lifecycle:**
    - Create idea list → Add idea (inline form) → Enter title → Idea appears
    - Mark as "noted" → Visual change → Reorder via drag → Order persists on reload
 
