@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getAuthenticatedUserWithRateLimit as getAuthenticatedUser } from '@/lib/auth-with-rate-limit';
 import { getAuthenticatedUser as getAuthenticatedUserOnly } from '@/lib/auth';
-import { actionRateLimit } from '@/lib/upstash/redis';
+import { actionRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import { z } from 'zod';
 import {
   cashflowEntrySchema,
@@ -371,7 +371,7 @@ export async function addEntry(formData: FormData) {
 
   // Parallelize: rate limit + permission check + targeted recurring conflict check
   const [{ success: rateLimitOk }, permission, { data: latestSameSeries }] = await Promise.all([
-    actionRateLimit.limit(user.id),
+    checkRateLimit(actionRateLimit, user.id),
     checkEditPermission(supabase, cashflowId, user),
     // Targeted: fetch only the latest entry for this exact name+type instead of all templates
     !is_recurring
@@ -460,7 +460,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
 
   // Batch 1: rate limit + entry fetch are independent — run in parallel
   const [{ success: rateLimitOk }, { data: entry }] = await Promise.all([
-    actionRateLimit.limit(user.id),
+    checkRateLimit(actionRateLimit, user.id),
     supabase
       .from('cashflow_entries')
       .select('cashflow_id, goal_id, category, cashflows(user_id)')

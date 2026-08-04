@@ -36,7 +36,7 @@ test.describe.serial('Bio: Folder Logic', () => {
     // 1. Create a dummy link at root
     const rootLinkName = `Root Link ${Date.now()}`;
     await page.getByRole('button', { name: 'Add Item' }).click();
-    await page.getByLabel(/link title/i).fill(rootLinkName);
+    await page.locator('#title').fill(rootLinkName);
     await page.getByLabel(/destination url/i).fill('https://test.com');
     await page.getByRole('button', { name: 'Add Link', exact: true }).click();
     
@@ -82,7 +82,7 @@ test.describe.serial('Bio: Folder Logic', () => {
     
     // 2. Add a link inside
     await page.getByRole('button', { name: 'Add Item' }).click();
-    await page.getByLabel(/link title/i).fill(linkName);
+    await page.locator('#title').fill(linkName);
     await page.getByLabel(/destination url/i).fill(testUrl);
     await page.getByRole('button', { name: 'Add Link', exact: true }).click();
     await expect(page.getByText(linkName)).toBeVisible();
@@ -101,7 +101,7 @@ test.describe.serial('Bio: Folder Logic', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     // Link should be gone from the folder editor view
-    const editorList = page.locator('.min-h-\\[400px\\]');
+    const editorList = page.getByRole('tabpanel', { name: 'Links' });
     const linkInFolderRow = editorList.locator('div.group').filter({ hasText: linkName });
     await expect(linkInFolderRow).not.toBeVisible({ timeout: 10000 });
 
@@ -112,7 +112,7 @@ test.describe.serial('Bio: Folder Logic', () => {
     await expect(page.getByText(linkName).first()).toBeVisible({ timeout: 10000 });
     
     // Confirm it's specifically in the editor list now
-    await expect(editorList.getByText(linkName)).toBeVisible();
+    await expect(editorList.getByText(linkName).first()).toBeVisible();
   });
 
   test('cascade delete: link is removed when its folder is deleted', async ({ page, browser }) => {

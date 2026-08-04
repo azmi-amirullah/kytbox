@@ -39,3 +39,21 @@ export const actionRateLimit = new Ratelimit({
   analytics: true,
   prefix: '@kytbox/action-ratelimit',
 });
+
+/**
+ * Helper to check rate limits while automatically bypassing during tests/E2E runs.
+ */
+export async function checkRateLimit(
+  limiter: Ratelimit,
+  identifier: string
+) {
+  if (
+    process.env.NODE_ENV === 'test' ||
+    process.env.PLAYWRIGHT === 'true' ||
+    process.env.CI
+  ) {
+    return { success: true, limit: 100, remaining: 99, reset: Date.now() + 60000 };
+  }
+  return limiter.limit(identifier);
+}
+

@@ -2,7 +2,7 @@ import 'server-only';
 import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { after } from 'next/server';
-import { redirectRateLimit } from '@/lib/upstash/redis';
+import { redirectRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
 import { env } from '@/env';
 
@@ -19,7 +19,7 @@ export async function trackProfileView(profileId: string) {
   after(async () => {
     // 1. Check Rate Limit
     // We check this before creating the client to save resources
-    const { success } = await redirectRateLimit.limit(ip);
+    const { success } = await checkRateLimit(redirectRateLimit, ip);
 
     if (!success) {
       return;

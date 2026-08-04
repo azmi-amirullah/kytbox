@@ -1,6 +1,6 @@
 import { getAuthenticatedUser } from '@/lib/auth';
 import { getAuthenticatedUserAndProfile } from '@/lib/auth';
-import { actionRateLimit } from '@/lib/upstash/redis';
+import { actionRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 
 /**
  * Wraps getAuthenticatedUser() with a global action rate limit (60 req/min per user).
@@ -8,8 +8,7 @@ import { actionRateLimit } from '@/lib/upstash/redis';
  */
 export async function getAuthenticatedUserWithRateLimit() {
   const result = await getAuthenticatedUser();
-
-  const { success } = await actionRateLimit.limit(result.user.id);
+  const { success } = await checkRateLimit(actionRateLimit, result.user.id);
   if (!success) {
     throw new Error('Too many requests. Please slow down.');
   }
@@ -22,8 +21,7 @@ export async function getAuthenticatedUserWithRateLimit() {
  */
 export async function getAuthenticatedUserAndProfileWithRateLimit() {
   const result = await getAuthenticatedUserAndProfile();
-
-  const { success } = await actionRateLimit.limit(result.user.id);
+  const { success } = await checkRateLimit(actionRateLimit, result.user.id);
   if (!success) {
     throw new Error('Too many requests. Please slow down.');
   }

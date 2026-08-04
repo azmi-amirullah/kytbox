@@ -24,7 +24,7 @@ test.describe.serial('Bio E2E Flow', () => {
     await page.getByRole('button', { name: 'Add Item' }).click();
 
     // Fill in the form
-    await page.getByLabel(/link title/i).fill(testLinkTitle);
+    await page.locator('#title').fill(testLinkTitle);
     await page.getByLabel(/destination url/i).fill(testUrl);
     await page.getByRole('button', { name: 'Add Link', exact: true }).click();
 
@@ -40,7 +40,7 @@ test.describe.serial('Bio E2E Flow', () => {
     await targetRow.getByRole('button', { name: 'Edit' }).click();
 
     const updatedTitle = `${testLinkTitle} (Edited)`;
-    await page.getByLabel(/link title/i).fill(updatedTitle);
+    await page.locator('#title').fill(updatedTitle);
     await page.getByRole('button', { name: 'Save Changes' }).click();
 
     await expect(page.locator('h3').filter({ hasText: updatedTitle }).first()).toBeVisible({ timeout: 10000 });
@@ -130,7 +130,7 @@ test.describe.serial('Bio E2E Flow', () => {
     
     await page.goto('/bio');
     await page.getByRole('button', { name: 'Add Item' }).click();
-    await page.getByLabel(/link title/i).fill(toggleLinkName);
+    await page.locator('#title').fill(toggleLinkName);
     await page.getByLabel(/destination url/i).fill(testUrl);
     await page.getByRole('button', { name: 'Add Link', exact: true }).click();
 

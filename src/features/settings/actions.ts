@@ -7,7 +7,7 @@ import { validateUsername } from '@/lib/username';
 import { z } from 'zod';
 import { updateProfileSchema } from './schemas.server';
 import { getIp } from '@/lib/ip';
-import { usernameRateLimit } from '@/lib/upstash/redis';
+import { usernameRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 
 const AVATAR_BUCKET = 'avatars';
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
@@ -199,7 +199,7 @@ export async function removeAvatar() {
 
 export async function checkUsername(username: string) {
   const ip = await getIp();
-  const { success } = await usernameRateLimit.limit(ip);
+  const { success } = await checkRateLimit(usernameRateLimit, ip);
   if (!success) return { available: false, error: 'Too many requests' };
 
   const { user, supabase } = await getAuthenticatedUser();

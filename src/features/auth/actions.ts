@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { validateUsername } from '@/lib/username';
-import { authRateLimit, usernameRateLimit, redis } from '@/lib/upstash/redis';
+import { authRateLimit, usernameRateLimit, redis, checkRateLimit } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
 import {
   loginSchema,
@@ -34,7 +34,7 @@ async function setEmailCooldown(ip: string) {
 
 export async function login(formData: FormData) {
   const ip = await getIp();
-  const { success: rlSuccess, reset } = await authRateLimit.limit(ip);
+  const { success: rlSuccess, reset = Date.now() + 60000 } = await checkRateLimit(authRateLimit, ip);
   if (!rlSuccess) {
     const seconds = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
     return {
@@ -77,7 +77,7 @@ export async function signup(formData: FormData) {
   }
 
   // 2. Bruteforce protection layer
-  const { success: rlSuccess } = await authRateLimit.limit(ip);
+  const { success: rlSuccess } = await checkRateLimit(authRateLimit, ip);
   if (!rlSuccess) {
     return { error: 'Too many requests. Please try again later.' };
   }
@@ -174,7 +174,7 @@ export async function resetPassword(formData: FormData) {
   }
 
   // 2. Bruteforce protection layer
-  const { success: rlSuccess } = await authRateLimit.limit(ip);
+  const { success: rlSuccess } = await checkRateLimit(authRateLimit, ip);
   if (!rlSuccess) {
     return { error: 'Too many requests. Please try again later.' };
   }
@@ -235,7 +235,7 @@ export async function updatePassword(formData: FormData) {
  */
 export async function checkUsernameAvailable(username: string) {
   const ip = await getIp();
-  const { success: rlSuccess, reset } = await usernameRateLimit.limit(ip);
+  const { success: rlSuccess, reset = Date.now() + 60000 } = await checkRateLimit(usernameRateLimit, ip);
   if (!rlSuccess) {
     const seconds = Math.max(1, Math.ceil((reset - Date.now()) / 1000) + 1);
     return { available: false, error: `Too many requests. Wait ${seconds}s.` };

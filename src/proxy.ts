@@ -197,6 +197,7 @@ export async function proxy(request: NextRequest) {
   // Get user only when needed
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
   // Helper to construct app subdomain URL
@@ -213,6 +214,7 @@ export async function proxy(request: NextRequest) {
 
   // Protect routes — redirect unauthenticated users to /login on app subdomain
   if (isProtectedRoute && !user) {
+    if (authError) console.error('[proxy] Auth check failed on protected route:', authError.message);
     return applyCorsHeaders(NextResponse.redirect(getAppSubdomainUrl('/login')));
   }
 

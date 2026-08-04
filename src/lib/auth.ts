@@ -72,9 +72,11 @@ export const getAuthenticatedUser = cache(async () => {
 
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
 
   if (!user) {
+    if (error) console.error('[auth] getAuthenticatedUser failed:', error.message);
     redirect('/login');
   }
 
