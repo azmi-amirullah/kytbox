@@ -36,7 +36,7 @@
 - [x] [Day 22 — List App E2E Tests](#day-22)
 - [ ] [Day 23 — Sunday Rest](#day-23)
 - [x] [Day 24 — Support + Cashflow E2E Tests](#day-24)
-- [ ] [Day 25 — Bio DnD + Analytics + Scheduling E2E](#day-25)
+- [x] [Day 25 — Bio DnD + Analytics + Scheduling E2E](#day-25)
 - [ ] [Day 26 — Accessibility Audit (WCAG 2.2)](#day-26)
 - [ ] [Day 27 — Full Build Verification + Type Safety](#day-27)
 - [ ] [Day 28 — Visual Regression Baseline](#day-28)
