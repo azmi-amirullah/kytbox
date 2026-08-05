@@ -929,7 +929,7 @@ export default function CashflowDetail({
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className='absolute right-3 text-muted-foreground hover:text-foreground focus:outline-none'
+                className='absolute right-3 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs'
                 aria-label='Clear search'
               >
                 <LuX className='w-4 h-4' />

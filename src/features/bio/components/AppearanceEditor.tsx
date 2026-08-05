@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
-import { LuCheck, LuPalette, LuShare2, LuChevronRight } from 'react-icons/lu';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState, useEffect } from 'react'
+import { LuCheck, LuPalette, LuShare2, LuChevronRight } from 'react-icons/lu'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card';
-import { motion, AnimatePresence } from 'framer-motion';
-import { updateAppearance } from '../actions';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
+} from '@/components/ui/card'
+import { motion, AnimatePresence } from 'framer-motion'
+import { updateAppearance } from '../actions'
+import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 import {
   THEME_LIST,
   type ButtonStyle,
@@ -21,23 +21,23 @@ import {
   validateButtonStyle,
   validateButtonShape,
   type CustomThemeData,
-} from '@/lib/theme';
-import type { ThemeCategory } from '@/lib/theme/theme.types';
+} from '@/lib/theme'
+import type { ThemeCategory } from '@/lib/theme/theme.types'
 
 interface AppearanceEditorProps {
-  initialTheme: string;
-  initialButtonStyle: string;
-  initialButtonShape: string;
-  initialSocialLinks: Record<string, string>;
-  initialCustomTheme?: CustomThemeData | null;
-  isLoading?: boolean;
+  initialTheme: string
+  initialButtonStyle: string
+  initialButtonShape: string
+  initialSocialLinks: Record<string, string>
+  initialCustomTheme?: CustomThemeData | null
+  isLoading?: boolean
   onPreviewUpdate: (
     theme: string,
     style: string,
     shape: string,
     social: Record<string, string>,
     custom?: CustomThemeData | null,
-  ) => void;
+  ) => void
 }
 
 function ColorPickerRow({
@@ -46,20 +46,20 @@ function ColorPickerRow({
   customTheme,
   onChange,
 }: {
-  label: string;
-  colorKey: keyof CustomThemeData;
-  customTheme: CustomThemeData;
-  onChange: (key: keyof CustomThemeData, value: string) => void;
+  label: string
+  colorKey: keyof CustomThemeData
+  customTheme: CustomThemeData
+  onChange: (key: keyof CustomThemeData, value: string) => void
 }) {
-  const fullHex = customTheme[colorKey] || '#000000';
-  const baseHex = fullHex.slice(0, 7).padEnd(7, '0');
-  let alphaHex = 'ff';
+  const fullHex = customTheme[colorKey] || '#000000'
+  const baseHex = fullHex.slice(0, 7).padEnd(7, '0')
+  let alphaHex = 'ff'
   if (fullHex.length === 9) {
-    alphaHex = fullHex.slice(7, 9);
+    alphaHex = fullHex.slice(7, 9)
   } else if (fullHex.length === 5) {
-    alphaHex = fullHex.slice(4, 5).repeat(2);
+    alphaHex = fullHex.slice(4, 5).repeat(2)
   }
-  const alphaPercent = Math.round((parseInt(alphaHex, 16) / 255) * 100) || 0;
+  const alphaPercent = Math.round((parseInt(alphaHex, 16) / 255) * 100) || 0
 
   return (
     <div className='flex flex-col gap-1.5'>
@@ -74,8 +74,8 @@ function ColorPickerRow({
           type='color'
           value={baseHex}
           onChange={(e) => {
-            const newAlpha = alphaPercent === 100 ? '' : alphaHex;
-            onChange(colorKey, e.target.value + newAlpha);
+            const newAlpha = alphaPercent === 100 ? '' : alphaHex
+            onChange(colorKey, e.target.value + newAlpha)
           }}
           className='w-7 h-7 cursor-pointer rounded bg-transparent border-0 p-0 shrink-0'
         />
@@ -83,7 +83,7 @@ function ColorPickerRow({
           id={`${String(colorKey)}-hex`}
           value={fullHex}
           onChange={(e) => onChange(colorKey, e.target.value)}
-          className='h-7 flex-1 min-w-[75px] border-0 shadow-none focus-visible:ring-0 font-mono text-xs uppercase px-1'
+          className='h-7 flex-1 min-w-18.75 border-0 shadow-none focus-visible:ring-0 font-mono text-xs uppercase px-1'
           maxLength={9}
         />
         <div className='flex items-center gap-1 border-l pl-2'>
@@ -94,17 +94,17 @@ function ColorPickerRow({
             max={100}
             value={alphaPercent}
             onChange={(e) => {
-              let perc = parseInt(e.target.value);
-              if (isNaN(perc)) return; // Don't crash on empty input
-              perc = Math.max(0, Math.min(100, perc)); // Clamp between 0-100
+              let perc = parseInt(e.target.value)
+              if (isNaN(perc)) return // Don't crash on empty input
+              perc = Math.max(0, Math.min(100, perc)) // Clamp between 0-100
 
               if (perc === 100) {
-                onChange(colorKey, baseHex);
+                onChange(colorKey, baseHex)
               } else {
                 const newAlpha = Math.round((perc / 100) * 255)
                   .toString(16)
-                  .padStart(2, '0');
-                onChange(colorKey, baseHex + newAlpha);
+                  .padStart(2, '0')
+                onChange(colorKey, baseHex + newAlpha)
               }
             }}
             className='h-7 w-12 border-0 shadow-none focus-visible:ring-0 font-mono text-xs px-1 text-center bg-transparent'
@@ -116,7 +116,7 @@ function ColorPickerRow({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 const SOCIAL_PLATFORMS = [
@@ -156,15 +156,15 @@ const SOCIAL_PLATFORMS = [
     baseUrl: 'https://wa.me/',
     placeholder: 'phone number',
   },
-];
+]
 
 function StatusIndicator({
   status,
 }: {
-  status: 'idle' | 'saving' | 'saved' | 'error';
+  status: 'idle' | 'saving' | 'saved' | 'error'
 }) {
   return (
-    <div className='flex items-center gap-2 text-xs font-medium min-h-[20px]'>
+    <div className='flex items-center gap-2 text-xs font-medium min-h-5'>
       {status === 'saving' && (
         <span className='text-muted-foreground animate-pulse'>Saving...</span>
       )}
@@ -182,13 +182,13 @@ function StatusIndicator({
         <span className='text-destructive'>Failed to save</span>
       )}
     </div>
-  );
+  )
 }
 
 function SavingBar({
   status,
 }: {
-  status: 'idle' | 'saving' | 'saved' | 'error';
+  status: 'idle' | 'saving' | 'saved' | 'error'
 }) {
   return (
     <AnimatePresence>
@@ -204,7 +204,7 @@ function SavingBar({
         </div>
       )}
     </AnimatePresence>
-  );
+  )
 }
 
 export default function AppearanceEditor({
@@ -216,17 +216,17 @@ export default function AppearanceEditor({
   isLoading,
   onPreviewUpdate,
 }: AppearanceEditorProps) {
-  const router = useRouter();
-  const [themeName, setThemeName] = useState(initialTheme);
+  const router = useRouter()
+  const [themeName, setThemeName] = useState(initialTheme)
   const [buttonStyle, setButtonStyle] = useState<ButtonStyle>(
     validateButtonStyle(initialButtonStyle),
-  );
+  )
   const [buttonShape, setButtonShape] = useState<ButtonShape>(
     validateButtonShape(initialButtonShape),
-  );
+  )
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>(
     initialSocialLinks || {},
-  );
+  )
   const [customTheme, setCustomTheme] = useState<CustomThemeData>(
     initialCustomTheme || {
       background: '#ffffff',
@@ -242,44 +242,44 @@ export default function AppearanceEditor({
       footerBorder: 'rgba(0,0,0,0.1)',
       footerText: '#666666',
     },
-  );
+  )
 
   const initialCategory =
     initialTheme === 'custom'
       ? 'custom'
-      : (THEME_LIST.find((t) => t.id === initialTheme)?.category ?? null);
+      : (THEME_LIST.find((t) => t.id === initialTheme)?.category ?? null)
   const [activeCategory, setActiveCategory] = useState<ThemeCategory | null>(
     initialCategory,
-  );
-  const [error, setError] = useState<string | null>(null);
+  )
+  const [error, setError] = useState<string | null>(null)
   const [appearanceStatus, setAppearanceStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
-  >('idle');
+  >('idle')
   const [socialStatus, setSocialStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
-  >('idle');
+  >('idle')
 
   const themeCategories: ThemeCategory[] = [
     'solid',
     'gradient',
     'soft',
     'custom',
-  ];
+  ]
 
   // Appearance Auto-save
   useEffect(() => {
-    let isChanged = false;
-    if (themeName !== initialTheme) isChanged = true;
-    if (buttonStyle !== initialButtonStyle) isChanged = true;
-    if (buttonShape !== initialButtonShape) isChanged = true;
+    let isChanged = false
+    if (themeName !== initialTheme) isChanged = true
+    if (buttonStyle !== initialButtonStyle) isChanged = true
+    if (buttonShape !== initialButtonShape) isChanged = true
 
     // Supabase JSONB reformats key order, so JSON.stringify is unreliable for equality checks.
     const isCustomThemeEqual = (
       a: CustomThemeData | null | undefined,
       b: CustomThemeData | null | undefined,
     ) => {
-      if (!a && !b) return true;
-      if (!a || !b) return false;
+      if (!a && !b) return true
+      if (!a || !b) return false
       const THEME_KEYS: Array<keyof CustomThemeData> = [
         'background',
         'textPrimary',
@@ -293,59 +293,59 @@ export default function AppearanceEditor({
         'footerBg',
         'footerBorder',
         'footerText',
-      ];
+      ]
       for (const k of THEME_KEYS) {
-        if (a[k] !== b[k]) return false;
+        if (a[k] !== b[k]) return false
       }
-      return true;
-    };
+      return true
+    }
 
     if (
       themeName === 'custom' &&
       !isCustomThemeEqual(customTheme, initialCustomTheme || null)
     ) {
-      isChanged = true;
+      isChanged = true
     }
 
     if (!isChanged) {
-      return;
+      return
     }
 
     const timer = setTimeout(async () => {
-      setAppearanceStatus('saving');
-      const startTime = Date.now();
+      setAppearanceStatus('saving')
+      const startTime = Date.now()
 
-      const formData = new FormData();
-      formData.append('themeName', themeName);
-      formData.append('buttonStyle', buttonStyle);
-      formData.append('buttonShape', buttonShape);
-      formData.append('socialLinks', JSON.stringify(socialLinks));
+      const formData = new FormData()
+      formData.append('themeName', themeName)
+      formData.append('buttonStyle', buttonStyle)
+      formData.append('buttonShape', buttonShape)
+      formData.append('socialLinks', JSON.stringify(socialLinks))
       if (themeName === 'custom') {
-        formData.append('customTheme', JSON.stringify(customTheme));
+        formData.append('customTheme', JSON.stringify(customTheme))
       }
 
-      const result = await updateAppearance(formData);
+      const result = await updateAppearance(formData)
 
-      const elapsed = Date.now() - startTime;
-      const minDuration = 500;
+      const elapsed = Date.now() - startTime
+      const minDuration = 500
       if (elapsed < minDuration) {
         await new Promise((resolve) =>
           setTimeout(resolve, minDuration - elapsed),
-        );
+        )
       }
 
       if (result.error) {
-        setAppearanceStatus('error');
-        setError(result.error);
+        setAppearanceStatus('error')
+        setError(result.error)
       } else {
-        setAppearanceStatus('saved');
-        setError(null);
-        router.refresh();
-        setTimeout(() => setAppearanceStatus('idle'), 2000);
+        setAppearanceStatus('saved')
+        setError(null)
+        router.refresh()
+        setTimeout(() => setAppearanceStatus('idle'), 2000)
       }
-    }, 500);
+    }, 500)
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer)
   }, [
     themeName,
     buttonStyle,
@@ -357,52 +357,52 @@ export default function AppearanceEditor({
     initialCustomTheme,
     socialLinks,
     router,
-  ]);
+  ])
 
   // Social Links Auto-save
   useEffect(() => {
     const isSocialChanged =
-      JSON.stringify(socialLinks) !== JSON.stringify(initialSocialLinks);
+      JSON.stringify(socialLinks) !== JSON.stringify(initialSocialLinks)
 
     if (!isSocialChanged) {
-      return;
+      return
     }
 
     const timer = setTimeout(async () => {
-      setSocialStatus('saving');
-      const startTime = Date.now();
+      setSocialStatus('saving')
+      const startTime = Date.now()
 
-      const formData = new FormData();
-      formData.append('themeName', themeName);
-      formData.append('buttonStyle', buttonStyle);
-      formData.append('buttonShape', buttonShape);
-      formData.append('socialLinks', JSON.stringify(socialLinks));
+      const formData = new FormData()
+      formData.append('themeName', themeName)
+      formData.append('buttonStyle', buttonStyle)
+      formData.append('buttonShape', buttonShape)
+      formData.append('socialLinks', JSON.stringify(socialLinks))
       if (themeName === 'custom') {
-        formData.append('customTheme', JSON.stringify(customTheme));
+        formData.append('customTheme', JSON.stringify(customTheme))
       }
 
-      const result = await updateAppearance(formData);
+      const result = await updateAppearance(formData)
 
-      const elapsed = Date.now() - startTime;
-      const minDuration = 500;
+      const elapsed = Date.now() - startTime
+      const minDuration = 500
       if (elapsed < minDuration) {
         await new Promise((resolve) =>
           setTimeout(resolve, minDuration - elapsed),
-        );
+        )
       }
 
       if (result.error) {
-        setSocialStatus('error');
-        setError(result.error);
+        setSocialStatus('error')
+        setError(result.error)
       } else {
-        setSocialStatus('saved');
-        setError(null);
-        router.refresh();
-        setTimeout(() => setSocialStatus('idle'), 2000);
+        setSocialStatus('saved')
+        setError(null)
+        router.refresh()
+        setTimeout(() => setSocialStatus('idle'), 2000)
       }
-    }, 1000); // Longer debounce for typing
+    }, 1000) // Longer debounce for typing
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer)
   }, [
     socialLinks,
     initialSocialLinks,
@@ -411,11 +411,11 @@ export default function AppearanceEditor({
     buttonStyle,
     buttonShape,
     router,
-  ]);
+  ])
 
   // Debounced Custom Theme Preview Update
   useEffect(() => {
-    if (themeName !== 'custom') return;
+    if (themeName !== 'custom') return
 
     const timer = setTimeout(() => {
       onPreviewUpdate(
@@ -424,10 +424,10 @@ export default function AppearanceEditor({
         buttonShape,
         socialLinks,
         customTheme,
-      );
-    }, 300); // 300ms sweet spot for typing vs visual feedback
+      )
+    }, 300) // 300ms sweet spot for typing vs visual feedback
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer)
   }, [
     customTheme,
     themeName,
@@ -435,7 +435,7 @@ export default function AppearanceEditor({
     buttonShape,
     socialLinks,
     onPreviewUpdate,
-  ]);
+  ])
 
   const handleUpdate = (
     type: 'theme' | 'style' | 'shape' | 'social',
@@ -443,62 +443,62 @@ export default function AppearanceEditor({
     overrideCustomTheme?: CustomThemeData,
   ) => {
     if (type === 'theme' && typeof value === 'string') {
-      const themeId = value;
-      setThemeName(themeId);
-      setAppearanceStatus('idle');
+      const themeId = value
+      setThemeName(themeId)
+      setAppearanceStatus('idle')
       onPreviewUpdate(
         themeId,
         buttonStyle,
         buttonShape,
         socialLinks,
         overrideCustomTheme !== undefined ? overrideCustomTheme : customTheme,
-      );
+      )
     } else if (type === 'style' && typeof value === 'string') {
-      const style = validateButtonStyle(value);
-      setButtonStyle(style);
-      setAppearanceStatus('idle');
-      onPreviewUpdate(themeName, style, buttonShape, socialLinks);
+      const style = validateButtonStyle(value)
+      setButtonStyle(style)
+      setAppearanceStatus('idle')
+      onPreviewUpdate(themeName, style, buttonShape, socialLinks)
     } else if (type === 'shape' && typeof value === 'string') {
-      const shape = validateButtonShape(value);
-      setButtonShape(shape);
-      setAppearanceStatus('idle');
-      onPreviewUpdate(themeName, buttonStyle, shape, socialLinks, customTheme);
+      const shape = validateButtonShape(value)
+      setButtonShape(shape)
+      setAppearanceStatus('idle')
+      onPreviewUpdate(themeName, buttonStyle, shape, socialLinks, customTheme)
     } else if (type === 'social' && typeof value === 'object') {
-      const social = value;
-      const newSocial = { ...socialLinks, ...social };
-      setSocialLinks(newSocial);
-      setSocialStatus('idle');
+      const social = value
+      const newSocial = { ...socialLinks, ...social }
+      setSocialLinks(newSocial)
+      setSocialStatus('idle')
       onPreviewUpdate(
         themeName,
         buttonStyle,
         buttonShape,
         newSocial,
         customTheme,
-      );
+      )
     }
-  };
+  }
 
   const handleCustomColorChange = (
     key: keyof CustomThemeData,
     color: string,
   ) => {
-    const newCustom = { ...customTheme, [key]: color };
-    setCustomTheme(newCustom);
-    setAppearanceStatus('idle');
-    setThemeName('custom');
+    const newCustom = { ...customTheme, [key]: color }
+    setCustomTheme(newCustom)
+    setAppearanceStatus('idle')
+    setThemeName('custom')
     // Removed immediate onPreviewUpdate to prevent typing lag
-  };
+  }
 
   const getPreviewButtonClass = (themeId: string) => {
-    const theme = THEME_LIST.find((t) => t.id === themeId);
-    if (!theme) return 'bg-white/15 border-white/25 text-white';
-    const { colors } = theme;
-    return `${colors.buttonBg} ${colors.buttonBorder} ${colors.buttonText}`;
-  };
+    const theme = THEME_LIST.find((t) => t.id === themeId)
+    if (!theme) return 'bg-white/15 border-white/25 text-white'
+    const { colors } = theme
+    return `${colors.buttonBg} ${colors.buttonBorder} ${colors.buttonText}`
+  }
 
   const filteredThemes = activeCategory
     ? THEME_LIST.filter((t) => t.category === activeCategory)
-    : [];
+    : []
 
   return (
     <div className='space-y-6'>
@@ -526,16 +526,22 @@ export default function AppearanceEditor({
               <Label className='text-sm font-bold uppercase tracking-wider opacity-60'>
                 Background Theme
               </Label>
-              <div className='flex bg-muted p-1 rounded-xl gap-1 w-fit overflow-x-auto no-scrollbar scroll-smooth'>
+              <div
+                role='tablist'
+                aria-label='Theme categories'
+                className='flex bg-muted p-1 rounded-xl gap-1 w-fit overflow-x-auto no-scrollbar scroll-smooth'
+              >
                 {themeCategories.map((cat) => (
                   <button
                     type='button'
                     key={cat}
+                    role='tab'
+                    aria-selected={activeCategory === cat}
                     onClick={async () => {
-                      setActiveCategory(cat);
+                      setActiveCategory(cat)
                       // If they specifically click the custom tab, auto-switch the theme to custom
                       if (cat === 'custom') {
-                        let currentCustom = customTheme;
+                        let currentCustom = customTheme
 
                         // If they haven't set a custom theme yet, give them a clean default slate
                         if (
@@ -555,15 +561,15 @@ export default function AppearanceEditor({
                             footerBg: '#0000000d',
                             footerBorder: '#0000001a',
                             footerText: '#666666',
-                          };
-                          setCustomTheme(currentCustom);
+                          }
+                          setCustomTheme(currentCustom)
                         }
 
-                        handleUpdate('theme', 'custom', currentCustom);
+                        handleUpdate('theme', 'custom', currentCustom)
                       }
                     }}
                     className={cn(
-                      'px-3 py-1 text-[10px] font-bold uppercase tracking-tight rounded-md transition-all cursor-pointer',
+                      'px-3 py-1 text-[10px] font-bold uppercase tracking-tight rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       activeCategory === cat
                         ? 'bg-card text-foreground shadow-sm ring-1 ring-border'
                         : 'text-muted-foreground hover:text-foreground',
@@ -611,7 +617,7 @@ export default function AppearanceEditor({
                   ? Array.from({ length: 3 }).map((_, i) => (
                       <div
                         key={i}
-                        className='flex flex-col items-center justify-center p-3 rounded-xl border-2 border-border/50 min-h-[90px] bg-secondary/50'
+                        className='flex flex-col items-center justify-center p-3 rounded-xl border-2 border-border/50 min-h-22.5 bg-secondary/50'
                       >
                         <Skeleton className='h-3 w-12 rounded mb-2' />
                         <Skeleton className='w-full h-6 rounded' />
@@ -622,8 +628,9 @@ export default function AppearanceEditor({
                         key={theme.id}
                         type='button'
                         onClick={() => handleUpdate('theme', theme.id)}
+                        aria-label={`Select ${theme.name} theme`}
                         className={cn(
-                          'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all shadow-sm group min-h-[90px] cursor-pointer',
+                          'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all shadow-sm group min-h-22.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                           theme.previewClass,
                           themeName === theme.id
                             ? 'border-primary ring-2 ring-primary/10'
@@ -839,5 +846,5 @@ export default function AppearanceEditor({
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

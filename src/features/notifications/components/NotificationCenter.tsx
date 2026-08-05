@@ -185,7 +185,7 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
       <PopoverTrigger asChild>
         <button
           className={cn(
-            'flex items-center justify-center relative h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-secondary/40 border border-border/80 text-foreground hover:bg-secondary/80 transition-all shrink-0 group cursor-pointer',
+            'flex items-center justify-center relative h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-secondary/40 border border-border/80 text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all shrink-0 group cursor-pointer',
             hasUnread &&
               'border-destructive/40 bg-destructive/5 text-destructive shadow-sm shadow-destructive/15',
           )}
@@ -271,7 +271,7 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
                       key={item.id}
                       onClick={() => handleNotificationClick(item)}
                       className={cn(
-                        'w-full text-left p-3 flex items-start gap-3 hover:bg-accent/50 transition-colors relative',
+                        'w-full text-left p-3 flex items-start gap-3 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset transition-colors relative',
                         !item.read_at && 'bg-accent/20 font-medium',
                       )}
                     >
@@ -309,7 +309,7 @@ export function NotificationCenter({ user }: NotificationCenterProps) {
                       key={item.id}
                       onClick={() => handleNotificationClick(item)}
                       className={cn(
-                        'w-full text-left p-3 flex items-start gap-3 hover:bg-accent/50 transition-colors relative',
+                        'w-full text-left p-3 flex items-start gap-3 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset transition-colors relative',
                         !item.read_at && 'bg-accent/20 font-medium',
                       )}
                     >

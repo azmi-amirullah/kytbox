@@ -10,7 +10,7 @@ export function SearchTrigger() {
     <button
       id='tour-search-trigger'
       onClick={() => window.dispatchEvent(new CustomEvent('toggle-command-palette'))}
-      className='flex items-center justify-center gap-2 h-8 w-8 sm:h-9 sm:w-auto px-0 sm:px-3 text-xs font-medium text-foreground bg-secondary/40 border border-border/80 rounded-full hover:bg-secondary/80 transition-all cursor-pointer shrink-0'
+      className='flex items-center justify-center gap-2 h-8 w-8 sm:h-9 sm:w-auto px-0 sm:px-3 text-xs font-medium text-foreground bg-secondary/40 border border-border/80 rounded-full hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all cursor-pointer shrink-0'
       aria-label='Search commands'
       title={'Search commands (' + shortcut + ')'}
     >

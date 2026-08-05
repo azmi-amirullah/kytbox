@@ -130,25 +130,14 @@ const LinkItemContent = memo(function LinkItemContent({
         {...attributes}
         {...listeners}
         onClick={(e) => e.stopPropagation()}
-        className='p-2 cursor-move text-muted-foreground/50 hover:text-foreground touch-none select-none transition-colors'
-        aria-label='Drag to reorder'
+        className='p-2 cursor-move text-muted-foreground/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm touch-none select-none transition-colors'
+        aria-label={`Drag to reorder ${link.title}`}
       >
         <LuGripVertical className='w-5 h-5' />
       </button>
 
       {/* Toggle */}
-      <div
-        className='flex items-center'
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ' && !isParentHidden) {
-            e.stopPropagation();
-            onToggle(link.id, !link.is_active);
-          }
-        }}
-        role='button'
-        tabIndex={isParentHidden ? -1 : 0}
-      >
+      <div className='flex items-center'>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -156,7 +145,9 @@ const LinkItemContent = memo(function LinkItemContent({
                 <Switch
                   checked={isParentHidden ? false : !!link.is_active}
                   onCheckedChange={(checked) => !isParentHidden && onToggle(link.id, checked)}
+                  onClick={(e) => e.stopPropagation()}
                   disabled={isParentHidden}
+                  aria-label={`Toggle visibility of ${link.title}`}
                   className={cn(
                     'data-[state=checked]:bg-green-500',
                     isParentHidden && 'opacity-50 grayscale'

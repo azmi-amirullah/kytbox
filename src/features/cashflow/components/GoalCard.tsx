@@ -271,7 +271,7 @@ export default function GoalCard({
                             e.stopPropagation()
                             handleEdit(goal)
                           }}
-                          className='p-1 text-muted-foreground hover:text-foreground transition-colors rounded cursor-pointer'
+                          className='p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors rounded cursor-pointer'
                           title='Edit Goal'
                           aria-label={`Edit ${goal.title}`}
                         >
@@ -283,7 +283,7 @@ export default function GoalCard({
                             requestArchive(goal)
                           }}
                           disabled={deletingId === goal.id}
-                          className='p-1 text-muted-foreground hover:text-destructive transition-colors rounded cursor-pointer'
+                          className='p-1 text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors rounded cursor-pointer'
                           title='Archive Goal'
                           aria-label={`Archive ${goal.title}`}
                         >
