@@ -111,7 +111,7 @@ export function InvoiceTable({
               key={st}
               type='button'
               onClick={() => setSelectedStatus(st)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors ${
+              className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors ${
                 selectedStatus === st
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'

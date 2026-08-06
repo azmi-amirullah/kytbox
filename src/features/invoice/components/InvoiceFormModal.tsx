@@ -547,19 +547,20 @@ function InvoiceFormContent({
                       </label>
                       <Input
                         id={`item_qty_${idx}`}
-                        type='number'
-                        min='0.01'
-                        step='any'
+                        type='text'
+                        inputMode='decimal'
                         required
                         placeholder='Qty'
-                        value={item.quantity}
-                        onChange={(e) =>
+                        value={item.quantity || ''}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '')
                           handleItemChange(
                             idx,
                             'quantity',
-                            parseFloat(e.target.value) || 0,
+                            parseFloat(val) || 0,
                           )
-                        }
+                        }}
                         className='w-full text-right text-xs sm:text-sm px-2'
                       />
                     </div>
@@ -570,19 +571,20 @@ function InvoiceFormContent({
                       </label>
                       <Input
                         id={`item_price_${idx}`}
-                        type='number'
-                        min='0'
-                        step='any'
+                        type='text'
+                        inputMode='decimal'
                         required
                         placeholder='Price'
-                        value={item.unit_price}
-                        onChange={(e) =>
+                        value={item.unit_price || ''}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/^0+(?=\d)/, '')
                           handleItemChange(
                             idx,
                             'unit_price',
-                            parseFloat(e.target.value) || 0,
+                            parseFloat(val) || 0,
                           )
-                        }
+                        }}
                         className='w-full text-right text-xs sm:text-sm px-2'
                       />
                     </div>
@@ -624,11 +626,15 @@ function InvoiceFormContent({
             </label>
             <Input
               id='tax_rate'
-              type='number'
-              min='0'
-              max='100'
-              value={taxRate}
-              onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+              type='text'
+              inputMode='decimal'
+              placeholder='0'
+              value={taxRate || ''}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => {
+                const val = e.target.value.replace(/^0+(?=\d)/, '')
+                setTaxRate(parseFloat(val) || 0)
+              }}
               className='w-24 text-right h-8 py-1 text-xs'
             />
           </div>
@@ -641,12 +647,15 @@ function InvoiceFormContent({
             </label>
             <Input
               id='discount_amount'
-              type='number'
-              min='0'
-              value={discountAmount}
-              onChange={(e) =>
-                setDiscountAmount(parseFloat(e.target.value) || 0)
-              }
+              type='text'
+              inputMode='decimal'
+              placeholder='0'
+              value={discountAmount || ''}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => {
+                const val = e.target.value.replace(/^0+(?=\d)/, '')
+                setDiscountAmount(parseFloat(val) || 0)
+              }}
               className='w-24 text-right h-8 py-1 text-xs'
             />
           </div>

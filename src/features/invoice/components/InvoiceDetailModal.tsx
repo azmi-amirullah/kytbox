@@ -90,75 +90,73 @@ export function InvoiceDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='max-h-[92vh] w-[calc(100%-1rem)] max-w-full overflow-y-auto overflow-x-hidden p-4 sm:max-w-4xl sm:p-6'>
-        <DialogHeader className='flex flex-col gap-4 border-b border-border/80 pb-4 sm:flex-row sm:items-center sm:justify-between'>
+        <DialogHeader className='flex flex-row items-center justify-between border-b border-border/80 pb-3'>
           <DialogTitle className='text-lg font-bold sm:text-xl'>
             Invoice #{invoice.invoice_number}
           </DialogTitle>
-
-          <div className='flex flex-wrap items-center gap-2 print:hidden'>
-            {invoice.status !== 'paid' && (
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={handleMarkAsPaid}
-                disabled={isUpdating}
-                className='text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10'
-              >
-                <LuCheck className='mr-1.5 size-4' aria-hidden='true' />
-                Mark Paid
-              </Button>
-            )}
-
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleDownloadPDF}
-              disabled={isDownloading}
-              title='Download PDF'
-            >
-              {isDownloading ? (
-                <LuLoader
-                  className='mr-1.5 size-4 animate-spin'
-                  aria-hidden='true'
-                />
-              ) : (
-                <LuDownload className='mr-1.5 size-4' aria-hidden='true' />
-              )}
-              {isDownloading ? 'Generating…' : 'Download PDF'}
-            </Button>
-
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => {
-                onClose()
-                onEdit(invoice)
-              }}
-            >
-              <LuPencil className='mr-1.5 size-4' aria-hidden='true' />
-              Edit
-            </Button>
-
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleDelete}
-              disabled={isUpdating}
-              className='text-rose-600 border-rose-500/30 hover:bg-rose-500/10'
-            >
-              <LuTrash2 className='mr-1.5 size-4' aria-hidden='true' />
-              Delete
-            </Button>
-
-            <DialogClose onClick={onClose} />
-          </div>
+          <DialogClose onClick={onClose} />
         </DialogHeader>
 
-        {/* PDF View Body — min-width forces desktop layout on all screen sizes */}
-        <div className='overflow-x-auto py-4'>
-          <div className='min-w-170'>
-            <InvoicePDFView invoice={invoice} />
-          </div>
+        {/* Action Buttons Toolbar below Header */}
+        <div className='flex flex-wrap items-center gap-2 pt-1 pb-1 print:hidden'>
+          {invoice.status !== 'paid' && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleMarkAsPaid}
+              disabled={isUpdating}
+              className='text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10'
+            >
+              <LuCheck className='mr-1.5 size-4' aria-hidden='true' />
+              Mark Paid
+            </Button>
+          )}
+
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+            title='Download PDF'
+          >
+            {isDownloading ? (
+              <LuLoader
+                className='mr-1.5 size-4 animate-spin'
+                aria-hidden='true'
+              />
+            ) : (
+              <LuDownload className='mr-1.5 size-4' aria-hidden='true' />
+            )}
+            {isDownloading ? 'Generating…' : 'Download PDF'}
+          </Button>
+
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => {
+              onClose()
+              onEdit(invoice)
+            }}
+          >
+            <LuPencil className='mr-1.5 size-4' aria-hidden='true' />
+            Edit
+          </Button>
+
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={handleDelete}
+            disabled={isUpdating}
+            className='text-rose-600 border-rose-500/30 hover:bg-rose-500/10'
+          >
+            <LuTrash2 className='mr-1.5 size-4' aria-hidden='true' />
+            Delete
+          </Button>
+        </div>
+
+        {/* PDF View Body — horizontal scroll for static uncompacted invoice preview on small screens */}
+        <div className='overflow-x-auto py-2'>
+          <InvoicePDFView invoice={invoice} />
         </div>
       </DialogContent>
     </Dialog>
