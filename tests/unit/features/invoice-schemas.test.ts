@@ -21,7 +21,8 @@ describe('Invoice Server Schemas & DB Mappers', () => {
         discount_amount: 50,
         notes: 'Payment due in 14 days',
         payment_info: 'Bank: Tech Bank, Acc: 12345',
-        include_signature: true,
+        include_issuer_signature: true,
+        include_client_signature: true,
         signatory_name: 'Alex Rivera',
         signed_date: '2026-08-06',
         items: [
@@ -94,7 +95,8 @@ describe('Invoice Server Schemas & DB Mappers', () => {
         subtotal: 500,
         tax_amount: 25,
         total_amount: 515,
-        include_signature: false,
+        include_issuer_signature: false,
+        include_client_signature: true,
         created_at: '2026-08-01T00:00:00Z',
         updated_at: '2026-08-01T00:00:00Z',
       };
@@ -118,6 +120,8 @@ describe('Invoice Server Schemas & DB Mappers', () => {
       expect(dto.invoice_number).toBe('INV-100');
       expect(dto.status).toBe('paid');
       expect(dto.total_amount).toBe(515);
+      expect(dto.include_issuer_signature).toBe(false);
+      expect(dto.include_client_signature).toBe(true);
       expect(dto.items).toHaveLength(1);
       expect(dto.items[0].description).toBe('Consulting');
     });

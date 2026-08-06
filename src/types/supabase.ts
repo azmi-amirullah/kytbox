@@ -268,7 +268,8 @@ export type Database = {
           discount_amount: number | null
           due_date: string
           id: string
-          include_signature: boolean
+          include_issuer_signature?: boolean
+          include_client_signature?: boolean
           invoice_number: string
           issue_date: string
           notes: string | null
@@ -295,7 +296,8 @@ export type Database = {
           discount_amount?: number | null
           due_date: string
           id?: string
-          include_signature?: boolean
+          include_issuer_signature?: boolean
+          include_client_signature?: boolean
           invoice_number: string
           issue_date?: string
           notes?: string | null
@@ -322,7 +324,8 @@ export type Database = {
           discount_amount?: number | null
           due_date?: string
           id?: string
-          include_signature?: boolean
+          include_issuer_signature?: boolean
+          include_client_signature?: boolean
           invoice_number?: string
           issue_date?: string
           notes?: string | null

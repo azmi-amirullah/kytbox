@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   sigCol: { flex: 1 },
-  sigLine: { borderBottomWidth: 1, borderBottomColor: C.border, marginTop: 24, marginBottom: 3 },
+  sigLine: { borderBottomWidth: 1, borderBottomColor: C.border, marginTop: 44, marginBottom: 3 },
   sigName: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.foreground },
   sigMeta: { fontSize: 7, color: C.mutedFg, marginTop: 1 },
   sigPlaceholder: { fontSize: 7, color: C.mutedFg },
@@ -280,24 +280,48 @@ export function InvoiceDocument({ invoice }: InvoiceDocumentProps) {
         )}
 
         {/* ── Signature Block ── */}
-        {invoice.include_signature && (
-          <View style={styles.sigContainer}>
-            <View style={styles.sigCol}>
-              <Text style={styles.sectionLabel}>Authorized By</Text>
-              <View style={styles.sigLine} />
-              <Text style={styles.sigName}>
-                {invoice.signatory_name || invoice.sender_name || 'Authorized Signatory'}
-              </Text>
-              <Text style={styles.sigMeta}>
-                Date Signed: {fmtDate(invoice.signed_date || invoice.issue_date)}
-              </Text>
-            </View>
-            <View style={styles.sigCol}>
-              <Text style={styles.sectionLabel}>Client Acknowledgement</Text>
-              <View style={styles.sigLine} />
-              <Text style={styles.sigPlaceholder}>Signature</Text>
-              <Text style={styles.sigMeta}>Date Signed: ____ / ____ / ________</Text>
-            </View>
+        {(invoice.include_issuer_signature || invoice.include_client_signature) && (
+          <View
+            style={[
+              styles.sigContainer,
+              !(invoice.include_issuer_signature && invoice.include_client_signature)
+                ? { justifyContent: 'flex-end' }
+                : {},
+            ]}
+          >
+            {invoice.include_issuer_signature && (
+              <View
+                style={[
+                  styles.sigCol,
+                  !(invoice.include_issuer_signature && invoice.include_client_signature)
+                    ? { flex: 0.5 }
+                    : {},
+                ]}
+              >
+                <Text style={styles.sectionLabel}>Authorized By</Text>
+                <View style={styles.sigLine} />
+                <Text style={styles.sigName}>
+                  {invoice.signatory_name || invoice.sender_name || 'Authorized Signatory'}
+                </Text>
+                <Text style={styles.sigMeta}>
+                  Date Signed: {fmtDate(invoice.signed_date || invoice.issue_date)}
+                </Text>
+              </View>
+            )}
+            {invoice.include_client_signature && (
+              <View
+                style={[
+                  styles.sigCol,
+                  !(invoice.include_issuer_signature && invoice.include_client_signature)
+                    ? { flex: 0.5 }
+                    : {},
+                ]}
+              >
+                <Text style={styles.sectionLabel}>Client Acknowledgement</Text>
+                <View style={styles.sigLine} />
+                <Text style={styles.sigMeta}>Date Signed: ____ / ____ / ________</Text>
+              </View>
+            )}
           </View>
         )}
 

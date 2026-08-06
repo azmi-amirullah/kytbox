@@ -201,40 +201,42 @@ export function InvoicePDFView({ invoice }: InvoicePDFViewProps) {
         </div>
       )}
 
-      {/* Signature Block (When include_signature is enabled) */}
-      {invoice.include_signature && (
+      {/* Signature Block */}
+      {(invoice.include_issuer_signature || invoice.include_client_signature) && (
         <div className='mt-10 border-t border-border/80 pt-6'>
           <div className='grid grid-cols-2 gap-6'>
             {/* Issuer Authorization */}
-            <div>
-              <span className='text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground'>
-                Authorized By
-              </span>
-              <div className='mt-8 border-b border-border/80 pb-1'>
-                <p className='text-sm font-semibold text-foreground'>
-                  {invoice.signatory_name ||
-                    invoice.sender_name ||
-                    'Authorized Signatory'}
+            {invoice.include_issuer_signature && (
+              <div className={!invoice.include_client_signature ? 'col-start-2' : ''}>
+                <span className='text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground'>
+                  Authorized By
+                </span>
+                <div className='mt-4 flex h-14 items-end border-b border-border/80 pb-1'>
+                  <p className='text-sm font-semibold text-foreground'>
+                    {invoice.signatory_name ||
+                      invoice.sender_name ||
+                      'Authorized Signatory'}
+                  </p>
+                </div>
+                <p className='mt-1.5 text-xs text-muted-foreground'>
+                  Date Signed:{' '}
+                  {formatDate(invoice.signed_date || invoice.issue_date)}
                 </p>
               </div>
-              <p className='mt-1 text-xs text-muted-foreground'>
-                Date Signed:{' '}
-                {formatDate(invoice.signed_date || invoice.issue_date)}
-              </p>
-            </div>
+            )}
 
             {/* Client Counter-Sign */}
-            <div>
-              <span className='text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground'>
-                Client Acknowledgement
-              </span>
-              <div className='mt-8 border-b border-border/80 pb-1'>
-                <p className='text-xs text-muted-foreground/60'>Signature</p>
+            {invoice.include_client_signature && (
+              <div className={!invoice.include_issuer_signature ? 'col-start-2' : ''}>
+                <span className='text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground'>
+                  Client Acknowledgement
+                </span>
+                <div className='mt-4 h-14 border-b border-border/80' />
+                <p className='mt-1.5 text-xs text-muted-foreground'>
+                  Date Signed: ____ / ____ / ________
+                </p>
               </div>
-              <p className='mt-1 text-xs text-muted-foreground'>
-                Date Signed: ____ / ____ / ________
-              </p>
-            </div>
+            )}
           </div>
         </div>
       )}

@@ -32,7 +32,8 @@ export interface InvoiceDTO {
   total_amount: number;
   notes: string | null;
   payment_info: string | null;
-  include_signature: boolean;
+  include_issuer_signature: boolean;
+  include_client_signature: boolean;
   signatory_name: string | null;
   signed_date: string | null;
   created_at: string;
@@ -64,7 +65,8 @@ export interface InvoiceFormInput {
   discount_amount: number;
   notes?: string;
   payment_info?: string;
-  include_signature: boolean;
+  include_issuer_signature?: boolean;
+  include_client_signature?: boolean;
   signatory_name?: string;
   signed_date?: string;
   items: InvoiceFormItemInput[];

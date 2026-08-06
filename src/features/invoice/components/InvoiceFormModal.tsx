@@ -139,8 +139,11 @@ function InvoiceFormContent({
     invoiceToEdit ? invoiceToEdit.payment_info || '' : '',
   )
 
-  const [includeSignature, setIncludeSignature] = useState(() =>
-    invoiceToEdit ? invoiceToEdit.include_signature : false,
+  const [includeIssuerSignature, setIncludeIssuerSignature] = useState(() =>
+    invoiceToEdit ? Boolean(invoiceToEdit.include_issuer_signature) : false,
+  )
+  const [includeClientSignature, setIncludeClientSignature] = useState(() =>
+    invoiceToEdit ? Boolean(invoiceToEdit.include_client_signature) : false,
   )
   const [signatoryName, setSignatoryName] = useState(() =>
     invoiceToEdit ? invoiceToEdit.signatory_name || '' : '',
@@ -224,9 +227,10 @@ function InvoiceFormContent({
       discount_amount: Number(discountAmount) || 0,
       notes: notes || undefined,
       payment_info: paymentInfo || undefined,
-      include_signature: includeSignature,
-      signatory_name: includeSignature ? signatoryName || undefined : undefined,
-      signed_date: includeSignature ? signedDate || undefined : undefined,
+      include_issuer_signature: includeIssuerSignature,
+      include_client_signature: includeClientSignature,
+      signatory_name: includeIssuerSignature ? signatoryName || undefined : undefined,
+      signed_date: includeIssuerSignature ? signedDate || undefined : undefined,
       items: items.map((item) => ({
         id: item.id,
         description: item.description,
@@ -709,57 +713,83 @@ function InvoiceFormContent({
           </div>
         </div>
 
-        {/* Signature Block Toggle */}
-        <div className='rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3'>
-          <div className='flex items-center gap-2.5'>
-            <Checkbox
-              id='include_signature'
-              checked={includeSignature}
-              onCheckedChange={(checked) =>
-                setIncludeSignature(Boolean(checked))
-              }
-            />
-            <label
-              htmlFor='include_signature'
-              className='text-xs font-semibold text-foreground cursor-pointer select-none'
-            >
-              Include Formal Authorization / Signature Block on PDF
-            </label>
+        {/* Signature Block Toggles */}
+        <div className='rounded-xl border border-border/60 bg-muted/30 p-4 space-y-4'>
+          <p className='text-xs font-semibold uppercase tracking-widest text-muted-foreground'>
+            PDF Signature Options
+          </p>
+
+          {/* Issuer Authorization Section */}
+          <div className='space-y-3'>
+            <div className='flex items-center gap-2.5'>
+              <Checkbox
+                id='include_issuer_signature'
+                checked={includeIssuerSignature}
+                onCheckedChange={(checked) =>
+                  setIncludeIssuerSignature(Boolean(checked))
+                }
+              />
+              <label
+                htmlFor='include_issuer_signature'
+                className='text-xs font-medium text-foreground cursor-pointer select-none'
+              >
+                Authorized By
+              </label>
+            </div>
+
+            {includeIssuerSignature && (
+              <div className='grid gap-4 sm:grid-cols-2 pt-1'>
+                <div>
+                  <label
+                    htmlFor='signatory_name'
+                    className='block text-xs font-semibold text-foreground/80 mb-1'
+                  >
+                    Authorized By (Name / Title)
+                  </label>
+                  <Input
+                    id='signatory_name'
+                    type='text'
+                    placeholder='e.g., Alex Rivera (Founder)'
+                    value={signatoryName}
+                    onChange={(e) => setSignatoryName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor='signed_date'
+                    className='block text-xs font-semibold text-foreground/80 mb-1'
+                  >
+                    Date Signed
+                  </label>
+                  <Input
+                    id='signed_date'
+                    type='date'
+                    value={signedDate}
+                    onChange={(e) => setSignedDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          {includeSignature && (
-            <div className='grid gap-4 sm:grid-cols-2 pt-2 border-t border-border/60'>
-              <div>
-                <label
-                  htmlFor='signatory_name'
-                  className='block text-xs font-semibold text-foreground/80 mb-1'
-                >
-                  Authorized By (Name / Title)
-                </label>
-                <Input
-                  id='signatory_name'
-                  type='text'
-                  placeholder='e.g., Alex Rivera (Founder)'
-                  value={signatoryName}
-                  onChange={(e) => setSignatoryName(e.target.value)}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor='signed_date'
-                  className='block text-xs font-semibold text-foreground/80 mb-1'
-                >
-                  Date Signed
-                </label>
-                <Input
-                  id='signed_date'
-                  type='date'
-                  value={signedDate}
-                  onChange={(e) => setSignedDate(e.target.value)}
-                />
-              </div>
+          {/* Client Counter-Sign Section */}
+          <div className='pt-3 border-t border-border/60'>
+            <div className='flex items-center gap-2.5'>
+              <Checkbox
+                id='include_client_signature'
+                checked={includeClientSignature}
+                onCheckedChange={(checked) =>
+                  setIncludeClientSignature(Boolean(checked))
+                }
+              />
+              <label
+                htmlFor='include_client_signature'
+                className='text-xs font-medium text-foreground cursor-pointer select-none'
+              >
+                Client Acknowledgement
+              </label>
             </div>
-          )}
+          </div>
         </div>
 
         <DialogFooter>
