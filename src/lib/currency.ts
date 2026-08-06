@@ -23,18 +23,27 @@ export function getCurrency(code: string | null | undefined) {
   return CURRENCIES.find((c) => c.code === code) ?? CURRENCIES[0];
 }
 
+// Currencies with no fractional units — hardcoded to avoid Node/browser ICU data divergence.
+// Source: Stripe zero-decimal currency list + common conventions (IDR, JPY, KRW, etc.)
+export const ZERO_DECIMAL_CURRENCIES = new Set([
+  'BIF', 'CLP', 'DJF', 'GNF', 'IDR', 'ISK', 'JPY', 'KMF', 'KRW',
+  'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
+]);
+
 export function formatCurrency(
   amount: number,
   currencyCode: string | null | undefined,
 ): string {
   const currency = getCurrency(currencyCode);
+  const fractionDigits = ZERO_DECIMAL_CURRENCIES.has(currency.code) ? 0 : 2;
   return new Intl.NumberFormat(currency.locale, {
     style: 'currency',
     currency: currency.code,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(amount);
 }
+
 
 export function formatCurrencyCompact(
   amount: number,

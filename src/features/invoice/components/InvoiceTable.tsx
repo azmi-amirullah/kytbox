@@ -13,6 +13,7 @@ import {
   LuPlus,
 } from 'react-icons/lu';
 import { updateInvoiceStatusAction, deleteInvoiceAction } from '../actions';
+import { formatCurrency } from '@/lib/currency';
 import { toast } from 'react-toastify';
 
 interface InvoiceTableProps {
@@ -47,12 +48,6 @@ export function InvoiceTable({
     return matchesSearch && matchesStatus;
   });
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-    }).format(amount);
-  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
@@ -212,7 +207,7 @@ export function InvoiceTable({
                         <Button
                           variant='ghost'
                           size='sm'
-                          title='View Detail / Print'
+                          title='View Detail'
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelect(inv);
