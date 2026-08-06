@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,9 @@ export default function CreateListModal({
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>{meta.label}</DialogTitle>
+          <DialogDescription className='sr-only'>
+            Create a new board or wishlist to organize your items.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className='space-y-4'>

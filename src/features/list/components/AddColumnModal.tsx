@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,9 @@ export default function AddColumnModal({
       <DialogContent className='sm:max-w-sm'>
         <DialogHeader>
           <DialogTitle>Add Column</DialogTitle>
+          <DialogDescription className='sr-only'>
+            Enter a title to add a new column to this list.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className='space-y-4'>

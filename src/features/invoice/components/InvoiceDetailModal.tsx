@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -33,6 +34,7 @@ export function InvoiceDetailModal({
 }: InvoiceDetailModalProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   if (!invoice) return null
 
@@ -60,24 +62,18 @@ export function InvoiceDetailModal({
     const res = await updateInvoiceStatusAction(invoice.id, 'paid')
     setIsUpdating(false)
     if (res.success) {
-      toast.success('Invoice marked as Paid')
+      toast.success('Invoice marked as paid')
       onRefresh()
     } else {
-      toast.error(res.error || 'Failed to update status')
+      toast.error(res.error || 'Failed to update invoice')
     }
   }
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        `Are you sure you want to delete invoice #${invoice.invoice_number}?`,
-      )
-    ) {
-      return
-    }
-    setIsUpdating(true)
+    if (!confirm('Are you sure you want to delete this invoice?')) return
+    setIsDeleting(true)
     const res = await deleteInvoiceAction(invoice.id)
-    setIsUpdating(false)
+    setIsDeleting(false)
     if (res.success) {
       toast.success('Invoice deleted')
       onClose()
@@ -91,9 +87,14 @@ export function InvoiceDetailModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='max-h-[92vh] w-[calc(100%-1rem)] max-w-full overflow-y-auto overflow-x-hidden p-4 sm:max-w-4xl sm:p-6'>
         <DialogHeader className='flex flex-row items-center justify-between border-b border-border/80 pb-3'>
-          <DialogTitle className='text-lg font-bold sm:text-xl'>
-            Invoice #{invoice.invoice_number}
-          </DialogTitle>
+          <div>
+            <DialogTitle className='text-lg font-bold sm:text-xl'>
+              Invoice #{invoice.invoice_number}
+            </DialogTitle>
+            <DialogDescription className='sr-only'>
+              Details and preview for invoice #{invoice.invoice_number}
+            </DialogDescription>
+          </div>
           <DialogClose onClick={onClose} />
         </DialogHeader>
 
@@ -146,11 +147,18 @@ export function InvoiceDetailModal({
             variant='outline'
             size='sm'
             onClick={handleDelete}
-            disabled={isUpdating}
+            disabled={isDeleting || isUpdating}
             className='text-rose-600 border-rose-500/30 hover:bg-rose-500/10'
           >
-            <LuTrash2 className='mr-1.5 size-4' aria-hidden='true' />
-            Delete
+            {isDeleting ? (
+              <LuLoader
+                className='mr-1.5 size-4 animate-spin'
+                aria-hidden='true'
+              />
+            ) : (
+              <LuTrash2 className='mr-1.5 size-4' aria-hidden='true' />
+            )}
+            {isDeleting ? 'Deleting…' : 'Delete'}
           </Button>
         </div>
 

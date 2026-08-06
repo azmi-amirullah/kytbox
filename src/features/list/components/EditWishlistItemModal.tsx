@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -90,6 +91,9 @@ export default function EditWishlistItemModal({
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>Edit Wish</DialogTitle>
+          <DialogDescription className='sr-only'>
+            Edit details of this wishlist item.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className='space-y-4'>

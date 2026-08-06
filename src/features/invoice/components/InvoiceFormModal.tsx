@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
@@ -271,11 +272,18 @@ function InvoiceFormContent({
   return (
     <DialogContent className='max-h-[92vh] w-[calc(100%-1rem)] max-w-full overflow-y-auto overflow-x-hidden p-4 sm:max-w-3xl sm:p-6'>
       <DialogHeader className='flex flex-row items-center justify-between border-b border-border/80 pb-4'>
-        <DialogTitle className='text-base font-bold sm:text-xl text-foreground'>
-          {isEditing
-            ? `Edit Invoice #${invoiceToEdit?.invoice_number}`
-            : 'Create New Invoice'}
-        </DialogTitle>
+        <div>
+          <DialogTitle className='text-base font-bold sm:text-xl text-foreground'>
+            {isEditing
+              ? `Edit Invoice #${invoiceToEdit?.invoice_number}`
+              : 'Create New Invoice'}
+          </DialogTitle>
+          <DialogDescription className='sr-only'>
+            {isEditing
+              ? 'Form to edit an existing invoice.'
+              : 'Form to create a new invoice.'}
+          </DialogDescription>
+        </div>
         <DialogClose onClick={onClose} />
       </DialogHeader>
 

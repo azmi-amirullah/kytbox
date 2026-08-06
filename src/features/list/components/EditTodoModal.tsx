@@ -1,29 +1,30 @@
-'use client';
+'use client'
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition } from 'react'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog';
-import { LuX, LuAlignLeft } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import type { ListItemDTO } from '@/types/dto';
-import { updateItem, toggleItem } from '../actions';
-import { toast } from 'react-toastify';
-import { Checkbox } from '@/components/ui/checkbox';
+} from '@/components/ui/dialog'
+import { LuX, LuAlignLeft } from 'react-icons/lu'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import type { ListItemDTO } from '@/types/dto'
+import { updateItem, toggleItem } from '../actions'
+import { toast } from 'react-toastify'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface EditTodoModalProps {
-  item: ListItemDTO;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUpdated: (item: ListItemDTO) => void;
+  item: ListItemDTO
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onUpdated: (item: ListItemDTO) => void
 }
 
 export default function EditTodoModal({
@@ -32,60 +33,60 @@ export default function EditTodoModal({
   onOpenChange,
   onUpdated,
 }: EditTodoModalProps) {
-  const [isPending, startTransition] = useTransition();
-  const [prevItemId, setPrevItemId] = useState(item.id);
-  const [prevOpen, setPrevOpen] = useState(open);
-  const [title, setTitle] = useState(item.title);
-  const [description, setDescription] = useState(item.description || '');
-  const [isCompleted, setIsCompleted] = useState(item.is_completed);
+  const [isPending, startTransition] = useTransition()
+  const [prevItemId, setPrevItemId] = useState(item.id)
+  const [prevOpen, setPrevOpen] = useState(open)
+  const [title, setTitle] = useState(item.title)
+  const [description, setDescription] = useState(item.description || '')
+  const [isCompleted, setIsCompleted] = useState(item.is_completed)
 
   // Reset local state synchronously when props change (avoids useEffect cascading renders)
   if (item.id !== prevItemId || open !== prevOpen) {
-    setPrevItemId(item.id);
-    setPrevOpen(open);
-    setTitle(item.title);
-    setDescription(item.description || '');
-    setIsCompleted(item.is_completed);
+    setPrevItemId(item.id)
+    setPrevOpen(open)
+    setTitle(item.title)
+    setDescription(item.description || '')
+    setIsCompleted(item.is_completed)
   }
 
   const handleToggleCompleted = () => {
-    if (isPending) return;
+    if (isPending) return
     startTransition(async () => {
-      const result = await toggleItem(item.id, !isCompleted);
+      const result = await toggleItem(item.id, !isCompleted)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        setIsCompleted(!isCompleted);
-        onUpdated({ ...item, is_completed: !isCompleted });
+        setIsCompleted(!isCompleted)
+        onUpdated({ ...item, is_completed: !isCompleted })
       }
-    });
-  };
+    })
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
+    e.preventDefault()
+    if (!title.trim()) return
 
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append('title', title.trim());
+      const formData = new FormData()
+      formData.append('title', title.trim())
       if (description.trim()) {
-        formData.append('description', description.trim());
+        formData.append('description', description.trim())
       }
 
-      const result = await updateItem(item.id, formData);
+      const result = await updateItem(item.id, formData)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
         onUpdated({
           ...item,
           title: title.trim(),
           description: description.trim() || null,
           is_completed: isCompleted,
-        });
-        onOpenChange(false);
+        })
+        onOpenChange(false)
       }
-    });
-  };
+    })
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,6 +111,9 @@ export default function EditTodoModal({
                 required
               />
             </DialogTitle>
+            <DialogDescription className='sr-only'>
+              Edit details for this todo task.
+            </DialogDescription>
             <DialogClose className='text-muted-foreground/75 hover:text-foreground hover:bg-accent rounded-xs p-1 transition-colors cursor-pointer shrink-0'>
               <LuX className='w-5 h-5' />
               <span className='sr-only'>Close</span>
@@ -130,7 +134,7 @@ export default function EditTodoModal({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder='Add details to this task...'
-                  className='min-h-[100px]'
+                  className='min-h-25'
                   maxLength={1000}
                 />
               </div>
@@ -153,5 +157,5 @@ export default function EditTodoModal({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
