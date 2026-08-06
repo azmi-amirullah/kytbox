@@ -44,9 +44,9 @@
   --sidebar-accent-foreground: oklch(0.35 0.1 55);
   --sidebar-border: oklch(0.89 0.02 255);
   --sidebar-ring: oklch(0.49 0.19 264);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-    'Noto Color Emoji';
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --font-serif: Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius: 0.75rem;
@@ -106,9 +106,9 @@
   --sidebar-accent-foreground: oklch(0.92 0.06 75);
   --sidebar-border: oklch(0.29 0.035 255);
   --sidebar-ring: oklch(0.74 0.15 264);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-    'Noto Color Emoji';
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --font-serif: Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius: 0.75rem;
@@ -174,6 +174,7 @@
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
 
+  --radius-xs: calc(var(--radius) - 8px);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -205,6 +206,14 @@
     isolation: isolate;
   }
 
+  input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not(
+      [type='submit']
+    ):not([type='button']):not([type='reset']),
+  select,
+  textarea {
+    @apply border-input bg-card text-foreground shadow-xs transition-colors;
+  }
+
   ::selection {
     background: color-mix(in srgb, var(--primary) 24%, transparent);
   }
@@ -227,8 +236,16 @@
 
   .marketing-grid {
     background-image:
-      linear-gradient(to right, color-mix(in srgb, var(--grid-line) 58%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in srgb, var(--grid-line) 58%, transparent) 1px, transparent 1px);
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--grid-line) 58%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--grid-line) 58%, transparent) 1px,
+        transparent 1px
+      );
     background-size: 4rem 4rem;
   }
 

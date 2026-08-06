@@ -258,6 +258,139 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          client_address: string | null
+          client_email: string | null
+          client_name: string
+          created_at: string
+          currency: string
+          discount_amount: number | null
+          due_date: string
+          id: string
+          include_signature: boolean
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          payment_info: string | null
+          sender_address: string | null
+          sender_email: string | null
+          sender_name: string | null
+          signatory_name: string | null
+          signed_date: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_address?: string | null
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          due_date: string
+          id?: string
+          include_signature?: boolean
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          payment_info?: string | null
+          sender_address?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
+          signatory_name?: string | null
+          signed_date?: string | null
+          status: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number | null
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_address?: string | null
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          due_date?: string
+          id?: string
+          include_signature?: boolean
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          payment_info?: string | null
+          sender_address?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
+          signatory_name?: string | null
+          signed_date?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'invoices_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      invoice_items: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          sort_order: number | null
+          unit_price: number
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          sort_order?: number | null
+          unit_price?: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          sort_order?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_items_invoice_id_fkey'
+            columns: ['invoice_id']
+            isOneToOne: false
+            referencedRelation: 'invoices'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       link_events: {
         Row: {
           city: string | null

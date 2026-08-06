@@ -27,3 +27,7 @@ export type ListColumn = Database['public']['Tables']['list_columns']['Row'];
 export type ListItem = Database['public']['Tables']['list_items']['Row'];
 export type ListWithSummary =
   Database['public']['Views']['list_summaries']['Row'];
+
+export type Invoice = Database['public']['Tables']['invoices']['Row'];
+export type InvoiceItem = Database['public']['Tables']['invoice_items']['Row'];
+

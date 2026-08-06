@@ -1,4 +1,4 @@
-import { LuLink2, LuListTodo, LuCar, LuWallet } from 'react-icons/lu';
+import { LuLink2, LuListTodo, LuCar, LuWallet, LuFileText } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 
 export interface KytboxApp {
@@ -29,6 +29,15 @@ export const KYTBOX_APPS: KytboxApp[] = [
     icon: LuWallet,
     status: 'active',
     color: 'bg-accent text-accent-foreground',
+  },
+  {
+    id: 'invoice',
+    name: 'Invoice',
+    description: 'Create professional invoices & export PDF statements',
+    href: '/invoice',
+    icon: LuFileText,
+    status: 'active',
+    color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   },
   {
     id: 'list',

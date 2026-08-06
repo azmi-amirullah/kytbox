@@ -25,9 +25,23 @@ function DialogPortal({
 }
 
 function DialogClose({
+  className,
+  children,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return <DialogPrimitive.Close data-slot='dialog-close' {...props} />;
+  return (
+    <DialogPrimitive.Close
+      data-slot='dialog-close'
+      className={cn(
+        'flex size-8 shrink-0 items-center justify-center rounded-md border border-input bg-card text-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus:ring-2 focus:ring-ring outline-none disabled:pointer-events-none cursor-pointer',
+        className,
+      )}
+      {...props}
+    >
+      {children || <LuX className='size-4' />}
+      <span className='sr-only'>Close</span>
+    </DialogPrimitive.Close>
+  );
 }
 
 function DialogOverlay({
@@ -49,7 +63,7 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
-  showCloseButton = true,
+  showCloseButton = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
@@ -67,13 +81,7 @@ function DialogContent({
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot='dialog-close'
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer"
-          >
-            <LuX />
-            <span className='sr-only'>Close</span>
-          </DialogPrimitive.Close>
+          <DialogClose className='absolute top-4 right-4 sm:top-5 sm:right-6' />
         )}
       </DialogPrimitive.Content>
     </DialogPortal>
