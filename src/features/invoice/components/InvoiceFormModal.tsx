@@ -269,9 +269,9 @@ function InvoiceFormContent({
   }
 
   return (
-    <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-3xl p-4 sm:p-6'>
+    <DialogContent className='max-h-[92vh] w-[calc(100%-1rem)] max-w-full overflow-y-auto overflow-x-hidden p-4 sm:max-w-3xl sm:p-6'>
       <DialogHeader className='flex flex-row items-center justify-between border-b border-border/80 pb-4'>
-        <DialogTitle className='text-lg font-bold sm:text-xl text-foreground'>
+        <DialogTitle className='text-base font-bold sm:text-xl text-foreground'>
           {isEditing
             ? `Edit Invoice #${invoiceToEdit?.invoice_number}`
             : 'Create New Invoice'}
@@ -282,7 +282,7 @@ function InvoiceFormContent({
       <form onSubmit={handleSubmit} className='space-y-6 py-2'>
         {/* Metadata Section */}
         <div className='grid gap-4 sm:grid-cols-3'>
-          <div>
+          <div className='sm:col-span-1'>
             <label
               htmlFor='invoice_number'
               className='block text-xs font-semibold text-foreground/80 mb-1'
@@ -298,108 +298,115 @@ function InvoiceFormContent({
             />
           </div>
 
-          <div>
-            <label
-              htmlFor='issue_date'
-              className='block text-xs font-semibold text-foreground/80 mb-1'
-            >
-              Issue Date *
-            </label>
-            <Input
-              id='issue_date'
-              type='date'
-              required
-              value={issueDate}
-              onChange={(e) => setIssueDate(e.target.value)}
-            />
+          <div className='grid grid-cols-2 gap-3 sm:col-span-2 sm:grid-cols-2'>
+            <div>
+              <label
+                htmlFor='issue_date'
+                className='block text-xs font-semibold text-foreground/80 mb-1'
+              >
+                Issue Date *
+              </label>
+              <Input
+                id='issue_date'
+                type='date'
+                required
+                value={issueDate}
+                onChange={(e) => setIssueDate(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor='due_date'
+                className='block text-xs font-semibold text-foreground/80 mb-1'
+              >
+                Due Date *
+              </label>
+              <Input
+                id='due_date'
+                type='date'
+                required
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div>
-            <label
-              htmlFor='due_date'
-              className='block text-xs font-semibold text-foreground/80 mb-1'
-            >
-              Due Date *
-            </label>
-            <Input
-              id='due_date'
-              type='date'
-              required
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </div>
+          <div className='grid grid-cols-2 gap-3 sm:col-span-3 sm:grid-cols-2'>
+            <div>
+              <label
+                htmlFor='status'
+                className='block text-xs font-semibold text-foreground/80 mb-1'
+              >
+                Status
+              </label>
+              <Select
+                value={status}
+                onValueChange={(val) => setStatus(parseStatus(val))}
+              >
+                <SelectTrigger id='status' className='w-full'>
+                  <SelectValue placeholder='Select status' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='pending'>
+                    <span className='flex items-center gap-2'>
+                      <span className='w-2 h-2 rounded-full bg-amber-500'></span>
+                      Pending
+                    </span>
+                  </SelectItem>
+                  <SelectItem value='paid'>
+                    <span className='flex items-center gap-2'>
+                      <span className='w-2 h-2 rounded-full bg-emerald-500'></span>
+                      Paid
+                    </span>
+                  </SelectItem>
+                  <SelectItem value='overdue'>
+                    <span className='flex items-center gap-2'>
+                      <span className='w-2 h-2 rounded-full bg-rose-500'></span>
+                      Overdue
+                    </span>
+                  </SelectItem>
+                  <SelectItem value='draft'>
+                    <span className='flex items-center gap-2'>
+                      <span className='w-2 h-2 rounded-full bg-slate-400'></span>
+                      Draft
+                    </span>
+                  </SelectItem>
+                  <SelectItem value='cancelled'>
+                    <span className='flex items-center gap-2'>
+                      <span className='w-2 h-2 rounded-full bg-zinc-600'></span>
+                      Cancelled
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <label
-              htmlFor='status'
-              className='block text-xs font-semibold text-foreground/80 mb-1'
-            >
-              Status
-            </label>
-            <Select
-              value={status}
-              onValueChange={(val) => setStatus(parseStatus(val))}
-            >
-              <SelectTrigger id='status' className='w-full'>
-                <SelectValue placeholder='Select status' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='pending'>
-                  <span className='flex items-center gap-2'>
-                    <span className='w-2 h-2 rounded-full bg-amber-500'></span>
-                    Pending
-                  </span>
-                </SelectItem>
-                <SelectItem value='paid'>
-                  <span className='flex items-center gap-2'>
-                    <span className='w-2 h-2 rounded-full bg-emerald-500'></span>
-                    Paid
-                  </span>
-                </SelectItem>
-                <SelectItem value='overdue'>
-                  <span className='flex items-center gap-2'>
-                    <span className='w-2 h-2 rounded-full bg-rose-500'></span>
-                    Overdue
-                  </span>
-                </SelectItem>
-                <SelectItem value='draft'>
-                  <span className='flex items-center gap-2'>
-                    <span className='w-2 h-2 rounded-full bg-slate-400'></span>
-                    Draft
-                  </span>
-                </SelectItem>
-                <SelectItem value='cancelled'>
-                  <span className='flex items-center gap-2'>
-                    <span className='w-2 h-2 rounded-full bg-zinc-600'></span>
-                    Cancelled
-                  </span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label
-              htmlFor='currency'
-              className='block text-xs font-semibold text-foreground/80 mb-1'
-            >
-              Currency
-            </label>
-            <Select value={currency} onValueChange={(val) => setCurrency(val)}>
-              <SelectTrigger id='currency' className='w-full'>
-                <SelectValue placeholder='Select currency' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='USD'>USD ($)</SelectItem>
-                <SelectItem value='EUR'>EUR (€)</SelectItem>
-                <SelectItem value='GBP'>GBP (£)</SelectItem>
-                <SelectItem value='IDR'>IDR (Rp)</SelectItem>
-                <SelectItem value='CAD'>CAD ($)</SelectItem>
-                <SelectItem value='AUD'>AUD ($)</SelectItem>
-                <SelectItem value='SGD'>SGD ($)</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <label
+                htmlFor='currency'
+                className='block text-xs font-semibold text-foreground/80 mb-1'
+              >
+                Currency
+              </label>
+              <Select
+                value={currency}
+                onValueChange={(val) => setCurrency(val)}
+              >
+                <SelectTrigger id='currency' className='w-full'>
+                  <SelectValue placeholder='Select currency' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='USD'>USD ($)</SelectItem>
+                  <SelectItem value='EUR'>EUR (€)</SelectItem>
+                  <SelectItem value='GBP'>GBP (£)</SelectItem>
+                  <SelectItem value='IDR'>IDR (Rp)</SelectItem>
+                  <SelectItem value='CAD'>CAD ($)</SelectItem>
+                  <SelectItem value='AUD'>AUD ($)</SelectItem>
+                  <SelectItem value='SGD'>SGD ($)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -509,82 +516,97 @@ function InvoiceFormContent({
             </Button>
           </div>
 
-          <div className='space-y-2'>
+          <div className='space-y-2.5'>
             {items.map((item, idx) => (
               <div
                 key={idx}
-                className='flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center'
+                className='flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:gap-3'
               >
-                <label htmlFor={`item_desc_${idx}`} className='sr-only'>
-                  Item Description
-                </label>
-                <Input
-                  id={`item_desc_${idx}`}
-                  type='text'
-                  required
-                  placeholder='Description'
-                  value={item.description}
-                  onChange={(e) =>
-                    handleItemChange(idx, 'description', e.target.value)
-                  }
-                  className='flex-1'
-                />
-                <div className='flex items-center gap-2'>
-                  <label htmlFor={`item_qty_${idx}`} className='sr-only'>
-                    Quantity
+                <div className='flex-1 min-w-0'>
+                  <label htmlFor={`item_desc_${idx}`} className='sr-only'>
+                    Item Description
                   </label>
                   <Input
-                    id={`item_qty_${idx}`}
-                    type='number'
-                    min='0.01'
-                    step='any'
+                    id={`item_desc_${idx}`}
+                    type='text'
                     required
-                    placeholder='Qty'
-                    value={item.quantity}
+                    placeholder='Description'
+                    value={item.description}
                     onChange={(e) =>
-                      handleItemChange(
-                        idx,
-                        'quantity',
-                        parseFloat(e.target.value) || 0,
-                      )
+                      handleItemChange(idx, 'description', e.target.value)
                     }
-                    className='w-16 text-right'
+                    className='w-full'
                   />
-                  <label htmlFor={`item_price_${idx}`} className='sr-only'>
-                    Unit Price
-                  </label>
-                  <Input
-                    id={`item_price_${idx}`}
-                    type='number'
-                    min='0'
-                    step='any'
-                    required
-                    placeholder='Price'
-                    value={item.unit_price}
-                    onChange={(e) =>
-                      handleItemChange(
-                        idx,
-                        'unit_price',
-                        parseFloat(e.target.value) || 0,
-                      )
-                    }
-                    className='w-36 text-right'
-                  />
-                  <span className='w-32 text-right text-xs font-semibold text-foreground truncate'>
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency,
-                    }).format(item.quantity * item.unit_price)}
-                  </span>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='sm'
-                    onClick={() => handleRemoveItem(idx)}
-                    className='text-rose-500 hover:bg-rose-500/10'
-                  >
-                    <LuTrash2 className='size-4' />
-                  </Button>
+                </div>
+
+                <div className='flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end'>
+                  <div className='flex items-center gap-1.5 flex-1 sm:flex-initial min-w-0'>
+                    <div className='w-16 sm:w-20 shrink-0'>
+                      <label htmlFor={`item_qty_${idx}`} className='sr-only'>
+                        Quantity
+                      </label>
+                      <Input
+                        id={`item_qty_${idx}`}
+                        type='number'
+                        min='0.01'
+                        step='any'
+                        required
+                        placeholder='Qty'
+                        value={item.quantity}
+                        onChange={(e) =>
+                          handleItemChange(
+                            idx,
+                            'quantity',
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
+                        className='w-full text-right text-xs sm:text-sm px-2'
+                      />
+                    </div>
+
+                    <div className='flex-1 sm:w-32 min-w-0'>
+                      <label htmlFor={`item_price_${idx}`} className='sr-only'>
+                        Unit Price
+                      </label>
+                      <Input
+                        id={`item_price_${idx}`}
+                        type='number'
+                        min='0'
+                        step='any'
+                        required
+                        placeholder='Price'
+                        value={item.unit_price}
+                        onChange={(e) =>
+                          handleItemChange(
+                            idx,
+                            'unit_price',
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
+                        className='w-full text-right text-xs sm:text-sm px-2'
+                      />
+                    </div>
+                  </div>
+
+                  <div className='flex items-center gap-2 shrink-0 pl-1'>
+                    <span className='min-w-16 text-right text-xs font-semibold text-foreground truncate'>
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency,
+                      }).format(item.quantity * item.unit_price)}
+                    </span>
+
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => handleRemoveItem(idx)}
+                      className='size-8 p-0 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 shrink-0'
+                      title='Remove item'
+                    >
+                      <LuTrash2 className='size-4' />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -592,8 +614,8 @@ function InvoiceFormContent({
         </div>
 
         {/* Tax, Discount & Totals Section */}
-        <div className='flex flex-col items-end gap-3 rounded-xl border border-border/60 bg-muted/30 p-4'>
-          <div className='flex items-center gap-3 text-xs'>
+        <div className='flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 sm:items-end'>
+          <div className='flex items-center justify-between gap-3 text-xs w-full sm:w-auto sm:justify-end'>
             <label
               htmlFor='tax_rate'
               className='font-semibold text-foreground/80'
@@ -607,10 +629,10 @@ function InvoiceFormContent({
               max='100'
               value={taxRate}
               onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-              className='w-24 text-right h-8 py-1'
+              className='w-24 text-right h-8 py-1 text-xs'
             />
           </div>
-          <div className='flex items-center gap-3 text-xs'>
+          <div className='flex items-center justify-between gap-3 text-xs w-full sm:w-auto sm:justify-end'>
             <label
               htmlFor='discount_amount'
               className='font-semibold text-foreground/80'
@@ -625,7 +647,7 @@ function InvoiceFormContent({
               onChange={(e) =>
                 setDiscountAmount(parseFloat(e.target.value) || 0)
               }
-              className='w-24 text-right h-8 py-1'
+              className='w-24 text-right h-8 py-1 text-xs'
             />
           </div>
 

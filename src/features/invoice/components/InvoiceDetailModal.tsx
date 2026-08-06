@@ -89,7 +89,7 @@ export function InvoiceDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-4xl p-4 sm:p-6'>
+      <DialogContent className='max-h-[92vh] w-[calc(100%-1rem)] max-w-full overflow-y-auto overflow-x-hidden p-4 sm:max-w-4xl sm:p-6'>
         <DialogHeader className='flex flex-col gap-4 border-b border-border/80 pb-4 sm:flex-row sm:items-center sm:justify-between'>
           <DialogTitle className='text-lg font-bold sm:text-xl'>
             Invoice #{invoice.invoice_number}

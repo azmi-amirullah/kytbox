@@ -1,10 +1,10 @@
-import type { InvoiceStatsDTO } from '../types';
-import { formatCurrency } from '@/lib/currency';
-import { LuReceipt, LuClock, LuCheck, LuTriangle } from 'react-icons/lu';
+import type { InvoiceStatsDTO } from '../types'
+import { formatCurrency } from '@/lib/currency'
+import { LuReceipt, LuClock, LuCheck, LuTriangleAlert } from 'react-icons/lu'
 
 interface InvoiceStatsProps {
-  stats: InvoiceStatsDTO;
-  currency?: string;
+  stats: InvoiceStatsDTO
+  currency?: string
 }
 
 export function InvoiceStats({ stats, currency = 'USD' }: InvoiceStatsProps) {
@@ -62,13 +62,14 @@ export function InvoiceStats({ stats, currency = 'USD' }: InvoiceStatsProps) {
             Overdue Invoices
           </span>
           <div className='flex size-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400'>
-            <LuTriangle className='size-4' aria-hidden='true' />
+            <LuTriangleAlert className='size-4' aria-hidden='true' />
           </div>
         </div>
         <p className='mt-3 text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400'>
-          {stats.overdueCount} {stats.overdueCount === 1 ? 'Invoice' : 'Invoices'}
+          {stats.overdueCount}{' '}
+          {stats.overdueCount === 1 ? 'Invoice' : 'Invoices'}
         </p>
       </div>
     </div>
-  );
+  )
 }
