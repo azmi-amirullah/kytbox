@@ -90,7 +90,7 @@ export function DateFilter({
               value={state.custom.from ?? ''}
               max={effectiveRange.to ?? undefined}
               onChange={(e) => handleCustomFrom(e.target.value)}
-              className='h-9 text-sm bg-background/50'
+              className='h-9 text-sm'
               aria-label='Start date'
             />
           </div>
@@ -107,7 +107,7 @@ export function DateFilter({
               value={state.custom.to ?? ''}
               min={effectiveRange.from ?? undefined}
               onChange={(e) => handleCustomTo(e.target.value)}
-              className='h-9 text-sm bg-background/50'
+              className='h-9 text-sm'
               aria-label='End date'
             />
           </div>

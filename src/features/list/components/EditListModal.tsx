@@ -4,10 +4,8 @@ import { useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
   DialogFooter,
+  ModalHeader,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,12 +60,11 @@ export default function EditListModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-md'>
-        <DialogHeader>
-          <DialogTitle>Edit List</DialogTitle>
-          <DialogDescription className='sr-only'>
-            Edit the title and details of this list.
-          </DialogDescription>
-        </DialogHeader>
+        <ModalHeader
+          title='Edit List'
+          description='Edit the title and details of this list.'
+          onClose={() => onOpenChange(false)}
+        />
 
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div className='space-y-2'>

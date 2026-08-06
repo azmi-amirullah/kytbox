@@ -7,10 +7,8 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  ModalHeader,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -150,20 +148,18 @@ export default function EntryModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-106.25 overflow-hidden p-0 gap-0'>
-        <div className='p-6 pb-0'>
-          <DialogHeader className='mb-6'>
-            <DialogTitle className='text-xl text-center'>
-              {isEdit ? 'Edit Entry' : 'Add Entry'}
-            </DialogTitle>
-            <DialogDescription className='text-center'>
-              {isEdit
-                ? 'Update your transaction details.'
-                : 'Add a new income or expense entry.'}
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className='sm:max-w-md max-h-[90vh] overflow-y-auto'>
+        <ModalHeader
+          title={isEdit ? 'Edit Entry' : 'Add Entry'}
+          description={
+            isEdit
+              ? 'Update your transaction details.'
+              : 'Add a new income or expense entry.'
+          }
+          onClose={() => onOpenChange(false)}
+        />
 
-          <form onSubmit={handleSubmit} className='space-y-4'>
+        <form onSubmit={handleSubmit} className='space-y-4'>
             <div className='grid gap-4'>
               {/* Description */}
               <div className='grid gap-2'>
@@ -182,7 +178,7 @@ export default function EntryModal({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder='e.g., Groceries, Salary'
                     required
-                    className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                    className='pl-9'
                   />
                 </div>
               </div>
@@ -209,7 +205,7 @@ export default function EntryModal({
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder='0.00'
                     required
-                    className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                    className='pl-9'
                   />
                 </div>
               </div>
@@ -236,7 +232,7 @@ export default function EntryModal({
                     setType(newType);
                   }}
                 >
-                  <SelectTrigger className='bg-background/50 border-input/60'>
+                  <SelectTrigger className='w-full'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -277,7 +273,7 @@ export default function EntryModal({
                     setCategory(v === 'uncategorized' ? null : v);
                   }}
                 >
-                  <SelectTrigger className='bg-background/50 border-input/60'>
+                  <SelectTrigger className='w-full'>
                     <SelectValue placeholder='Select a category' />
                   </SelectTrigger>
                   <SelectContent>
@@ -361,7 +357,7 @@ export default function EntryModal({
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
-                    className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                    className='pl-9'
                   />
                 </div>
               </div>
@@ -399,7 +395,7 @@ export default function EntryModal({
                         )
                       }
                     >
-                      <SelectTrigger className='bg-background/50 border-input/60'>
+                      <SelectTrigger className='w-full'>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -424,7 +420,7 @@ export default function EntryModal({
                           )
                         }
                       >
-                        <SelectTrigger className='bg-background/50 border-input/60'>
+                        <SelectTrigger className='w-full'>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -479,7 +475,6 @@ export default function EntryModal({
               </div>
             </DialogFooter>
           </form>
-        </div>
       </DialogContent>
     </Dialog>
   );

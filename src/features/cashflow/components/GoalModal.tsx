@@ -8,10 +8,8 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  ModalHeader,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -91,17 +89,16 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
   }
 
   return (
-    <div className="p-6 pb-0">
-      <DialogHeader className="mb-6">
-        <DialogTitle className="text-xl text-center">
-          {isEdit ? 'Edit Savings Goal' : 'New Savings Goal'}
-        </DialogTitle>
-        <DialogDescription className="text-center text-sm text-muted-foreground">
-          {isEdit
+    <>
+      <ModalHeader
+        title={isEdit ? 'Edit Savings Goal' : 'New Savings Goal'}
+        description={
+          isEdit
             ? 'Update your target savings amount and deadline.'
-            : 'Set a target savings goal to track contributions from your cashflows.'}
-        </DialogDescription>
-      </DialogHeader>
+            : 'Set a target savings goal to track contributions from your cashflows.'
+        }
+        onClose={onClose}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-4">
@@ -115,7 +112,7 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
                 value={selectedCashflowId}
                 onValueChange={setSelectedCashflowId}
               >
-                <SelectTrigger id="goal-cashflow" className="bg-background/50 border-input/60">
+                <SelectTrigger id="goal-cashflow" className="w-full">
                   <SelectValue placeholder="Select Cashflow Book" />
                 </SelectTrigger>
                 <SelectContent>
@@ -143,7 +140,6 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
               placeholder="e.g. Vacation Fund, New Laptop, Emergency Fund"
               required
               maxLength={100}
-              className="bg-background/50 border-input/60 focus:border-primary/50 transition-colors"
             />
           </div>
 
@@ -166,7 +162,7 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
                 onChange={(e) => setTargetAmount(e.target.value)}
                 placeholder="5000.00"
                 required
-                className="pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors"
+                className="pl-9"
               />
             </div>
           </div>
@@ -182,7 +178,6 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="bg-background/50 border-input/60 focus:border-primary/50 transition-colors"
             />
           </div>
 
@@ -218,8 +213,8 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
             </Button>
           </div>
         </DialogFooter>
-      </form>
-    </div>
+        </form>
+    </>
   );
 }
 
@@ -233,7 +228,7 @@ export default function GoalModal({
 }: GoalModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md overflow-hidden p-0 gap-0">
+      <DialogContent className="sm:max-w-md">
         {open && (
           <GoalForm
             key={goal?.id ?? 'new-goal'}

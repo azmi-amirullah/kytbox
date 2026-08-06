@@ -144,6 +144,45 @@ function DialogDescription({
   );
 }
 
+function ModalHeader({
+  title,
+  description,
+  onClose,
+  showClose = true,
+  className,
+}: {
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  onClose?: () => void;
+  showClose?: boolean;
+  className?: string;
+}) {
+  return (
+    <DialogHeader
+      className={cn(
+        'flex flex-row items-start justify-between border-b border-border/80 pb-4 mb-4 text-left sm:text-left',
+        className,
+      )}
+    >
+      <div className='space-y-1 pr-2 min-w-0 flex-1'>
+        <DialogTitle className='text-lg font-bold sm:text-xl text-foreground truncate'>
+          {title}
+        </DialogTitle>
+        {description ? (
+          <DialogDescription className='text-xs sm:text-sm text-muted-foreground'>
+            {description}
+          </DialogDescription>
+        ) : (
+          <DialogDescription className='sr-only'>
+            {typeof title === 'string' ? title : 'Dialog'}
+          </DialogDescription>
+        )}
+      </div>
+      {showClose && <DialogClose onClick={onClose} className='mt-0.5' />}
+    </DialogHeader>
+  );
+}
+
 export {
   Dialog,
   DialogClose,
@@ -155,4 +194,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  ModalHeader,
 };

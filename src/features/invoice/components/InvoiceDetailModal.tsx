@@ -7,10 +7,7 @@ import { InvoicePDFView } from './InvoicePDFView'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
+  ModalHeader,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { LuDownload, LuPencil, LuTrash2, LuCheck } from 'react-icons/lu'
@@ -86,17 +83,11 @@ export function InvoiceDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='max-h-[92vh] w-[calc(100%-1rem)] max-w-full overflow-y-auto overflow-x-hidden p-4 sm:max-w-4xl sm:p-6'>
-        <DialogHeader className='flex flex-row items-center justify-between border-b border-border/80 pb-3'>
-          <div>
-            <DialogTitle className='text-lg font-bold sm:text-xl'>
-              Invoice #{invoice.invoice_number}
-            </DialogTitle>
-            <DialogDescription className='sr-only'>
-              Details and preview for invoice #{invoice.invoice_number}
-            </DialogDescription>
-          </div>
-          <DialogClose onClick={onClose} />
-        </DialogHeader>
+        <ModalHeader
+          title={`Invoice #${invoice.invoice_number}`}
+          description={`Details and preview for invoice #${invoice.invoice_number}`}
+          onClose={onClose}
+        />
 
         {/* Action Buttons Toolbar below Header */}
         <div className='flex flex-wrap items-center gap-2 pt-1 pb-1 print:hidden'>

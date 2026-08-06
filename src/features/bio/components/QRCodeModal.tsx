@@ -10,10 +10,8 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  ModalHeader,
 } from '@/components/ui/dialog';
 
 interface QRCodeModalProps {
@@ -139,17 +137,17 @@ export default function QRCodeModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-110 overflow-hidden p-0 gap-0'>
-        <div className='p-6'>
-          <DialogHeader className='mb-4'>
-            <DialogTitle className='text-xl text-center flex items-center justify-center gap-2'>
+      <DialogContent className='sm:max-w-md'>
+        <ModalHeader
+          title={
+            <span className='flex items-center gap-2'>
               <LuQrCode className='w-5 h-5 text-primary' />
               Your QR Code
-            </DialogTitle>
-            <DialogDescription className='text-center'>
-              Share this QR code on business cards, flyers, or social media.
-            </DialogDescription>
-          </DialogHeader>
+            </span>
+          }
+          description='Share this QR code on business cards, flyers, or social media.'
+          onClose={() => onOpenChange(false)}
+        />
 
           {/* Target URL Badge */}
           <div className='flex items-center justify-between gap-2 p-2 px-3 rounded-lg bg-muted/60 text-xs font-mono mb-5 border border-border/50'>
@@ -262,7 +260,6 @@ export default function QRCodeModal({
               {isDownloadingPng ? 'Generating...' : 'Download PNG'}
             </Button>
           </DialogFooter>
-        </div>
       </DialogContent>
     </Dialog>
   );

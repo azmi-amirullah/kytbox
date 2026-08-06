@@ -4,10 +4,8 @@ import { useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
   DialogFooter,
+  ModalHeader,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,12 +87,11 @@ export default function EditWishlistItemModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-md'>
-        <DialogHeader>
-          <DialogTitle>Edit Wish</DialogTitle>
-          <DialogDescription className='sr-only'>
-            Edit details of this wishlist item.
-          </DialogDescription>
-        </DialogHeader>
+        <ModalHeader
+          title='Edit Wish'
+          description='Edit details of this wishlist item.'
+          onClose={() => onOpenChange(false)}
+        />
 
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div className='space-y-2'>

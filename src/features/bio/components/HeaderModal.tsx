@@ -1,27 +1,25 @@
-'use client';
+'use client'
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { LuLoader, LuType } from 'react-icons/lu';
-import { toast } from 'react-toastify';
-import { addHeader } from '../actions';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { LuLoader, LuType } from 'react-icons/lu'
+import { toast } from 'react-toastify'
+import { addHeader } from '../actions'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ModalHeader,
+} from '@/components/ui/dialog'
 
 interface HeaderModalProps {
-  parentId?: string | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  parentId?: string | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
 export default function HeaderModal({
@@ -30,53 +28,49 @@ export default function HeaderModal({
   onOpenChange,
   onSuccess,
 }: HeaderModalProps) {
-  const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const [title, setTitle] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
 
-  const isBusy = isLoading || isPending;
+  const isBusy = isLoading || isPending
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
 
-    const result = await addHeader(title, parentId);
+    const result = await addHeader(title, parentId)
 
     if (result?.error) {
-      setError(result.error);
-      toast.error('Failed to add section header');
-      setIsLoading(false);
+      setError(result.error)
+      toast.error('Failed to add section header')
+      setIsLoading(false)
     } else {
-      toast.success('Section header added!');
-      setTitle('');
-      setIsLoading(false);
+      toast.success('Section header added!')
+      setTitle('')
+      setIsLoading(false)
       if (onSuccess) {
-        onSuccess();
+        onSuccess()
       }
       startTransition(() => {
-        router.refresh();
-      });
-      onOpenChange(false);
+        router.refresh()
+      })
+      onOpenChange(false)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-[425px] overflow-hidden p-0 gap-0'>
-        <div className='p-6 pb-0'>
-          <DialogHeader className='mb-6'>
-            <DialogTitle className='text-xl text-center'>
-              Add Section Header
-            </DialogTitle>
-            <DialogDescription className='text-center'>
-              Create a non-clickable text label to organize your bio page.
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className='sm:max-w-md'>
+        <ModalHeader
+          title='Add Section Header'
+          description='Create a non-clickable text label to organize your bio page.'
+          onClose={() => onOpenChange(false)}
+        />
 
-          <form onSubmit={handleSubmit} className='space-y-4'>
+        <form onSubmit={handleSubmit} className='space-y-4'>
             <div className='grid gap-4'>
               <div className='grid gap-2'>
                 <Label
@@ -95,7 +89,7 @@ export default function HeaderModal({
                     placeholder='e.g., Social Links, My Projects...'
                     required
                     maxLength={100}
-                    className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                    className='pl-9'
                   />
                 </div>
               </div>
@@ -131,8 +125,7 @@ export default function HeaderModal({
               </div>
             </DialogFooter>
           </form>
-        </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

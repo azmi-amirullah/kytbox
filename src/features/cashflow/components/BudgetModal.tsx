@@ -1,31 +1,29 @@
-'use client';
+'use client'
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ModalHeader,
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { LuLoader } from 'react-icons/lu';
-import { toast } from 'react-toastify';
-import { upsertBudget } from '../actions';
-import type { CashflowBudgetDTO } from '@/types/dto';
-import { getCurrencySymbol } from '@/lib/currency';
-import { budgetExpenseCategorySchema } from '../schemas.client';
+} from '@/components/ui/select'
+import { LuLoader } from 'react-icons/lu'
+import { toast } from 'react-toastify'
+import { upsertBudget } from '../actions'
+import type { CashflowBudgetDTO } from '@/types/dto'
+import { getCurrencySymbol } from '@/lib/currency'
+import { budgetExpenseCategorySchema } from '../schemas.client'
 
 const EXPENSE_CATEGORIES = [
   { value: 'food', label: 'Food & Dining' },
@@ -35,14 +33,14 @@ const EXPENSE_CATEGORIES = [
   { value: 'shopping', label: 'Shopping' },
   { value: 'health', label: 'Health & Fitness' },
   { value: 'other', label: 'Other Expense' },
-] as const;
+] as const
 
 interface BudgetModalProps {
-  cashflowId: string;
-  budget?: CashflowBudgetDTO | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  currency: string | null;
+  cashflowId: string
+  budget?: CashflowBudgetDTO | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  currency: string | null
 }
 
 export default function BudgetModal({
@@ -52,65 +50,63 @@ export default function BudgetModal({
   onOpenChange,
   currency,
 }: BudgetModalProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const isEdit = !!budget;
-  const isBusy = isLoading || isPending;
+  const isEdit = !!budget
+  const isBusy = isLoading || isPending
 
   const [category, setCategory] = useState(
     budgetExpenseCategorySchema.parse(budget?.category),
-  );
-  const [amount, setAmount] = useState(budget?.amount?.toString() ?? '');
+  )
+  const [amount, setAmount] = useState(budget?.amount?.toString() ?? '')
 
   function handleOpenChange(nextOpen: boolean) {
-    onOpenChange(nextOpen);
+    onOpenChange(nextOpen)
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
 
-    const formData = new FormData();
-    formData.append('cashflowId', cashflowId);
-    formData.append('category', category);
-    formData.append('amount', amount);
+    const formData = new FormData()
+    formData.append('cashflowId', cashflowId)
+    formData.append('category', category)
+    formData.append('amount', amount)
 
-    const result = await upsertBudget(formData);
+    const result = await upsertBudget(formData)
 
     if (result?.error) {
-      setError(result.error);
-      toast.error('Failed to save budget');
-      setIsLoading(false);
+      setError(result.error)
+      toast.error('Failed to save budget')
+      setIsLoading(false)
     } else {
-      toast.success(isEdit ? 'Budget updated!' : 'Budget created!');
-      setIsLoading(false);
+      toast.success(isEdit ? 'Budget updated!' : 'Budget created!')
+      setIsLoading(false)
       startTransition(() => {
-        router.refresh();
-      });
-      onOpenChange(false);
+        router.refresh()
+      })
+      onOpenChange(false)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:max-w-[400px] overflow-hidden p-0 gap-0'>
-        <div className='p-6 pb-0'>
-          <DialogHeader className='mb-6'>
-            <DialogTitle className='text-xl text-center'>
-              {isEdit ? 'Edit Budget' : 'Set Budget'}
-            </DialogTitle>
-            <DialogDescription className='text-center'>
-              {isEdit
-                ? 'Update the spending limit for this category.'
-                : 'Set a monthly spending limit for an expense category.'}
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className='sm:max-w-md'>
+        <ModalHeader
+          title={isEdit ? 'Edit Budget' : 'Set Budget'}
+          description={
+            isEdit
+              ? 'Update the spending limit for this category.'
+              : 'Set a monthly spending limit for an expense category.'
+          }
+          onClose={() => onOpenChange(false)}
+        />
 
-          <form onSubmit={handleSubmit} className='space-y-4'>
+        <form onSubmit={handleSubmit} className='space-y-4'>
             <div className='grid gap-4'>
               {/* Category */}
               <div className='grid gap-2'>
@@ -124,7 +120,7 @@ export default function BudgetModal({
                   }
                   disabled={isEdit}
                 >
-                  <SelectTrigger className='bg-background/50 border-input/60'>
+                  <SelectTrigger className='w-full'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,7 +161,7 @@ export default function BudgetModal({
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder='0.00'
                     required
-                    className='pl-9 bg-background/50 border-input/60 focus:border-primary/50 transition-colors'
+                    className='pl-9'
                   />
                 </div>
               </div>
@@ -203,8 +199,7 @@ export default function BudgetModal({
               </div>
             </DialogFooter>
           </form>
-        </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

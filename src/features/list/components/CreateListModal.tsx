@@ -4,10 +4,8 @@ import { useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
   DialogFooter,
+  ModalHeader,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,12 +80,11 @@ export default function CreateListModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-md'>
-        <DialogHeader>
-          <DialogTitle>{meta.label}</DialogTitle>
-          <DialogDescription className='sr-only'>
-            Create a new board or wishlist to organize your items.
-          </DialogDescription>
-        </DialogHeader>
+        <ModalHeader
+          title={meta.label}
+          description='Create a new board or wishlist to organize your items.'
+          onClose={() => onOpenChange(false)}
+        />
 
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div className='space-y-2'>

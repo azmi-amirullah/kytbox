@@ -4,10 +4,8 @@ import { useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
   DialogFooter,
+  ModalHeader,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,12 +69,11 @@ export default function AddWishlistItemModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-md'>
-        <DialogHeader>
-          <DialogTitle>Add Wish</DialogTitle>
-          <DialogDescription className='sr-only'>
-            Add a new item to your wishlist.
-          </DialogDescription>
-        </DialogHeader>
+        <ModalHeader
+          title='Add Wish'
+          description='Add a new item to your wishlist.'
+          onClose={() => onOpenChange(false)}
+        />
 
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div className='space-y-2'>

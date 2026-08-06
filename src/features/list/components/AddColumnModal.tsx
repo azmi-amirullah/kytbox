@@ -4,10 +4,8 @@ import { useState, useTransition } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
   DialogFooter,
+  ModalHeader,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,13 +48,12 @@ export default function AddColumnModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-sm'>
-        <DialogHeader>
-          <DialogTitle>Add Column</DialogTitle>
-          <DialogDescription className='sr-only'>
-            Enter a title to add a new column to this list.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className='sm:max-w-md'>
+        <ModalHeader
+          title='Add Column'
+          description='Enter a title to add a new column to this list.'
+          onClose={() => onOpenChange(false)}
+        />
 
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div className='space-y-2'>

@@ -6,10 +6,8 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
   DialogFooter,
+  ModalHeader,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -84,19 +82,19 @@ export default function MoveToFolderModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-[425px] overflow-hidden p-0 gap-0'>
-        <div className='p-6 pb-0'>
-          <DialogHeader className='mb-6'>
-            <DialogTitle className='text-xl text-center flex items-center justify-center gap-2'>
+      <DialogContent className='sm:max-w-md'>
+        <ModalHeader
+          title={
+            <span className='flex items-center gap-2'>
               <LuFolderInput className='w-5 h-5 text-primary' />
               Move &quot;{link.title}&quot;
-            </DialogTitle>
-            <DialogDescription className='text-center'>
-              Select a folder to move this link into.
-            </DialogDescription>
-          </DialogHeader>
+            </span>
+          }
+          description='Select a folder to move this link into.'
+          onClose={() => onOpenChange(false)}
+        />
 
-          <form onSubmit={handleMove}>
+        <form onSubmit={handleMove}>
             <div className='mb-6 px-1'>
               <Select
                 value={selectedFolderId}
@@ -157,7 +155,6 @@ export default function MoveToFolderModal({
               </div>
             </DialogFooter>
           </form>
-        </div>
       </DialogContent>
     </Dialog>
   );

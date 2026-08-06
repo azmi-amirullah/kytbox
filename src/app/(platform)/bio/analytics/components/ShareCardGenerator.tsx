@@ -11,10 +11,8 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  ModalHeader,
 } from '@/components/ui/dialog'
 import type { AnalyticsShareCardProps } from '@/features/bio'
 import type {
@@ -578,15 +576,16 @@ export default function ShareCardGenerator({
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className='max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto p-4 sm:p-6'>
-          <DialogHeader>
-            <DialogTitle className='flex items-center gap-2'>
-              <LuShare2 className='h-5 w-5 text-primary' />
-              Share your bio stats
-            </DialogTitle>
-            <DialogDescription>
-              Preview your Instagram-ready card, then download it as a PNG.
-            </DialogDescription>
-          </DialogHeader>
+          <ModalHeader
+            title={
+              <span className='flex items-center gap-2'>
+                <LuShare2 className='h-5 w-5 text-primary' />
+                Share your bio stats
+              </span>
+            }
+            description='Preview your Instagram-ready card, then download it as a PNG.'
+            onClose={() => setOpen(false)}
+          />
 
           <div className='flex justify-center rounded-2xl bg-muted/40 p-2 sm:p-4'>
             <canvas
