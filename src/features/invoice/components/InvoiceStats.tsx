@@ -1,5 +1,6 @@
 import type { InvoiceStatsDTO } from '../types';
-import { LuDollarSign, LuClock, LuCheck, LuTriangle } from 'react-icons/lu';
+import { formatCurrency } from '@/lib/currency';
+import { LuReceipt, LuClock, LuCheck, LuTriangle } from 'react-icons/lu';
 
 interface InvoiceStatsProps {
   stats: InvoiceStatsDTO;
@@ -7,14 +8,6 @@ interface InvoiceStatsProps {
 }
 
 export function InvoiceStats({ stats, currency = 'USD' }: InvoiceStatsProps) {
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
   return (
     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
       {/* Total Invoiced */}
@@ -24,11 +17,11 @@ export function InvoiceStats({ stats, currency = 'USD' }: InvoiceStatsProps) {
             Total Invoiced
           </span>
           <div className='flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-            <LuDollarSign className='size-4' aria-hidden='true' />
+            <LuReceipt className='size-4' aria-hidden='true' />
           </div>
         </div>
         <p className='mt-3 text-2xl font-bold tracking-tight text-foreground'>
-          {formatAmount(stats.totalInvoiced)}
+          {formatCurrency(stats.totalInvoiced, currency)}
         </p>
       </div>
 
@@ -43,7 +36,7 @@ export function InvoiceStats({ stats, currency = 'USD' }: InvoiceStatsProps) {
           </div>
         </div>
         <p className='mt-3 text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400'>
-          {formatAmount(stats.totalOutstanding)}
+          {formatCurrency(stats.totalOutstanding, currency)}
         </p>
       </div>
 
@@ -58,7 +51,7 @@ export function InvoiceStats({ stats, currency = 'USD' }: InvoiceStatsProps) {
           </div>
         </div>
         <p className='mt-3 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400'>
-          {formatAmount(stats.totalPaid)}
+          {formatCurrency(stats.totalPaid, currency)}
         </p>
       </div>
 

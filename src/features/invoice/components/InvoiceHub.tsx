@@ -69,7 +69,7 @@ export function InvoiceHub({
       <InvoiceHeader onCreateNew={handleCreateNew} />
 
       {/* Stats Summary */}
-      <InvoiceStats stats={stats} />
+      <InvoiceStats stats={stats} currency={defaultCurrency} />
 
       {/* Main Table */}
       <InvoiceTable

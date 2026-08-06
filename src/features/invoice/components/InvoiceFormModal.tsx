@@ -126,7 +126,7 @@ function InvoiceFormContent({
     invoiceToEdit ? invoiceToEdit.status : 'pending',
   )
   const [currency, setCurrency] = useState(() =>
-    invoiceToEdit ? invoiceToEdit.currency : (defaultCurrency || 'USD'),
+    invoiceToEdit ? invoiceToEdit.currency : defaultCurrency || 'USD',
   )
   const [taxRate, setTaxRate] = useState(() =>
     invoiceToEdit ? invoiceToEdit.tax_rate : 0,
@@ -548,7 +548,7 @@ function InvoiceFormContent({
                         parseFloat(e.target.value) || 0,
                       )
                     }
-                    className='w-20 text-right'
+                    className='w-16 text-right'
                   />
                   <label htmlFor={`item_price_${idx}`} className='sr-only'>
                     Unit Price
@@ -568,9 +568,9 @@ function InvoiceFormContent({
                         parseFloat(e.target.value) || 0,
                       )
                     }
-                    className='w-28 text-right'
+                    className='w-36 text-right'
                   />
-                  <span className='w-28 text-right text-xs font-semibold text-foreground'>
+                  <span className='w-32 text-right text-xs font-semibold text-foreground truncate'>
                     {new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency,
