@@ -16,7 +16,7 @@ export function buildCspHeader(nonce: string, allowedOrigins: string[] = []): st
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://*.supabase.co;
     font-src 'self'${additionalOrigins};
-    connect-src 'self' https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com${additionalOrigins};
+    connect-src 'self' data: https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com${additionalOrigins};
     frame-ancestors 'none';
     object-src 'none';
     base-uri 'self';
