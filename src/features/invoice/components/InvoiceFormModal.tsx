@@ -28,6 +28,7 @@ interface InvoiceFormModalProps {
   isOpen: boolean
   onClose: () => void
   invoiceToEdit?: InvoiceDTO | null
+  existingCount?: number
   defaultCurrency?: string
   onSuccess: () => void
 }
@@ -56,6 +57,7 @@ export function InvoiceFormModal({
   isOpen,
   onClose,
   invoiceToEdit,
+  existingCount = 0,
   defaultCurrency = 'USD',
   onSuccess,
 }: InvoiceFormModalProps) {
@@ -65,6 +67,7 @@ export function InvoiceFormModal({
         <InvoiceFormContent
           key={invoiceToEdit ? invoiceToEdit.id : 'new'}
           invoiceToEdit={invoiceToEdit}
+          existingCount={existingCount}
           defaultCurrency={defaultCurrency}
           onClose={onClose}
           onSuccess={onSuccess}
@@ -76,11 +79,13 @@ export function InvoiceFormModal({
 
 function InvoiceFormContent({
   invoiceToEdit,
+  existingCount = 0,
   defaultCurrency = 'USD',
   onClose,
   onSuccess,
 }: {
   invoiceToEdit?: InvoiceDTO | null
+  existingCount?: number
   defaultCurrency?: string
   onClose: () => void
   onSuccess: () => void
@@ -89,7 +94,9 @@ function InvoiceFormContent({
 
   const [invoiceNumber, setInvoiceNumber] = useState(() => {
     if (invoiceToEdit) return invoiceToEdit.invoice_number
-    return `INV-${new Date().getFullYear()}-0000`
+    const nextNumber = existingCount + 1
+    const padded = String(nextNumber).padStart(4, '0')
+    return `INV-${new Date().getFullYear()}-${padded}`
   })
 
   const [clientName, setClientName] = useState(() =>

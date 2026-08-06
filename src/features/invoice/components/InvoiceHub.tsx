@@ -85,6 +85,7 @@ export function InvoiceHub({
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         invoiceToEdit={invoiceToEdit}
+        existingCount={invoices.length}
         defaultCurrency={defaultCurrency}
         onSuccess={handleRefresh}
       />
