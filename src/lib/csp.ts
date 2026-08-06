@@ -12,7 +12,7 @@ export function buildCspHeader(nonce: string, allowedOrigins: string[] = []): st
   const csp = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'sha256-TiyWB4YB4NUrUHDJSqaW0w0OtUb7i0Tddwwo6j0O07c=' 'sha256-HugGj5oR7f2UGBbrPIOJua5vPpKBIJj8354Z6gsKoUQ=' 'sha256-7mu4H06fwDCjmnxxr/xNHyuQC6pLTHr4M2E4jXw5WZs=' https://va.vercel-scripts.com 'wasm-unsafe-eval' ${isDev ? "'unsafe-eval'" : ''};
-    worker-src blob:;
+    worker-src 'self' blob:;
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://*.supabase.co;
     font-src 'self'${additionalOrigins};
