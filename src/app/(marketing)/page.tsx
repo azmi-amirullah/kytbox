@@ -8,6 +8,7 @@ import {
   LuFolderTree,
   LuLightbulb,
   LuPiggyBank,
+  LuReceipt,
   LuShieldCheck,
   LuZap,
 } from 'react-icons/lu'
@@ -43,6 +44,13 @@ const modules = [
     description: 'Organize tasks, wishlists, and ideas in one place.',
     icon: LuLightbulb,
   },
+  {
+    title: 'Invoice',
+    kicker: 'GET PAID',
+    description:
+      'Create and send professional invoices, then track what is paid and what is pending.',
+    icon: LuReceipt,
+  },
 ]
 
 const cashflowPreviewEntries = [
@@ -63,18 +71,23 @@ const cashflowPreviewEntries = [
   },
 ]
 
+const invoicePreviewItems = [
+  { ref: 'INV-003', client: 'Studio North', amount: '$3,200', status: 'Paid' },
+  { ref: 'INV-004', client: 'Meadow Co.', amount: '$1,450', status: 'Pending' },
+]
+
 const workflow = [
   {
     number: '01',
     title: 'Bring it together',
     description:
-      'Keep your public links, cashflow, tasks, wishes, and ideas in one account.',
+      'Keep your public links, cashflow, invoices, tasks, and ideas in one account.',
   },
   {
     number: '02',
     title: 'Use the right tool',
     description:
-      'Bio, Cashflow, and List each stay focused on the work they are built for.',
+      'Bio, Cashflow, List, and Invoice each stay focused on the work they are built for.',
   },
   {
     number: '03',
@@ -163,7 +176,7 @@ export default async function LandingPage() {
                   </h1>
 
                   <p className='mt-8 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl'>
-                    Kytbox brings Bio, Cashflow, and List into one calm
+                    Kytbox brings Bio, Cashflow, List, and Invoice into one calm
                     workspace — so you spend less time switching between tools.
                   </p>
 
@@ -229,7 +242,7 @@ export default async function LandingPage() {
                   className='h-1 w-1 rounded-full bg-signal'
                   aria-hidden='true'
                 />
-                <span>Three tools</span>
+                <span>Four tools</span>
                 <span
                   className='h-1 w-1 rounded-full bg-signal'
                   aria-hidden='true'
@@ -252,14 +265,14 @@ export default async function LandingPage() {
                 </p>
                 <div>
                   <h2 className='max-w-3xl text-4xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-5xl lg:text-6xl'>
-                    Three tools.{' '}
+                    Four tools.{' '}
                     <span className='text-muted-foreground'>
                       One workspace.
                     </span>
                   </h2>
                   <p className='mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg'>
-                    Use Bio for your links, Cashflow for your money, and List
-                    for tasks, wishlists, and ideas.
+                    Use Bio for your links, Cashflow for your money, Invoice to
+                    get paid, and List for tasks, wishlists, and ideas.
                   </p>
                 </div>
               </div>
@@ -454,6 +467,66 @@ export default async function LandingPage() {
                     ))}
                   </div>
                 </article>
+
+                <article className='marketing-bento-feature marketing-bento-feature--invoice rounded-[1.75rem] border border-emerald-500/15 bg-surface-green p-6 sm:p-8'>
+                  <div className='flex items-start justify-between gap-6'>
+                    <div>
+                      <div className='mb-5 flex size-11 items-center justify-center rounded-2xl bg-emerald-600/12 text-emerald-700 shadow-sm dark:bg-emerald-400/12 dark:text-emerald-400'>
+                        <LuReceipt className='size-5' aria-hidden='true' />
+                      </div>
+                      <p className='font-mono text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-emerald-700/70 dark:text-emerald-400/70'>
+                        Get paid
+                      </p>
+                      <h3 className='mt-3 text-3xl font-semibold tracking-[-0.045em]'>
+                        Invoices that close.
+                      </h3>
+                      <p className='mt-3 leading-7 text-muted-foreground'>
+                        {modules[3].description}
+                      </p>
+                    </div>
+                    <span className='hidden font-mono text-xs text-foreground/45 sm:block'>
+                      04
+                    </span>
+                  </div>
+
+                  <div className='mt-10 rounded-2xl border border-emerald-500/15 bg-card/80 p-4 shadow-sm'>
+                    <div className='flex items-center justify-between gap-3 border-b border-border pb-3'>
+                      <p className='text-xs font-medium text-muted-foreground'>
+                        Recent invoices
+                      </p>
+                      <span className='font-mono text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground/70'>
+                        Example
+                      </span>
+                    </div>
+                    <div className='mt-3 grid gap-2'>
+                      {invoicePreviewItems.map(({ ref, client, amount, status }) => (
+                        <div
+                          key={ref}
+                          className='flex items-center gap-3 rounded-lg border border-border/80 bg-card px-2.5 py-2'
+                        >
+                          <span className='shrink-0 font-mono text-[0.7rem] text-muted-foreground/70'>
+                            {ref}
+                          </span>
+                          <span className='flex-1 truncate text-xs font-medium'>
+                            {client}
+                          </span>
+                          <span className='shrink-0 font-mono text-xs font-semibold'>
+                            {amount}
+                          </span>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide ${
+                              status === 'Paid'
+                                ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-signal/12 text-signal'
+                            }`}
+                          >
+                            {status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </article>
               </div>
             </div>
           </div>
@@ -548,7 +621,7 @@ export default async function LandingPage() {
             <div className='mt-5 grid gap-4 sm:grid-cols-3'>
               {[
                 { value: '13+', label: 'themes' },
-                { value: '03', label: 'core tools' },
+                { value: '04', label: 'core tools' },
                 { value: '$0', label: 'to get started' },
               ].map(({ value, label }, index) => (
                 <ScrollReveal key={label} delay={0.16 + index * 0.08}>
