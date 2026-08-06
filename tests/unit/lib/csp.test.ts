@@ -20,12 +20,13 @@ describe('buildCspHeader', () => {
     expect(csp).toContain("form-action 'self'");
     expect(scriptSrc).toBeDefined();
     expect(scriptSrc).not.toContain("'unsafe-inline'");
+    expect(scriptSrc).not.toContain('blob:');
     expect(csp).toContain("upgrade-insecure-requests");
   });
 
   it('includes additional allowed origins in connect-src', () => {
     const allowed = ['https://app.example.com', 'https://example.com'];
     const csp = buildCspHeader('nonce', allowed);
-    expect(csp).toContain("connect-src 'self' https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://app.example.com https://example.com;");
+    expect(csp).toContain("connect-src 'self' data: https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://app.example.com https://example.com;");
   });
 });
