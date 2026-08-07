@@ -43,7 +43,7 @@
 - [x] [Day 29 — Documentation Overhaul](#day-29)
 - [x] [Day 30 — Sunday Rest](#day-30)
 - [x] [Day 31 — Bio: Link Quick-Stats + Click Sparklines](#day-31)
-- [ ] [Day 32 — Cashflow: Duplicate Book](#day-32)
+- [x] [Day 32 — Cashflow: Duplicate Book](#day-32)
 - [ ] [Day 33 — Bio: Content Embedding (YouTube + Spotify)](#day-33)
 - [ ] [Day 34 — 30-Day Retrospective + Next Sprint](#day-34)
 

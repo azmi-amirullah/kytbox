@@ -45,6 +45,7 @@ import {
   LuChevronsRight,
   LuSearch,
   LuX,
+  LuCopy,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import type {
@@ -58,6 +59,7 @@ import {
   deleteCashflow,
   deleteEntry,
   generateRecurringEntries,
+  duplicateCashflow,
 } from '../actions';
 import dynamic from 'next/dynamic';
 import CashflowModal from './CashflowModal';
@@ -543,6 +545,18 @@ export default function CashflowDetail({
     });
   }
 
+  async function handleDuplicateCashflow() {
+    startTransition(async () => {
+      const result = await duplicateCashflow(cashflow.id);
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.id) {
+        toast.success('Cashflow duplicated!');
+        router.push(`/cashflow/${result.id}`);
+      }
+    });
+  }
+
   async function handleDeleteEntry(entryId: string) {
     setIsDeletingEntryId(entryId);
     startTransition(async () => {
@@ -726,6 +740,13 @@ export default function CashflowDetail({
                     >
                       <LuPencil className='w-4 h-4 mr-2' />
                       Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className='cursor-pointer'
+                      onClick={handleDuplicateCashflow}
+                    >
+                      <LuCopy className='w-4 h-4 mr-2' />
+                      Duplicate
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {

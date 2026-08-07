@@ -28,6 +28,7 @@ import {
   LuEllipsisVertical,
   LuLoader,
   LuShare2,
+  LuCopy,
 } from 'react-icons/lu';
 import {
   DropdownMenu,
@@ -38,7 +39,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'react-toastify';
 import type { CashflowDTO, CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
-import { deleteCashflow, deleteEntry } from '../actions';
+import { deleteCashflow, deleteEntry, duplicateCashflow } from '../actions';
 import CashflowModal from './CashflowModal';
 import EntryModal from './EntryModal';
 import ShareModal from './ShareModal';
@@ -99,6 +100,18 @@ export default function CashflowCard({
         toast.success('Cashflow deleted');
         router.refresh();
         // Keep isDeleting true to prevent flicker before refresh updates UI
+      }
+    });
+  }
+
+  async function handleDuplicateCashflow() {
+    startTransition(async () => {
+      const result = await duplicateCashflow(cashflow.id);
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.id) {
+        toast.success('Cashflow duplicated!');
+        router.push(`/cashflow/${result.id}`);
       }
     });
   }
@@ -185,6 +198,10 @@ export default function CashflowCard({
                     <LuPencil className='w-3.5 h-3.5 mr-2' />
                     Rename
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDuplicateCashflow}>
+                    <LuCopy className='w-3.5 h-3.5 mr-2' />
+                    Duplicate
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => {
@@ -227,10 +244,10 @@ export default function CashflowCard({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className='w-[100px]'>Date</TableHead>
+                  <TableHead className='w-25'>Date</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className='text-right'>Amount</TableHead>
-                  <TableHead className='w-[80px]'></TableHead>
+                  <TableHead className='w-20'></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -342,7 +359,7 @@ export default function CashflowCard({
                 handleDeleteCashflow();
               }}
               disabled={isPending}
-              className='bg-destructive text-white hover:bg-destructive/90 min-w-[100px]'
+              className='bg-destructive text-white hover:bg-destructive/90 min-w-25'
             >
               {isDeleting ? (
                 <div className='flex items-center gap-2'>
@@ -382,7 +399,7 @@ export default function CashflowCard({
                 }
               }}
               disabled={!!isDeletingEntryId}
-              className='bg-destructive text-white hover:bg-destructive/90 min-w-[80px]'
+              className='bg-destructive text-white hover:bg-destructive/90 min-w-20'
             >
               {isDeletingEntryId ? (
                 <div className='flex items-center gap-2'>

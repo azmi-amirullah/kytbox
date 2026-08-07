@@ -21,6 +21,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { mapBudgetToDTO, mapGoalToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
+import { shiftToCurrentMonth } from './math';
 
 // Extracts user_id from Supabase joined relation (e.g. cashflows(user_id))
 const joinedOwnerSchema = z
@@ -1488,3 +1489,118 @@ export async function deleteGoal(goalId: string, cashflowId: string) {
   revalidatePath(`/cashflow/goal/${goalId}`);
   return { success: true };
 }
+
+export async function duplicateCashflow(cashflowId: string) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const parsedId = z.string().uuid().safeParse(cashflowId);
+  if (!parsedId.success) {
+    return { error: 'Invalid cashflow ID' };
+  }
+
+  // 1. Fetch original cashflow
+  const { data: original, error: origError } = await supabase
+    .from('cashflows')
+    .select('*')
+    .eq('id', cashflowId)
+    .single();
+
+  if (origError || !original) {
+    return { error: 'Cashflow not found' };
+  }
+
+  // Verify permission: User must be owner or have share access
+  const perm = await checkEditPermission(supabase, cashflowId, user, original.user_id);
+  if (!perm.canEdit) {
+    return { error: 'You do not have permission to duplicate this cashflow' };
+  }
+
+  // 2. Create duplicate cashflow book owned by current user
+  const { data: newCashflow, error: createError } = await supabase
+    .from('cashflows')
+    .insert({
+      user_id: user.id,
+      title: `${original.title} (Copy)`,
+      is_public: false,
+    })
+    .select()
+    .single();
+
+  if (createError || !newCashflow) {
+    console.error('Failed to create duplicate cashflow:', createError);
+    return { error: 'Failed to duplicate cashflow' };
+  }
+
+  const now = new Date();
+
+  // 3. Duplicate goals (and map old goal IDs to new goal IDs)
+  const goalIdMap = new Map<string, string>();
+  const { data: originalGoals } = await supabase
+    .from('cashflow_goals')
+    .select('*')
+    .eq('cashflow_id', cashflowId)
+    .eq('is_deleted', false);
+
+  if (originalGoals && originalGoals.length > 0) {
+    for (const goal of originalGoals) {
+      const { data: newGoal } = await supabase
+        .from('cashflow_goals')
+        .insert({
+          cashflow_id: newCashflow.id,
+          title: goal.title,
+          target_amount: goal.target_amount,
+          deadline: goal.deadline,
+          is_deleted: false,
+        })
+        .select()
+        .single();
+
+      if (newGoal) {
+        goalIdMap.set(goal.id, newGoal.id);
+      }
+    }
+  }
+
+  // 4. Duplicate budgets
+  const { data: originalBudgets } = await supabase
+    .from('cashflow_budgets')
+    .select('*')
+    .eq('cashflow_id', cashflowId);
+
+  if (originalBudgets && originalBudgets.length > 0) {
+    const toInsertBudgets = originalBudgets.map((b) => ({
+      cashflow_id: newCashflow.id,
+      category: b.category,
+      amount: b.amount,
+    }));
+    await supabase.from('cashflow_budgets').insert(toInsertBudgets);
+  }
+
+  // 5. Duplicate entries (shift dates to current month and map goal IDs)
+  const { data: originalEntries } = await supabase
+    .from('cashflow_entries')
+    .select('*')
+    .eq('cashflow_id', cashflowId);
+
+  if (originalEntries && originalEntries.length > 0) {
+    const toInsertEntries = originalEntries.map((e) => ({
+      cashflow_id: newCashflow.id,
+      description: e.description,
+      amount: e.amount,
+      type: e.type,
+      category: e.category,
+      date: shiftToCurrentMonth(e.date, now),
+      is_recurring: e.is_recurring,
+      recurrence_interval: e.recurrence_interval,
+      yearly_calculation: e.yearly_calculation,
+      goal_id: e.goal_id ? goalIdMap.get(e.goal_id) || null : null,
+    }));
+
+    await supabase.from('cashflow_entries').insert(toInsertEntries);
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath('/app');
+  return { success: true, id: newCashflow.id };
+}
+

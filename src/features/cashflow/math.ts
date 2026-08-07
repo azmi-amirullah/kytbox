@@ -332,3 +332,28 @@ export function filterEntriesByDate(
     return true;
   });
 }
+
+/**
+ * Shift a YYYY-MM-DD date string to the current year and month,
+ * maintaining the original day of month (clamped to the last day of target month).
+ */
+export function shiftToCurrentMonth(dateStr: string, now: Date = new Date()): string {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+      .toISOString()
+      .split('T')[0];
+  }
+  const parts = dateStr.split('-').map(Number);
+  const origDay = parts[2];
+  const targetYear = now.getUTCFullYear();
+  const targetMonth = now.getUTCMonth(); // 0-indexed UTC month
+
+  // Determine last day of target month in UTC
+  const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+  const newDay = Math.min(origDay, lastDay);
+
+  const monthFormatted = String(targetMonth + 1).padStart(2, '0');
+  const dayFormatted = String(newDay).padStart(2, '0');
+  return `${targetYear}-${monthFormatted}-${dayFormatted}`;
+}
+
