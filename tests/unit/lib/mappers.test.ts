@@ -65,6 +65,7 @@ const baseLink: Link = {
   parent_id: null,
   clicks: 42,
   animation_type: 'slide',
+  display_mode: 'link',
   short_id: 1,
   last_clicked_at: null,
   scheduled_at: null,

@@ -53,7 +53,7 @@ export async function addLink(formData: FormData) {
   const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, parentId, animationType, scheduled_at, expires_at } = parsed.data;
+  const { title, parentId, animationType, displayMode, scheduled_at, expires_at } = parsed.data;
   let url = parsed.data.url || '';
 
   if (!/^https?:\/\//i.test(url)) {
@@ -105,6 +105,7 @@ export async function addLink(formData: FormData) {
     short_id: nextShortId,
     parent_id: parentId || null,
     animation_type: animationType || 'none',
+    display_mode: displayMode || 'link',
     scheduled_at: scheduled_at ? scheduled_at.toISOString() : null,
     expires_at: expires_at ? expires_at.toISOString() : null,
   });
@@ -144,18 +145,20 @@ export async function updateLink(linkId: string, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, isFolder, animationType, scheduled_at, expires_at } = parsed.data;
+  const { title, isFolder, animationType, displayMode, scheduled_at, expires_at } = parsed.data;
   let url = parsed.data.url || null;
 
   const updates: {
     title: string;
     url?: string;
     animation_type?: string;
+    display_mode?: string;
     scheduled_at: string | null;
     expires_at: string | null;
   } = {
     title,
     animation_type: animationType || 'none',
+    display_mode: displayMode || 'link',
     scheduled_at: scheduled_at ? scheduled_at.toISOString() : null,
     expires_at: expires_at ? expires_at.toISOString() : null,
   };
@@ -568,7 +571,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
   const { data, error } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, scheduled_at, expires_at, children:links(count)',
     )
     .eq('user_id', profileId)
     .eq('is_active', true)
@@ -594,6 +597,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
     parent_id: z.string().nullable(),
     sort_order: z.number().nullable(),
     animation_type: z.string().nullable(),
+    display_mode: z.string().nullable().optional(),
     scheduled_at: z.string().nullable().optional(),
     expires_at: z.string().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
@@ -607,6 +611,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
       url: link.url || '',
       is_active: !!link.is_active,
       child_count: link.children?.[0]?.count ?? 0,
+      display_mode: link.display_mode || 'link',
       scheduled_at: link.scheduled_at || null,
       expires_at: link.expires_at || null,
     }))
@@ -625,7 +630,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
   const { data, error, count } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, scheduled_at, expires_at, children:links(count)',
       { count: 'exact' }
     )
     .eq('user_id', profileId)
@@ -652,6 +657,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
     parent_id: z.string().nullable(),
     sort_order: z.number().nullable(),
     animation_type: z.string().nullable(),
+    display_mode: z.string().nullable().optional(),
     scheduled_at: z.string().nullable().optional(),
     expires_at: z.string().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
@@ -665,6 +671,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
       url: link.url || '',
       is_active: !!link.is_active,
       child_count: link.children?.[0]?.count ?? 0,
+      display_mode: link.display_mode || 'link',
       scheduled_at: link.scheduled_at || null,
       expires_at: link.expires_at || null,
     })),

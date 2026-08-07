@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { LuLoader, LuType, LuGlobe, LuFolderOpen } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import { addLink, updateLink, createFolder } from '../actions'
+import { getEmbedInfo } from '../embed'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   linkDtoSchema,
@@ -87,6 +88,10 @@ export default function LinkModal({
   const [isScheduledEnabled, setIsScheduledEnabled] = useState(
     !!link?.scheduled_at || !!link?.expires_at,
   )
+  const [displayMode, setDisplayMode] = useState<'link' | 'embed'>(
+    link?.display_mode === 'embed' ? 'embed' : 'link',
+  )
+  const embedInfo = getEmbedInfo(url)
 
   // Determine if controlled or uncontrolled
   const isControlled = controlledOpen !== undefined
@@ -108,6 +113,7 @@ export default function LinkModal({
         setScheduledAt(formatToDatetimeLocal(link?.scheduled_at))
         setExpiresAt(formatToDatetimeLocal(link?.expires_at))
         setIsScheduledEnabled(!!link?.scheduled_at || !!link?.expires_at)
+        setDisplayMode(link?.display_mode === 'embed' ? 'embed' : 'link')
         setError(null)
       })
     }
@@ -145,6 +151,7 @@ export default function LinkModal({
       formData.append('url', url)
     }
     formData.append('animationType', animationType)
+    formData.append('displayMode', displayMode)
     formData.append('isFolder', type === 'folder' ? 'true' : 'false')
     formData.append('scheduled_at', isScheduledEnabled ? scheduledAt || '' : '')
     formData.append('expires_at', isScheduledEnabled ? expiresAt || '' : '')
@@ -307,6 +314,33 @@ export default function LinkModal({
                         />
                       </div>
                     </div>
+
+                    {embedInfo && (
+                      <div className='grid gap-2 border-t pt-4 mt-2'>
+                        <Label className='font-medium text-foreground/80 text-xs'>
+                          Display Mode
+                        </Label>
+                        <Select
+                          value={displayMode}
+                          onValueChange={(val) => setDisplayMode(val === 'embed' ? 'embed' : 'link')}
+                        >
+                          <SelectTrigger className='w-full'>
+                            <SelectValue placeholder='Select display mode' />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='link'>Standard Link Button</SelectItem>
+                            <SelectItem value='embed'>
+                              Inline Player ({embedInfo.type === 'youtube' ? 'YouTube' : 'Spotify'})
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className='text-xs text-muted-foreground'>
+                          {displayMode === 'embed'
+                            ? `Visitors can ${embedInfo.type === 'youtube' ? 'watch video' : 'listen audio'} directly on your bio page.`
+                            : 'Displays as a standard clickable link button.'}
+                        </p>
+                      </div>
+                    )}
 
                     <div className='grid gap-4 border-t pt-4 mt-2'>
                       <div className='flex items-center justify-between'>

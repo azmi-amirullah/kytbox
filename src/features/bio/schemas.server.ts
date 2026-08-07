@@ -12,6 +12,7 @@ export const addLinkSchema = z.object({
     .or(z.literal('')),
   isFolder: z.preprocess((val) => val === 'true', z.boolean()).optional(),
   animationType: z.string().optional().or(z.literal('')),
+  displayMode: z.string().optional().or(z.literal('')),
   scheduled_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
   expires_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
 }).refine(
@@ -33,6 +34,7 @@ export const updateLinkSchema = z.object({
   url: z.string().optional().nullable().or(z.literal('')),
   isFolder: z.preprocess((val) => val === 'true', z.boolean()),
   animationType: z.string().optional().or(z.literal('')),
+  displayMode: z.string().optional().or(z.literal('')),
   scheduled_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
   expires_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
 }).refine(

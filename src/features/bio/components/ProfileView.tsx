@@ -38,11 +38,13 @@ interface ProfileViewProps {
     parent_id?: string | null;
     child_count?: number;
     animation_type?: string | null;
+    display_mode?: string | null;
     scheduled_at?: string | null;
     expires_at?: string | null;
   }[];
   totalLinks?: number;
   isLoading?: boolean;
+  isInteractive?: boolean;
 }
 
 export default function ProfileView({
@@ -50,6 +52,7 @@ export default function ProfileView({
   links,
   totalLinks = 0,
   isLoading,
+  isInteractive = true,
 }: ProfileViewProps) {
   const theme = getTheme(profile?.theme_name, profile?.custom_theme);
   const buttonStyle = validateButtonStyle(profile?.button_style);
@@ -132,6 +135,7 @@ export default function ProfileView({
           buttonClasses={buttonClasses}
           totalLinks={totalLinks}
           isLoading={showSkeleton}
+          isInteractive={isInteractive}
         />
 
         {/* Branding Footer */}

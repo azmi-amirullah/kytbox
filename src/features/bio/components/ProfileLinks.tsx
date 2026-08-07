@@ -7,6 +7,7 @@ import { LinkButton } from './LinkButton';
 import type { ThemeConfig } from '@/lib/theme/theme.types';
 import { LuArrowLeft, LuFolderOpen, LuSearch, LuX } from 'react-icons/lu';
 import { loadMorePublicLinks, loadMorePublicFolderLinks } from '../actions';
+import { getEmbedInfo } from '../embed';
 
 interface ProfileLinksProps {
   links: {
@@ -20,6 +21,7 @@ interface ProfileLinksProps {
     parent_id?: string | null;
     sort_order?: number | null;
     animation_type?: string | null;
+    display_mode?: string | null;
     child_count?: number;
     scheduled_at?: string | null;
     expires_at?: string | null;
@@ -30,6 +32,7 @@ interface ProfileLinksProps {
   theme: ThemeConfig;
   buttonClasses: string;
   isLoading?: boolean;
+  isInteractive?: boolean;
 }
 
 export default function ProfileLinks({
@@ -40,6 +43,7 @@ export default function ProfileLinks({
   theme,
   buttonClasses,
   isLoading,
+  isInteractive = true,
 }: ProfileLinksProps) {
   const { colors } = theme;
   const [links, setLinks] = useState(initialLinks);
@@ -334,24 +338,49 @@ export default function ProfileLinks({
                         </div>
                       </div>
                     </button>
-                  ) : (
-                    <LinkButton
-                      href={`/${username}/${link.short_id ?? link.id}`}
-                      title={link.title}
-                      url={link.url}
-                      subtitle={
-                        searchQuery && link.parent_id ? (
-                          <>
-                            <LuFolderOpen className='w-3 h-3' />
-                            {activeLinks.find((l) => l.id === link.parent_id)
-                              ?.title || 'Folder'}
-                          </>
-                        ) : undefined
-                      }
-                      animationType={link.animation_type}
-                      className={cn(buttonClasses, 'w-full')}
-                    />
-                  )}
+                  ) : (() => {
+                    const embed = getEmbedInfo(link.url);
+                    if (embed && link.display_mode === 'embed') {
+                      return (
+                        <div
+                          className='w-full rounded-xl overflow-hidden shadow-sm border transition-all'
+                          style={{
+                            borderColor: colors.elementBorder,
+                            backgroundColor: colors.elementBg,
+                          }}
+                        >
+                          <iframe
+                            src={embed.embedUrl}
+                            width='100%'
+                            height={embed.type === 'youtube' ? '215' : '80'}
+                            allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope'
+                            allowFullScreen={embed.type === 'youtube'}
+                            className={cn('border-0 block w-full', !isInteractive && 'pointer-events-none')}
+                            loading='lazy'
+                            title={link.title}
+                          />
+                        </div>
+                      );
+                    }
+                    return (
+                      <LinkButton
+                        href={`/${username}/${link.short_id ?? link.id}`}
+                        title={link.title}
+                        url={link.url}
+                        subtitle={
+                          searchQuery && link.parent_id ? (
+                            <>
+                              <LuFolderOpen className='w-3 h-3' />
+                              {activeLinks.find((l) => l.id === link.parent_id)
+                                ?.title || 'Folder'}
+                            </>
+                          ) : undefined
+                        }
+                        animationType={link.animation_type}
+                        className={cn(buttonClasses, 'w-full')}
+                      />
+                    );
+                  })()}
                 </div>
               );
             })

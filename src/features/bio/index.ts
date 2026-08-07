@@ -7,3 +7,5 @@ export * from './db';
 export * from './actions';
 export * as schemasClient from './schemas.client';
 export * as schemasServer from './schemas.server';
+export * from './embed';
+

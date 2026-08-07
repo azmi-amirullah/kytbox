@@ -56,6 +56,7 @@ export interface PublicProfileData {
     is_header: boolean;
     parent_id: string | null;
     animation_type: string | null;
+    display_mode?: string | null;
     child_count: number;
   }[];
   totalLinks: number;

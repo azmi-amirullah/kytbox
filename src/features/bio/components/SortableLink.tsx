@@ -207,6 +207,11 @@ const LinkItemContent = memo(function LinkItemContent({
               Hidden
             </span>
           )}
+          {link.display_mode === 'embed' && (
+            <span className='text-[10px] uppercase tracking-wider font-bold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-sm'>
+              Embed
+            </span>
+          )}
         </div>
         {(!!getScheduleBadge() || (!link.is_folder && !link.is_header && !!link.url)) && (
           <div className='flex flex-wrap items-center gap-2 mt-1'>

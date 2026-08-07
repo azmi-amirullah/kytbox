@@ -54,6 +54,7 @@ export function mapLinkToDTO(row: {
   parent_id?: string | null;
   clicks?: number | null;
   animation_type?: string | null;
+  display_mode?: string | null;
   scheduled_at?: string | null;
   expires_at?: string | null;
   children?: { count: number }[];
@@ -70,6 +71,7 @@ export function mapLinkToDTO(row: {
     parent_id: row.parent_id ?? null,
     clicks: row.clicks ?? null,
     animation_type: row.animation_type ?? null,
+    display_mode: row.display_mode ?? 'link',
     scheduled_at: row.scheduled_at ?? null,
     expires_at: row.expires_at ?? null,
     child_count: row.children?.[0]?.count ?? row.child_count ?? undefined,

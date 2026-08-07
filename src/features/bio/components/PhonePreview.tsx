@@ -26,6 +26,7 @@ interface PhonePreviewProps {
     parent_id?: string | null;
     child_count?: number;
     animation_type?: string | null;
+    display_mode?: string | null;
     scheduled_at?: string | null;
     expires_at?: string | null;
   }[];
@@ -70,6 +71,7 @@ export default function PhonePreview({
               links={links}
               totalLinks={totalLinks}
               isLoading={isLoading}
+              isInteractive={false}
             />
 
             {!isLoading && (

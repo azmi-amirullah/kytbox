@@ -429,6 +429,7 @@ export type Database = {
           animation_type: string | null
           clicks: number | null
           created_at: string
+          display_mode: string | null
           expires_at: string | null
           id: string
           is_active: boolean | null
@@ -447,6 +448,7 @@ export type Database = {
           animation_type?: string | null
           clicks?: number | null
           created_at?: string
+          display_mode?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -465,6 +467,7 @@ export type Database = {
           animation_type?: string | null
           clicks?: number | null
           created_at?: string
+          display_mode?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean | null

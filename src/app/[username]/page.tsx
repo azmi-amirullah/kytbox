@@ -38,6 +38,7 @@ async function ProfileLinksStream({
       is_header: !!link.is_header,
       parent_id: link.parent_id,
       animation_type: link.animation_type,
+      display_mode: link.display_mode,
       child_count: link.children?.[0]?.count ?? 0,
     }));
 
