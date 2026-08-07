@@ -127,7 +127,8 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   sigCol: { flex: 1 },
-  sigLine: { borderBottomWidth: 1, borderBottomColor: C.border, marginTop: 44, marginBottom: 3 },
+  sigNameBox: { height: 44, justifyContent: 'flex-end', paddingBottom: 2 },
+  sigLine: { borderBottomWidth: 1, borderBottomColor: C.border, marginBottom: 3 },
   sigName: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.foreground },
   sigMeta: { fontSize: 7, color: C.mutedFg, marginTop: 1 },
   sigPlaceholder: { fontSize: 7, color: C.mutedFg },
@@ -299,10 +300,12 @@ export function InvoiceDocument({ invoice }: InvoiceDocumentProps) {
                 ]}
               >
                 <Text style={styles.sectionLabel}>Authorized By</Text>
+                <View style={styles.sigNameBox}>
+                  <Text style={styles.sigName}>
+                    {invoice.signatory_name || invoice.sender_name || 'Authorized Signatory'}
+                  </Text>
+                </View>
                 <View style={styles.sigLine} />
-                <Text style={styles.sigName}>
-                  {invoice.signatory_name || invoice.sender_name || 'Authorized Signatory'}
-                </Text>
                 <Text style={styles.sigMeta}>
                   Date Signed: {fmtDate(invoice.signed_date || invoice.issue_date)}
                 </Text>
@@ -318,6 +321,7 @@ export function InvoiceDocument({ invoice }: InvoiceDocumentProps) {
                 ]}
               >
                 <Text style={styles.sectionLabel}>Client Acknowledgement</Text>
+                <View style={styles.sigNameBox} />
                 <View style={styles.sigLine} />
                 <Text style={styles.sigMeta}>Date Signed: ____ / ____ / ________</Text>
               </View>
