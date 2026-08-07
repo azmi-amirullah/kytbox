@@ -39,7 +39,7 @@
 - [x] [Day 25 — Bio DnD + Analytics + Scheduling E2E](#day-25)
 - [x] [Day 26 — Accessibility Audit (WCAG 2.2)](#day-26)
 - [x] [Day 27 — Full Build Verification + Type Safety](#day-27)
-- [ ] [Day 28 — Visual Regression Baseline](#day-28)
+- [x] [Day 28 — Visual Regression Baseline](#day-28)
 - [ ] [Day 29 — Documentation Overhaul](#day-29)
 - [ ] [Day 30 — Sunday Rest](#day-30)
 - [ ] [Day 31 — Bio: Link Quick-Stats + Click Sparklines](#day-31)
@@ -1570,7 +1570,7 @@ The original audit batch was already largely resolved by existing architecture a
 
 <a id="day-28"></a>
 
-### Day 28 — Friday, Aug 7 | 🧪 Testing
+### Day 28 — Friday, Aug 7 | 🧪 Testing ✅ Complete
 
 #### Visual Regression Baseline (Playwright Screenshots)
 
