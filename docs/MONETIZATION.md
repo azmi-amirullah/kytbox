@@ -322,4 +322,4 @@ Paid users expect priority support. We built a lightweight internal ticketing sy
 
 ---
 
-_Last Updated: July 20, 2026_
+_Last Updated: August 8, 2026_

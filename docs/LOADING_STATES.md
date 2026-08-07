@@ -20,6 +20,8 @@ This table summarizes our strategic choice for each route to ensure total transp
 | **Root Shell**                  | Silent Boundary     | `fallback={null}` | `NextTopLoader` is the primary indicator; prevents header duplication. |
 | **(platform) / Bio**            | Unified Skeleton    | ✅ Active         | High-complexity page; matches `DashboardClient` perfectly.             |
 | **(platform) / Analytics**      | Standalone Skeleton | ✅ Active         | Prevents blank areas during heavy data streaming.                      |
+| **(platform) / Cashflow (all)** | Standalone Skeleton | ✅ Active         | Instant grid/table skeleton for books and transaction history.         |
+| **(platform) / List (all)**     | Standalone Skeleton | ✅ Active         | Kanban grid and list skeleton for Todo, Wishlists, and Ideas.          |
 | **(platform) / App & Settings** | Standalone Skeleton | ✅ Active         | Stable layouts; provides immediate branded frame.                      |
 | **(platform) / Support (all)**  | Standalone Skeleton | ✅ Active         | Dynamic ticket data requires streaming UI for premium feel.            |
 | **(admin) / Support Admin**     | Standalone Skeleton | ✅ Active         | Ensures admin queue feels responsive during data fetch.                |
@@ -122,4 +124,6 @@ The [StatsCard](../src/features/bio/components/StatsCard.tsx) is the primary sta
 3.  **No Spinning Icons**: Use defined skeletons that hint at the final component structure.
 4.  **Clean Transitions**: Prioritize `NextTopLoader` and `Skeleton` for all states.
 
-_Last Updated: July 30, 2026_
+---
+
+_Last Updated: August 8, 2026_

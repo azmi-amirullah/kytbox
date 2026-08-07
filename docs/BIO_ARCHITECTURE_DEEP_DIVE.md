@@ -181,4 +181,4 @@ To prevent "No links found" bugs when the database returns slightly unexpected d
 - Use `?? ''` or `|| ''` for strings.
 - Explicitly map mixed types like `short_id` (which can be `string` or `number` based on the query range).
 
-_Last Updated: March 11, 2026_
+_Last Updated: August 8, 2026_

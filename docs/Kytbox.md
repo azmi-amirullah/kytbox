@@ -465,12 +465,16 @@ Public:
 ## Status
 
 Product: Kytbox  
+
+## Status
+
+Product: Kytbox  
 Phase: Platform + Bio v1  
 Rule: This document defines how Kytbox works
 
 ---
 
-_Last Updated: July 30, 2026_
+_Last Updated: August 8, 2026_
 
 ## Implementation Status
 
@@ -479,7 +483,7 @@ _Last Updated: July 30, 2026_
 | Section | Feature                            | Status  |
 | ------- | ---------------------------------- | ------- |
 | §4.1    | Public route `/{username}`         | ✅ Done |
-| §4.2    | Platform shell `/app` and private app routes | ✅ Done |
+| §4.2    | Platform shell `/app` and activity feed | ✅ Done |
 | §4.2    | Support routes `/support*`         | ✅ Done |
 | §5      | Reserved usernames                 | ✅ Done |
 | §6      | Username format (a-z, 0-9, hyphen) | ✅ Done |
@@ -494,7 +498,10 @@ _Last Updated: July 30, 2026_
 | §12.4   | `'use cache'` Implementation       | ✅ Done |
 | §9      | Bio Dashboard Hybrid Sync Engine   | ✅ Done |
 |         | List App App & Database API        | ✅ Done |
-
+|         | Command Palette (`Cmd+K`)          | ✅ Done |
+|         | Unified Notification Center        | ✅ Done |
+|         | Bio Link Scheduling & Headers      | ✅ Done |
+|         | Cashflow Recurring Auto-Gen & Goals| ✅ Done |
 
 ### 🔜 Deferred to Post-Launch
 
@@ -509,7 +516,6 @@ _Last Updated: July 30, 2026_
 ---
 
 ## 12. Technical Architecture
-
 ### 12.1 Performance & Loading States
 
 Kytbox prioritizes perceived performance using Next.js Streaming SSR.

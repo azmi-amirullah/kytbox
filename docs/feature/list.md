@@ -83,4 +83,4 @@ The app exclusively uses Next.js Server Actions for database mutations.
 - `addColumn` / `updateColumn` / `deleteColumn`: Kanban column CRUD.
 - `toggleDoneColumn`: Marks a column as the "done" column and batch-updates all its items to `is_completed = true`.
 
-_Last Updated: July 30, 2026_
+_Last Updated: August 8, 2026_

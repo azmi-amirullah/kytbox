@@ -115,4 +115,4 @@ Every error captured by these boundaries logs the `pathname` alongside the error
 
 ---
 
-_Last Updated: February 25, 2026_
+_Last Updated: August 8, 2026_

@@ -1,4 +1,4 @@
-# 🧪 Unified Testing Roadmap (March 2026)
+# 🧪 Unified Testing Roadmap (August 2026)
 
 Testing a moving target is a waste of time, but shipping a broken core is a waste of a product. We focus on **Security > Math Accuracy > Critical User Journeys**.
 
@@ -13,29 +13,30 @@ Testing a moving target is a waste of time, but shipping a broken core is a wast
 
 ---
 
-## 🚀 Phase 1: Pre-Launch Stability (Current Focus)
+## 🚀 Phase 1: Pre-Launch Stability (Completed Core)
 
 ### 1. Security & Data Integrity (Critical)
-- [x] **Auth Setup**: Persist sessions between tests to avoid login spam.
-- [x] **Protected Routes**: Verify `/bio` and `/cashflow` redirect to `/login` when unauthenticated.
-- [x] **Data Leak Prevention (DTOs)**: Unit tests for DTO mappers to ensure sensitive DB fields (hashes, raw IDs) never leak to client.
-- [x] **Hierarchical Delete**: Verify that deleting a folder recursively cleans up links or orphan-checks them.
+- [x] **Auth Setup**: Persist sessions between tests to avoid login spam (`tests/e2e/auth.setup.ts`).
+- [x] **Protected Routes**: Verify `/bio`, `/cashflow`, `/list` redirect to `/login` when unauthenticated (`tests/e2e/security.test.ts`).
+- [x] **Data Leak Prevention (DTOs)**: Unit tests for DTO mappers to ensure sensitive DB fields (hashes, raw IDs) never leak to client (`tests/unit/lib/mappers.test.ts`).
+- [x] **Hierarchical Delete**: Verify that deleting a folder recursively cleans up links or orphan-checks them (`tests/e2e/folder-logic.test.ts`).
 
 ### 2. Cashflow Logic & Math (Critical)
-- [x] **Math Engine**: Unit tests for projection logic (`calculateProjections`).
-- [x] **Budget Engine**: Tests for "Over Budget" vs "Maxed Out" status logic.
-- [x] **Date Filtering**: Verify edge cases for custom date ranges (leap years, month boundaries).
+- [x] **Math Engine**: Unit tests for projection logic (`tests/unit/features/cashflow-math.test.ts`).
+- [x] **Budget Engine**: Tests for "Over Budget" vs "Maxed Out" status logic (`tests/unit/features/cashflow-budget.test.ts`).
+- [x] **Date Filtering**: Verify edge cases for custom date ranges (`tests/unit/features/date-filter.test.ts`).
 
 ### 3. Core Product Lifecycles (High)
 - [x] **Bio CRUD**: Create link/folder -> Edit -> Move -> Delete -> Verify Public visibility (`tests/e2e/bio.test.ts`).
 - [x] **Nested Management**: Add, edit, delete, move, and drag-sort links *inside* folders -> Verify Public visibility (`tests/e2e/folder-logic.test.ts`).
-- [ ] **Support System (`tests/e2e/support.test.ts`)**: Create support ticket -> Verify user dashboard -> Send reply message -> Check `<SupportNotificationBell />` count & read state.
-- [ ] **Cashflow CRUD (`tests/e2e/cashflow.test.ts`)**: Create cashflow book -> Add Income/Expense entries -> Verify calculation math -> Test search bar & multi-criteria type/category filtering -> Cleanup test entries.
+- [x] **Support System (`tests/e2e/support.test.ts`)**: Create support ticket -> Verify user dashboard -> Send reply message -> Check `<SupportNotificationBell />` count & read state.
+- [x] **Cashflow CRUD (`tests/e2e/cashflow.test.ts`)**: Create cashflow book -> Add Income/Expense entries -> Verify calculation math -> Test search bar & multi-criteria type/category filtering -> Cleanup test entries.
+- [x] **List App E2E (`tests/e2e/list.test.ts`)**: Create Todo, Wishlist, Ideas -> Move cards across columns -> Sync done status.
 
 ### 4. Advanced Interaction & Analytics (Medium)
-- [ ] **Drag & Drop**: Reorder items via handle (Root & Inside Folders) -> Verify Public order visibility.
-- [ ] **Analytics**: Verify click tracking increments after public profile click.
-- [ ] **Export/Filter**: Apply filter -> Verify table subset -> Trigger CSV export.
+- [x] **Bio DnD & Scheduling (`tests/e2e/bio-advanced.test.ts`)**: Drag-and-drop reordering, link scheduling date boundaries, and country analytics aggregation.
+- [x] **Visual Regression Baseline (`tests/e2e/visual-regression.test.ts`)**: Baseline screenshots for public profile, platform shell, cashflow details, and list boards.
+- [x] **Export/Filter**: Apply date filter -> Verify table subset -> Trigger CSV export.
 
 ---
 

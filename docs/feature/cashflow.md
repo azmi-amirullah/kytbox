@@ -299,10 +299,12 @@ stateDiagram-v2
 ✅ SQL View aggregation (`cashflow_summaries`) — O(N) offloaded to DB  
 ✅ Scalable sharing model with full RLS audit  
 ✅ CSV Export (respects date filter)  
-✅ Savings Goals on `/cashflow/[id]` with cross-book goal contributions
+✅ Savings Goals on `/cashflow/[id]` with cross-book goal contributions  
+✅ Recurring Entry Auto-Generation (`generateRecurringEntries` server action & auto-gen banner)  
+✅ Duplicate Cashflow Book (`duplicateCashflow` action)  
 
 ---
 
 _For loading state details, see [LOADING_STATES.md](./LOADING_STATES.md)_
 
-_Last Updated: July 30, 2026_
+_Last Updated: August 8, 2026_

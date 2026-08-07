@@ -57,12 +57,13 @@ Analytics for link clicks (UA, Country, Referer). Used to populate the Bio analy
 - **`reorder_links(p_link_ids uuid[])`**: Bulk updates `sort_order` for an array of links.
 - **`get_analytics_chart_data(...)`**: Aggregates clicks for Bio analytics charts.
 
-### 2.3 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`, `cashflow_budgets`)
+### 2.3 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`, `cashflow_budgets`, `cashflow_goals`)
 
 - **`cashflows`**: Virtual wallets/accounts.
 - **`cashflow_entries`**: Immutable transaction log.
 - **`cashflow_shares`**: ACL for sharing cashflows with other users by email.
-- **`cashflow_budgets`**: Monthly spending limits per category per cashflow. Unique on `(cashflow_id, category)`. Cascade-deletes with the parent cashflow. RLS: owners manage all; editors read via `auth.jwt() ->> 'email'` match on `cashflow_shares`.
+- **`cashflow_budgets`**: Monthly spending limits per category per cashflow. Unique on `(cashflow_id, category)`.
+- **`cashflow_goals`**: Savings targets scoped to cashflows with target amounts, deadlines, and soft-archive support.
 
 ### 2.4 Support System (`support_tickets`, `support_messages`)
 
@@ -74,6 +75,15 @@ Analytics for link clicks (UA, Country, Referer). Used to populate the Bio analy
 - **`lists`**: Parent container for all types of lists (todo, wishlist, idea). Includes `is_public` sharing toggle.
 - **`list_columns`**: Used only for Kanban boards (type: `todo`). Includes `is_done_column` for automatic completion syncing.
 - **`list_items`**: Child items. Uses `metadata` JSONB for type-specific data (e.g., price and url for wishlists). Maps to a `column_id` if it belongs to a Kanban board.
+
+### 2.6 Notifications (`notifications`)
+
+- **`notifications`**: Platform-wide notification event queue (types: `support_reply`, `budget_warning`, `budget_exceeded`, `click_milestone`, `system`). Service-role client insert only.
+
+### 2.7 Invoices (`invoices`, `invoice_items`)
+
+- **`invoices`**: B2B/freelance invoices with client details, tax, discount, signature toggles, and payment status.
+- **`invoice_items`**: Line items for each invoice (description, quantity, unit price, amount).
 
 ---
 
@@ -114,6 +124,15 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 | 20    | `20260716_add_unique_recurring_index.sql`           | `unique_recurring_monthly_entry` constraint and template RPC.       |
 | 21    | `20260717_get_analytics_by_country.sql`             | RPC function `get_analytics_by_country` for visitor geography.       |
 | 22    | `20260718_add_onboarding_flag.sql`                  | `has_completed_onboarding` column on `profiles` for onboarding.       |
+| 23    | `20260721000000_dashboard_overview_rpc.sql`         | RPC `get_dashboard_overview` for `/app` quick stats and activity.   |
+| 24    | `20260723_create_notifications.sql`                  | Platform notification queue with RLS.                               |
+| 25    | `20260728111653_cashflow_goals_squashed.sql`         | `cashflow_goals` schema, contributions, and RLS policies.           |
+| 26    | `20260728112001_cashflow_security_squashed.sql`      | Hardened cashflow owner check functions & RLS policies.              |
+| 27    | `20260728122446_cashflow_audit_fixes.sql`           | Cashflow security audit fixes & trigger guards.                     |
+| 28    | `20260728130000_harden_notification_insert_policy.sql` | Revoke public notification insert, restrict to service-role client.|
+| 29    | `20260806110000_create_invoice_tables.sql`          | `invoices` and `invoice_items` schema with user_id RLS.             |
+| 30    | `20260806120000_add_include_client_signature_to_invoices.sql` | `include_client_signature` boolean column on `invoices`.  |
+| 31    | `20260806121500_fix_cashflow_shares_rls_recursion.sql` | Non-recursive RLS policy for `cashflow_shares`.                    |
 
 ---
 
@@ -128,4 +147,4 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 
 ---
 
-_Last Updated: July 20, 2026_
+_Last Updated: August 8, 2026_

@@ -40,7 +40,7 @@
 - [x] [Day 26 — Accessibility Audit (WCAG 2.2)](#day-26)
 - [x] [Day 27 — Full Build Verification + Type Safety](#day-27)
 - [x] [Day 28 — Visual Regression Baseline](#day-28)
-- [ ] [Day 29 — Documentation Overhaul](#day-29)
+- [x] [Day 29 — Documentation Overhaul](#day-29)
 - [ ] [Day 30 — Sunday Rest](#day-30)
 - [ ] [Day 31 — Bio: Link Quick-Stats + Click Sparklines](#day-31)
 - [ ] [Day 32 — Cashflow: Duplicate Book](#day-32)

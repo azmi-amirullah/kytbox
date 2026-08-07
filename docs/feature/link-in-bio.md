@@ -266,6 +266,51 @@ src/
 
 Blocked: `login`, `signup`, `app`, `admin`, `api`, `blog`, `terms`, `privacy`, `www`, `auth`, `callback`, `dashboard`, `settings`, `bio`, `list`, `track`, `id`, etc.
 
+| Action          | Description                           |
+| :-------------- | :------------------------------------ |
+| `updateProfile` | Update username, display name, bio    |
+| `uploadAvatar`  | Upload avatar to Supabase Storage     |
+| `removeAvatar`  | Delete avatar from storage            |
+| `checkUsername` | Real-time username availability check |
+
+### Auth Flow
+
+1. **Email Signup**: User picks username + Email + Password → Create profile (via DB trigger)
+2. **Google OAuth Signup**: Google sign-in → Redirect to `/onboarding` (if no username) → Pick username → Complete profile
+3. **Login**: Email + Password OR Google OAuth → Redirect to `/app` (or `/onboarding` if profile incomplete)
+4. **Forgot Password**: Email → Reset link → `/auth/callback` → `/update-password`
+5. **Onboarding**: Users without a username are redirected here to complete their profile before accessing the platform
+
+### Click Tracking (`/{username}/[linkId]`)
+
+1. Link buttons on public page point to `/{username}/[linkId]`
+2. Server calls `increment_link_click` RPC to update count
+3. Redirects to actual `url`
+
+## 5. Username Rules (Kytbox Spec)
+
+### Allowed Characters
+
+- Lowercase letters `a-z`
+- Numbers `0-9`
+- Single hyphen `-` (not at start or end)
+
+### Disallowed
+
+- Uppercase (auto-lowercased)
+- Underscore, dot, spaces
+- Consecutive hyphens (`--`)
+- Start/end with hyphen
+
+### Length
+
+- Minimum: 3 characters
+- Maximum: 20 characters
+
+### Reserved Usernames
+
+Blocked: `login`, `signup`, `app`, `admin`, `api`, `blog`, `terms`, `privacy`, `www`, `auth`, `callback`, `dashboard`, `settings`, `bio`, `list`, `track`, `id`, etc.
+
 See `src/lib/username.ts` for full list.
 
 ## 6. Security Features
@@ -298,10 +343,15 @@ See `src/lib/username.ts` for full list.
 ✅ Nested Folders (Drill-Down UI & Native iOS-style slide transitions)  
 ✅ Sticky Search Bar (Public page, dynamic folder context)  
 ✅ Link & Folder Animations (Pulse, Bounce, Glow — configurable per-item)  
-✅ Link List Pagination (High-performance "Load More" for 100+ items)
-✅ Phone Preview State Synchronization (Hybrid Refresh API with parallel segment updates)
-✅ Resilient Data Mapping (Safe handling of database nulls and type mismatches)
-✅ Atomic Folder-to-Root Navigation (Synchronized list and badge updates)
+✅ Link List Pagination (High-performance "Load More" for 100+ items)  
+✅ Phone Preview State Synchronization (Hybrid Refresh API with parallel segment updates)  
+✅ Resilient Data Mapping (Safe handling of database nulls and type mismatches)  
+✅ Atomic Folder-to-Root Navigation (Synchronized list and badge updates)  
+✅ Link Scheduling (Start & end datetime activation/expiry)  
+✅ Section Headers (Visual dividers inside profiles and folders)  
+✅ QR Code Generator Modal (`QrCodeModal.tsx` for instant Bio sharing)  
+✅ Country Analytics Map (`get_analytics_by_country` RPC & `CountryBreakdown.tsx`)  
+✅ Analytics Share Card Modal (`ShareCardModal.tsx` for generating social share graphics)
 
 ## 8. Social Link Icons (Implemented)
 
@@ -394,4 +444,4 @@ See `src/lib/username.ts` for full list.
 - **Custom Domain support** — deferred.
 - **Advanced SEO metadata editor** — Pro feature, deferred.
 
-_Last Updated: July 30, 2026_
+_Last Updated: August 8, 2026_
