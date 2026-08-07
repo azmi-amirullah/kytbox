@@ -13,6 +13,7 @@ import LinksTabContent from './LinksTabContent';
 import PhonePreview from './PhonePreview';
 import AppearanceEditor from './AppearanceEditor';
 import type { ProfileDTO, LinkDTO } from '@/types/dto';
+import type { LinkClickTrend } from '../db';
 import type { CustomThemeData } from '@/lib/theme/theme.types';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +44,7 @@ interface DashboardClientProps {
   activeRootTotalCount?: number;
   isLoading?: boolean;
   activeTab?: BioTab;
+  clickTrends?: Record<string, LinkClickTrend>;
 }
 
 /**
@@ -61,6 +63,7 @@ export default function DashboardClient({
   activeRootTotalCount = 0,
   isLoading,
   activeTab = DEFAULT_TAB,
+  clickTrends,
 }: DashboardClientProps) {
   const searchParams = useSearchParams();
   const urlTab = bioTabSchema.parse(searchParams.get('tab'));
@@ -169,6 +172,7 @@ export default function DashboardClient({
               isLoading={isLoading}
               username={profile?.username}
               publicUrl={publicUrl}
+              clickTrends={clickTrends}
             />
           </TabsContent>
 

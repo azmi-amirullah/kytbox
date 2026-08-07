@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { linkDtoListSchema } from '../schemas.client';
 import type { LinkDTO } from '@/types/dto';
+import type { LinkClickTrend } from '../db';
 
 interface LinksTabContentProps {
   links: LinkDTO[];
@@ -39,6 +40,7 @@ interface LinksTabContentProps {
   isLoading?: boolean;
   username?: string | null;
   publicUrl?: string;
+  clickTrends?: Record<string, LinkClickTrend>;
 }
 
 export default function LinksTabContent({
@@ -54,6 +56,7 @@ export default function LinksTabContent({
   isLoading,
   username,
   publicUrl,
+  clickTrends,
 }: LinksTabContentProps) {
   const searchParams = useSearchParams();
   const action = searchParams.get('action');
@@ -305,6 +308,7 @@ export default function LinksTabContent({
               setFolderCounts={setFolderCounts}
               onRefreshView={refreshCurrentView}
               setLocalActiveLinks={setLocalActiveLinks}
+              clickTrends={clickTrends}
             />
             {!isLoading && !currentFolderId && !isRefreshing && (links.filter(l => !l.parent_id).length < localRootTotalLinks || isLoadingMore) && (
               <div className='mt-6 flex justify-center'>

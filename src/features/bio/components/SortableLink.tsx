@@ -16,6 +16,8 @@ import {
   LuFolderInput,
   LuTriangleAlert,
   LuType,
+  LuTrendingUp,
+  LuTrendingDown,
 } from 'react-icons/lu';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -37,6 +39,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import LinkModal from './LinkModal';
 import type { LinkDTO } from '@/types/dto';
+import type { LinkClickTrend } from '../db';
 import { cn } from '@/lib/utils';
 
 interface SortableLinkProps {
@@ -48,6 +51,7 @@ interface SortableLinkProps {
   onMove: (linkId: string) => void;
   onDrillDown: (folderId: string) => void;
   onUpdate?: (link: LinkDTO) => void;
+  clickTrend?: LinkClickTrend;
 }
 
 const LinkItemContent = memo(function LinkItemContent({
@@ -60,6 +64,7 @@ const LinkItemContent = memo(function LinkItemContent({
   onDelete,
   onMove,
   onUpdate,
+  clickTrend,
 }: {
   link: LinkDTO;
   childCount?: number;
@@ -70,6 +75,7 @@ const LinkItemContent = memo(function LinkItemContent({
   onDelete: (linkId: string) => void;
   onMove: (linkId: string) => void;
   onUpdate?: (link: LinkDTO) => void;
+  clickTrend?: LinkClickTrend;
 }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -229,13 +235,54 @@ const LinkItemContent = memo(function LinkItemContent({
             <span className='opacity-70'>items</span>
           </div>
         )
-      ) : link.is_header ? null : (
-        <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
-          <LuActivity className='w-3.5 h-3.5' />
-          {link.clicks ?? 0}
-          <span className='opacity-70'>clicks</span>
-        </div>
-      )}
+      ) : link.is_header ? null : (() => {
+        if (!clickTrend) {
+          return (
+            <div className='hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card border border-border text-foreground text-xs font-medium'>
+              <LuActivity className='w-3.5 h-3.5' />
+              {link.clicks ?? 0}
+              <span className='opacity-70'>clicks</span>
+            </div>
+          );
+        }
+
+        const { thisWeek, lastWeek } = clickTrend;
+        const isUp = thisWeek > lastWeek && (lastWeek === 0 || thisWeek > lastWeek * 1.05);
+        const isDown = thisWeek < lastWeek && lastWeek > 0 && thisWeek < lastWeek * 0.95;
+
+        let badgeStyle = 'bg-card border-border text-foreground';
+        let Icon = LuActivity;
+        const trendLabel = `${thisWeek} clicks`;
+
+        if (isUp) {
+          badgeStyle = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+          Icon = LuTrendingUp;
+        } else if (isDown) {
+          badgeStyle = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+          Icon = LuTrendingDown;
+        }
+
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className={cn('hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-colors cursor-help', badgeStyle)}>
+                  <Icon className='w-3.5 h-3.5' />
+                  <span>{trendLabel}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side='top'>
+                <div className='text-xs space-y-0.5'>
+                  <p className='font-medium'>Click Performance</p>
+                  <p className='opacity-80'>This week: <strong>{thisWeek}</strong></p>
+                  <p className='opacity-80'>Last week: <strong>{lastWeek}</strong></p>
+                  <p className='opacity-80'>Lifetime: <strong>{link.clicks ?? 0}</strong></p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      })()}
 
       {/* Actions */}
       <div
@@ -399,6 +446,7 @@ export default function SortableLink({
   onDrillDown,
   onUpdate,
   isParentHidden,
+  clickTrend,
 }: SortableLinkProps) {
   const {
     attributes,
@@ -485,6 +533,7 @@ export default function SortableLink({
         onDelete={onDelete}
         onMove={onMove}
         onUpdate={onUpdate}
+        clickTrend={clickTrend}
       />
     </div>
   );

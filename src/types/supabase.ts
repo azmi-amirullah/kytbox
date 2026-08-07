@@ -258,101 +258,6 @@ export type Database = {
           },
         ]
       }
-      invoices: {
-        Row: {
-          client_address: string | null
-          client_email: string | null
-          client_name: string
-          created_at: string
-          currency: string
-          discount_amount: number | null
-          due_date: string
-          id: string
-          include_issuer_signature?: boolean
-          include_client_signature?: boolean
-          invoice_number: string
-          issue_date: string
-          notes: string | null
-          payment_info: string | null
-          sender_address: string | null
-          sender_email: string | null
-          sender_name: string | null
-          signatory_name: string | null
-          signed_date: string | null
-          status: string
-          subtotal: number
-          tax_amount: number
-          tax_rate: number | null
-          total_amount: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          client_address?: string | null
-          client_email?: string | null
-          client_name: string
-          created_at?: string
-          currency?: string
-          discount_amount?: number | null
-          due_date: string
-          id?: string
-          include_issuer_signature?: boolean
-          include_client_signature?: boolean
-          invoice_number: string
-          issue_date?: string
-          notes?: string | null
-          payment_info?: string | null
-          sender_address?: string | null
-          sender_email?: string | null
-          sender_name?: string | null
-          signatory_name?: string | null
-          signed_date?: string | null
-          status: string
-          subtotal?: number
-          tax_amount?: number
-          tax_rate?: number | null
-          total_amount?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          client_address?: string | null
-          client_email?: string | null
-          client_name?: string
-          created_at?: string
-          currency?: string
-          discount_amount?: number | null
-          due_date?: string
-          id?: string
-          include_issuer_signature?: boolean
-          include_client_signature?: boolean
-          invoice_number?: string
-          issue_date?: string
-          notes?: string | null
-          payment_info?: string | null
-          sender_address?: string | null
-          sender_email?: string | null
-          sender_name?: string | null
-          signatory_name?: string | null
-          signed_date?: string | null
-          status?: string
-          subtotal?: number
-          tax_amount?: number
-          tax_rate?: number | null
-          total_amount?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'invoices_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-        ]
-      }
       invoice_items: {
         Row: {
           amount: number
@@ -393,6 +298,93 @@ export type Database = {
             referencedColumns: ['id']
           },
         ]
+      }
+      invoices: {
+        Row: {
+          client_address: string | null
+          client_email: string | null
+          client_name: string
+          created_at: string
+          currency: string
+          discount_amount: number | null
+          due_date: string
+          id: string
+          include_client_signature: boolean
+          include_issuer_signature: boolean
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          payment_info: string | null
+          sender_address: string | null
+          sender_email: string | null
+          sender_name: string | null
+          signatory_name: string | null
+          signed_date: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_address?: string | null
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          due_date: string
+          id?: string
+          include_client_signature?: boolean
+          include_issuer_signature?: boolean
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          payment_info?: string | null
+          sender_address?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
+          signatory_name?: string | null
+          signed_date?: string | null
+          status: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number | null
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_address?: string | null
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          currency?: string
+          discount_amount?: number | null
+          due_date?: string
+          id?: string
+          include_client_signature?: boolean
+          include_issuer_signature?: boolean
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          payment_info?: string | null
+          sender_address?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
+          signatory_name?: string | null
+          signed_date?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       link_events: {
         Row: {
@@ -1031,6 +1023,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_link_click_trends: {
+        Args: { p_user_id: string }
+        Returns: {
+          last_week: number
+          link_id: string
+          this_week: number
+        }[]
+      }
       get_next_short_id: { Args: { p_user_id: string }; Returns: number }
       get_recent_activity: {
         Args: { p_limit?: number; p_user_id: string }
@@ -1082,10 +1082,7 @@ export type Database = {
         Args: { p_column_ids: string[] }
         Returns: undefined
       }
-      reorder_list_items: {
-        Args: { p_item_ids: string[] }
-        Returns: undefined
-      }
+      reorder_list_items: { Args: { p_item_ids: string[] }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

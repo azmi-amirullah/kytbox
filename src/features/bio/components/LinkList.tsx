@@ -24,6 +24,7 @@ import { LuFolderOpen, LuLoader } from 'react-icons/lu';
 import MoveToFolderModal from './MoveToFolderModal';
 import SortableLink from './SortableLink';
 import type { LinkDTO } from '@/types/dto';
+import type { LinkClickTrend } from '../db';
 import { linkDtoListSchema } from '../schemas.client';
 
 interface LinkListProps {
@@ -36,6 +37,7 @@ interface LinkListProps {
   setFolderCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   onRefreshView: (refreshRoot?: boolean) => Promise<void>;
   setLocalActiveLinks: React.Dispatch<React.SetStateAction<number>>;
+  clickTrends?: Record<string, LinkClickTrend>;
 }
 
 export default function LinkList({
@@ -48,6 +50,7 @@ export default function LinkList({
   setFolderCounts,
   onRefreshView,
   setLocalActiveLinks,
+  clickTrends,
 }: LinkListProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -278,7 +281,7 @@ export default function LinkList({
               <LuFolderOpen className='w-6 h-6 text-muted-foreground' />
             </div>
             <p className='text-foreground font-medium'>This folder is empty</p>
-            <p className='text-sm text-muted-foreground max-w-[200px] mx-auto mt-1'>
+            <p className='text-sm text-muted-foreground max-w-50 mx-auto mt-1'>
               Move or add links here to get started.
             </p>
           </div>
@@ -301,6 +304,7 @@ export default function LinkList({
                    }
                    onDrillDown={handleDrillDown}
                    onUpdate={handleUpdate}
+                   clickTrend={clickTrends?.[link.id]}
                 />
               ))}
             </div>
@@ -328,7 +332,7 @@ export default function LinkList({
             variant='outline'
             onClick={handleLoadMoreFolder}
             disabled={loadingFolder === currentFolderId}
-            className='min-w-[140px] shadow-sm'
+            className='min-w-35 shadow-sm'
           >
             {loadingFolder === currentFolderId ? (
               <>

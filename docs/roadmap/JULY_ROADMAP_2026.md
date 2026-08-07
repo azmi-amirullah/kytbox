@@ -41,8 +41,8 @@
 - [x] [Day 27 — Full Build Verification + Type Safety](#day-27)
 - [x] [Day 28 — Visual Regression Baseline](#day-28)
 - [x] [Day 29 — Documentation Overhaul](#day-29)
-- [ ] [Day 30 — Sunday Rest](#day-30)
-- [ ] [Day 31 — Bio: Link Quick-Stats + Click Sparklines](#day-31)
+- [x] [Day 30 — Sunday Rest](#day-30)
+- [x] [Day 31 — Bio: Link Quick-Stats + Click Sparklines](#day-31)
 - [ ] [Day 32 — Cashflow: Duplicate Book](#day-32)
 - [ ] [Day 33 — Bio: Content Embedding (YouTube + Spotify)](#day-33)
 - [ ] [Day 34 — 30-Day Retrospective + Next Sprint](#day-34)
@@ -1630,7 +1630,7 @@ await expect(page).toHaveScreenshot('bio-dashboard-links.png', {
 
 <a id="day-31"></a>
 
-### Day 31 — Monday, Aug 10 | ✨ Feature
+### Day 31 — Monday, Aug 10 | ✨ Feature ✅ Complete
 
 #### Bio: Link Quick-Stats + Click Sparklines
 

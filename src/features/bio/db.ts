@@ -9,6 +9,11 @@ import { customThemeDataSchema } from '@/lib/validation.schemas';
 import type { CustomThemeData } from '@/lib/theme';
 import type { ProfileDTO, LinkDTO } from '@/types/dto';
 
+export interface LinkClickTrend {
+  thisWeek: number;
+  lastWeek: number;
+}
+
 export interface BioDashboardData {
   profile: ProfileDTO & {
     theme_name: string | null;
@@ -25,6 +30,7 @@ export interface BioDashboardData {
   rootTotalCount: number;
   activeRootTotalCount: number;
   totalViews: number;
+  clickTrends: Record<string, LinkClickTrend>;
 }
 
 export interface PublicProfileData {
@@ -61,7 +67,7 @@ export async function getBioDashboardData(
   userId: string
 ): Promise<BioDashboardData> {
   // Parallelize all data fetching for maximum performance
-  const [profileResult, allLinksMetadataResult, initialRootLinksResult, viewsCountResult] = await Promise.all([
+  const [profileResult, allLinksMetadataResult, initialRootLinksResult, viewsCountResult, clickTrendsResult] = await Promise.all([
     supabase
       .from('profiles')
       .select(
@@ -85,6 +91,8 @@ export async function getBioDashboardData(
       .from('profile_events')
       .select('*', { count: 'exact', head: true })
       .eq('profile_id', userId),
+    supabase
+      .rpc('get_link_click_trends', { p_user_id: userId }),
   ]);
 
   const profile = profileResult.data;
@@ -95,6 +103,16 @@ export async function getBioDashboardData(
   const allLinks = allLinksMetadataResult.data || [];
   const rawRootLinks = initialRootLinksResult.data || [];
   const totalViews = viewsCountResult.count || 0;
+
+  const clickTrends: Record<string, LinkClickTrend> = {};
+  if (clickTrendsResult.data) {
+    clickTrendsResult.data.forEach((row) => {
+      clickTrends[row.link_id] = {
+        thisWeek: Number(row.this_week || 0),
+        lastWeek: Number(row.last_week || 0),
+      };
+    });
+  }
 
   // Calculate counts based on reachability (hierarchy-aware)
   const globalTotalCount = allLinks.length;
@@ -137,6 +155,7 @@ export async function getBioDashboardData(
     rootTotalCount,
     activeRootTotalCount,
     totalViews,
+    clickTrends,
   };
 }
 
