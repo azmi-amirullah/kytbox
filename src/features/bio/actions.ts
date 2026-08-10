@@ -9,6 +9,7 @@ import {
   addLinkSchema,
   updateLinkSchema,
   updateAppearanceSchema,
+  updateSeoSchema,
   moveToFolderSchema,
 } from './schemas.server';
 import { mapLinkToDTO } from '@/lib/mappers';
@@ -294,6 +295,9 @@ export async function updateAppearance(formData: FormData) {
     buttonShape = '',
     socialLinks: socialLinksRaw = '',
     customTheme: customThemeRaw = '',
+    metaTitle,
+    metaDescription,
+    ogImageUrl,
   } = parsed.data;
 
   const updateData: {
@@ -302,6 +306,9 @@ export async function updateAppearance(formData: FormData) {
     button_shape: string;
     social_links?: Record<string, string>;
     custom_theme?: Record<string, string> | null;
+    meta_title?: string | null;
+    meta_description?: string | null;
+    og_image_url?: string | null;
   } = {
     theme_name: themeName,
     button_style: buttonStyle,
@@ -324,6 +331,10 @@ export async function updateAppearance(formData: FormData) {
     }
   }
 
+  if (metaTitle !== undefined) updateData.meta_title = metaTitle || null;
+  if (metaDescription !== undefined) updateData.meta_description = metaDescription || null;
+  if (ogImageUrl !== undefined) updateData.og_image_url = ogImageUrl || null;
+
   const { error } = await supabase
     .from('profiles')
     .update(updateData)
@@ -337,6 +348,35 @@ export async function updateAppearance(formData: FormData) {
   if (profile) {
     updateTag(`profile-${profile.username}`);
     updateTag(`links-${profile.username}`);
+    revalidatePath(`/${profile.username}`, 'page');
+  }
+  return { success: true };
+}
+
+export async function updateSeoSettings(formData: FormData) {
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+
+  const parsed = updateSeoSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { metaTitle, metaDescription, ogImageUrl } = parsed.data;
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      meta_title: metaTitle || null,
+      meta_description: metaDescription || null,
+      og_image_url: ogImageUrl || null,
+    })
+    .eq('id', user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/bio', 'page');
+  if (profile) {
+    updateTag(`profile-${profile.username}`);
     revalidatePath(`/${profile.username}`, 'page');
   }
   return { success: true };

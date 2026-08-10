@@ -196,6 +196,11 @@ export default function DashboardClient({
               initialCustomTheme={
                 isLoading ? null : profile?.custom_theme || null
               }
+              initialMetaTitle={isLoading ? '' : profile?.meta_title || ''}
+              initialMetaDescription={
+                isLoading ? '' : profile?.meta_description || ''
+              }
+              initialOgImageUrl={isLoading ? '' : profile?.og_image_url || ''}
               isLoading={isLoading}
               onPreviewUpdate={useCallback(
                 (

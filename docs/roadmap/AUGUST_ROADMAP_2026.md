@@ -8,7 +8,7 @@
 
 ## 📌 Table of Contents & Progress Checklist
 
-- [ ] [Day 1 — Bio: SEO Metadata Editor](#day-1)
+- [x] [Day 1 — Bio: SEO Metadata Editor](#day-1)
 - [ ] [Day 2 — Bio: Custom Link Thumbnails](#day-2)
 - [ ] [Day 3 — Bio: Lead Capture Form Widget](#day-3)
 - [ ] [Day 4 — Bio: Pin Important Links & Sensitive Content Warning](#day-4)

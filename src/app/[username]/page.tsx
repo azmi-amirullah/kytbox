@@ -94,12 +94,16 @@ export async function generateMetadata({ params }: PublicProfilePageProps) {
   const { username } = await params;
   const profile = await getProfileByUsername(username);
 
-  const title = profile?.display_name
-    ? `${profile.display_name} (@${username})`
-    : `@${username}`;
+  const title =
+    profile?.meta_title ||
+    (profile?.display_name
+      ? `${profile.display_name} (@${username}) | Kytbox`
+      : `@${username} | Kytbox`);
   const description =
-    profile?.bio || `Check out ${username}'s bio page and links on Kytbox.`;
-  const avatarUrl = profile?.avatar_url || undefined;
+    profile?.meta_description ||
+    profile?.bio ||
+    `Check out ${username}'s bio page and links on Kytbox.`;
+  const ogImageUrl = profile?.og_image_url || profile?.avatar_url || undefined;
 
   return {
     title,
@@ -110,13 +114,13 @@ export async function generateMetadata({ params }: PublicProfilePageProps) {
       url: `${siteConfig.url}/${username}`,
       siteName: 'Kytbox',
       type: 'profile',
-      images: avatarUrl ? [{ url: avatarUrl, alt: `${username}'s avatar` }] : [],
+      images: ogImageUrl ? [{ url: ogImageUrl, alt: `${username}'s social image` }] : [],
     },
     twitter: {
-      card: 'summary',
+      card: profile?.og_image_url ? 'summary_large_image' : 'summary',
       title,
       description,
-      images: avatarUrl ? [avatarUrl] : [],
+      images: ogImageUrl ? [ogImageUrl] : [],
     },
   };
 }

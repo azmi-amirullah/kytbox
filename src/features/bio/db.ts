@@ -72,7 +72,7 @@ export async function getBioDashboardData(
     supabase
       .from('profiles')
       .select(
-        'id, username, display_name, avatar_url, bio, role, created_at, theme_name, button_style, button_shape, social_links, custom_theme, default_currency, tier, has_completed_onboarding',
+        'id, username, display_name, avatar_url, bio, role, created_at, theme_name, button_style, button_shape, social_links, custom_theme, default_currency, tier, has_completed_onboarding, meta_title, meta_description, og_image_url',
       )
       .eq('id', userId)
       .single(),

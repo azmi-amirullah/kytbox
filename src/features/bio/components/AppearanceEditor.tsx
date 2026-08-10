@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react'
-import { LuCheck, LuPalette, LuShare2, LuChevronRight } from 'react-icons/lu'
+import {
+  LuCheck,
+  LuPalette,
+  LuShare2,
+  LuChevronRight,
+  LuGlobe,
+  LuSearch,
+  LuImage,
+} from 'react-icons/lu'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -11,7 +19,7 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { motion, AnimatePresence } from 'framer-motion'
-import { updateAppearance } from '../actions'
+import { updateAppearance, updateSeoSettings } from '../actions'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
@@ -30,6 +38,9 @@ interface AppearanceEditorProps {
   initialButtonShape: string
   initialSocialLinks: Record<string, string>
   initialCustomTheme?: CustomThemeData | null
+  initialMetaTitle?: string
+  initialMetaDescription?: string
+  initialOgImageUrl?: string
   isLoading?: boolean
   onPreviewUpdate: (
     theme: string,
@@ -213,6 +224,9 @@ export default function AppearanceEditor({
   initialButtonShape,
   initialSocialLinks,
   initialCustomTheme,
+  initialMetaTitle = '',
+  initialMetaDescription = '',
+  initialOgImageUrl = '',
   isLoading,
   onPreviewUpdate,
 }: AppearanceEditorProps) {
@@ -243,6 +257,9 @@ export default function AppearanceEditor({
       footerText: '#666666',
     },
   )
+  const [metaTitle, setMetaTitle] = useState(initialMetaTitle)
+  const [metaDescription, setMetaDescription] = useState(initialMetaDescription)
+  const [ogImageUrl, setOgImageUrl] = useState(initialOgImageUrl)
 
   const initialCategory =
     initialTheme === 'custom'
@@ -256,6 +273,9 @@ export default function AppearanceEditor({
     'idle' | 'saving' | 'saved' | 'error'
   >('idle')
   const [socialStatus, setSocialStatus] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle')
+  const [seoStatus, setSeoStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle')
 
@@ -410,6 +430,58 @@ export default function AppearanceEditor({
     customTheme,
     buttonStyle,
     buttonShape,
+    router,
+  ])
+
+  // SEO & Social Metadata Auto-save
+  useEffect(() => {
+    const isSeoChanged =
+      metaTitle !== initialMetaTitle ||
+      metaDescription !== initialMetaDescription ||
+      ogImageUrl !== initialOgImageUrl
+
+    if (!isSeoChanged) {
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setSeoStatus('saving')
+      const startTime = Date.now()
+
+      const formData = new FormData()
+      formData.append('metaTitle', metaTitle)
+      formData.append('metaDescription', metaDescription)
+      formData.append('ogImageUrl', ogImageUrl)
+
+      const result = await updateSeoSettings(formData)
+
+      const elapsed = Date.now() - startTime
+      const minDuration = 500
+      if (elapsed < minDuration) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, minDuration - elapsed),
+        )
+      }
+
+      if (result.error) {
+        setSeoStatus('error')
+        setError(result.error)
+      } else {
+        setSeoStatus('saved')
+        setError(null)
+        router.refresh()
+        setTimeout(() => setSeoStatus('idle'), 2000)
+      }
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [
+    metaTitle,
+    metaDescription,
+    ogImageUrl,
+    initialMetaTitle,
+    initialMetaDescription,
+    initialOgImageUrl,
     router,
   ])
 
@@ -843,6 +915,152 @@ export default function AppearanceEditor({
               </div>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* SEO & Social Media Metadata Card */}
+      <Card className='border-border bg-card shadow-sm relative overflow-hidden'>
+        <SavingBar status={seoStatus} />
+        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-4'>
+          <div>
+            <CardTitle className='text-lg flex items-center gap-2'>
+              <LuGlobe className='w-5 h-5 text-primary' />
+              SEO & Social Sharing Preview
+            </CardTitle>
+            <CardDescription>
+              Customize how your bio profile appears in Google search engine results and social media cards.
+            </CardDescription>
+          </div>
+          <StatusIndicator status={seoStatus} />
+        </CardHeader>
+        <CardContent className='space-y-5'>
+          <div className='grid gap-4 md:grid-cols-2'>
+            <div className='space-y-4'>
+              {/* Meta Title Field */}
+              <div className='space-y-1.5'>
+                <div className='flex items-center justify-between'>
+                  <Label htmlFor='meta-title' className='text-xs font-semibold'>
+                    Custom Meta Title
+                  </Label>
+                  <span
+                    className={cn(
+                      'text-[10px] font-mono',
+                      metaTitle.length > 60
+                        ? 'text-amber-500 font-semibold'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    {metaTitle.length}/120 {metaTitle.length > 60 ? '(>60 Rec.)' : ''}
+                  </span>
+                </div>
+                <div className='relative'>
+                  <LuSearch className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50' />
+                  <Input
+                    id='meta-title'
+                    value={metaTitle}
+                    onChange={(e) => setMetaTitle(e.target.value)}
+                    placeholder='e.g., Jane Doe — Founder & Tech Creator'
+                    maxLength={120}
+                    disabled={isLoading}
+                    className='pl-9 text-xs h-9 bg-secondary/5 border-border/50 focus-visible:ring-primary/20'
+                  />
+                </div>
+              </div>
+
+              {/* Meta Description Field */}
+              <div className='space-y-1.5'>
+                <div className='flex items-center justify-between'>
+                  <Label htmlFor='meta-description' className='text-xs font-semibold'>
+                    Custom Meta Description
+                  </Label>
+                  <span
+                    className={cn(
+                      'text-[10px] font-mono',
+                      metaDescription.length > 160
+                        ? 'text-amber-500 font-semibold'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    {metaDescription.length}/300 {metaDescription.length > 160 ? '(>160 Rec.)' : ''}
+                  </span>
+                </div>
+                <textarea
+                  id='meta-description'
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  placeholder='e.g., Welcome to my bio link hub! Find my latest videos, podcasts, and newsletter.'
+                  maxLength={300}
+                  rows={3}
+                  disabled={isLoading}
+                  className='w-full rounded-md border border-border/50 bg-secondary/5 p-2.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-50'
+                />
+              </div>
+
+              {/* OpenGraph Image URL Field */}
+              <div className='space-y-1.5'>
+                <Label htmlFor='og-image-url' className='text-xs font-semibold'>
+                  Social Card Image URL (OG Image)
+                </Label>
+                <div className='relative'>
+                  <LuImage className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50' />
+                  <Input
+                    id='og-image-url'
+                    value={ogImageUrl}
+                    onChange={(e) => setOgImageUrl(e.target.value)}
+                    placeholder='https://example.com/banner.png'
+                    disabled={isLoading}
+                    className='pl-9 text-xs h-9 bg-secondary/5 border-border/50 focus-visible:ring-primary/20'
+                  />
+                </div>
+                <p className='text-[10px] text-muted-foreground'>
+                  Landscape ratio 1200×630px recommended. Defaults to profile picture if empty.
+                </p>
+              </div>
+            </div>
+
+            {/* Social Share Card Preview Box */}
+            <div className='space-y-2 border border-border/60 rounded-xl p-3 bg-secondary/10 flex flex-col justify-between'>
+              <div className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between'>
+                <span>Social Card Live Preview</span>
+                <span className='text-[10px] text-primary/80 font-mono'>Twitter / LinkedIn</span>
+              </div>
+              <div className='border border-border/70 rounded-lg overflow-hidden bg-background shadow-xs transition-all'>
+                {ogImageUrl ? (
+                  <div className='relative w-full h-32 bg-muted flex items-center justify-center overflow-hidden'>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ogImageUrl}
+                      alt='Social Share Preview'
+                      className='w-full h-full object-cover'
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className='w-full h-24 bg-linear-to-r from-primary/10 via-secondary/20 to-primary/5 flex flex-col items-center justify-center gap-1 text-muted-foreground/60 p-2 text-center'>
+                    <LuImage className='w-6 h-6 opacity-40' />
+                    <span className='text-[11px]'>Using Default Profile Avatar</span>
+                  </div>
+                )}
+                <div className='p-3 space-y-1'>
+                  <p className='text-[10px] uppercase font-mono text-muted-foreground tracking-tight'>
+                    kytbox.com
+                  </p>
+                  <p className='text-xs font-bold line-clamp-1 text-foreground'>
+                    {metaTitle || 'Your Bio Profile Title'}
+                  </p>
+                  <p className='text-[11px] text-muted-foreground line-clamp-2 leading-tight'>
+                    {metaDescription ||
+                      'Your profile summary or bio description will be displayed here on social platforms.'}
+                  </p>
+                </div>
+              </div>
+              <div className='text-[10px] text-muted-foreground/70 italic text-center'>
+                Preview changes automatically save as you type
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

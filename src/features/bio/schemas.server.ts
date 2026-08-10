@@ -42,12 +42,29 @@ export const updateLinkSchema = z.object({
   { message: 'Expiry must be after start date', path: ['expires_at'] }
 );
 
+export const updateSeoSchema = z.object({
+  metaTitle: z.string().trim().max(120, 'Title must be under 120 characters').optional().or(z.literal('')),
+  metaDescription: z.string().trim().max(300, 'Description must be under 300 characters').optional().or(z.literal('')),
+  ogImageUrl: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .refine((val) => !val || /^https?:\/\//i.test(val), {
+      message: 'OG image URL must start with http:// or https://',
+    }),
+});
+
 export const updateAppearanceSchema = z.object({
   themeName: z.string().optional().or(z.literal('')),
   buttonStyle: z.string().optional().or(z.literal('')),
   buttonShape: z.string().optional().or(z.literal('')),
   socialLinks: z.string().optional().or(z.literal('')),
   customTheme: z.string().optional().or(z.literal('')),
+  metaTitle: z.string().optional().or(z.literal('')),
+  metaDescription: z.string().optional().or(z.literal('')),
+  ogImageUrl: z.string().optional().or(z.literal('')),
 });
 
 export const socialLinksSchema = z.record(z.string(), z.string()).catch({});
+

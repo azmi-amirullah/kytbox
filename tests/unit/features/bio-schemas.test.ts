@@ -4,9 +4,48 @@ import {
   addLinkSchema,
   updateLinkSchema,
   socialLinksSchema,
+  updateSeoSchema,
 } from '@/features/bio/schemas.server';
 
 describe('Bio Server Schemas', () => {
+  describe('updateSeoSchema', () => {
+    it('validates a correct SEO metadata payload', () => {
+      const result = updateSeoSchema.safeParse({
+        metaTitle: 'John Doe — Creator & Developer',
+        metaDescription: 'Discover all my links and projects.',
+        ogImageUrl: 'https://example.com/social-banner.png',
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.metaTitle).toBe('John Doe — Creator & Developer');
+        expect(result.data.metaDescription).toBe('Discover all my links and projects.');
+        expect(result.data.ogImageUrl).toBe('https://example.com/social-banner.png');
+      }
+    });
+
+    it('accepts empty/optional SEO fields', () => {
+      const result = updateSeoSchema.safeParse({
+        metaTitle: '',
+        metaDescription: '',
+        ogImageUrl: '',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('fails when metaTitle exceeds 120 characters', () => {
+      const longTitle = 'a'.repeat(121);
+      const result = updateSeoSchema.safeParse({ metaTitle: longTitle });
+      expect(result.success).toBe(false);
+    });
+
+    it('fails when ogImageUrl does not start with http or https', () => {
+      const result = updateSeoSchema.safeParse({
+        ogImageUrl: 'ftp://example.com/image.png',
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
   describe('bioTabSchema', () => {
     it('parses valid tabs', () => {
       expect(bioTabSchema.parse('links')).toBe('links');

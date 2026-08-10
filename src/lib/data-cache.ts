@@ -13,7 +13,7 @@ export async function getProfileByUsername(username: string) {
   const { data, error } = await supabase
     .from('profiles')
     .select(
-      'id, username, display_name, bio, avatar_url, theme_name, button_style, button_shape, social_links, custom_theme, default_currency',
+      'id, username, display_name, bio, avatar_url, theme_name, button_style, button_shape, social_links, custom_theme, default_currency, meta_title, meta_description, og_image_url',
     )
     .eq('username', username)
     .single();
