@@ -83,16 +83,34 @@ async function getOwnedItem(
 ): Promise<OwnedItem | null> {
   const { data, error } = await supabase
     .from('list_items')
-    .select('id, list_id')
+    .select('id, list_id, lists!inner(id, type, user_id)')
     .eq('id', itemId)
+    .eq('lists.user_id', userId)
     .maybeSingle();
 
   if (error || !data) return null;
 
-  const list = await getOwnedList(supabase, userId, data.list_id);
-  return list
-    ? { id: data.id, listId: data.list_id, listType: list.type }
-    : null;
+  let listType: ListType | null = null;
+  if (
+    'lists' in data &&
+    data.lists &&
+    typeof data.lists === 'object' &&
+    'type' in data.lists &&
+    typeof data.lists.type === 'string'
+  ) {
+    listType = listTypeSchema.catch('todo').parse(data.lists.type);
+  } else {
+    const list = await getOwnedList(supabase, userId, data.list_id);
+    if (list) listType = list.type;
+  }
+
+  if (!listType) return null;
+
+  return {
+    id: data.id,
+    listId: data.list_id,
+    listType,
+  };
 }
 
 async function getOwnedColumn(
@@ -102,20 +120,28 @@ async function getOwnedColumn(
 ): Promise<OwnedColumn | null> {
   const { data, error } = await supabase
     .from('list_columns')
-    .select('id, list_id, is_done_column')
+    .select('id, list_id, is_done_column, lists!inner(id, user_id)')
     .eq('id', columnId)
+    .eq('lists.user_id', userId)
     .maybeSingle();
 
   if (error || !data) return null;
 
-  const list = await getOwnedList(supabase, userId, data.list_id);
-  return list
-    ? {
-        id: data.id,
-        listId: data.list_id,
-        isDoneColumn: data.is_done_column,
-      }
-    : null;
+  let hasList = false;
+  if ('lists' in data && data.lists && typeof data.lists === 'object') {
+    hasList = true;
+  } else {
+    const list = await getOwnedList(supabase, userId, data.list_id);
+    if (list) hasList = true;
+  }
+
+  if (!hasList) return null;
+
+  return {
+    id: data.id,
+    listId: data.list_id,
+    isDoneColumn: data.is_done_column,
+  };
 }
 
 async function allItemsBelongToList(

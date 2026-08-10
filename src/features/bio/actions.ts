@@ -24,25 +24,32 @@ import type {
 } from '@/types/analytics';
 
 async function calculateGlobalCounts(userId: string, supabase: SupabaseClient) {
-  const { data: allLinks } = await supabase
-    .from('links')
-    .select('id, is_active, parent_id, is_folder')
-    .eq('user_id', userId);
+  const [{ count: totalCount }, { data: relevantLinks }] = await Promise.all([
+    supabase
+      .from('links')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId),
+    supabase
+      .from('links')
+      .select('id, is_active, parent_id, is_folder')
+      .eq('user_id', userId)
+      .or('is_active.eq.true,is_folder.eq.true'),
+  ]);
 
-  if (!allLinks) return { globalTotalCount: 0, globalActiveCount: 0 };
+  if (!relevantLinks) return { globalTotalCount: totalCount || 0, globalActiveCount: 0 };
 
   const inactiveFolderIds = new Set(
-    allLinks.filter((l) => l.is_folder && !l.is_active).map((l) => l.id),
+    relevantLinks.filter((l) => l.is_folder && !l.is_active).map((l) => l.id),
   );
 
-  const reachableLinksCount = allLinks.filter((l) => {
+  const reachableLinksCount = relevantLinks.filter((l) => {
     if (!l.is_active) return false;
     if (l.parent_id && inactiveFolderIds.has(l.parent_id)) return false;
     return true;
   }).length;
 
   return {
-    globalTotalCount: allLinks.length,
+    globalTotalCount: totalCount || 0,
     globalActiveCount: reachableLinksCount,
   };
 }

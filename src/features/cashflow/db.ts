@@ -96,13 +96,14 @@ export async function getCashflowDashboardData(
     .map((c) => c.id)
     .filter((id): id is string => Boolean(id));
   // Fetch entries for dashboard charts
-  let entriesData: CashflowEntry[] = [];
+  const entriesData: CashflowEntry[] = [];
+  const dashboardGoalTitles = new Map<string, string>();
 
   if (summaryIds.length > 0) {
     const { data, error } = await supabase
       .from('cashflow_entries')
       .select(
-        'id, cashflow_id, goal_id, amount, type, category, date, description, is_recurring, recurrence_interval, yearly_calculation, created_at'
+        'id, cashflow_id, goal_id, amount, type, category, date, description, is_recurring, recurrence_interval, yearly_calculation, created_at, cashflow_goals(id, title)'
       )
       .in('cashflow_id', summaryIds)
       .order('date', { ascending: true })
@@ -112,31 +113,21 @@ export async function getCashflowDashboardData(
       console.error('cashflow_dashboard_entry_lookup_failed', error);
       throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
     }
-    entriesData = data ?? [];
-  }
-
-  const dashboardGoalTitles = new Map<string, string>();
-  const dashboardGoalIds = Array.from(
-    new Set(
-      entriesData
-        .map((entry) => entry.goal_id)
-        .filter((goalId): goalId is string => Boolean(goalId)),
-    ),
-  );
-  if (dashboardGoalIds.length > 0) {
-    const { data: dashboardGoals, error: dashboardGoalsError } = await supabase
-      .from('cashflow_goals')
-      .select('id, title')
-      .in('id', dashboardGoalIds)
-      .eq('is_deleted', false);
-
-    if (dashboardGoalsError) {
-      console.error('cashflow_dashboard_goal_lookup_failed', dashboardGoalsError);
-      throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
-    }
-
-    for (const goal of dashboardGoals ?? []) {
-      dashboardGoalTitles.set(goal.id, goal.title);
+    if (data) {
+      for (const row of data) {
+        entriesData.push(row);
+        if (
+          'cashflow_goals' in row &&
+          row.cashflow_goals &&
+          typeof row.cashflow_goals === 'object' &&
+          'id' in row.cashflow_goals &&
+          'title' in row.cashflow_goals &&
+          typeof row.cashflow_goals.id === 'string' &&
+          typeof row.cashflow_goals.title === 'string'
+        ) {
+          dashboardGoalTitles.set(row.cashflow_goals.id, row.cashflow_goals.title);
+        }
+      }
     }
   }
 

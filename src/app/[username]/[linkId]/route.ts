@@ -5,6 +5,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { redirectRateLimit } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
 
+import { getProfileByUsername } from '@/lib/data-cache';
+
 interface RedirectRouteProps {
   params: Promise<{
     username: string;
@@ -25,18 +27,14 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
     return new Response('Too Many Requests', { status: 429 });
   }
 
-  const supabase = await createClient();
-
-  // First get the user profile to get user_id
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('username', username)
-    .single();
+  // Fetch cached user profile to get user_id (uses Next.js 'use cache' profile tag)
+  const profile = await getProfileByUsername(username);
 
   if (!profile) {
     notFound();
   }
+
+  const supabase = await createClient();
 
   // Try to find link by short_id first (if linkId is numeric), then fall back to UUID
   const isNumeric = /^\d+$/.test(linkId);

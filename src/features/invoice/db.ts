@@ -13,7 +13,7 @@ export async function getInvoicesByUserId(userId: string): Promise<InvoiceDTO[]>
 
   const { data: invoicesData, error: invoiceError } = await supabase
     .from('invoices')
-    .select('*')
+    .select('*, items:invoice_items(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
@@ -22,39 +22,32 @@ export async function getInvoicesByUserId(userId: string): Promise<InvoiceDTO[]>
     return [];
   }
 
-  if (invoicesData.length === 0) {
-    return [];
-  }
-
-  const invoiceIds = invoicesData.map((inv) => inv.id);
-
-  const { data: itemsData, error: itemsError } = await supabase
-    .from('invoice_items')
-    .select('*')
-    .in('invoice_id', invoiceIds)
-    .order('sort_order', { ascending: true });
-
-  if (itemsError) {
-    console.error('Error fetching invoice items:', itemsError);
-  }
-
-  const itemsByInvoiceId = new Map<string, Record<string, unknown>[]>();
-  (itemsData || []).forEach((item) => {
-    const list = itemsByInvoiceId.get(item.invoice_id) || [];
-    list.push(item);
-    itemsByInvoiceId.set(item.invoice_id, list);
+  return invoicesData.map((inv) => {
+    const rawItems = Array.isArray(inv.items) ? inv.items : [];
+    return mapInvoiceToDTO(inv, rawItems);
   });
-
-  return invoicesData.map((inv) =>
-    mapInvoiceToDTO(inv, itemsByInvoiceId.get(inv.id) || [])
-  );
 }
 
 /**
  * Compute invoice stats for a user
  */
 export async function getInvoiceStatsByUserId(userId: string): Promise<InvoiceStatsDTO> {
-  const invoices = await getInvoicesByUserId(userId);
+  const supabase = await createClient();
+
+  const { data: invoices, error } = await supabase
+    .from('invoices')
+    .select('status, total_amount, due_date')
+    .eq('user_id', userId);
+
+  if (error || !invoices) {
+    return {
+      totalInvoiced: 0,
+      totalPaid: 0,
+      totalOutstanding: 0,
+      overdueCount: 0,
+      draftCount: 0,
+    };
+  }
 
   let totalInvoiced = 0;
   let totalPaid = 0;
@@ -65,17 +58,18 @@ export async function getInvoiceStatsByUserId(userId: string): Promise<InvoiceSt
   const today = new Date().toISOString().split('T')[0];
 
   invoices.forEach((inv) => {
-    totalInvoiced += inv.total_amount;
+    const totalAmount = Number(inv.total_amount || 0);
+    totalInvoiced += totalAmount;
 
     if (inv.status === 'paid') {
-      totalPaid += inv.total_amount;
+      totalPaid += totalAmount;
     } else if (inv.status === 'pending') {
-      totalOutstanding += inv.total_amount;
-      if (inv.due_date < today) {
+      totalOutstanding += totalAmount;
+      if (inv.due_date && inv.due_date < today) {
         overdueCount++;
       }
     } else if (inv.status === 'overdue') {
-      totalOutstanding += inv.total_amount;
+      totalOutstanding += totalAmount;
       overdueCount++;
     } else if (inv.status === 'draft') {
       draftCount++;
