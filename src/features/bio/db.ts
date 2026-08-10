@@ -57,6 +57,7 @@ export interface PublicProfileData {
     parent_id: string | null;
     animation_type: string | null;
     display_mode?: string | null;
+    icon_url?: string | null;
     child_count: number;
   }[];
   totalLinks: number;
@@ -186,6 +187,8 @@ export async function getPublicProfileData(
       is_header: !!link.is_header,
       parent_id: link.parent_id,
       animation_type: link.animation_type,
+      display_mode: link.display_mode,
+      icon_url: link.icon_url ?? null,
       child_count: link.children?.[0]?.count ?? 0,
     }));
 

@@ -8,6 +8,7 @@ import { toast } from 'react-toastify'
 import { addLink, updateLink, createFolder } from '../actions'
 import { getEmbedInfo } from '../embed'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import LinkThumbnailPicker from './LinkThumbnailPicker'
 import {
   linkDtoSchema,
   linkActionResponseSchema,
@@ -91,6 +92,7 @@ export default function LinkModal({
   const [displayMode, setDisplayMode] = useState<'link' | 'embed'>(
     link?.display_mode === 'embed' ? 'embed' : 'link',
   )
+  const [iconUrl, setIconUrl] = useState<string | null>(link?.icon_url || null)
   const embedInfo = getEmbedInfo(url)
 
   // Determine if controlled or uncontrolled
@@ -114,6 +116,7 @@ export default function LinkModal({
         setExpiresAt(formatToDatetimeLocal(link?.expires_at))
         setIsScheduledEnabled(!!link?.scheduled_at || !!link?.expires_at)
         setDisplayMode(link?.display_mode === 'embed' ? 'embed' : 'link')
+        setIconUrl(link?.icon_url || null)
         setError(null)
       })
     }
@@ -152,6 +155,7 @@ export default function LinkModal({
     }
     formData.append('animationType', animationType)
     formData.append('displayMode', displayMode)
+    formData.append('icon_url', iconUrl || '')
     formData.append('isFolder', type === 'folder' ? 'true' : 'false')
     formData.append('scheduled_at', isScheduledEnabled ? scheduledAt || '' : '')
     formData.append('expires_at', isScheduledEnabled ? expiresAt || '' : '')
@@ -314,6 +318,12 @@ export default function LinkModal({
                         />
                       </div>
                     </div>
+
+                    <LinkThumbnailPicker
+                      url={url}
+                      value={iconUrl}
+                      onChange={setIconUrl}
+                    />
 
                     {embedInfo && (
                       <div className='grid gap-2 border-t pt-4 mt-2'>

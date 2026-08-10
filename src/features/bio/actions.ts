@@ -17,6 +17,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createStaticClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { subDays, subHours, startOfHour, startOfDay, format } from 'date-fns';
+import { uploadRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import type {
   DateRange as AnalyticsDateRange,
   AnalyticsData,
@@ -61,7 +62,7 @@ export async function addLink(formData: FormData) {
   const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, parentId, animationType, displayMode, scheduled_at, expires_at } = parsed.data;
+  const { title, parentId, animationType, displayMode, icon_url, scheduled_at, expires_at } = parsed.data;
   let url = parsed.data.url || '';
 
   if (!/^https?:\/\//i.test(url)) {
@@ -114,6 +115,7 @@ export async function addLink(formData: FormData) {
     parent_id: parentId || null,
     animation_type: animationType || 'none',
     display_mode: displayMode || 'link',
+    icon_url: icon_url || null,
     scheduled_at: scheduled_at ? scheduled_at.toISOString() : null,
     expires_at: expires_at ? expires_at.toISOString() : null,
   });
@@ -139,6 +141,7 @@ export async function addLink(formData: FormData) {
   if (profile) {
     updateTag(`profile-${profile.username}`);
     updateTag(`links-${profile.username}`);
+    revalidatePath(`/${profile.username}`, 'page');
   }
   return { success: true, link: newLink ? mapLinkToDTO(newLink) : null, newCount: nextCount };
 }
@@ -153,7 +156,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, isFolder, animationType, displayMode, scheduled_at, expires_at } = parsed.data;
+  const { title, isFolder, animationType, displayMode, icon_url, scheduled_at, expires_at } = parsed.data;
   let url = parsed.data.url || null;
 
   const updates: {
@@ -161,12 +164,14 @@ export async function updateLink(linkId: string, formData: FormData) {
     url?: string;
     animation_type?: string;
     display_mode?: string;
+    icon_url?: string | null;
     scheduled_at: string | null;
     expires_at: string | null;
   } = {
     title,
     animation_type: animationType || 'none',
     display_mode: displayMode || 'link',
+    icon_url: icon_url || null,
     scheduled_at: scheduled_at ? scheduled_at.toISOString() : null,
     expires_at: expires_at ? expires_at.toISOString() : null,
   };
@@ -195,6 +200,14 @@ export async function updateLink(linkId: string, formData: FormData) {
     updates.url = url;
   }
 
+  // Fetch existing link to clean up old storage icon if icon_url changed or removed
+  const { data: existingLink } = await supabase
+    .from('links')
+    .select('icon_url')
+    .eq('id', linkId)
+    .eq('user_id', user.id)
+    .single();
+
   const { error } = await supabase
     .from('links')
     .update(updates)
@@ -203,6 +216,11 @@ export async function updateLink(linkId: string, formData: FormData) {
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Clean up old storage file if icon was replaced or cleared
+  if (existingLink?.icon_url && existingLink.icon_url !== updates.icon_url) {
+    await deleteStorageIcon(supabase, existingLink.icon_url);
   }
 
   // Fetch the updated link
@@ -216,12 +234,96 @@ export async function updateLink(linkId: string, formData: FormData) {
   if (profile) {
     updateTag(`profile-${profile.username}`);
     updateTag(`links-${profile.username}`);
+    revalidatePath(`/${profile.username}`, 'page');
   }
-  return { success: true, link: updatedLink };
+  return { success: true, link: updatedLink ? mapLinkToDTO(updatedLink) : null };
+}
+
+async function deleteStorageIcon(supabase: SupabaseClient, iconUrl?: string | null) {
+  if (!iconUrl) return;
+  try {
+    const urlObj = new URL(iconUrl);
+    const pathParts = urlObj.pathname.split('/storage/v1/object/public/');
+    if (pathParts.length > 1) {
+      const fullStoragePath = pathParts[1];
+      const [bucket, ...filePathParts] = fullStoragePath.split('/');
+      const filePath = filePathParts.join('/');
+      if (bucket && filePath && ['link-icons', 'avatars'].includes(bucket)) {
+        await supabase.storage.from(bucket).remove([filePath]);
+      }
+    }
+  } catch {
+    // Ignore invalid URL parsing errors
+  }
+}
+
+export async function uploadLinkIcon(formData: FormData) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const rateLimitResult = await checkRateLimit(uploadRateLimit, user.id);
+  if (!rateLimitResult.success) {
+    return { error: 'Upload rate limit exceeded. Please wait a minute before uploading again.' };
+  }
+
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: 'No valid file provided' };
+  }
+
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+  if (!allowedTypes.includes(file.type)) {
+    return { error: 'Invalid file type. JPG, PNG, WebP, or SVG only.' };
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    return { error: 'File size must be under 2MB.' };
+  }
+
+  const extByType: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/svg+xml': 'svg',
+  };
+  const fileExt = extByType[file.type] || 'png';
+  const filePath = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
+  let bucket = 'link-icons';
+  let uploadResult = await supabase.storage
+    .from(bucket)
+    .upload(filePath, file, { upsert: true });
+
+  if (
+    uploadResult.error &&
+    'statusCode' in uploadResult.error &&
+    String(uploadResult.error.statusCode) === '404'
+  ) {
+    bucket = 'avatars';
+    uploadResult = await supabase.storage
+      .from(bucket)
+      .upload(`link-icons/${filePath}`, file, { upsert: true });
+  }
+
+  if (uploadResult.error) {
+    console.error('Failed to upload link icon:', uploadResult.error);
+    return { error: 'Failed to upload icon to storage' };
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(uploadResult.data.path);
+
+  return { success: true, iconUrl: publicUrlData.publicUrl };
 }
 
 export async function deleteLink(linkId: string) {
   const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
+
+  const { data: linkToDelete } = await supabase
+    .from('links')
+    .select('icon_url')
+    .eq('id', linkId)
+    .eq('user_id', user.id)
+    .single();
 
   const { error } = await supabase
     .from('links')
@@ -231,6 +333,10 @@ export async function deleteLink(linkId: string) {
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (linkToDelete?.icon_url) {
+    await deleteStorageIcon(supabase, linkToDelete.icon_url);
   }
 
   revalidatePath('/bio', 'page');
@@ -618,7 +724,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
   const { data, error } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, children:links(count)',
     )
     .eq('user_id', profileId)
     .eq('is_active', true)
@@ -645,6 +751,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
     sort_order: z.number().nullable(),
     animation_type: z.string().nullable(),
     display_mode: z.string().nullable().optional(),
+    icon_url: z.string().nullable().optional(),
     scheduled_at: z.string().nullable().optional(),
     expires_at: z.string().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
@@ -659,6 +766,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
       is_active: !!link.is_active,
       child_count: link.children?.[0]?.count ?? 0,
       display_mode: link.display_mode || 'link',
+      icon_url: link.icon_url || null,
       scheduled_at: link.scheduled_at || null,
       expires_at: link.expires_at || null,
     }))
@@ -677,7 +785,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
   const { data, error, count } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, children:links(count)',
       { count: 'exact' }
     )
     .eq('user_id', profileId)
@@ -705,6 +813,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
     sort_order: z.number().nullable(),
     animation_type: z.string().nullable(),
     display_mode: z.string().nullable().optional(),
+    icon_url: z.string().nullable().optional(),
     scheduled_at: z.string().nullable().optional(),
     expires_at: z.string().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
@@ -719,6 +828,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
       is_active: !!link.is_active,
       child_count: link.children?.[0]?.count ?? 0,
       display_mode: link.display_mode || 'link',
+      icon_url: link.icon_url || null,
       scheduled_at: link.scheduled_at || null,
       expires_at: link.expires_at || null,
     })),

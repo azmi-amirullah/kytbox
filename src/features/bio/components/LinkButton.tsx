@@ -1,13 +1,15 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { getSocialIcon } from '@/components/ui/social-icons';
+import { getFaviconUrl } from '../utils/favicon';
 import { cn } from '@/lib/utils';
 
 interface LinkButtonProps {
   href: string;
   title: string;
   url: string;
+  iconUrl?: string | null;
   subtitle?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
@@ -22,11 +24,31 @@ export function LinkButton({
   href,
   title,
   url,
+  iconUrl,
   subtitle,
   className,
   style,
   animationType,
 }: LinkButtonProps) {
+  const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
+
+  const currentImgUrl = useMemo(() => {
+    if (iconUrl && iconUrl.trim().length > 0 && !failedUrls[iconUrl.trim()]) {
+      return iconUrl.trim();
+    }
+    const autoFavicon = getFaviconUrl(url);
+    if (autoFavicon && !failedUrls[autoFavicon]) {
+      return autoFavicon;
+    }
+    return null;
+  }, [url, iconUrl, failedUrls]);
+
+  const handleImageError = () => {
+    if (currentImgUrl) {
+      setFailedUrls((prev) => ({ ...prev, [currentImgUrl]: true }));
+    }
+  };
+
   // useMemo ensures we capture referrer once on mount, not on every render
   const finalHref = useMemo(() => {
     if (typeof document === 'undefined' || !document.referrer) {
@@ -73,7 +95,17 @@ export function LinkButton({
       <div
         className={cn('flex items-center justify-center gap-3 w-full h-full')}
       >
-        {getSocialIcon(url, 'w-5 h-5 shrink-0')}
+        {currentImgUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={currentImgUrl}
+            alt=''
+            className='w-5 h-5 object-cover rounded shrink-0'
+            onError={handleImageError}
+          />
+        ) : (
+          getSocialIcon(url, 'w-5 h-5 shrink-0')
+        )}
         <div className='flex flex-col items-center justify-center overflow-hidden'>
           <span className='truncate text-center'>{title}</span>
           {subtitle && (

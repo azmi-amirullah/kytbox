@@ -122,8 +122,38 @@ describe('Bio Server Schemas', () => {
         title: 'Updated Title',
         url: 'https://newurl.com',
         isFolder: 'false',
+        icon_url: 'https://example.com/icon.png',
       });
       expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.icon_url).toBe('https://example.com/icon.png');
+      }
+    });
+  });
+
+  describe('favicon utility', () => {
+    it('generates Google favicon URL for valid domains', async () => {
+      const { getFaviconUrl, resolveLinkIcon } = await import(
+        '@/features/bio/utils/favicon'
+      );
+      expect(getFaviconUrl('https://github.com/azmi')).toBe(
+        'https://www.google.com/s2/favicons?domain=github.com&sz=128',
+      );
+
+      const resolvedCustom = resolveLinkIcon(
+        'https://github.com',
+        'https://custom.com/icon.png',
+      );
+      expect(resolvedCustom).toEqual({
+        url: 'https://custom.com/icon.png',
+        isFavicon: false,
+      });
+
+      const resolvedAuto = resolveLinkIcon('https://github.com', null);
+      expect(resolvedAuto).toEqual({
+        url: 'https://www.google.com/s2/favicons?domain=github.com&sz=128',
+        isFavicon: true,
+      });
     });
   });
 

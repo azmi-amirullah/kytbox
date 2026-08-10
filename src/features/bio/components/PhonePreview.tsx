@@ -27,6 +27,7 @@ interface PhonePreviewProps {
     child_count?: number;
     animation_type?: string | null;
     display_mode?: string | null;
+    icon_url?: string | null;
     scheduled_at?: string | null;
     expires_at?: string | null;
   }[];

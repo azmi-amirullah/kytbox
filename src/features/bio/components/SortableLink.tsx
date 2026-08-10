@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, memo } from 'react';
+import { useState, memo, useMemo } from 'react';
+import { getFaviconUrl } from '../utils/favicon';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSortable, defaultAnimateLayoutChanges } from '@dnd-kit/sortable';
@@ -99,6 +100,25 @@ const LinkItemContent = memo(function LinkItemContent({
   const isExpired = link.expires_at && new Date(link.expires_at) < new Date();
   const isScheduled = link.scheduled_at && new Date(link.scheduled_at) > new Date();
 
+  const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
+
+  const currentImgUrl = useMemo(() => {
+    if (link.icon_url && link.icon_url.trim().length > 0 && !failedUrls[link.icon_url.trim()]) {
+      return link.icon_url.trim();
+    }
+    const autoFavicon = getFaviconUrl(link.url);
+    if (autoFavicon && !failedUrls[autoFavicon]) {
+      return autoFavicon;
+    }
+    return null;
+  }, [link.url, link.icon_url, failedUrls]);
+
+  const handleThumbError = () => {
+    if (currentImgUrl) {
+      setFailedUrls((prev) => ({ ...prev, [currentImgUrl]: true }));
+    }
+  };
+
   const getScheduleBadge = () => {
     if (!link.scheduled_at && !link.expires_at) return null;
     const now = new Date();
@@ -185,6 +205,15 @@ const LinkItemContent = memo(function LinkItemContent({
             )}
             {link.is_header && (
               <LuType className='w-4 h-4 shrink-0 text-muted-foreground' />
+            )}
+            {!link.is_folder && !link.is_header && currentImgUrl && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={currentImgUrl}
+                alt=''
+                className='w-4 h-4 object-cover rounded shrink-0'
+                onError={handleThumbError}
+              />
             )}
             {link.title}
           </h3>

@@ -13,6 +13,15 @@ export const addLinkSchema = z.object({
   isFolder: z.preprocess((val) => val === 'true', z.boolean()).optional(),
   animationType: z.string().optional().or(z.literal('')),
   displayMode: z.string().optional().or(z.literal('')),
+  icon_url: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .refine((val) => !val || /^https?:\/\//i.test(val), {
+      message: 'Thumbnail URL must start with http:// or https://',
+    }),
   scheduled_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
   expires_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
 }).refine(
@@ -35,6 +44,15 @@ export const updateLinkSchema = z.object({
   isFolder: z.preprocess((val) => val === 'true', z.boolean()),
   animationType: z.string().optional().or(z.literal('')),
   displayMode: z.string().optional().or(z.literal('')),
+  icon_url: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .refine((val) => !val || /^https?:\/\//i.test(val), {
+      message: 'Thumbnail URL must start with http:// or https://',
+    }),
   scheduled_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
   expires_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
 }).refine(

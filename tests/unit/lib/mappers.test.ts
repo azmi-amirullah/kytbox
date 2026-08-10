@@ -69,6 +69,7 @@ const baseLink: Link = {
   clicks: 42,
   animation_type: 'slide',
   display_mode: 'link',
+  icon_url: null,
   short_id: 1,
   last_clicked_at: null,
   scheduled_at: null,
@@ -254,6 +255,14 @@ describe('mapLinkToDTO', () => {
       is_header: null,
     });
     expect(dto3.is_header).toBe(false);
+  });
+
+  it('maps icon_url field correctly', () => {
+    const dto = mapLinkToDTO({
+      ...baseLink,
+      icon_url: 'https://example.com/icon.png',
+    });
+    expect(dto.icon_url).toBe('https://example.com/icon.png');
   });
 });
 

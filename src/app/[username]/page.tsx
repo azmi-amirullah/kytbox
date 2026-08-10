@@ -39,6 +39,7 @@ async function ProfileLinksStream({
       parent_id: link.parent_id,
       animation_type: link.animation_type,
       display_mode: link.display_mode,
+      icon_url: link.icon_url,
       child_count: link.children?.[0]?.count ?? 0,
     }));
 

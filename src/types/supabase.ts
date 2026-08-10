@@ -431,6 +431,7 @@ export type Database = {
           created_at: string
           display_mode: string | null
           expires_at: string | null
+          icon_url: string | null
           id: string
           is_active: boolean | null
           is_folder: boolean | null
@@ -450,6 +451,7 @@ export type Database = {
           created_at?: string
           display_mode?: string | null
           expires_at?: string | null
+          icon_url?: string | null
           id?: string
           is_active?: boolean | null
           is_folder?: boolean | null
@@ -469,6 +471,7 @@ export type Database = {
           created_at?: string
           display_mode?: string | null
           expires_at?: string | null
+          icon_url?: string | null
           id?: string
           is_active?: boolean | null
           is_folder?: boolean | null

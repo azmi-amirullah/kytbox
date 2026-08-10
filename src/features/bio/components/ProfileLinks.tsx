@@ -22,6 +22,7 @@ interface ProfileLinksProps {
     sort_order?: number | null;
     animation_type?: string | null;
     display_mode?: string | null;
+    icon_url?: string | null;
     child_count?: number;
     scheduled_at?: string | null;
     expires_at?: string | null;
@@ -367,6 +368,7 @@ export default function ProfileLinks({
                         href={`/${username}/${link.short_id ?? link.id}`}
                         title={link.title}
                         url={link.url}
+                        iconUrl={link.icon_url}
                         subtitle={
                           searchQuery && link.parent_id ? (
                             <>

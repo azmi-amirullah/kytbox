@@ -40,6 +40,14 @@ export const actionRateLimit = new Ratelimit({
   prefix: '@kytbox/action-ratelimit',
 });
 
+// Rate limiter for file uploads (10 uploads per min per user)
+export const uploadRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '1m'),
+  analytics: true,
+  prefix: '@kytbox/upload-ratelimit',
+});
+
 /**
  * Helper to check rate limits while automatically bypassing during tests/E2E runs.
  */

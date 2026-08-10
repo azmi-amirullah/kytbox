@@ -19,6 +19,7 @@ export const linkDtoSchema = z.object({
   clicks: z.catch(z.union([z.number(), z.null()]), null),
   animation_type: z.catch(z.union([z.string(), z.null()]), null),
   display_mode: z.catch(z.union([z.string(), z.null()]), 'link'),
+  icon_url: z.catch(z.union([z.string(), z.null()]), null),
   child_count: z.catch(z.number(), 0),
   scheduled_at: z.catch(z.union([z.string(), z.null()]), null),
   expires_at: z.catch(z.union([z.string(), z.null()]), null),
