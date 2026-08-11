@@ -353,10 +353,14 @@ export default function ProfileLinks({
                           <iframe
                             src={embed.embedUrl}
                             width='100%'
-                            height={embed.type === 'youtube' ? '215' : '80'}
+                            height={embed.type === 'youtube' ? undefined : '80'}
                             allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope'
                             allowFullScreen={embed.type === 'youtube'}
-                            className={cn('border-0 block w-full', !isInteractive && 'pointer-events-none')}
+                            className={cn(
+                              'border-0 block w-full',
+                              embed.type === 'youtube' && 'aspect-video h-auto',
+                              !isInteractive && 'pointer-events-none',
+                            )}
                             loading='lazy'
                             title={link.title}
                           />
