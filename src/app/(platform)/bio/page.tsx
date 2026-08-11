@@ -31,6 +31,8 @@ export default async function BioDashboardPage({
     <div className='max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-8 w-full'>
       <DashboardClient
         initialLinks={data.initialLinks}
+        initialSubscribers={data.initialSubscribers}
+        totalSubscribers={data.totalSubscribers}
         profile={data.profile}
         publicUrl={data.publicUrl}
         totalLinks={data.totalLinks}

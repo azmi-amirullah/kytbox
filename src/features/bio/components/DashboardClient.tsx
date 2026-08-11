@@ -7,12 +7,13 @@ import {
   bioTabSchema,
   socialLinksSchema,
 } from '../schemas.client';
-import { LuEye, LuLink, LuPalette } from 'react-icons/lu';
+import { LuEye, LuLink, LuPalette, LuUsers } from 'react-icons/lu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LinksTabContent from './LinksTabContent';
 import PhonePreview from './PhonePreview';
 import AppearanceEditor from './AppearanceEditor';
-import type { ProfileDTO, LinkDTO } from '@/types/dto';
+import SubscribersList from './SubscribersList';
+import type { ProfileDTO, LinkDTO, BioSubscriberDTO } from '@/types/dto';
 import type { LinkClickTrend } from '../db';
 import type { CustomThemeData } from '@/lib/theme/theme.types';
 import { cn } from '@/lib/utils';
@@ -29,12 +30,14 @@ export type ProfileWithTheme = Omit<
   display_name?: string | null;
 };
 
-export type BioTab = 'links' | 'appearance';
-export const VALID_TABS: BioTab[] = ['links', 'appearance'];
+export type BioTab = 'links' | 'appearance' | 'subscribers';
+export const VALID_TABS: BioTab[] = ['links', 'appearance', 'subscribers'];
 export const DEFAULT_TAB: BioTab = 'links';
 
 interface DashboardClientProps {
   initialLinks: LinkDTO[];
+  initialSubscribers?: BioSubscriberDTO[];
+  totalSubscribers?: number;
   profile: Partial<ProfileWithTheme>;
   publicUrl: string;
   totalViews: number;
@@ -54,6 +57,8 @@ interface DashboardClientProps {
  */
 export default function DashboardClient({
   initialLinks,
+  initialSubscribers = [],
+  totalSubscribers = 0,
   profile,
   publicUrl,
   totalViews,
@@ -152,6 +157,10 @@ export default function DashboardClient({
               <LuPalette className='w-4 h-4' />
               <span>Appearance</span>
             </TabsTrigger>
+            <TabsTrigger value='subscribers' className='gap-2'>
+              <LuUsers className='w-4 h-4' />
+              <span>Subscribers</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -218,6 +227,21 @@ export default function DashboardClient({
                 },
                 [],
               )}
+            />
+          </TabsContent>
+
+          <TabsContent
+            value='subscribers'
+            forceMount
+            className={cn(
+              'mt-4 md:mt-6',
+              currentTab !== 'subscribers' && 'hidden',
+            )}
+          >
+            <SubscribersList
+              initialSubscribers={initialSubscribers}
+              totalSubscribers={totalSubscribers}
+              username={profile?.username}
             />
           </TabsContent>
         </Tabs>

@@ -48,6 +48,14 @@ export const uploadRateLimit = new Ratelimit({
   prefix: '@kytbox/upload-ratelimit',
 });
 
+// Rate limiter for bio subscriptions (5 requests per min per IP)
+export const subscribeRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '1m'),
+  analytics: true,
+  prefix: '@kytbox/subscribe-ratelimit',
+});
+
 /**
  * Helper to check rate limits while automatically bypassing during tests/E2E runs.
  */

@@ -37,6 +37,14 @@ export interface LinkDTO {
   is_local?: boolean
 }
 
+export interface BioSubscriberDTO {
+  id: string
+  profile_id: string
+  email: string
+  source_url: string | null
+  created_at: string
+}
+
 export interface CashflowDTO {
   id: string
   title: string

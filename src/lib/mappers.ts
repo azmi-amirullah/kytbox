@@ -21,6 +21,7 @@ import {
 import type {
   ProfileDTO,
   LinkDTO,
+  BioSubscriberDTO,
   CashflowDTO,
   CashflowEntryDTO,
   CashflowShareDTO,
@@ -80,6 +81,22 @@ export function mapLinkToDTO(row: {
     scheduled_at: row.scheduled_at ?? null,
     expires_at: row.expires_at ?? null,
     child_count: row.children?.[0]?.count ?? row.child_count ?? undefined,
+  };
+}
+
+export function mapSubscriberToDTO(row: {
+  id: string;
+  profile_id: string;
+  email: string;
+  source_url?: string | null;
+  created_at: string;
+}): BioSubscriberDTO {
+  return {
+    id: row.id,
+    profile_id: row.profile_id,
+    email: row.email,
+    source_url: row.source_url ?? null,
+    created_at: row.created_at,
   };
 }
 

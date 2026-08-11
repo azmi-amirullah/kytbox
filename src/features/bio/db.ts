@@ -2,12 +2,12 @@ import 'server-only';
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
-import { mapProfileToDTO, mapLinkToDTO } from '@/lib/mappers';
+import { mapProfileToDTO, mapLinkToDTO, mapSubscriberToDTO } from '@/lib/mappers';
 import { getProfileByUsername, getCachedPublicLinks } from '@/lib/data-cache';
 import { socialLinksSchema } from './schemas.server';
 import { customThemeDataSchema } from '@/lib/validation.schemas';
 import type { CustomThemeData } from '@/lib/theme';
-import type { ProfileDTO, LinkDTO } from '@/types/dto';
+import type { ProfileDTO, LinkDTO, BioSubscriberDTO } from '@/types/dto';
 
 export interface LinkClickTrend {
   thisWeek: number;
@@ -24,6 +24,8 @@ export interface BioDashboardData {
     custom_theme: CustomThemeData | null;
   };
   initialLinks: LinkDTO[];
+  initialSubscribers: BioSubscriberDTO[];
+  totalSubscribers: number;
   publicUrl: string;
   totalLinks: number;
   activeLinksCount: number;
@@ -69,7 +71,14 @@ export async function getBioDashboardData(
   userId: string
 ): Promise<BioDashboardData> {
   // Parallelize all data fetching for maximum performance
-  const [profileResult, allLinksMetadataResult, initialRootLinksResult, viewsCountResult, clickTrendsResult] = await Promise.all([
+  const [
+    profileResult,
+    allLinksMetadataResult,
+    initialRootLinksResult,
+    viewsCountResult,
+    clickTrendsResult,
+    subscribersResult,
+  ] = await Promise.all([
     supabase
       .from('profiles')
       .select(
@@ -95,6 +104,12 @@ export async function getBioDashboardData(
       .eq('profile_id', userId),
     supabase
       .rpc('get_link_click_trends', { p_user_id: userId }),
+    supabase
+      .from('bio_subscribers')
+      .select('*', { count: 'exact' })
+      .eq('profile_id', userId)
+      .order('created_at', { ascending: false })
+      .range(0, 49),
   ]);
 
   const profile = profileResult.data;
@@ -105,6 +120,10 @@ export async function getBioDashboardData(
   const allLinks = allLinksMetadataResult.data || [];
   const rawRootLinks = initialRootLinksResult.data || [];
   const totalViews = viewsCountResult.count || 0;
+
+  const rawSubscribers = subscribersResult.data || [];
+  const totalSubscribers = subscribersResult.count || 0;
+  const initialSubscribers: BioSubscriberDTO[] = rawSubscribers.map(mapSubscriberToDTO);
 
   const clickTrends: Record<string, LinkClickTrend> = {};
   if (clickTrendsResult.data) {
@@ -151,6 +170,8 @@ export async function getBioDashboardData(
         .parse(profile.custom_theme),
     },
     initialLinks: mappedLinks,
+    initialSubscribers,
+    totalSubscribers,
     publicUrl,
     totalLinks: globalTotalCount,
     activeLinksCount: globalActiveCount,
@@ -204,4 +225,22 @@ export async function getPublicProfileData(
     links: typedLinks,
     totalLinks: typedLinks.length + (rawRootLinks.length >= 50 ? 1 : 0),
   };
+}
+
+export async function getBioSubscribers(
+  supabase: SupabaseClient<Database>,
+  profileId: string
+): Promise<{ subscribers: BioSubscriberDTO[]; totalCount: number }> {
+  const { data, count, error } = await supabase
+    .from('bio_subscribers')
+    .select('*', { count: 'exact' })
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch subscribers: ${error.message}`);
+  }
+
+  const subscribers = (data || []).map(mapSubscriberToDTO);
+  return { subscribers, totalCount: count || 0 };
 }

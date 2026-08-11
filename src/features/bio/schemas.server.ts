@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-export const bioTabSchema = z.enum(['links', 'appearance']).catch('links');
+export const bioTabSchema = z.enum(['links', 'appearance', 'subscribers']).catch('links');
+
+export const subscribeSchema = z.object({
+  profileId: z.string().uuid({ message: 'Invalid profile ID' }),
+  email: z.string().trim().email({ message: 'Please enter a valid email address' }),
+  sourceUrl: z.string().trim().optional().or(z.literal('')),
+});
 
 export const addLinkSchema = z.object({
   title: z.string().trim().min(1, 'Title is required'),

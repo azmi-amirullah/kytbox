@@ -13,6 +13,7 @@ import { socialLinksSchema } from '../schemas.client';
 import SocialGrid from './SocialGrid';
 import ProfileHeader from './ProfileHeader';
 import ProfileLinks from './ProfileLinks';
+import LeadCaptureWidget from './LeadCaptureWidget';
 
 interface ProfileViewProps {
   profile: {
@@ -138,6 +139,14 @@ export default function ProfileView({
           isLoading={showSkeleton}
           isInteractive={isInteractive}
         />
+
+        {/* Lead Capture Subscriber Form Widget */}
+        {!showSkeleton && (
+          <LeadCaptureWidget
+            profileId={profile.id}
+            theme={theme}
+          />
+        )}
 
         {/* Branding Footer */}
         <div className='mt-auto flex flex-col items-center pt-16'>

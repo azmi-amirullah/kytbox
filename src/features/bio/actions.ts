@@ -11,13 +11,16 @@ import {
   updateAppearanceSchema,
   updateSeoSchema,
   moveToFolderSchema,
+  subscribeSchema,
 } from './schemas.server';
 import { mapLinkToDTO } from '@/lib/mappers';
+import { getBioSubscribers } from './db';
+import { getIp } from '@/lib/ip';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createStaticClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { subDays, subHours, startOfHour, startOfDay, format } from 'date-fns';
-import { uploadRateLimit, checkRateLimit } from '@/lib/upstash/redis';
+import { uploadRateLimit, subscribeRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import type {
   DateRange as AnalyticsDateRange,
   AnalyticsData,
@@ -1423,4 +1426,75 @@ async function getCountryAnalyticsData(
       view_count: item.view_count,
     }))
     .sort((a, b) => b.click_count - a.click_count || b.view_count - a.view_count);
+}
+
+export async function subscribeToBioAction(
+  profileId: string,
+  email: string,
+  sourceUrl?: string
+) {
+  const parsed = subscribeSchema.safeParse({ profileId, email, sourceUrl });
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid input data',
+    };
+  }
+
+  const clientIp = await getIp();
+  const limitResult = await checkRateLimit(subscribeRateLimit, `subscribe:${clientIp}:${profileId}`);
+  if (!limitResult.success) {
+    return {
+      success: false,
+      error: 'Too many subscription attempts. Please try again in a minute.',
+    };
+  }
+
+  const supabase = createStaticClient();
+  const { error } = await supabase.from('bio_subscribers').insert({
+    profile_id: parsed.data.profileId,
+    email: parsed.data.email.toLowerCase(),
+    source_url: parsed.data.sourceUrl || null,
+  });
+
+  if (error) {
+    // Unique constraint violation (duplicate email for profile)
+    if (error.code === '23505') {
+      return {
+        success: true,
+        message: "You're already subscribed to this bio!",
+      };
+    }
+    return {
+      success: false,
+      error: 'Failed to subscribe. Please try again.',
+    };
+  }
+
+  return {
+    success: true,
+    message: 'Successfully subscribed!',
+  };
+}
+
+export async function deleteBioSubscriberAction(subscriberId: string) {
+  const { user, supabase } = await getAuthenticatedUser();
+  const { error } = await supabase
+    .from('bio_subscribers')
+    .delete()
+    .eq('id', subscriberId)
+    .eq('profile_id', user.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/bio');
+  return { success: true };
+}
+
+export async function getBioSubscribersAction() {
+  const { user, supabase } = await getAuthenticatedUser();
+  const { subscribers, totalCount } = await getBioSubscribers(supabase, user.id);
+  return { subscribers, totalCount };
 }

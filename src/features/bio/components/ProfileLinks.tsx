@@ -260,7 +260,7 @@ export default function ProfileLinks({
 
         {/* Search Bar */}
         {!currentFolderId && (
-          <div className='sticky top-4 z-20 mb-6'>
+          <div className='w-full mb-6'>
             <div
               className='relative flex items-center w-full rounded-2xl backdrop-blur-md overflow-hidden transition-shadow focus-within:ring-2 focus-within:ring-primary/50'
               style={{

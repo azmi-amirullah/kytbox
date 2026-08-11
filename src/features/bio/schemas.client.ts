@@ -1,6 +1,6 @@
 import * as z from 'zod/mini';
 
-export const bioTabSchema = z.catch(z.enum(['links', 'appearance']), 'links');
+export const bioTabSchema = z.catch(z.enum(['links', 'appearance', 'subscribers']), 'links');
 export const linkTypeSchema = z.catch(z.enum(['link', 'folder']), 'link');
 export const linkAnimationSchema = z.catch(
   z.enum(['none', 'pulse', 'bounce', 'glow']),

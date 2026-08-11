@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      bio_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          profile_id: string
+          source_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          profile_id: string
+          source_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          profile_id?: string
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'bio_subscribers_profile_id_fkey'
+            columns: ['profile_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       cashflow_budgets: {
         Row: {
           amount: number
