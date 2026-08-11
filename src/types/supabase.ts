@@ -468,6 +468,8 @@ export type Database = {
           is_active: boolean | null
           is_folder: boolean | null
           is_header: boolean
+          is_pinned: boolean
+          is_sensitive: boolean
           last_clicked_at: string | null
           parent_id: string | null
           scheduled_at: string | null
@@ -488,6 +490,8 @@ export type Database = {
           is_active?: boolean | null
           is_folder?: boolean | null
           is_header?: boolean
+          is_pinned?: boolean
+          is_sensitive?: boolean
           last_clicked_at?: string | null
           parent_id?: string | null
           scheduled_at?: string | null
@@ -508,6 +512,8 @@ export type Database = {
           is_active?: boolean | null
           is_folder?: boolean | null
           is_header?: boolean
+          is_pinned?: boolean
+          is_sensitive?: boolean
           last_clicked_at?: string | null
           parent_id?: string | null
           scheduled_at?: string | null

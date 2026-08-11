@@ -176,6 +176,7 @@ const LinkItemContent = memo(function LinkItemContent({
                   aria-label={`Toggle visibility of ${link.title}`}
                   className={cn(
                     'data-[state=checked]:bg-green-500',
+                    isExpired && 'bg-destructive/80 data-[state=checked]:bg-destructive',
                     isParentHidden && 'opacity-50 grayscale'
                   )}
                 />
@@ -232,7 +233,7 @@ const LinkItemContent = memo(function LinkItemContent({
               </Tooltip>
             </TooltipProvider>
           ) : !link.is_active && (
-            <span className='text-[10px] uppercase tracking-wider font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded-sm'>
+            <span className='text-[10px] uppercase tracking-wider font-bold bg-muted text-muted-foreground border border-muted-foreground/20 px-1.5 py-0.5 rounded-sm'>
               Hidden
             </span>
           )}
@@ -241,10 +242,20 @@ const LinkItemContent = memo(function LinkItemContent({
               Embed
             </span>
           )}
+          {link.is_pinned && (
+            <span className='text-[10px] uppercase tracking-wider font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-sm'>
+              📌 Pinned
+            </span>
+          )}
+          {link.is_sensitive && (
+            <span className='text-[10px] uppercase tracking-wider font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 px-1.5 py-0.5 rounded-sm'>
+              🔞 Sensitive
+            </span>
+          )}
+          {getScheduleBadge()}
         </div>
-        {(!!getScheduleBadge() || (!link.is_folder && !link.is_header && !!link.url)) && (
+        {(!link.is_folder && !link.is_header && !!link.url) && (
           <div className='flex flex-wrap items-center gap-2 mt-1'>
-            {getScheduleBadge()}
             {!link.is_folder && !link.is_header && (
               <a
                 href={link.url}
@@ -553,7 +564,7 @@ export default function SortableLink({
         }
         ${link.is_folder && !isDragging ? 'cursor-pointer hover:border-primary/50' : ''}
         ${isParentHidden ? 'opacity-70 bg-secondary/30' : ''}
-        ${isExpired ? 'opacity-50 grayscale' : ''}
+        ${isExpired ? 'opacity-50' : ''}
         ${isScheduled ? 'opacity-75 bg-secondary/40' : ''}
       `}
     >

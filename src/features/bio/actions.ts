@@ -65,7 +65,7 @@ export async function addLink(formData: FormData) {
   const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, parentId, animationType, displayMode, icon_url, scheduled_at, expires_at } = parsed.data;
+  const { title, parentId, animationType, displayMode, icon_url, scheduled_at, expires_at, isPinned, isSensitive } = parsed.data;
   let url = parsed.data.url || '';
 
   if (!/^https?:\/\//i.test(url)) {
@@ -121,6 +121,8 @@ export async function addLink(formData: FormData) {
     icon_url: icon_url || null,
     scheduled_at: scheduled_at ? scheduled_at.toISOString() : null,
     expires_at: expires_at ? expires_at.toISOString() : null,
+    is_pinned: isPinned ?? false,
+    is_sensitive: isSensitive ?? false,
   });
 
   if (error) {
@@ -159,7 +161,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, isFolder, animationType, displayMode, icon_url, scheduled_at, expires_at } = parsed.data;
+  const { title, isFolder, animationType, displayMode, icon_url, scheduled_at, expires_at, isPinned, isSensitive } = parsed.data;
   let url = parsed.data.url || null;
 
   const updates: {
@@ -170,6 +172,8 @@ export async function updateLink(linkId: string, formData: FormData) {
     icon_url?: string | null;
     scheduled_at: string | null;
     expires_at: string | null;
+    is_pinned: boolean;
+    is_sensitive: boolean;
   } = {
     title,
     animation_type: animationType || 'none',
@@ -177,6 +181,8 @@ export async function updateLink(linkId: string, formData: FormData) {
     icon_url: icon_url || null,
     scheduled_at: scheduled_at ? scheduled_at.toISOString() : null,
     expires_at: expires_at ? expires_at.toISOString() : null,
+    is_pinned: isPinned ?? false,
+    is_sensitive: isSensitive ?? false,
   };
 
   if (!isFolder && url) {
@@ -727,13 +733,14 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
   const { data, error } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, is_pinned, is_sensitive, children:links(count)',
     )
     .eq('user_id', profileId)
     .eq('is_active', true)
     .is('parent_id', null)
     .or(`scheduled_at.is.null,scheduled_at.lte.${nowStr}`)
     .or(`expires_at.is.null,expires_at.gte.${nowStr}`)
+    .order('is_pinned', { ascending: false })
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
@@ -757,6 +764,8 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
     icon_url: z.string().nullable().optional(),
     scheduled_at: z.string().nullable().optional(),
     expires_at: z.string().nullable().optional(),
+    is_pinned: z.boolean().nullable().optional(),
+    is_sensitive: z.boolean().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
   })).safeParse(data);
 
@@ -772,6 +781,8 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
       icon_url: link.icon_url || null,
       scheduled_at: link.scheduled_at || null,
       expires_at: link.expires_at || null,
+      is_pinned: link.is_pinned ?? false,
+      is_sensitive: link.is_sensitive ?? false,
     }))
   };
 }
@@ -788,7 +799,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
   const { data, error, count } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, is_sensitive, children:links(count)',
       { count: 'exact' }
     )
     .eq('user_id', profileId)
@@ -819,6 +830,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
     icon_url: z.string().nullable().optional(),
     scheduled_at: z.string().nullable().optional(),
     expires_at: z.string().nullable().optional(),
+    is_sensitive: z.boolean().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
   })).safeParse(data);
 
@@ -834,6 +846,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
       icon_url: link.icon_url || null,
       scheduled_at: link.scheduled_at || null,
       expires_at: link.expires_at || null,
+      is_sensitive: link.is_sensitive ?? false,
     })),
     totalFolderLinks: count || 0
   };

@@ -11,7 +11,7 @@
 - [x] [Day 1 — Bio: SEO Metadata Editor](#day-1)
 - [x] [Day 2 — Bio: Custom Link Thumbnails](#day-2)
 - [x] [Day 3 — Bio: Lead Capture Form Widget](#day-3)
-- [ ] [Day 4 — Bio: Pin Important Links & Sensitive Content Warning](#day-4)
+- [x] [Day 4 — Bio: Pin Important Links & Sensitive Content Warning](#day-4)
 - [ ] [Day 5 — Bio: Custom Domain Mapping Engine](#day-5)
 - [ ] [Day 6 — Bio: Creator Features E2E Test Suite](#day-6)
 - [ ] [Day 7 — Weekly Sprint Audit & Security Boundary Check](#day-7)

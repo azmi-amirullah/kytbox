@@ -65,6 +65,8 @@ export function mapLinkToDTO(row: {
   expires_at?: string | null;
   children?: { count: number }[];
   child_count?: number | null;
+  is_pinned?: boolean | null;
+  is_sensitive?: boolean | null;
 }): LinkDTO {
   return {
     id: row.id,
@@ -82,6 +84,8 @@ export function mapLinkToDTO(row: {
     scheduled_at: row.scheduled_at ?? null,
     expires_at: row.expires_at ?? null,
     child_count: row.children?.[0]?.count ?? row.child_count ?? undefined,
+    is_pinned: row.is_pinned ?? false,
+    is_sensitive: row.is_sensitive ?? false,
   };
 }
 

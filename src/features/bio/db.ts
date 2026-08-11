@@ -63,6 +63,8 @@ export interface PublicProfileData {
     display_mode?: string | null;
     icon_url?: string | null;
     child_count: number;
+    is_pinned?: boolean;
+    is_sensitive?: boolean;
   }[];
   totalLinks: number;
 }
@@ -213,6 +215,8 @@ export async function getPublicProfileData(
       display_mode: link.display_mode,
       icon_url: link.icon_url ?? null,
       child_count: link.children?.[0]?.count ?? 0,
+      is_pinned: link.is_pinned === true,
+      is_sensitive: link.is_sensitive === true,
     }));
 
   return {

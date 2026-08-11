@@ -93,6 +93,8 @@ export default function LinkModal({
     link?.display_mode === 'embed' ? 'embed' : 'link',
   )
   const [iconUrl, setIconUrl] = useState<string | null>(link?.icon_url || null)
+  const [isPinned, setIsPinned] = useState(link?.is_pinned ?? false)
+  const [isSensitive, setIsSensitive] = useState(link?.is_sensitive ?? false)
   const embedInfo = getEmbedInfo(url)
 
   // Determine if controlled or uncontrolled
@@ -117,6 +119,8 @@ export default function LinkModal({
         setIsScheduledEnabled(!!link?.scheduled_at || !!link?.expires_at)
         setDisplayMode(link?.display_mode === 'embed' ? 'embed' : 'link')
         setIconUrl(link?.icon_url || null)
+        setIsPinned(link?.is_pinned ?? false)
+        setIsSensitive(link?.is_sensitive ?? false)
         setError(null)
       })
     }
@@ -159,6 +163,8 @@ export default function LinkModal({
     formData.append('isFolder', type === 'folder' ? 'true' : 'false')
     formData.append('scheduled_at', isScheduledEnabled ? scheduledAt || '' : '')
     formData.append('expires_at', isScheduledEnabled ? expiresAt || '' : '')
+    formData.append('isPinned', isPinned ? 'true' : 'false')
+    formData.append('isSensitive', isSensitive ? 'true' : 'false')
     if (parentId) formData.append('parentId', parentId)
 
     let result
@@ -428,6 +434,40 @@ export default function LinkModal({
                           </motion.div>
                         )}
                       </AnimatePresence>
+                    </div>
+
+                    {/* Pin & Sensitive toggles */}
+                    <div className='grid gap-3 border-t pt-4 mt-2'>
+                      <div className='flex items-center justify-between'>
+                        <div className='space-y-0.5'>
+                          <Label htmlFor='pin-toggle' className='font-semibold text-sm'>
+                            📌 Pin to Top
+                          </Label>
+                          <p className='text-xs text-muted-foreground'>
+                            Always appears at the top of your bio page
+                          </p>
+                        </div>
+                        <Switch
+                          id='pin-toggle'
+                          checked={isPinned}
+                          onCheckedChange={setIsPinned}
+                        />
+                      </div>
+                      <div className='flex items-center justify-between'>
+                        <div className='space-y-0.5'>
+                          <Label htmlFor='sensitive-toggle' className='font-semibold text-sm'>
+                            🔞 Sensitive Content
+                          </Label>
+                          <p className='text-xs text-muted-foreground'>
+                            Visitors must confirm before seeing this link
+                          </p>
+                        </div>
+                        <Switch
+                          id='sensitive-toggle'
+                          checked={isSensitive}
+                          onCheckedChange={setIsSensitive}
+                        />
+                      </div>
                     </div>
                   </div>
                 </motion.div>

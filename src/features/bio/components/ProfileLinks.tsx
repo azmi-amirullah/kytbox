@@ -8,6 +8,7 @@ import type { ThemeConfig } from '@/lib/theme/theme.types';
 import { LuArrowLeft, LuFolderOpen, LuSearch, LuX } from 'react-icons/lu';
 import { loadMorePublicLinks, loadMorePublicFolderLinks } from '../actions';
 import { getEmbedInfo } from '../embed';
+import SensitiveOverlay from './SensitiveOverlay';
 
 interface ProfileLinksProps {
   links: {
@@ -26,6 +27,8 @@ interface ProfileLinksProps {
     child_count?: number;
     scheduled_at?: string | null;
     expires_at?: string | null;
+    is_pinned?: boolean;
+    is_sensitive?: boolean;
   }[];
   username: string;
   profileId: string;
@@ -210,9 +213,17 @@ export default function ProfileLinks({
         currentFolderId ? l.parent_id === currentFolderId : !l.parent_id,
       );
 
+  // Stable: pinned links float to top (server already orders them first,
+  // but client-side sort ensures correctness after load-more merges)
+  const sortedVisibleLinks = [...rawVisibleLinks].sort((a, b) => {
+    const aPinned = a.is_pinned ? 1 : 0
+    const bPinned = b.is_pinned ? 1 : 0
+    return bPinned - aPinned
+  })
+
   const visibleLinks = currentFolderId
-    ? rawVisibleLinks.slice(0, folderLimit)
-    : rawVisibleLinks;
+    ? sortedVisibleLinks.slice(0, folderLimit)
+    : sortedVisibleLinks;
 
   const currentFolder = currentFolderId
     ? activeLinks.find((l) => l.id === currentFolderId)
@@ -342,7 +353,7 @@ export default function ProfileLinks({
                   ) : (() => {
                     const embed = getEmbedInfo(link.url);
                     if (embed && link.display_mode === 'embed') {
-                      return (
+                      const embedEl = (
                         <div
                           className='w-full rounded-xl overflow-hidden shadow-sm border transition-all'
                           style={{
@@ -366,8 +377,13 @@ export default function ProfileLinks({
                           />
                         </div>
                       );
+                      return link.is_sensitive ? (
+                        <SensitiveOverlay theme={theme} isInteractive={isInteractive}>
+                          {embedEl}
+                        </SensitiveOverlay>
+                      ) : embedEl;
                     }
-                    return (
+                    const linkEl = (
                       <LinkButton
                         href={`/${username}/${link.short_id ?? link.id}`}
                         title={link.title}
@@ -386,6 +402,11 @@ export default function ProfileLinks({
                         className={cn(buttonClasses, 'w-full')}
                       />
                     );
+                    return link.is_sensitive ? (
+                      <SensitiveOverlay theme={theme} isInteractive={isInteractive}>
+                        {linkEl}
+                      </SensitiveOverlay>
+                    ) : linkEl;
                   })()}
                 </div>
               );

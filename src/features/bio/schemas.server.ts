@@ -30,6 +30,8 @@ export const addLinkSchema = z.object({
     }),
   scheduled_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
   expires_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
+  isPinned: z.preprocess((val) => val === 'true', z.boolean()).optional(),
+  isSensitive: z.preprocess((val) => val === 'true', z.boolean()).optional(),
 }).refine(
   (data) => !data.scheduled_at || !data.expires_at || data.expires_at > data.scheduled_at,
   { message: 'Expiry must be after start date', path: ['expires_at'] }
@@ -61,6 +63,8 @@ export const updateLinkSchema = z.object({
     }),
   scheduled_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
   expires_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
+  isPinned: z.preprocess((val) => val === 'true', z.boolean()).optional(),
+  isSensitive: z.preprocess((val) => val === 'true', z.boolean()).optional(),
 }).refine(
   (data) => !data.scheduled_at || !data.expires_at || data.expires_at > data.scheduled_at,
   { message: 'Expiry must be after start date', path: ['expires_at'] }

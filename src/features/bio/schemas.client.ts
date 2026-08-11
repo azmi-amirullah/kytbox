@@ -23,6 +23,8 @@ export const linkDtoSchema = z.object({
   child_count: z.catch(z.number(), 0),
   scheduled_at: z.catch(z.union([z.string(), z.null()]), null),
   expires_at: z.catch(z.union([z.string(), z.null()]), null),
+  is_pinned: z.catch(z.boolean(), false),
+  is_sensitive: z.catch(z.boolean(), false),
 });
 
 export const linkDtoListSchema = z.catch(z.array(linkDtoSchema), []);

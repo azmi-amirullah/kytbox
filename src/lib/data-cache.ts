@@ -34,12 +34,13 @@ export async function getCachedPublicLinks(userId: string, username: string) {
   const { data, count, error } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, is_pinned, is_sensitive, children:links(count)',
       { count: 'exact' },
     )
     .eq('user_id', userId)
     .eq('is_active', true)
     .is('parent_id', null)
+    .order('is_pinned', { ascending: false })
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
     .range(0, 49);

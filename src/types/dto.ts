@@ -36,6 +36,8 @@ export interface LinkDTO {
   expires_at: string | null
   child_count?: number
   is_local?: boolean
+  is_pinned?: boolean
+  is_sensitive?: boolean
 }
 
 export interface BioSubscriberDTO {

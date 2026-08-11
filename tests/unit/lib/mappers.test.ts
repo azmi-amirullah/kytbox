@@ -75,6 +75,8 @@ const baseLink: Link = {
   last_clicked_at: null,
   scheduled_at: null,
   expires_at: null,
+  is_pinned: false,
+  is_sensitive: false,
   created_at: '2026-01-01T00:00:00Z',
 };
 
