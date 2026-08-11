@@ -10,12 +10,14 @@ interface LeadCaptureWidgetProps {
   profileId: string;
   theme?: ThemeConfig;
   className?: string;
+  isInteractive?: boolean;
 }
 
 export default function LeadCaptureWidget({
   profileId,
   theme,
   className,
+  isInteractive = true,
 }: LeadCaptureWidgetProps) {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +26,7 @@ export default function LeadCaptureWidget({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || isSubmitting) return;
+    if (!email.trim() || isSubmitting || !isInteractive) return;
 
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -109,8 +111,10 @@ export default function LeadCaptureWidget({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder='Enter your email address'
-              disabled={isSubmitting}
-              className='w-full h-11 px-4 text-xs sm:text-sm rounded-xl border bg-black/5 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:opacity-50'
+              disabled={isSubmitting || !isInteractive}
+              readOnly={!isInteractive}
+              tabIndex={isInteractive ? 0 : -1}
+              className='w-full h-11 px-4 text-xs sm:text-sm rounded-xl border bg-black/5 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:opacity-50 disabled:cursor-default disabled:pointer-events-none'
               style={
                 colors
                   ? {
@@ -123,8 +127,9 @@ export default function LeadCaptureWidget({
           </div>
           <button
             type='submit'
-            disabled={isSubmitting || !email.trim()}
-            className='h-11 px-5 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90'
+            disabled={isSubmitting || !email.trim() || !isInteractive}
+            tabIndex={isInteractive ? 0 : -1}
+            className='h-11 px-5 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none hover:opacity-90'
             style={
               colors
                 ? {

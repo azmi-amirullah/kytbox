@@ -769,6 +769,7 @@ export type Database = {
           display_name: string | null
           has_completed_onboarding: boolean
           id: string
+          lead_capture_enabled: boolean
           meta_description: string | null
           meta_title: string | null
           og_image_url: string | null
@@ -789,6 +790,7 @@ export type Database = {
           display_name?: string | null
           has_completed_onboarding?: boolean
           id: string
+          lead_capture_enabled?: boolean
           meta_description?: string | null
           meta_title?: string | null
           og_image_url?: string | null
@@ -809,6 +811,7 @@ export type Database = {
           display_name?: string | null
           has_completed_onboarding?: boolean
           id?: string
+          lead_capture_enabled?: boolean
           meta_description?: string | null
           meta_title?: string | null
           og_image_url?: string | null

@@ -15,6 +15,7 @@ interface PhonePreviewProps {
     button_style?: string | null;
     button_shape?: string | null;
     social_links?: Record<string, string> | null;
+    lead_capture_enabled?: boolean;
   };
   links: {
     id: string;
@@ -64,7 +65,7 @@ export default function PhonePreview({
         }}
       >
         {/* Phone Frame */}
-        <div className='relative w-full h-full bg-neutral-900 rounded-[56px] shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border-12 border-neutral-900 ring-1 ring-white/10 ring-inset'>
+        <div className='relative w-full h-full bg-neutral-900 rounded-[56px] shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border-12 border-neutral-900 ring-1 ring-white/10 ring-inset overflow-hidden'>
           {/* Inner Screen */}
           <div className='relative rounded-[44px] overflow-hidden overflow-y-auto scrollbar-hide w-full h-full'>
             <ProfileView
@@ -74,11 +75,12 @@ export default function PhonePreview({
               isLoading={isLoading}
               isInteractive={false}
             />
-
-            {!isLoading && (
-              <div className='absolute inset-0 z-50 pointer-events-auto bg-transparent cursor-default' />
-            )}
           </div>
+
+          {/* Fixed Non-scroll Overlay covering entire device screen */}
+          {!isLoading && (
+            <div className='absolute inset-0 z-50 pointer-events-none rounded-[44px] bg-transparent cursor-default' />
+          )}
         </div>
       </div>
     </div>

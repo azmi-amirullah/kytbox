@@ -28,6 +28,7 @@ export type ProfileWithTheme = Omit<
   button_style?: string | null;
   button_shape?: string | null;
   display_name?: string | null;
+  lead_capture_enabled?: boolean;
 };
 
 export type BioTab = 'links' | 'appearance' | 'subscribers';
@@ -94,6 +95,9 @@ export default function DashboardClient({
 
   const [socialLinks, setSocialLinks] =
     useState<Record<string, string>>(initialSocials);
+  const [leadCaptureEnabled, setLeadCaptureEnabled] = useState(
+    profile?.lead_capture_enabled ?? true,
+  );
 
   // Merge initialLinks from props whenever they change (Single source of truth for the first batch)
   useEffect(() => {
@@ -242,6 +246,8 @@ export default function DashboardClient({
               initialSubscribers={initialSubscribers}
               totalSubscribers={totalSubscribers}
               username={profile?.username}
+              initialLeadCaptureEnabled={leadCaptureEnabled}
+              onToggleLeadCapture={(enabled) => setLeadCaptureEnabled(enabled)}
             />
           </TabsContent>
         </Tabs>
@@ -267,6 +273,7 @@ export default function DashboardClient({
               button_style: buttonStyle,
               button_shape: buttonShape,
               social_links: socialLinks,
+              lead_capture_enabled: leadCaptureEnabled,
             }}
             links={useMemo(
               () =>

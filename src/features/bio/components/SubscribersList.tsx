@@ -15,25 +15,51 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { deleteBioSubscriberAction } from '../actions';
+import { Switch } from '@/components/ui/switch';
+import { deleteBioSubscriberAction, toggleLeadCaptureAction } from '../actions';
 import type { BioSubscriberDTO } from '@/types/dto';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface SubscribersListProps {
   initialSubscribers: BioSubscriberDTO[];
   totalSubscribers: number;
   username?: string;
+  initialLeadCaptureEnabled?: boolean;
+  onToggleLeadCapture?: (enabled: boolean) => void;
 }
 
 export default function SubscribersList({
   initialSubscribers,
   totalSubscribers,
   username = 'creator',
+  initialLeadCaptureEnabled = true,
+  onToggleLeadCapture,
 }: SubscribersListProps) {
   const [subscribers, setSubscribers] = useState<BioSubscriberDTO[]>(initialSubscribers);
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [leadCaptureEnabled, setLeadCaptureEnabled] = useState(initialLeadCaptureEnabled);
+  const [isToggling, setIsToggling] = useState(false);
+
+  const handleToggleLeadCapture = async (checked: boolean) => {
+    setLeadCaptureEnabled(checked);
+    onToggleLeadCapture?.(checked);
+    setIsToggling(true);
+    try {
+      const res = await toggleLeadCaptureAction(checked);
+      if (!res.success) {
+        setLeadCaptureEnabled(!checked);
+        onToggleLeadCapture?.(!checked);
+      }
+    } catch {
+      setLeadCaptureEnabled(!checked);
+      onToggleLeadCapture?.(!checked);
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   // Filter subscribers based on search query
   const filteredSubscribers = useMemo(() => {
@@ -95,6 +121,49 @@ export default function SubscribersList({
 
   return (
     <div className='space-y-4'>
+      {/* Lead Capture Settings Banner Card */}
+      <Card className='p-4 bg-card/60 backdrop-blur-md border-border/80 hover:border-primary/20 transition-all shadow-sm relative overflow-hidden group flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
+        <div className='absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none' />
+        
+        <div className='flex items-center gap-3.5'>
+          <div className={cn(
+            'p-2.5 rounded-xl transition-all shrink-0',
+            leadCaptureEnabled
+              ? 'bg-primary/10 text-primary'
+              : 'bg-muted text-muted-foreground'
+          )}>
+            <LuMail className='w-5 h-5' />
+          </div>
+          <div>
+            <div className='flex items-center gap-2.5 flex-wrap'>
+              <h4 className='text-sm font-bold tracking-tight text-foreground'>
+                Newsletter Lead Capture Widget
+              </h4>
+              <span className={cn(
+                'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider',
+                leadCaptureEnabled
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-muted text-muted-foreground border border-border/60'
+              )}>
+                {leadCaptureEnabled ? 'Active on Bio' : 'Disabled'}
+              </span>
+            </div>
+            <p className='text-xs text-muted-foreground mt-0.5'>
+              Collect email subscribers directly on your public bio profile page.
+            </p>
+          </div>
+        </div>
+
+        <div className='flex items-center gap-3 shrink-0 self-end sm:self-center bg-muted/40 p-2 px-3 rounded-xl border border-border/60'>
+          <span className='text-xs font-semibold text-foreground'>Form Status</span>
+          <Switch
+            checked={leadCaptureEnabled}
+            onCheckedChange={handleToggleLeadCapture}
+            disabled={isToggling}
+          />
+        </div>
+      </Card>
+
       {/* Overview Cards */}
       <div className='grid sm:grid-cols-2 gap-4'>
         {/* Card 1: Total Subscribers */}

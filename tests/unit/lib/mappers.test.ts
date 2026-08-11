@@ -53,6 +53,7 @@ const baseProfile: Profile = {
   meta_title: null,
   meta_description: null,
   og_image_url: null,
+  lead_capture_enabled: true,
   created_at: '2026-01-01T00:00:00Z',
 };
 

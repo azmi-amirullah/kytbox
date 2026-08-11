@@ -22,6 +22,7 @@ export interface BioDashboardData {
     display_name: string | null;
     social_links: Record<string, string>;
     custom_theme: CustomThemeData | null;
+    lead_capture_enabled?: boolean;
   };
   initialLinks: LinkDTO[];
   initialSubscribers: BioSubscriberDTO[];
@@ -47,6 +48,7 @@ export interface PublicProfileData {
     button_shape: string | null;
     social_links: Record<string, string>;
     custom_theme: CustomThemeData | null;
+    lead_capture_enabled?: boolean;
   };
   links: {
     id: string;
@@ -82,7 +84,7 @@ export async function getBioDashboardData(
     supabase
       .from('profiles')
       .select(
-        'id, username, display_name, avatar_url, bio, role, created_at, theme_name, button_style, button_shape, social_links, custom_theme, default_currency, tier, has_completed_onboarding, meta_title, meta_description, og_image_url',
+        'id, username, display_name, avatar_url, bio, role, created_at, theme_name, button_style, button_shape, social_links, custom_theme, default_currency, tier, has_completed_onboarding, meta_title, meta_description, og_image_url, lead_capture_enabled',
       )
       .eq('id', userId)
       .single(),

@@ -1498,3 +1498,25 @@ export async function getBioSubscribersAction() {
   const { subscribers, totalCount } = await getBioSubscribers(supabase, user.id);
   return { subscribers, totalCount };
 }
+
+export async function toggleLeadCaptureAction(enabled: boolean) {
+  const { user, supabase } = await getAuthenticatedUser();
+  const { data: updatedProfile, error } = await supabase
+    .from('profiles')
+    .update({ lead_capture_enabled: enabled })
+    .eq('id', user.id)
+    .select('username')
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  if (updatedProfile?.username) {
+    updateTag(`profile-${updatedProfile.username}`);
+    revalidatePath(`/${updatedProfile.username}`);
+  }
+
+  revalidatePath('/bio');
+  return { success: true };
+}

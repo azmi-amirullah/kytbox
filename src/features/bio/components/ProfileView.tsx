@@ -27,6 +27,7 @@ interface ProfileViewProps {
     button_style?: string | null;
     button_shape?: string | null;
     social_links?: Record<string, string> | null;
+    lead_capture_enabled?: boolean;
   };
   links: {
     id: string;
@@ -141,10 +142,11 @@ export default function ProfileView({
         />
 
         {/* Lead Capture Subscriber Form Widget */}
-        {!showSkeleton && (
+        {!showSkeleton && profile.lead_capture_enabled !== false && (
           <LeadCaptureWidget
             profileId={profile.id}
             theme={theme}
+            isInteractive={isInteractive}
           />
         )}
 

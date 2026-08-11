@@ -41,6 +41,7 @@ export function mapProfileToDTO(row: Profile): ProfileDTO {
     full_name: row.display_name ?? null,
     bio: row.bio,
     avatar_url: row.avatar_url,
+    lead_capture_enabled: row.lead_capture_enabled ?? true,
     meta_title: row.meta_title ?? null,
     meta_description: row.meta_description ?? null,
     og_image_url: row.og_image_url ?? null,

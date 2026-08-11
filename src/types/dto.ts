@@ -13,6 +13,7 @@ export interface ProfileDTO {
   full_name: string | null
   bio: string | null
   avatar_url: string | null
+  lead_capture_enabled?: boolean
   meta_title?: string | null
   meta_description?: string | null
   og_image_url?: string | null
