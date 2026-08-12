@@ -41,6 +41,8 @@ async function ProfileLinksStream({
       display_mode: link.display_mode,
       icon_url: link.icon_url,
       child_count: link.children?.[0]?.count ?? 0,
+      is_pinned: !!link.is_pinned,
+      is_sensitive: !!link.is_sensitive,
     }));
 
   const totalLinks = links.length + (rawRootLinks.length >= 50 ? 1 : 0);
