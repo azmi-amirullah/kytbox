@@ -378,10 +378,16 @@ export default function ProfileLinks({
                         </div>
                       );
                       return link.is_sensitive ? (
-                        <SensitiveOverlay theme={theme} isInteractive={isInteractive}>
+                        <SensitiveOverlay
+                          theme={theme}
+                          isInteractive={isInteractive}
+                          className='rounded-xl'
+                        >
                           {embedEl}
                         </SensitiveOverlay>
-                      ) : embedEl;
+                      ) : (
+                        embedEl
+                      );
                     }
                     const linkEl = (
                       <LinkButton
@@ -402,11 +408,25 @@ export default function ProfileLinks({
                         className={cn(buttonClasses, 'w-full')}
                       />
                     );
+                    const roundedClasses = buttonClasses
+                      .split(' ')
+                      .filter((c) => c.startsWith('rounded-'));
+                    const shapeClass =
+                      roundedClasses.length > 0
+                        ? roundedClasses.join(' ')
+                        : 'rounded-xl';
+
                     return link.is_sensitive ? (
-                      <SensitiveOverlay theme={theme} isInteractive={isInteractive}>
+                      <SensitiveOverlay
+                        theme={theme}
+                        isInteractive={isInteractive}
+                        className={shapeClass}
+                      >
                         {linkEl}
                       </SensitiveOverlay>
-                    ) : linkEl;
+                    ) : (
+                      linkEl
+                    );
                   })()}
                 </div>
               );
