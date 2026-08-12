@@ -46,6 +46,47 @@ export type Database = {
           },
         ]
       }
+      custom_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          profile_id: string
+          status: string
+          updated_at: string
+          user_id: string
+          verification_token: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          profile_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          verification_token: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          profile_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verification_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'custom_domains_profile_id_fkey'
+            columns: ['profile_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       cashflow_budgets: {
         Row: {
           amount: number

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/env';
 import { buildCspHeader } from '@/lib/csp';
 import { getCookieDomain, isAllowedOrigin } from '@/lib/origin';
+import { getProfileByDomain } from '@/lib/data-cache';
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -72,6 +73,37 @@ export async function proxy(request: NextRequest) {
 
   const isAppSubdomain = hostname.startsWith('app.');
 
+  // Check for Custom Domain rewrite
+  let mainSiteHost = 'localhost';
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    try {
+      mainSiteHost = new URL(process.env.NEXT_PUBLIC_SITE_URL).hostname
+        .replace(/^www\./, '')
+        .replace(/^app\./, '');
+    } catch {
+      // Ignore invalid URL format
+    }
+  }
+
+  const isStandardHost =
+    cleanHost === 'localhost' ||
+    cleanHost === '127.0.0.1' ||
+    cleanHost === mainSiteHost ||
+    cleanHost.endsWith('.vercel.app');
+
+  if (!isStandardHost && !isAppSubdomain) {
+    const customProfile = await getProfileByDomain(cleanHost);
+    if (customProfile?.username) {
+      const targetPath = pathname === '/' ? `/${customProfile.username}` : `/${customProfile.username}${pathname}`;
+      const rewriteUrl = new URL(targetPath, request.url);
+      const response = NextResponse.rewrite(rewriteUrl, {
+        request: { headers: requestHeaders },
+      });
+      response.headers.set('Content-Security-Policy', cspHeaderValue);
+      return applyCorsHeaders(response);
+    }
+  }
+
   // 1. If on app subdomain (app.kytbox.com or app.localhost):
   if (isAppSubdomain) {
     if (pathname === '/') {
@@ -106,7 +138,7 @@ export async function proxy(request: NextRequest) {
 
       const appUrl = new URL(request.nextUrl.toString());
       appUrl.host = targetHost;
-      return applyCorsHeaders(NextResponse.redirect(appUrl));
+      return applyCorsHeaders(appUrl ? NextResponse.redirect(appUrl) : NextResponse.next());
     }
   }
 

@@ -49,3 +49,28 @@ export async function getCachedPublicLinks(userId: string, username: string) {
   return { data: data || [], count: count || 0 };
 }
 
+/**
+ * Get Bio Profile Username by Verified Custom Domain
+ */
+export async function getProfileByDomain(domain: string) {
+  const cleanDomain = domain.toLowerCase();
+
+  const supabase = createStaticClient();
+  const { data, error } = await supabase
+    .from('custom_domains')
+    .select('profile_id, status, profiles!inner(username)')
+    .eq('domain', cleanDomain)
+    .eq('status', 'verified')
+    .maybeSingle();
+
+  if (error || !data || !data.profiles) return null;
+
+  // Supabase returns object or array depending on relation metadata
+  const profilesObj = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
+  if (profilesObj && typeof profilesObj.username === 'string') {
+    return { username: profilesObj.username };
+  }
+  return null;
+}
+
+

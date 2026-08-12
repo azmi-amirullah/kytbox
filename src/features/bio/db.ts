@@ -2,12 +2,12 @@ import 'server-only';
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
-import { mapProfileToDTO, mapLinkToDTO, mapSubscriberToDTO } from '@/lib/mappers';
+import { mapProfileToDTO, mapLinkToDTO, mapSubscriberToDTO, mapCustomDomainToDTO } from '@/lib/mappers';
 import { getProfileByUsername, getCachedPublicLinks } from '@/lib/data-cache';
 import { socialLinksSchema } from './schemas.server';
 import { customThemeDataSchema } from '@/lib/validation.schemas';
 import type { CustomThemeData } from '@/lib/theme';
-import type { ProfileDTO, LinkDTO, BioSubscriberDTO } from '@/types/dto';
+import type { ProfileDTO, LinkDTO, BioSubscriberDTO, CustomDomainDTO } from '@/types/dto';
 
 export interface LinkClickTrend {
   thisWeek: number;
@@ -249,4 +249,18 @@ export async function getBioSubscribers(
 
   const subscribers = (data || []).map(mapSubscriberToDTO);
   return { subscribers, totalCount: count || 0 };
+}
+
+export async function getCustomDomainForUser(
+  supabase: SupabaseClient<Database>,
+  userId: string
+): Promise<CustomDomainDTO | null> {
+  const { data, error } = await supabase
+    .from('custom_domains')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapCustomDomainToDTO(data);
 }

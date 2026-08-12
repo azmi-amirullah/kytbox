@@ -96,3 +96,41 @@ export const updateAppearanceSchema = z.object({
 
 export const socialLinksSchema = z.record(z.string(), z.string()).catch({});
 
+const DOMAIN_REGEX = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+
+export const customDomainInputSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, 'Domain must be at least 3 characters')
+  .max(253, 'Domain must be under 253 characters')
+  .refine(
+    (domain) => {
+      const isDevOrTest =
+        process.env.NODE_ENV === 'development' ||
+        process.env.NODE_ENV === 'test';
+      const isTestDomain =
+        domain.endsWith('.local') ||
+        domain.endsWith('.test') ||
+        domain.endsWith('.localhost');
+      if (isDevOrTest && isTestDomain) {
+        return true;
+      }
+      return DOMAIN_REGEX.test(domain);
+    },
+    { message: 'Invalid domain format (e.g., links.creator.com or mybio.me)' }
+  )
+  .refine(
+    (domain) =>
+      domain !== 'localhost' &&
+      domain !== '127.0.0.1' &&
+      domain !== 'kytbox.app' &&
+      !domain.endsWith('.kytbox.app'),
+    { message: 'Reserved platform domain cannot be used as a custom domain' }
+  );
+
+export const addCustomDomainSchema = z.object({
+  domain: customDomainInputSchema,
+});
+
+

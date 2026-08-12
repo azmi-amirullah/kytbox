@@ -22,6 +22,7 @@ import type {
   ProfileDTO,
   LinkDTO,
   BioSubscriberDTO,
+  CustomDomainDTO,
   CashflowDTO,
   CashflowEntryDTO,
   CashflowShareDTO,
@@ -102,6 +103,28 @@ export function mapSubscriberToDTO(row: {
     email: row.email,
     source_url: row.source_url ?? null,
     created_at: row.created_at,
+  };
+}
+
+export function mapCustomDomainToDTO(row: {
+  id: string;
+  user_id: string;
+  profile_id: string;
+  domain: string;
+  status: string;
+  verification_token: string;
+  created_at: string;
+  updated_at: string;
+}): CustomDomainDTO {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    profile_id: row.profile_id,
+    domain: row.domain,
+    status: row.status === 'verified' ? 'verified' : 'pending',
+    verification_token: row.verification_token,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   };
 }
 

@@ -1,54 +1,53 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import {
-  bioTabSchema,
-  socialLinksSchema,
-} from '../schemas.client';
-import { LuEye, LuLink, LuPalette, LuUsers } from 'react-icons/lu';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import LinksTabContent from './LinksTabContent';
-import PhonePreview from './PhonePreview';
-import AppearanceEditor from './AppearanceEditor';
-import SubscribersList from './SubscribersList';
-import type { ProfileDTO, LinkDTO, BioSubscriberDTO } from '@/types/dto';
-import type { LinkClickTrend } from '../db';
-import type { CustomThemeData } from '@/lib/theme/theme.types';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { bioTabSchema, socialLinksSchema } from '../schemas.client'
+import { LuEye, LuLink, LuPalette, LuUsers, LuSettings } from 'react-icons/lu'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import LinksTabContent from './LinksTabContent'
+import PhonePreview from './PhonePreview'
+import AppearanceEditor from './AppearanceEditor'
+import SubscribersList from './SubscribersList'
+import CustomDomainModal from './CustomDomainModal'
+import type { ProfileDTO, LinkDTO, BioSubscriberDTO } from '@/types/dto'
+import type { LinkClickTrend } from '../db'
+import type { CustomThemeData } from '@/lib/theme/theme.types'
+import { cn } from '@/lib/utils'
 
 export type ProfileWithTheme = Omit<
   ProfileDTO,
   'social_links' | 'custom_theme'
 > & {
-  social_links?: Record<string, string> | null;
-  custom_theme?: CustomThemeData | null;
-  theme_name?: string | null;
-  button_style?: string | null;
-  button_shape?: string | null;
-  display_name?: string | null;
-  lead_capture_enabled?: boolean;
-};
+  social_links?: Record<string, string> | null
+  custom_theme?: CustomThemeData | null
+  theme_name?: string | null
+  button_style?: string | null
+  button_shape?: string | null
+  display_name?: string | null
+  lead_capture_enabled?: boolean
+}
 
-export type BioTab = 'links' | 'appearance' | 'subscribers';
-export const VALID_TABS: BioTab[] = ['links', 'appearance', 'subscribers'];
-export const DEFAULT_TAB: BioTab = 'links';
+export type BioTab = 'links' | 'appearance' | 'subscribers'
+export const VALID_TABS: BioTab[] = ['links', 'appearance', 'subscribers']
+export const DEFAULT_TAB: BioTab = 'links'
 
 interface DashboardClientProps {
-  initialLinks: LinkDTO[];
-  initialSubscribers?: BioSubscriberDTO[];
-  totalSubscribers?: number;
-  profile: Partial<ProfileWithTheme>;
-  publicUrl: string;
-  totalViews: number;
-  totalLinks?: number;
-  activeLinksCount?: number;
-  rootTotalCount?: number;
-  activeRootTotalCount?: number;
-  isLoading?: boolean;
-  activeTab?: BioTab;
-  clickTrends?: Record<string, LinkClickTrend>;
+  initialLinks: LinkDTO[]
+  initialSubscribers?: BioSubscriberDTO[]
+  totalSubscribers?: number
+  profile: Partial<ProfileWithTheme>
+  publicUrl: string
+  totalViews: number
+  totalLinks?: number
+  activeLinksCount?: number
+  rootTotalCount?: number
+  activeRootTotalCount?: number
+  isLoading?: boolean
+  activeTab?: BioTab
+  clickTrends?: Record<string, LinkClickTrend>
 }
 
 /**
@@ -71,62 +70,62 @@ export default function DashboardClient({
   activeTab = DEFAULT_TAB,
   clickTrends,
 }: DashboardClientProps) {
-  const searchParams = useSearchParams();
-  const urlTab = bioTabSchema.parse(searchParams.get('tab'));
-  const resolvedTab =
-    urlTab && VALID_TABS.includes(urlTab) ? urlTab : activeTab;
-  const [currentTab, setCurrentTab] = useState<BioTab>(resolvedTab);
+  const searchParams = useSearchParams()
+  const urlTab = bioTabSchema.parse(searchParams.get('tab'))
+  const resolvedTab = urlTab && VALID_TABS.includes(urlTab) ? urlTab : activeTab
+  const [currentTab, setCurrentTab] = useState<BioTab>(resolvedTab)
 
-  const [links, setLinks] = useState<LinkDTO[]>(initialLinks);
-  const [localTotalLinks, setLocalTotalLinks] = useState(totalLinks);
-  const [localActiveLinks, setLocalActiveLinks] = useState(activeLinksCount);
-  const [localRootTotalLinks, setLocalRootTotalLinks] = useState(rootTotalCount);
-  const [themeName, setThemeName] = useState(profile?.theme_name || 'default');
+  const [links, setLinks] = useState<LinkDTO[]>(initialLinks)
+  const [localTotalLinks, setLocalTotalLinks] = useState(totalLinks)
+  const [localActiveLinks, setLocalActiveLinks] = useState(activeLinksCount)
+  const [localRootTotalLinks, setLocalRootTotalLinks] = useState(rootTotalCount)
+  const [themeName, setThemeName] = useState(profile?.theme_name || 'default')
   const [customTheme, setCustomTheme] = useState<CustomThemeData | null>(
     profile?.custom_theme || null,
-  );
+  )
   const [buttonStyle, setButtonStyle] = useState(
     profile?.button_style || 'default',
-  );
+  )
   const [buttonShape, setButtonShape] = useState(
     profile?.button_shape || 'rounded',
-  );
-  const initialSocials = socialLinksSchema.parse(profile?.social_links);
+  )
+  const initialSocials = socialLinksSchema.parse(profile?.social_links)
 
   const [socialLinks, setSocialLinks] =
-    useState<Record<string, string>>(initialSocials);
+    useState<Record<string, string>>(initialSocials)
   const [leadCaptureEnabled, setLeadCaptureEnabled] = useState(
     profile?.lead_capture_enabled ?? true,
-  );
+  )
+  const [isDomainModalOpen, setIsDomainModalOpen] = useState(false)
 
   // Merge initialLinks from props whenever they change (Single source of truth for the first batch)
   useEffect(() => {
-    setLocalTotalLinks(totalLinks);
-    setLocalActiveLinks(activeLinksCount);
-    setLocalRootTotalLinks(rootTotalCount);
+    setLocalTotalLinks(totalLinks)
+    setLocalActiveLinks(activeLinksCount)
+    setLocalRootTotalLinks(rootTotalCount)
     if (initialLinks.length > 0) {
       setLinks((prev) => {
-        const serverIds = new Set(initialLinks.map((l) => l.id));
+        const serverIds = new Set(initialLinks.map((l) => l.id))
         // Keep local items that are NOT in the current server batch (e.g. pagination or other folders)
-        const otherItems = prev.filter((p) => !serverIds.has(p.id));
+        const otherItems = prev.filter((p) => !serverIds.has(p.id))
         return [...otherItems, ...initialLinks].sort(
           (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
-        );
-      });
+        )
+      })
     }
-  }, [initialLinks, totalLinks, activeLinksCount, rootTotalCount]);
+  }, [initialLinks, totalLinks, activeLinksCount, rootTotalCount])
 
   useEffect(() => {
-    setCurrentTab(resolvedTab);
-  }, [resolvedTab]);
+    setCurrentTab(resolvedTab)
+  }, [resolvedTab])
 
   const handleTabChange = useCallback((value: string) => {
-    const newTab = bioTabSchema.parse(value);
-    setCurrentTab(newTab);
-    const params = new URLSearchParams(window.location.search);
-    params.set('tab', value);
-    window.history.replaceState(null, '', `?${params.toString()}`);
-  }, []);
+    const newTab = bioTabSchema.parse(value)
+    setCurrentTab(newTab)
+    const params = new URLSearchParams(window.location.search)
+    params.set('tab', value)
+    window.history.replaceState(null, '', `?${params.toString()}`)
+  }, [])
 
   return (
     <div className='grid lg:grid-cols-[1fr_440px] gap-4 lg:gap-8'>
@@ -144,10 +143,23 @@ export default function DashboardClient({
             <span className='text-muted-foreground'>/</span>
             <span className='text-foreground font-medium'>Bio</span>
           </nav>
-          <h1 className='text-3xl font-bold tracking-tight text-foreground'>
-            Bio
-          </h1>
-          <p className='text-muted-foreground mt-1'>Manage your bio page</p>
+          <div className='flex items-center justify-between gap-4'>
+            <div>
+              <h1 className='text-3xl font-bold tracking-tight text-foreground'>
+                Bio
+              </h1>
+              <p className='text-muted-foreground mt-1'>Manage your bio page</p>
+            </div>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setIsDomainModalOpen(true)}
+              className='gap-2 text-xs font-medium shrink-0'
+              title='Custom Domain Setup'
+            >
+              <LuSettings className='w-3.5 h-3.5 text-muted-foreground' />
+            </Button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -223,11 +235,11 @@ export default function DashboardClient({
                   social: Record<string, string>,
                   custom?: CustomThemeData | null,
                 ) => {
-                  setThemeName(theme);
-                  setButtonStyle(style);
-                  setButtonShape(shape);
-                  setSocialLinks(social);
-                  if (custom !== undefined) setCustomTheme(custom);
+                  setThemeName(theme)
+                  setButtonStyle(style)
+                  setButtonShape(shape)
+                  setSocialLinks(social)
+                  if (custom !== undefined) setCustomTheme(custom)
                 },
                 [],
               )}
@@ -289,6 +301,11 @@ export default function DashboardClient({
           />
         </div>
       </div>
+
+      <CustomDomainModal
+        isOpen={isDomainModalOpen}
+        onClose={() => setIsDomainModalOpen(false)}
+      />
     </div>
-  );
+  )
 }

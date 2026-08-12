@@ -12,9 +12,11 @@ import {
   updateSeoSchema,
   moveToFolderSchema,
   subscribeSchema,
+  customDomainInputSchema,
 } from './schemas.server';
-import { mapLinkToDTO } from '@/lib/mappers';
-import { getBioSubscribers } from './db';
+import { mapLinkToDTO, mapCustomDomainToDTO } from '@/lib/mappers';
+import { getBioSubscribers, getCustomDomainForUser } from './db';
+import { verifyDnsTxtRecord } from './utils/dns';
 import { getIp } from '@/lib/ip';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createStaticClient } from '@/lib/supabase/server';
@@ -1533,3 +1535,126 @@ export async function toggleLeadCaptureAction(enabled: boolean) {
   revalidatePath('/bio');
   return { success: true };
 }
+
+export async function getCustomDomainAction() {
+  const { user, supabase } = await getAuthenticatedUser();
+  const customDomain = await getCustomDomainForUser(supabase, user.id);
+  return { customDomain };
+}
+
+export async function addCustomDomainAction(domainInput: string) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const parsed = customDomainInputSchema.safeParse(domainInput);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid domain format',
+    };
+  }
+
+  const cleanDomain = parsed.data;
+
+  // Check if domain is already registered
+  const { data: existing } = await supabase
+    .from('custom_domains')
+    .select('id, user_id')
+    .eq('domain', cleanDomain)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.user_id === user.id) {
+      return {
+        success: false,
+        error: 'You have already added this custom domain.',
+      };
+    }
+    return {
+      success: false,
+      error: 'This domain is already mapped by another user.',
+    };
+  }
+
+  // Generate verification token
+  const token = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+
+  const { data, error } = await supabase
+    .from('custom_domains')
+    .insert({
+      user_id: user.id,
+      profile_id: user.id,
+      domain: cleanDomain,
+      status: 'pending',
+      verification_token: token,
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/bio');
+  return { success: true, customDomain: mapCustomDomainToDTO(data) };
+}
+
+export async function verifyCustomDomainAction(domainId: string) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const { data: domainRecord, error: fetchError } = await supabase
+    .from('custom_domains')
+    .select('*')
+    .eq('id', domainId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError || !domainRecord) {
+    return { success: false, error: 'Custom domain not found' };
+  }
+
+  const result = await verifyDnsTxtRecord(
+    domainRecord.domain,
+    domainRecord.verification_token
+  );
+
+  if (!result.verified) {
+    return {
+      success: false,
+      error: result.message || 'DNS verification failed. Please check your TXT records.',
+    };
+  }
+
+  const { data: updatedRecord, error: updateError } = await supabase
+    .from('custom_domains')
+    .update({ status: 'verified', updated_at: new Date().toISOString() })
+    .eq('id', domainId)
+    .eq('user_id', user.id)
+    .select('*')
+    .single();
+
+  if (updateError) {
+    return { success: false, error: updateError.message };
+  }
+
+  revalidatePath('/bio');
+
+  return { success: true, customDomain: mapCustomDomainToDTO(updatedRecord) };
+}
+
+export async function deleteCustomDomainAction(domainId: string) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const { error } = await supabase
+    .from('custom_domains')
+    .delete()
+    .eq('id', domainId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/bio');
+  return { success: true };
+}
+

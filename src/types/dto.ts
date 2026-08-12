@@ -48,6 +48,17 @@ export interface BioSubscriberDTO {
   created_at: string
 }
 
+export interface CustomDomainDTO {
+  id: string
+  user_id: string
+  profile_id: string
+  domain: string
+  status: 'pending' | 'verified'
+  verification_token: string
+  created_at: string
+  updated_at: string
+}
+
 export interface CashflowDTO {
   id: string
   title: string
