@@ -37,9 +37,9 @@ export default function CustomDomainSettings({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // Load existing domain if not passed as initial prop
+  // Fetch domain if not provided as initial prop
   useEffect(() => {
-    if (!initialCustomDomain) {
+    if (initialCustomDomain === undefined) {
       getCustomDomainAction().then((res) => {
         if (res.customDomain) {
           setCustomDomain(res.customDomain);

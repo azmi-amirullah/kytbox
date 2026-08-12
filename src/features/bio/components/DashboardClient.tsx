@@ -12,7 +12,7 @@ import PhonePreview from './PhonePreview'
 import AppearanceEditor from './AppearanceEditor'
 import SubscribersList from './SubscribersList'
 import CustomDomainModal from './CustomDomainModal'
-import type { ProfileDTO, LinkDTO, BioSubscriberDTO } from '@/types/dto'
+import type { ProfileDTO, LinkDTO, BioSubscriberDTO, CustomDomainDTO } from '@/types/dto'
 import type { LinkClickTrend } from '../db'
 import type { CustomThemeData } from '@/lib/theme/theme.types'
 import { cn } from '@/lib/utils'
@@ -48,6 +48,7 @@ interface DashboardClientProps {
   isLoading?: boolean
   activeTab?: BioTab
   clickTrends?: Record<string, LinkClickTrend>
+  initialCustomDomain?: CustomDomainDTO | null
 }
 
 /**
@@ -69,6 +70,7 @@ export default function DashboardClient({
   isLoading,
   activeTab = DEFAULT_TAB,
   clickTrends,
+  initialCustomDomain = null,
 }: DashboardClientProps) {
   const searchParams = useSearchParams()
   const urlTab = bioTabSchema.parse(searchParams.get('tab'))
@@ -305,6 +307,7 @@ export default function DashboardClient({
       <CustomDomainModal
         isOpen={isDomainModalOpen}
         onClose={() => setIsDomainModalOpen(false)}
+        initialCustomDomain={initialCustomDomain}
       />
     </div>
   )

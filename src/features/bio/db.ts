@@ -34,6 +34,7 @@ export interface BioDashboardData {
   activeRootTotalCount: number;
   totalViews: number;
   clickTrends: Record<string, LinkClickTrend>;
+  initialCustomDomain: CustomDomainDTO | null;
 }
 
 export interface PublicProfileData {
@@ -82,6 +83,7 @@ export async function getBioDashboardData(
     viewsCountResult,
     clickTrendsResult,
     subscribersResult,
+    customDomainResult,
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -114,6 +116,7 @@ export async function getBioDashboardData(
       .eq('profile_id', userId)
       .order('created_at', { ascending: false })
       .range(0, 49),
+    getCustomDomainForUser(supabase, userId),
   ]);
 
   const profile = profileResult.data;
@@ -183,6 +186,7 @@ export async function getBioDashboardData(
     activeRootTotalCount,
     totalViews,
     clickTrends,
+    initialCustomDomain: customDomainResult,
   };
 }
 

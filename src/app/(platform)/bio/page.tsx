@@ -41,6 +41,7 @@ export default async function BioDashboardPage({
         activeRootTotalCount={data.activeRootTotalCount}
         totalViews={data.totalViews}
         clickTrends={data.clickTrends}
+        initialCustomDomain={data.initialCustomDomain}
         activeTab={activeTab}
       />
     </div>
