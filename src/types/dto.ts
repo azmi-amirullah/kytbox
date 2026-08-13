@@ -67,6 +67,15 @@ export interface CashflowDTO {
   created_at: string | null
 }
 
+export interface CashflowSplitEntryDTO {
+  id: string
+  parent_entry_id: string
+  item_name: string
+  category: string | null
+  amount: number
+  created_at?: string | null
+}
+
 export interface CashflowEntryDTO {
   id: string
   cashflow_id: string
@@ -80,6 +89,7 @@ export interface CashflowEntryDTO {
   is_recurring: boolean
   recurrence_interval: 'monthly' | 'yearly' | null
   yearly_calculation: 'prorated' | 'exact' | null
+  items?: CashflowSplitEntryDTO[]
 }
 
 export interface CashflowShareDTO {

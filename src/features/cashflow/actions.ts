@@ -8,6 +8,7 @@ import { z } from 'zod';
 import {
   cashflowEntrySchema,
   updateCashflowEntrySchema,
+  cashflowSplitItemSchema,
   cashflowBudgetSchema,
   deleteCashflowBudgetSchema,
   generateRecurringSchema,
@@ -399,27 +400,62 @@ export async function addEntry(formData: FormData) {
     return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
   }
 
-  const { error } = await supabase.from('cashflow_entries').insert({
-    cashflow_id: cashflowId,
-    goal_id: resolvedGoal.goalId,
-    description: description.trim(),
-    amount,
-    type,
-    category: resolvedGoal.category,
-    // Use provided date or fallback to UTC date string, but client should usually provide it.
-    // Ideally we require date to ensure timezone accuracy.
-    date: date || new Date().toISOString().split('T')[0],
-    is_recurring: is_recurring,
-    recurrence_interval: is_recurring ? recurrence_interval : null,
-    yearly_calculation:
-      is_recurring && recurrence_interval === 'yearly'
-        ? yearly_calculation
-        : null,
-  });
+  let splitItems: { itemName: string; category?: string | null; amount: number }[] | null = null;
+  if (parsed.data.itemsJson) {
+    try {
+      const rawJson = JSON.parse(parsed.data.itemsJson);
+      const parsedItems = z.array(cashflowSplitItemSchema).safeParse(rawJson);
+      if (parsedItems.success) {
+        splitItems = parsedItems.data;
+      }
+    } catch {
+      // Ignore JSON parse error
+    }
+  }
 
-  if (error) {
+  const finalAmount = splitItems && splitItems.length > 0
+    ? Math.round(splitItems.reduce((acc, item) => acc + item.amount, 0) * 100) / 100
+    : amount;
+
+  const { data: insertedEntry, error } = await supabase
+    .from('cashflow_entries')
+    .insert({
+      cashflow_id: cashflowId,
+      goal_id: resolvedGoal.goalId,
+      description: description.trim(),
+      amount: finalAmount,
+      type,
+      category: resolvedGoal.category,
+      date: date || new Date().toISOString().split('T')[0],
+      is_recurring: is_recurring,
+      recurrence_interval: is_recurring ? recurrence_interval : null,
+      yearly_calculation:
+        is_recurring && recurrence_interval === 'yearly'
+          ? yearly_calculation
+          : null,
+    })
+    .select('id')
+    .single();
+
+  if (error || !insertedEntry) {
     console.error('Failed to add entry:', error);
-    return { error: error.message };
+    return { error: error?.message || 'Failed to create entry' };
+  }
+
+  if (splitItems && splitItems.length > 0) {
+    const splitRows = splitItems.map((item) => ({
+      parent_entry_id: insertedEntry.id,
+      item_name: item.itemName,
+      category: item.category || null,
+      amount: item.amount,
+    }));
+    const { error: splitError } = await supabase
+      .from('cashflow_split_entries')
+      .insert(splitRows);
+
+    if (splitError) {
+      console.error('Failed to insert split entries:', splitError);
+    }
   }
 
   if (type === 'expense' && resolvedGoal.category) {
@@ -514,11 +550,28 @@ export async function updateEntry(entryId: string, formData: FormData) {
     return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
   }
 
+  let splitItems: { itemName: string; category?: string | null; amount: number }[] | null = null;
+  if (parsed.data.itemsJson) {
+    try {
+      const rawJson = JSON.parse(parsed.data.itemsJson);
+      const parsedItems = z.array(cashflowSplitItemSchema).safeParse(rawJson);
+      if (parsedItems.success) {
+        splitItems = parsedItems.data;
+      }
+    } catch {
+      // Ignore JSON parse error
+    }
+  }
+
+  const finalAmount = splitItems && splitItems.length > 0
+    ? Math.round(splitItems.reduce((acc, item) => acc + item.amount, 0) * 100) / 100
+    : amount;
+
   const { error } = await supabase
     .from('cashflow_entries')
     .update({
       description: description.trim(),
-      amount,
+      amount: finalAmount,
       ...(preserveExistingGoal
         ? {}
         : {
@@ -539,6 +592,28 @@ export async function updateEntry(entryId: string, formData: FormData) {
   if (error) {
     console.error('Failed to update entry:', error);
     return { error: error.message };
+  }
+
+  if (splitItems !== null) {
+    await supabase
+      .from('cashflow_split_entries')
+      .delete()
+      .eq('parent_entry_id', entryId);
+
+    if (splitItems.length > 0) {
+      const splitRows = splitItems.map((item) => ({
+        parent_entry_id: entryId,
+        item_name: item.itemName,
+        category: item.category || null,
+        amount: item.amount,
+      }));
+      const { error: splitError } = await supabase
+        .from('cashflow_split_entries')
+        .insert(splitRows);
+      if (splitError) {
+        console.error('Failed to update split entries:', splitError);
+      }
+    }
   }
 
   if (type === 'expense' && resolvedGoal.category) {

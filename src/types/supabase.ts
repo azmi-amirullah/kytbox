@@ -299,6 +299,41 @@ export type Database = {
           },
         ]
       }
+      cashflow_split_entries: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          id: string
+          item_name: string
+          parent_entry_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          item_name: string
+          parent_entry_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          item_name?: string
+          parent_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'cashflow_split_entries_parent_entry_id_fkey'
+            columns: ['parent_entry_id']
+            isOneToOne: false
+            referencedRelation: 'cashflow_entries'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       cashflows: {
         Row: {
           created_at: string | null

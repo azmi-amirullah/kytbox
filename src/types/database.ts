@@ -5,6 +5,8 @@ export type Link = Database['public']['Tables']['links']['Row'];
 export type Cashflow = Database['public']['Tables']['cashflows']['Row'];
 export type CashflowEntry =
   Database['public']['Tables']['cashflow_entries']['Row'];
+export type CashflowSplitEntry =
+  Database['public']['Tables']['cashflow_split_entries']['Row'];
 export type CashflowShare =
   Database['public']['Tables']['cashflow_shares']['Row'];
 export type CashflowBudget =

@@ -2,6 +2,7 @@ import type {
   Profile,
   Cashflow,
   CashflowEntry,
+  CashflowSplitEntry,
   CashflowShare,
   CashflowWithSummary,
   CashflowBudget,
@@ -25,6 +26,7 @@ import type {
   CustomDomainDTO,
   CashflowDTO,
   CashflowEntryDTO,
+  CashflowSplitEntryDTO,
   CashflowShareDTO,
   CashflowBudgetDTO,
   CashflowGoalDTO,
@@ -138,8 +140,21 @@ export function mapCashflowToDTO(row: Cashflow): CashflowDTO {
   };
 }
 
+export function mapCashflowSplitEntryToDTO(
+  row: CashflowSplitEntry,
+): CashflowSplitEntryDTO {
+  return {
+    id: row.id,
+    parent_entry_id: row.parent_entry_id,
+    item_name: row.item_name,
+    category: row.category ?? null,
+    amount: row.amount,
+    created_at: row.created_at,
+  };
+}
+
 export function mapCashflowEntryToDTO(
-  row: CashflowEntry,
+  row: CashflowEntry & { cashflow_split_entries?: CashflowSplitEntry[] },
   goalTitle?: string | null,
 ): CashflowEntryDTO {
   const category = row.goal_id
@@ -149,6 +164,10 @@ export function mapCashflowEntryToDTO(
     : row.category?.startsWith('Goal:')
       ? null
       : row.category;
+
+  const items = Array.isArray(row.cashflow_split_entries) && row.cashflow_split_entries.length > 0
+    ? row.cashflow_split_entries.map(mapCashflowSplitEntryToDTO)
+    : undefined;
 
   return {
     id: row.id,
@@ -167,6 +186,7 @@ export function mapCashflowEntryToDTO(
       .catch(null)
       .parse(row.yearly_calculation),
     created_at: row.created_at,
+    items,
   };
 }
 

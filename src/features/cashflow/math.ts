@@ -357,3 +357,23 @@ export function shiftToCurrentMonth(dateStr: string, now: Date = new Date()): st
   return `${targetYear}-${monthFormatted}-${dayFormatted}`;
 }
 
+/**
+ * Validates that the sum of split entries matches the parent total amount.
+ * Returns valid status, rounded sum, and difference.
+ */
+export function validateSplitTotal(
+  parentAmount: number,
+  items: { amount: number }[]
+): { isValid: boolean; sum: number; diff: number } {
+  const sum = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+  const roundedSum = Math.round(sum * 100) / 100;
+  const roundedParent = Math.round(parentAmount * 100) / 100;
+  const diff = Math.round((roundedParent - roundedSum) * 100) / 100;
+
+  return {
+    isValid: Math.abs(diff) < 0.005,
+    sum: roundedSum,
+    diff,
+  };
+}
+

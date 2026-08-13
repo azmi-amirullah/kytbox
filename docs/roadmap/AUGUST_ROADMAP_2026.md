@@ -14,12 +14,12 @@
 - [x] [Day 4 — Bio: Pin Important Links & Sensitive Content Warning](#day-4)
 - [x] [Day 5 — Bio: Custom Domain Mapping Engine](#day-5)
 - [x] [Day 6 — Bio: Creator Features E2E Test Suite](#day-6)
-- [ ] [Day 7 — Weekly Sprint Audit & Security Boundary Check](#day-7)
-- [ ] [Day 8 — Cashflow: Receipt & Attachment Upload](#day-8)
+- [x] [Day 7 — Weekly Sprint Audit & Security Boundary Check](#day-7)
+- [x] [Day 8 — Cashflow: Split Transactions Engine](#day-8)
 - [ ] [Day 9 — Cashflow: CSV / Bank Transaction Import & Auto-Parser](#day-9)
 - [ ] [Day 10 — Cashflow: Monthly Comparison View](#day-10)
 - [ ] [Day 11 — Cashflow: Custom Tags & Labels Engine](#day-11)
-- [ ] [Day 12 — Cashflow: Split Transactions Engine](#day-12)
+- [ ] [Day 12 — Cashflow: Receipt & Attachment Upload](#day-12)
 - [ ] [Day 13 — Cashflow: Advanced Features E2E Test Suite](#day-13)
 - [ ] [Day 14 — Weekly Sprint Audit & Financial Calculation Check](#day-14)
 - [ ] [Day 15 — List: Card Due Dates & Reminders](#day-15)
@@ -153,12 +153,12 @@
 
 <a id="day-8"></a>
 #### Day 8 — Saturday, Aug 8 | ✨ Feature
-##### Cashflow: Receipt & Attachment Upload
-- **Why**: Freelancers and business owners require receipt proof for tax compliance and expense audit tracking. Attaching receipt photos directly to cashflow entries prevents lost invoices and simplifies accounting.
+##### Cashflow: Split Transactions Engine
+- **Why**: A single receipt (e.g. $150 Supermarket bill) often contains multiple budget categories ($100 Grocery + $50 Home Cleaning). Split transactions allow one payment to be allocated accurately across multiple categories.
 - **Implementation Blueprint**:
-  - Add `receipt_url: string | null` column to `cashflow_entries`.
-  - Integrate Supabase Storage bucket `cashflow-receipts`.
-  - Build modal image lightbox viewer component `src/features/cashflow/components/ReceiptLightbox.tsx`.
+  - Create `cashflow_split_entries` child table (`id`, `parent_entry_id`, `item_name`, `category`, `amount`, `created_at`).
+  - Build interactive line-item breakdown UI in transaction modal with live auto-sum total calculation.
+  - Enforce server-side balance validation `validateSplitTotal(parentAmount, splits)` enforcing `sum(splits.amount) === parentAmount`.
 
 ---
 
@@ -196,11 +196,12 @@
 
 <a id="day-12"></a>
 #### Day 12 — Wednesday, Aug 12 | ✨ Feature
-##### Cashflow: Split Transactions Engine
-- **Why**: A single receipt (e.g. $150 Supermarket bill) often contains multiple budget categories ($100 Grocery + $50 Home Cleaning). Split transactions allow one payment to be allocated accurately across multiple categories.
+##### Cashflow: Receipt & Attachment Upload
+- **Why**: Freelancers and business owners require receipt proof for tax compliance and expense audit tracking. Attaching receipt photos directly to cashflow entries (or split parent entries) prevents lost invoices and simplifies accounting.
 - **Implementation Blueprint**:
-  - Create `cashflow_split_entries` child table (`id`, `parent_entry_id`, `category`, `amount`).
-  - Add balance validation function `validateSplitTotal(parentAmount, splits)` enforcing `sum(splits) === parentAmount`.
+  - Add `receipt_url: string | null` column to `cashflow_entries`.
+  - Integrate Supabase Storage bucket `cashflow-receipts`.
+  - Build modal image lightbox viewer component `src/features/cashflow/components/ReceiptLightbox.tsx`.
 
 ---
 

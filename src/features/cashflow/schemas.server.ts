@@ -26,6 +26,12 @@ const dateOnlySchema = z
     );
   }, 'Invalid calendar date');
 
+export const cashflowSplitItemSchema = z.object({
+  itemName: z.string().trim().min(1, 'Item name is required'),
+  category: z.string().trim().nullable().optional(),
+  amount: z.coerce.number().positive('Item amount must be positive'),
+});
+
 export const cashflowEntrySchema = z.object({
   goalId: z.uuid({ message: 'Invalid goal ID' }).optional(),
   description: z.string().min(1, 'Description is required'),
@@ -39,6 +45,7 @@ export const cashflowEntrySchema = z.object({
     .default(false),
   recurrence_interval: recurrenceIntervalSchema.optional(),
   yearly_calculation: yearlyCalculationSchema.optional(),
+  itemsJson: z.string().optional().nullable(),
 });
 
 export const updateCashflowEntrySchema = cashflowEntrySchema.extend({

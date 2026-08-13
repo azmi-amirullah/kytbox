@@ -1143,6 +1143,14 @@ export default function CashflowDetail({
                                 {entry.category}
                               </span>
                             )}
+                            {entry.items && entry.items.length > 0 && (
+                              <span
+                                className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 cursor-default'
+                                title={entry.items.map((i) => `${i.item_name}: ${formatCurrencyCompact(i.amount, currency)}`).join('\n')}
+                              >
+                                🛒 {entry.items.length} items ({entry.items.map((i) => i.item_name).join(', ')})
+                              </span>
+                            )}
                             {entry.is_recurring && (
                               <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/30'>
                                 <LuRepeat className='w-2.5 h-2.5' />

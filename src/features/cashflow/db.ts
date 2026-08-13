@@ -216,7 +216,7 @@ export async function getCashflowDetailData(
       supabase.from('cashflows').select('*').eq('id', cashflowId).single(),
       supabase
         .from('cashflow_entries')
-        .select('*')
+        .select('*, cashflow_split_entries(*)')
         .eq('cashflow_id', cashflowId)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
