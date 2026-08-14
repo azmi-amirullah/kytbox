@@ -16,7 +16,7 @@
 - [x] [Day 6 — Bio: Creator Features E2E Test Suite](#day-6)
 - [x] [Day 7 — Weekly Sprint Audit & Security Boundary Check](#day-7)
 - [x] [Day 8 — Cashflow: Split Transactions Engine](#day-8)
-- [ ] [Day 9 — Cashflow: CSV / Bank Transaction Import & Auto-Parser](#day-9)
+- [x] [Day 9 — Cashflow: CSV / Bank Transaction Import & Auto-Parser](#day-9)
 - [ ] [Day 10 — Cashflow: Monthly Comparison View](#day-10)
 - [ ] [Day 11 — Cashflow: Custom Tags & Labels Engine](#day-11)
 - [ ] [Day 12 — Cashflow: Receipt & Attachment Upload](#day-12)

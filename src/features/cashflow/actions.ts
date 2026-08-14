@@ -17,6 +17,8 @@ import {
   deleteCashflowGoalSchema,
   getGoalEntryValidationError,
   shouldPreserveExistingGoalRelation,
+  importCashflowEntriesSchema,
+  type ImportCashflowEntryItem,
 } from './schemas.server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
@@ -1677,5 +1679,59 @@ export async function duplicateCashflow(cashflowId: string) {
   revalidatePath('/cashflow');
   revalidatePath('/app');
   return { success: true, id: newCashflow.id };
+}
+
+export async function importCashflowEntries(
+  cashflowId: string,
+  entries: ImportCashflowEntryItem[]
+) {
+  const { user, supabase } = await getAuthenticatedUserOnly();
+
+  const parsed = importCashflowEntriesSchema.safeParse({ cashflowId, entries });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid import payload' };
+  }
+
+  const [{ success: rateLimitOk }, permission] = await Promise.all([
+    checkRateLimit(actionRateLimit, user.id),
+    checkEditPermission(supabase, cashflowId, user),
+  ]);
+
+  if (!rateLimitOk) {
+    throw new Error('Too many requests. Please slow down.');
+  }
+
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  const toInsert = parsed.data.entries.map((entry) => ({
+    cashflow_id: cashflowId,
+    description: entry.description.trim(),
+    amount: Math.round(entry.amount * 100) / 100,
+    type: entry.type,
+    category: entry.category?.trim() || null,
+    date: entry.date,
+    is_recurring: false,
+    recurrence_interval: null,
+    yearly_calculation: null,
+    goal_id: null,
+  }));
+
+  const { data, error } = await supabase
+    .from('cashflow_entries')
+    .insert(toInsert)
+    .select('id');
+
+  if (error) {
+    console.error('Failed to import cashflow entries:', error);
+    return { error: 'Failed to import transactions. Please check your data and try again.' };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  revalidatePath('/app');
+
+  return { success: true, count: data?.length || toInsert.length };
 }
 

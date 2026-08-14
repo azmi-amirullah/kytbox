@@ -113,3 +113,23 @@ export function shouldPreserveExistingGoalRelation(input: {
     input.requestedGoalId === input.existingGoalId
   );
 }
+
+export const importCashflowEntryItemSchema = z.object({
+  date: dateOnlySchema,
+  description: z.string().trim().min(1, 'Description is required').max(255, 'Description too long'),
+  amount: z.coerce.number().positive('Amount must be positive').max(1_000_000_000, 'Amount exceeds maximum limit'),
+  type: z.enum(['income', 'expense']),
+  category: z.string().trim().max(50, 'Category too long').nullable().optional(),
+});
+
+export const importCashflowEntriesSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  entries: z
+    .array(importCashflowEntryItemSchema)
+    .min(1, 'At least one transaction is required')
+    .max(1000, 'Maximum 1,000 transactions per import batch'),
+});
+
+export type ImportCashflowEntryItem = z.infer<typeof importCashflowEntryItemSchema>;
+export type ImportCashflowEntriesInput = z.infer<typeof importCashflowEntriesSchema>;
+

@@ -30,3 +30,17 @@ export const splitItemDtoSchema = z.object({
 });
 
 export const splitItemDtoListSchema = z.catch(z.array(splitItemDtoSchema), []);
+
+export interface ParsedCsvRow {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: 'income' | 'expense' | 'unselected';
+  category: string | null;
+  rawCategory?: string;
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  selected: boolean;
+}
