@@ -2,7 +2,9 @@ import {
   calculateProjections, 
   calculateBudgetStatus,
   resolveFilterRange,
-  filterEntriesByDate
+  filterEntriesByDate,
+  sortEntries,
+  isCashflowSortOption,
 } from '@/features/cashflow/math';
 import type { CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
 
@@ -403,3 +405,82 @@ describe('filterEntriesByDate', () => {
     expect(filtered[0].id).toBe('2');
   });
 });
+
+describe('sortEntries', () => {
+  const e1 = createEntry({
+    id: '1',
+    date: '2026-01-10',
+    created_at: '2026-01-15T10:00:00Z',
+    amount: 100,
+  });
+  const e2 = createEntry({
+    id: '2',
+    date: '2026-02-20',
+    created_at: '2026-01-10T12:00:00Z',
+    amount: 50,
+  });
+  const e3 = createEntry({
+    id: '3',
+    date: '2026-02-20',
+    created_at: '2026-02-21T08:00:00Z',
+    amount: 300,
+  });
+
+  const list = [e1, e2, e3];
+
+  it('sorts by created-desc (newest created_at first)', () => {
+    const sorted = sortEntries(list, 'created-desc');
+    expect(sorted.map((e) => e.id)).toEqual(['3', '1', '2']);
+  });
+
+  it('sorts by created-asc (oldest created_at first)', () => {
+    const sorted = sortEntries(list, 'created-asc');
+    expect(sorted.map((e) => e.id)).toEqual(['2', '1', '3']);
+  });
+
+  it('sorts by date-desc (newest transaction date first with created_at tie-breaker)', () => {
+    const sorted = sortEntries(list, 'date-desc');
+    // e3 & e2 both 2026-02-20; e3 created_at is newer ('2026-02-21' > '2026-01-10')
+    expect(sorted.map((e) => e.id)).toEqual(['3', '2', '1']);
+  });
+
+  it('sorts by date-asc (oldest transaction date first)', () => {
+    const sorted = sortEntries(list, 'date-asc');
+    expect(sorted.map((e) => e.id)).toEqual(['1', '2', '3']);
+  });
+
+  it('sorts by amount-desc (highest amount first)', () => {
+    const sorted = sortEntries(list, 'amount-desc');
+    expect(sorted.map((e) => e.id)).toEqual(['3', '1', '2']);
+  });
+
+  it('sorts by amount-asc (lowest amount first)', () => {
+    const sorted = sortEntries(list, 'amount-asc');
+    expect(sorted.map((e) => e.id)).toEqual(['2', '1', '3']);
+  });
+
+  it('handles null created_at without error', () => {
+    const legacyEntry = createEntry({ id: 'legacy', created_at: null });
+    const sorted = sortEntries([e1, legacyEntry], 'created-desc');
+    expect(sorted).toHaveLength(2);
+  });
+});
+
+describe('isCashflowSortOption', () => {
+  it('returns true for valid sort options', () => {
+    expect(isCashflowSortOption('date-desc')).toBe(true);
+    expect(isCashflowSortOption('date-asc')).toBe(true);
+    expect(isCashflowSortOption('created-desc')).toBe(true);
+    expect(isCashflowSortOption('created-asc')).toBe(true);
+    expect(isCashflowSortOption('amount-desc')).toBe(true);
+    expect(isCashflowSortOption('amount-asc')).toBe(true);
+  });
+
+  it('returns false for invalid sort options', () => {
+    expect(isCashflowSortOption('invalid')).toBe(false);
+    expect(isCashflowSortOption('')).toBe(false);
+    expect(isCashflowSortOption('created_at-desc')).toBe(false);
+  });
+});
+
+

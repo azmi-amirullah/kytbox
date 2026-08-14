@@ -48,6 +48,31 @@ export interface DateFilterState {
 }
 
 /**
+ * Supported cashflow sort options.
+ */
+export type CashflowSortOption =
+  | 'date-desc'
+  | 'date-asc'
+  | 'created-desc'
+  | 'created-asc'
+  | 'amount-desc'
+  | 'amount-asc';
+
+/**
+ * Type guard to check if a string is a valid CashflowSortOption.
+ */
+export function isCashflowSortOption(val: string): val is CashflowSortOption {
+  return (
+    val === 'date-desc' ||
+    val === 'date-asc' ||
+    val === 'created-desc' ||
+    val === 'created-asc' ||
+    val === 'amount-desc' ||
+    val === 'amount-asc'
+  );
+}
+
+/**
  * Result of the budget status calculation.
  */
 export interface BudgetStatus {
@@ -376,4 +401,45 @@ export function validateSplitTotal(
     diff,
   };
 }
+
+/**
+ * Sorts cashflow entries based on the selected sort criteria.
+ * Supports date, created_at, and amount sorting in ascending and descending order.
+ */
+export function sortEntries(
+  entries: CashflowEntryDTO[],
+  sortBy: CashflowSortOption = 'date-desc',
+): CashflowEntryDTO[] {
+  return [...entries].sort((a, b) => {
+    switch (sortBy) {
+      case 'date-desc': {
+        const dateComp = b.date.localeCompare(a.date);
+        if (dateComp !== 0) return dateComp;
+        return (b.created_at || '').localeCompare(a.created_at || '');
+      }
+      case 'date-asc': {
+        const dateComp = a.date.localeCompare(b.date);
+        if (dateComp !== 0) return dateComp;
+        return (a.created_at || '').localeCompare(b.created_at || '');
+      }
+      case 'created-desc': {
+        const createdComp = (b.created_at || '').localeCompare(a.created_at || '');
+        if (createdComp !== 0) return createdComp;
+        return b.date.localeCompare(a.date);
+      }
+      case 'created-asc': {
+        const createdComp = (a.created_at || '').localeCompare(b.created_at || '');
+        if (createdComp !== 0) return createdComp;
+        return a.date.localeCompare(b.date);
+      }
+      case 'amount-desc':
+        return Number(b.amount) - Number(a.amount);
+      case 'amount-asc':
+        return Number(a.amount) - Number(b.amount);
+      default:
+        return 0;
+    }
+  });
+}
+
 

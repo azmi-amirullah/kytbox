@@ -47,6 +47,8 @@ import {
   LuX,
   LuCopy,
   LuImport,
+  LuArrowDown,
+  LuArrowUp,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -88,7 +90,10 @@ import {
 import {
   filterEntriesByDate,
   resolveFilterRange,
+  sortEntries,
+  isCashflowSortOption,
   type DateFilterState,
+  type CashflowSortOption,
 } from '../math'
 import { escapeCsvField } from '../lib/csv'
 import { cn } from '@/lib/utils'
@@ -151,6 +156,9 @@ export default function CashflowDetail({
   >('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
 
+  // ── Sort option ──────────────────────────────────────────────────────────────
+  const [sortBy, setSortBy] = useState<CashflowSortOption>('date-desc')
+
   const uniqueCategories = useMemo(() => {
     const set = new Set<string>()
     for (const e of entries) {
@@ -169,13 +177,15 @@ export default function CashflowDetail({
     filterState.preset !== 'all-time' ||
     selectedType !== 'all' ||
     selectedCategory !== 'all' ||
-    searchQuery.trim() !== ''
+    searchQuery.trim() !== '' ||
+    sortBy !== 'date-desc'
 
   function clearAllFilters() {
     setFilterState({ preset: 'all-time', custom: { from: null, to: null } })
     setSelectedType('all')
     setSelectedCategory('all')
     setSearchQuery('')
+    setSortBy('date-desc')
   }
 
   const filteredEntries = useMemo(() => {
@@ -194,15 +204,15 @@ export default function CashflowDetail({
         e.description.toLowerCase().includes(query),
       )
     }
-    return filtered
-  }, [entries, filterState, selectedType, selectedCategory, searchQuery])
+    return sortEntries(filtered, sortBy)
+  }, [entries, filterState, selectedType, selectedCategory, searchQuery, sortBy])
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Client-side pagination ─────────────────────────────────────────────────────
   const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
   type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 
-  // Store page, pageSize, filterState, and searchQuery reference together so filter or search changes
+  // Store page, pageSize, filterState, searchQuery, and sort reference together so filter, search, or sort changes
   // reset the page to 1 in a single render pass — no refs, no effects.
   const [pageInfo, setPageInfo] = useState<{
     page: number
@@ -211,6 +221,7 @@ export default function CashflowDetail({
     forSearch: string
     forType: string
     forCategory: string
+    forSort: CashflowSortOption
   }>({
     page: 1,
     pageSize: 10,
@@ -218,13 +229,15 @@ export default function CashflowDetail({
     forSearch: searchQuery,
     forType: selectedType,
     forCategory: selectedCategory,
+    forSort: sortBy,
   })
 
   const currentPage =
     pageInfo.forFilter === filterState &&
     pageInfo.forSearch === searchQuery &&
     pageInfo.forType === selectedType &&
-    pageInfo.forCategory === selectedCategory
+    pageInfo.forCategory === selectedCategory &&
+    pageInfo.forSort === sortBy
       ? pageInfo.page
       : 1
   const pageSize = pageInfo.pageSize
@@ -237,6 +250,7 @@ export default function CashflowDetail({
       forSearch: searchQuery,
       forType: selectedType,
       forCategory: selectedCategory,
+      forSort: sortBy,
     }))
   }
 
@@ -248,6 +262,7 @@ export default function CashflowDetail({
       forSearch: searchQuery,
       forType: selectedType,
       forCategory: selectedCategory,
+      forSort: sortBy,
     })
   }
 
@@ -973,14 +988,14 @@ export default function CashflowDetail({
             )}
           </div>
 
-          {/* Select Dropdowns Wrapper (Date, Type, Category) */}
+          {/* Select Dropdowns Wrapper (Date, Type, Category, Sort) */}
           <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center lg:flex-1'>
             <div
               className={cn(
-                'grid gap-3 w-full lg:flex lg:w-auto',
+                'grid gap-3 w-full lg:flex lg:w-auto lg:items-center',
                 uniqueCategories.length > 0
-                  ? 'grid-cols-2 sm:grid-cols-3'
-                  : 'grid-cols-1 sm:grid-cols-2',
+                  ? 'grid-cols-2 sm:grid-cols-4'
+                  : 'grid-cols-2 sm:grid-cols-3',
               )}
             >
               {/* Date Filter — Spans full width (col-span-2) on mobile, 1 col on tablet/desktop */}
@@ -989,7 +1004,7 @@ export default function CashflowDetail({
                   'w-full lg:w-auto',
                   uniqueCategories.length > 0
                     ? 'col-span-2 sm:col-span-1'
-                    : 'col-span-1',
+                    : 'col-span-2 sm:col-span-1',
                 )}
               >
                 <DateFilter
@@ -1009,7 +1024,7 @@ export default function CashflowDetail({
                   }
                 }}
               >
-                <SelectTrigger className='bg-card w-full lg:w-35'>
+                <SelectTrigger className='bg-card w-full lg:w-32'>
                   <SelectValue placeholder='Type' />
                 </SelectTrigger>
                 <SelectContent>
@@ -1025,7 +1040,7 @@ export default function CashflowDetail({
                   value={selectedCategory}
                   onValueChange={setSelectedCategory}
                 >
-                  <SelectTrigger className='bg-card w-full lg:w-40'>
+                  <SelectTrigger className='bg-card w-full lg:w-36'>
                     <SelectValue placeholder='Category' />
                   </SelectTrigger>
                   <SelectContent>
@@ -1038,6 +1053,70 @@ export default function CashflowDetail({
                   </SelectContent>
                 </Select>
               )}
+
+              {/* Sort Dropdown */}
+              <div
+                className={cn(
+                  'w-full lg:w-auto',
+                  uniqueCategories.length > 0
+                    ? 'col-span-2 sm:col-span-1'
+                    : 'col-span-1',
+                )}
+              >
+                <Select
+                  value={sortBy}
+                  onValueChange={(v) => {
+                    if (isCashflowSortOption(v)) {
+                      setSortBy(v)
+                    }
+                  }}
+                >
+                  <SelectTrigger
+                    className='bg-card w-full lg:w-38 whitespace-nowrap'
+                    aria-label='Sort entries'
+                  >
+                    <SelectValue placeholder='Sort by' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='date-desc'>
+                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                        <span>Date</span>
+                        <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                      </span>
+                    </SelectItem>
+                    <SelectItem value='date-asc'>
+                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                        <span>Date</span>
+                        <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                      </span>
+                    </SelectItem>
+                    <SelectItem value='created-desc'>
+                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                        <span>Created</span>
+                        <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                      </span>
+                    </SelectItem>
+                    <SelectItem value='created-asc'>
+                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                        <span>Created</span>
+                        <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                      </span>
+                    </SelectItem>
+                    <SelectItem value='amount-desc'>
+                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                        <span>Amount</span>
+                        <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                      </span>
+                    </SelectItem>
+                    <SelectItem value='amount-asc'>
+                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                        <span>Amount</span>
+                        <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {hasActiveFilters && (
@@ -1111,7 +1190,12 @@ export default function CashflowDetail({
                         Type
                       </TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead className='text-right'>Amount</TableHead>
+                      <TableHead className='text-right border-r border-border/40'>
+                        Amount
+                      </TableHead>
+                      <TableHead className='w-36 border-r border-border/40'>
+                        Created
+                      </TableHead>
                       <TableHead className='w-20'></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1184,12 +1268,28 @@ export default function CashflowDetail({
                           </div>
                         </TableCell>
                         <TableCell
-                          className={`text-right font-medium text-nowrap ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                          className={`text-right font-medium text-nowrap border-r border-border/30 ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
                         >
                           {entry.type === 'income' ? '+' : '-'}
                           {formatCurrencyCompact(
                             Number(entry.amount),
                             currency,
+                          )}
+                        </TableCell>
+                        <TableCell className='text-muted-foreground text-xs border-r border-border/30 text-nowrap'>
+                          {entry.created_at ? (
+                            new Date(entry.created_at).toLocaleDateString(
+                              'en-US',
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              },
+                            )
+                          ) : (
+                            <span className='text-muted-foreground/50'>—</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -1239,7 +1339,7 @@ export default function CashflowDetail({
                     >
                       <div className='flex items-center justify-between gap-4'>
                         <div className='space-y-2 min-w-0 flex-1'>
-                          <div className='flex items-center gap-2'>
+                          <div className='flex items-center gap-2 flex-wrap'>
                             <span className='text-xs text-muted-foreground font-medium'>
                               {(() => {
                                 const [eYear, eMonth, eDay] = entry.date
@@ -1253,6 +1353,24 @@ export default function CashflowDetail({
                                 })
                               })()}
                             </span>
+                            {entry.created_at && (
+                              <span
+                                className='text-[10px] text-muted-foreground/70'
+                                title={`Created: ${new Date(entry.created_at).toLocaleString()}`}
+                              >
+                                (Created{' '}
+                                {new Date(entry.created_at).toLocaleDateString(
+                                  'en-US',
+                                  {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  },
+                                )}
+                                )
+                              </span>
+                            )}
                             <span
                               className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
                                 entry.type === 'income'
