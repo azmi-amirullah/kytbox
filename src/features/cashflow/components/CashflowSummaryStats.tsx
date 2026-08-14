@@ -10,7 +10,7 @@ import {
   LuCircleDollarSign,
   LuChartPie,
 } from 'react-icons/lu'
-import { formatCurrencyCompact } from '@/lib/currency'
+import { formatCurrency, formatCurrencyCompact } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 interface CashflowSummaryStatsProps {
@@ -28,7 +28,8 @@ export function getCashflowSummaryRatios(
 ) {
   const expenseRatio = income > 0 ? Math.max(0, (expense / income) * 100) : 0
   const savingsRatio = income > 0 ? ((income - expense) / income) * 100 : 0
-  const deficitRatio = income > 0 ? Math.max(0, ((expense - income) / income) * 100) : 0
+  const deficitRatio =
+    income > 0 ? Math.max(0, ((expense - income) / income) * 100) : 0
   const isPositiveBalance = balance >= 0
 
   return {
@@ -38,7 +39,6 @@ export function getCashflowSummaryRatios(
     isPositiveBalance,
   }
 }
-
 
 export function CashflowSummaryStats({
   income,
@@ -55,11 +55,11 @@ export function CashflowSummaryStats({
   return (
     <div className={cn('w-full space-y-3', className)}>
       {/* Unified Summary Card */}
-      <div className='bg-card border rounded-2xl p-4 sm:p-5 shadow-xs transition-all duration-200'>
+      <div className='bg-card border rounded-2xl p-3.5 sm:p-5 shadow-xs transition-all duration-200'>
         {/* Mobile: 2 cols for Income & Expense, Balance on Row 2. Tablet+: 3 equal columns */}
-        <div className='grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-3 md:gap-x-0 md:divide-x divide-border/60'>
+        <div className='grid grid-cols-2 md:grid-cols-3 gap-y-3.5 gap-x-2.5 sm:gap-x-4 md:gap-x-0 md:divide-x divide-border/60'>
           {/* Income Cell */}
-          <div className='flex flex-col justify-between md:pr-4 lg:pr-6'>
+          <div className='flex flex-col justify-between pr-2 sm:pr-3 md:pr-4 lg:pr-6'>
             <div className='flex items-center justify-between gap-1 mb-1.5'>
               <span className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
                 Income
@@ -68,7 +68,10 @@ export function CashflowSummaryStats({
                 <LuArrowUpRight className='w-3.5 h-3.5' />
               </div>
             </div>
-            <p className='text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight tabular-nums truncate'>
+            <p
+              title={`+${formatCurrency(income, currency)}`}
+              className='text-lg sm:text-xl md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight tabular-nums truncate'
+            >
               +{formatCurrencyCompact(income, currency)}
             </p>
             <div className='mt-1.5 flex items-center gap-1 text-[11px] font-medium text-emerald-600/80 dark:text-emerald-400/80 truncate'>
@@ -78,7 +81,7 @@ export function CashflowSummaryStats({
           </div>
 
           {/* Expense Cell */}
-          <div className='flex flex-col justify-between border-l border-border/40 md:border-l-0 pl-3 md:px-4 lg:px-6'>
+          <div className='flex flex-col justify-between border-l border-border/40 md:border-l-0 pl-2.5 sm:pl-3 md:px-4 lg:px-6'>
             <div className='flex items-center justify-between gap-1 mb-1.5'>
               <span className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
                 Expense
@@ -87,13 +90,18 @@ export function CashflowSummaryStats({
                 <LuArrowDownRight className='w-3.5 h-3.5' />
               </div>
             </div>
-            <p className='text-2xl font-extrabold text-rose-600 dark:text-rose-400 tracking-tight tabular-nums truncate'>
+            <p
+              title={`-${formatCurrency(expense, currency)}`}
+              className='text-lg sm:text-xl md:text-2xl font-extrabold text-rose-600 dark:text-rose-400 tracking-tight tabular-nums truncate'
+            >
               -{formatCurrencyCompact(expense, currency)}
             </p>
             <div className='mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-600/80 dark:text-rose-400/80 truncate'>
               <LuChartPie className='w-3 h-3 shrink-0' />
               <span className='truncate'>
-                {income > 0 ? `${stats.expenseRatio.toFixed(1)}% of income` : 'Total outflows'}
+                {income > 0
+                  ? `${stats.expenseRatio.toFixed(1)}% of income`
+                  : 'Total outflows'}
               </span>
             </div>
           </div>
@@ -105,7 +113,7 @@ export function CashflowSummaryStats({
                 'rounded-xl p-3 md:p-0 transition-all duration-200',
                 stats.isPositiveBalance
                   ? 'bg-emerald-500/5 md:bg-transparent border md:border-0 border-emerald-500/20'
-                  : 'bg-rose-500/5 md:bg-transparent border md:border-0 border-rose-500/20'
+                  : 'bg-rose-500/5 md:bg-transparent border md:border-0 border-rose-500/20',
               )}
             >
               <div className='flex items-center justify-between gap-1 mb-1.5'>
@@ -117,7 +125,7 @@ export function CashflowSummaryStats({
                     'flex items-center justify-center w-7 h-7 rounded-lg border shrink-0',
                     stats.isPositiveBalance
                       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+                      : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
                   )}
                 >
                   <LuWallet className='w-3.5 h-3.5' />
@@ -125,11 +133,12 @@ export function CashflowSummaryStats({
               </div>
               <div className='flex flex-col items-start'>
                 <p
+                  title={`${stats.isPositiveBalance ? '+' : ''}${formatCurrency(balance, currency)}`}
                   className={cn(
-                    'text-2xl font-black tracking-tight tabular-nums truncate',
+                    'text-xl sm:text-2xl font-extrabold tracking-tight tabular-nums truncate',
                     stats.isPositiveBalance
                       ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-rose-600 dark:text-rose-400'
+                      : 'text-rose-600 dark:text-rose-400',
                   )}
                 >
                   {stats.isPositiveBalance ? '+' : ''}
@@ -140,7 +149,7 @@ export function CashflowSummaryStats({
                     'mt-1.5 flex items-center gap-1 text-[11px] font-medium truncate',
                     stats.isPositiveBalance
                       ? 'text-emerald-600/80 dark:text-emerald-400/80'
-                      : 'text-rose-600/80 dark:text-rose-400/80'
+                      : 'text-rose-600/80 dark:text-rose-400/80',
                   )}
                 >
                   {stats.isPositiveBalance ? (
@@ -154,8 +163,8 @@ export function CashflowSummaryStats({
                         ? `${stats.savingsRatio.toFixed(1)}% saved`
                         : `${stats.deficitRatio.toFixed(1)}% deficit`
                       : stats.isPositiveBalance
-                      ? 'Positive'
-                      : 'Deficit'}
+                        ? 'Positive'
+                        : 'Deficit'}
                   </span>
                 </div>
               </div>

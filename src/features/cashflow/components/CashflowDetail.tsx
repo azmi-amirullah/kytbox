@@ -205,7 +205,14 @@ export default function CashflowDetail({
       )
     }
     return sortEntries(filtered, sortBy)
-  }, [entries, filterState, selectedType, selectedCategory, searchQuery, sortBy])
+  }, [
+    entries,
+    filterState,
+    selectedType,
+    selectedCategory,
+    searchQuery,
+    sortBy,
+  ])
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Client-side pagination ─────────────────────────────────────────────────────
@@ -998,15 +1005,8 @@ export default function CashflowDetail({
                   : 'grid-cols-2 sm:grid-cols-3',
               )}
             >
-              {/* Date Filter — Spans full width (col-span-2) on mobile, 1 col on tablet/desktop */}
-              <div
-                className={cn(
-                  'w-full lg:w-auto',
-                  uniqueCategories.length > 0
-                    ? 'col-span-2 sm:col-span-1'
-                    : 'col-span-2 sm:col-span-1',
-                )}
-              >
+              {/* Date Filter */}
+              <div className='w-full lg:w-auto'>
                 <DateFilter
                   state={filterState}
                   onChange={setFilterState}
@@ -1055,14 +1055,7 @@ export default function CashflowDetail({
               )}
 
               {/* Sort Dropdown */}
-              <div
-                className={cn(
-                  'w-full lg:w-auto',
-                  uniqueCategories.length > 0
-                    ? 'col-span-2 sm:col-span-1'
-                    : 'col-span-1',
-                )}
-              >
+              <div className='w-full lg:w-auto'>
                 <Select
                   value={sortBy}
                   onValueChange={(v) => {
