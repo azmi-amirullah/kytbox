@@ -2,6 +2,7 @@ export { default as CashflowDashboard } from './components/CashflowDashboard';
 export { default as CashflowList } from './components/CashflowList';
 export { default as CashflowDetail } from './components/CashflowDetail';
 export { default as GoalDetail } from './components/GoalDetail';
+export { MonthlyComparison } from './components/MonthlyComparison';
 export * from './db';
 export { getGoalDetailData } from './goal-db';
 export * from './actions';

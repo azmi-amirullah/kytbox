@@ -1,7 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { LuChartBarBig, LuTrendingUp, LuChartPie } from 'react-icons/lu';
+import {
+  LuChartBarBig,
+  LuTrendingUp,
+  LuChartPie,
+  LuArrowLeftRight,
+} from 'react-icons/lu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { CashflowEntryDTO } from '@/types/dto';
 import { aggregateEntriesByMonth } from '../lib/aggregateEntries';
@@ -9,6 +14,7 @@ import { aggregateEntriesByCategory } from '../lib/aggregateCategories';
 import { IncomeExpenseChart } from './IncomeExpenseChart';
 import { BalanceTrendChart } from './BalanceTrendChart';
 import { CategoryChart } from './CategoryChart';
+import { MonthlyComparison } from './MonthlyComparison';
 import { ResponsiveTabsList } from './ResponsiveTabsList';
 
 interface CashflowChartsProps {
@@ -44,6 +50,7 @@ export function CashflowCharts({ entries, currency }: CashflowChartsProps) {
             { value: 'income-expense', label: 'Income vs Expense', icon: LuChartBarBig },
             { value: 'balance-trend', label: 'Balance Trend', icon: LuTrendingUp },
             { value: 'categories', label: 'Categories', icon: LuChartPie },
+            { value: 'comparison', label: 'Compare Months', icon: LuArrowLeftRight },
           ]}
         />
       </Tabs>
@@ -80,6 +87,9 @@ export function CashflowCharts({ entries, currency }: CashflowChartsProps) {
             title={`${categoryType === 'income' ? 'Income' : 'Expense'} Breakdown`}
           />
         </div>
+      )}
+      {activeTab === 'comparison' && (
+        <MonthlyComparison entries={entries} currency={currency} />
       )}
     </div>
   );

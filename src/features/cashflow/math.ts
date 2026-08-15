@@ -442,4 +442,291 @@ export function sortEntries(
   });
 }
 
+/**
+ * Summary metrics for a month comparison.
+ */
+export interface MonthComparisonSummary {
+  monthA: {
+    key: string;
+    label: string;
+    income: number;
+    expense: number;
+    net: number;
+    savingsRate: number;
+  };
+  monthB: {
+    key: string;
+    label: string;
+    income: number;
+    expense: number;
+    net: number;
+    savingsRate: number;
+  };
+  deltas: {
+    income: number;
+    incomePct: number;
+    expense: number;
+    expensePct: number;
+    net: number;
+    netPct: number;
+    savingsRate: number;
+  };
+}
+
+/**
+ * Category-level diff between two months.
+ */
+export interface CategoryComparisonDiff {
+  category: string;
+  type: 'income' | 'expense';
+  amountA: number;
+  amountB: number;
+  diff: number;
+  diffPct: number;
+  trend: 'increased' | 'decreased' | 'unchanged' | 'new' | 'removed';
+}
+
+/**
+ * Dual bar chart item format for Recharts.
+ */
+export interface ComparisonChartMetric {
+  metric: string;
+  monthAAmount: number;
+  monthBAmount: number;
+}
+
+/**
+ * Result of the full compareMonths calculation.
+ */
+export interface MonthlyComparisonResult {
+  summary: MonthComparisonSummary;
+  categories: CategoryComparisonDiff[];
+  chartData: ComparisonChartMetric[];
+}
+
+/**
+ * Descriptor for an available month in cashflow entries.
+ */
+export interface AvailableMonth {
+  key: string;
+  label: string;
+  count: number;
+}
+
+/**
+ * Computes percentage change from valA to valB.
+ * Safe against division by zero and floating point errors.
+ */
+export function calculateDeltaPercentage(valA: number, valB: number): number {
+  const a = Math.round((valA + Number.EPSILON) * 100) / 100;
+  const b = Math.round((valB + Number.EPSILON) * 100) / 100;
+
+  if (a === 0) {
+    if (b === 0) return 0;
+    return b > 0 ? 100 : -100;
+  }
+
+  const pct = ((b - a) / Math.abs(a)) * 100;
+  return Math.round((pct + Number.EPSILON) * 100) / 100;
+}
+
+/**
+ * Formats a 'YYYY-MM' key to a human-friendly string (e.g., 'Jul 2026').
+ */
+export function formatMonthLabel(key: string): string {
+  if (!key || !/^\d{4}-\d{2}$/.test(key)) return key || 'Unknown';
+  const [year, month] = key.split('-').map(Number);
+  const date = new Date(year, month - 1, 1);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+/**
+ * Extracts and returns chronologically sorted unique months (newest first)
+ * from cashflow entries.
+ */
+export function getAvailableMonths(entries: CashflowEntryDTO[]): AvailableMonth[] {
+  const monthMap = new Map<string, number>();
+
+  for (const entry of entries) {
+    if (!entry.date || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) continue;
+    const key = entry.date.slice(0, 7);
+    monthMap.set(key, (monthMap.get(key) || 0) + 1);
+  }
+
+  const sortedKeys = Array.from(monthMap.keys()).sort((a, b) => b.localeCompare(a));
+
+  return sortedKeys.map((key) => ({
+    key,
+    label: formatMonthLabel(key),
+    count: monthMap.get(key) || 0,
+  }));
+}
+
+/**
+ * Side-by-side comparison calculation for two specific months.
+ * Computes income, expense, net delta, percentage changes, and category-level variances.
+ *
+ * @param entries - List of cashflow entries
+ * @param monthAKey - Base month key in 'YYYY-MM' format (e.g. '2026-07')
+ * @param monthBKey - Compare month key in 'YYYY-MM' format (e.g. '2026-08')
+ */
+export function compareMonths(
+  entries: CashflowEntryDTO[],
+  monthAKey: string,
+  monthBKey: string,
+): MonthlyComparisonResult {
+  const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+
+  let incomeA = 0;
+  let expenseA = 0;
+  let incomeB = 0;
+  let expenseB = 0;
+
+  const categoryMapA = new Map<string, { amount: number; type: 'income' | 'expense' }>();
+  const categoryMapB = new Map<string, { amount: number; type: 'income' | 'expense' }>();
+
+  for (const entry of entries) {
+    if (!entry.date || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) continue;
+    const monthKey = entry.date.slice(0, 7);
+    const amount = Number(entry.amount) || 0;
+    const category = entry.category?.trim() || 'uncategorized';
+    const type: 'income' | 'expense' = entry.type === 'income' ? 'income' : 'expense';
+    const catKey = `${category.toLowerCase()}|${type}`;
+
+    if (monthKey === monthAKey) {
+      if (type === 'income') incomeA += amount;
+      else expenseA += amount;
+
+      const existing = categoryMapA.get(catKey);
+      categoryMapA.set(catKey, {
+        amount: (existing?.amount || 0) + amount,
+        type,
+      });
+    } else if (monthKey === monthBKey) {
+      if (type === 'income') incomeB += amount;
+      else expenseB += amount;
+
+      const existing = categoryMapB.get(catKey);
+      categoryMapB.set(catKey, {
+        amount: (existing?.amount || 0) + amount,
+        type,
+      });
+    }
+  }
+
+  incomeA = round2(incomeA);
+  expenseA = round2(expenseA);
+  incomeB = round2(incomeB);
+  expenseB = round2(expenseB);
+
+  const netA = round2(incomeA - expenseA);
+  const netB = round2(incomeB - expenseB);
+
+  const savingsRateA =
+    incomeA > 0 ? round2((Math.max(0, netA) / incomeA) * 100) : 0;
+  const savingsRateB =
+    incomeB > 0 ? round2((Math.max(0, netB) / incomeB) * 100) : 0;
+
+  const incomeDelta = round2(incomeB - incomeA);
+  const incomeDeltaPct = calculateDeltaPercentage(incomeA, incomeB);
+
+  const expenseDelta = round2(expenseB - expenseA);
+  const expenseDeltaPct = calculateDeltaPercentage(expenseA, expenseB);
+
+  const netDelta = round2(netB - netA);
+  const netDeltaPct = calculateDeltaPercentage(netA, netB);
+
+  const savingsRateDelta = round2(savingsRateB - savingsRateA);
+
+  // Combine categories
+  const allCategoryKeys = new Set([
+    ...categoryMapA.keys(),
+    ...categoryMapB.keys(),
+  ]);
+
+  const categories: CategoryComparisonDiff[] = [];
+
+  for (const catKey of allCategoryKeys) {
+    const [rawCategory, typeStr] = catKey.split('|');
+    const type: 'income' | 'expense' = typeStr === 'income' ? 'income' : 'expense';
+    const amountA = round2(categoryMapA.get(catKey)?.amount || 0);
+    const amountB = round2(categoryMapB.get(catKey)?.amount || 0);
+    const diff = round2(amountB - amountA);
+    const diffPct = calculateDeltaPercentage(amountA, amountB);
+
+    let trend: CategoryComparisonDiff['trend'] = 'unchanged';
+    if (amountA === 0 && amountB > 0) {
+      trend = 'new';
+    } else if (amountA > 0 && amountB === 0) {
+      trend = 'removed';
+    } else if (amountB > amountA) {
+      trend = 'increased';
+    } else if (amountB < amountA) {
+      trend = 'decreased';
+    }
+
+    categories.push({
+      category: rawCategory,
+      type,
+      amountA,
+      amountB,
+      diff,
+      diffPct,
+      trend,
+    });
+  }
+
+  // Sort categories: Expenses first (highest spend in Month B first), then Income
+  categories.sort((a, b) => {
+    if (a.type !== b.type) {
+      return a.type === 'expense' ? -1 : 1;
+    }
+    const maxAmountA = Math.max(a.amountA, a.amountB);
+    const maxAmountB = Math.max(b.amountA, b.amountB);
+    return maxAmountB - maxAmountA;
+  });
+
+  const chartData: ComparisonChartMetric[] = [
+    { metric: 'Income', monthAAmount: incomeA, monthBAmount: incomeB },
+    { metric: 'Expense', monthAAmount: expenseA, monthBAmount: expenseB },
+    { metric: 'Net Savings', monthAAmount: netA, monthBAmount: netB },
+  ];
+
+  return {
+    summary: {
+      monthA: {
+        key: monthAKey,
+        label: formatMonthLabel(monthAKey),
+        income: incomeA,
+        expense: expenseA,
+        net: netA,
+        savingsRate: savingsRateA,
+      },
+      monthB: {
+        key: monthBKey,
+        label: formatMonthLabel(monthBKey),
+        income: incomeB,
+        expense: expenseB,
+        net: netB,
+        savingsRate: savingsRateB,
+      },
+      deltas: {
+        income: incomeDelta,
+        incomePct: incomeDeltaPct,
+        expense: expenseDelta,
+        expensePct: expenseDeltaPct,
+        net: netDelta,
+        netPct: netDeltaPct,
+        savingsRate: savingsRateDelta,
+      },
+    },
+    categories,
+    chartData,
+  };
+}
+
+
 
