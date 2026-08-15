@@ -228,7 +228,7 @@ export default function LinkList({
 
   if (isLoading || !mounted) {
     return (
-      <div className='py-12 bg-card border rounded-xl flex items-center justify-center'>
+      <div className='py-16 flex items-center justify-center'>
         <Loader size='md' className='py-0 min-h-0' text='Loading links...' />
       </div>
     );

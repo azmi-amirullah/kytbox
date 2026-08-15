@@ -2,11 +2,11 @@
 
 import { useState, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
   Table,
+  TableBody,
   TableCell,
   TableHead,
   TableHeader,
@@ -1201,11 +1201,7 @@ export default function CashflowDetail({
                       <TableHead className='w-20'></TableHead>
                     </TableRow>
                   </TableHeader>
-                  <motion.tbody
-                    key={currentPage}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                  <TableBody
                     data-slot='table-body'
                     className='[&_tr:last-child]:border-0'
                   >
@@ -1321,17 +1317,14 @@ export default function CashflowDetail({
                         </TableCell>
                       </TableRow>
                     ))}
-                  </motion.tbody>
+                  </TableBody>
                 </Table>
               </div>
 
               {/* Mobile Card View */}
               <div className='md:hidden'>
-                <motion.div
+                <div
                   key={currentPage}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
                   className='divide-y divide-border'
                 >
                   {paginatedEntries.map((entry) => (
@@ -1443,7 +1436,7 @@ export default function CashflowDetail({
                       </div>
                     </div>
                   ))}
-                </motion.div>
+                </div>
               </div>
             </div>
 
