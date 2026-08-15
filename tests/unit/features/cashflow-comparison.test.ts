@@ -128,7 +128,7 @@ describe('compareMonths', () => {
     expect(result.summary.deltas.savingsRate).toBe(12.5); // 50 - 37.5
   });
 
-  it('identifies category trends accurately (increased, decreased, new, removed, unchanged)', () => {
+  it('identifies category trends accurately (increased, decreased, unchanged)', () => {
     const result = compareMonths(sampleEntries, '2026-07', '2026-08');
 
     const foodDiff = result.categories.find(c => c.category === 'food');
@@ -151,21 +151,21 @@ describe('compareMonths', () => {
     expect(travelDiff?.amountA).toBe(500);
     expect(travelDiff?.amountB).toBe(0);
     expect(travelDiff?.diff).toBe(-500);
-    expect(travelDiff?.trend).toBe('removed');
+    expect(travelDiff?.trend).toBe('decreased');
 
     const entertainmentDiff = result.categories.find(c => c.category === 'entertainment');
     expect(entertainmentDiff).toBeDefined();
     expect(entertainmentDiff?.amountA).toBe(0);
     expect(entertainmentDiff?.amountB).toBe(200);
     expect(entertainmentDiff?.diff).toBe(200);
-    expect(entertainmentDiff?.trend).toBe('new');
+    expect(entertainmentDiff?.trend).toBe('increased');
 
     const freelanceDiff = result.categories.find(c => c.category === 'freelance');
     expect(freelanceDiff).toBeDefined();
     expect(freelanceDiff?.type).toBe('income');
     expect(freelanceDiff?.amountA).toBe(0);
     expect(freelanceDiff?.amountB).toBe(600);
-    expect(freelanceDiff?.trend).toBe('new');
+    expect(freelanceDiff?.trend).toBe('increased');
   });
 
   it('formats chart data metrics correctly', () => {

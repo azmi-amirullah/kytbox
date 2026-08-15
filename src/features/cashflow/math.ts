@@ -487,7 +487,7 @@ export interface CategoryComparisonDiff {
   amountB: number;
   diff: number;
   diffPct: number;
-  trend: 'increased' | 'decreased' | 'unchanged' | 'new' | 'removed';
+  trend: 'increased' | 'decreased' | 'unchanged';
 }
 
 /**
@@ -667,13 +667,9 @@ export function compareMonths(
     const diffPct = calculateDeltaPercentage(amountA, amountB);
 
     let trend: CategoryComparisonDiff['trend'] = 'unchanged';
-    if (amountA === 0 && amountB > 0) {
-      trend = 'new';
-    } else if (amountA > 0 && amountB === 0) {
-      trend = 'removed';
-    } else if (amountB > amountA) {
+    if (diff > 0) {
       trend = 'increased';
-    } else if (amountB < amountA) {
+    } else if (diff < 0) {
       trend = 'decreased';
     }
 

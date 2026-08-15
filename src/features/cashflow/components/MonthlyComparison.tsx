@@ -15,7 +15,6 @@ import {
   LuTrendingUp,
   LuTrendingDown,
   LuMinus,
-  LuSparkles,
   LuSearch,
   LuCalendar,
 } from 'react-icons/lu';
@@ -567,36 +566,20 @@ function CategoryDiffRow({
         {formatCurrencyCompact(item.diff, currency)}
       </TableCell>
       <TableCell className='text-right font-mono'>
-        {item.trend === 'new' ? (
-          <span className='text-emerald-600 dark:text-emerald-400 font-semibold'>New</span>
-        ) : item.trend === 'removed' ? (
-          <span className='text-muted-foreground'>-100%</span>
-        ) : (
-          <span
-            className={cn(
-              item.diffPct === 0
-                ? 'text-muted-foreground'
-                : isGood
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-rose-600 dark:text-rose-400',
-            )}
-          >
-            {item.diffPct > 0 ? '+' : ''}
-            {item.diffPct}%
-          </span>
-        )}
+        <span
+          className={cn(
+            item.diffPct === 0
+              ? 'text-muted-foreground'
+              : isGood
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-rose-600 dark:text-rose-400',
+          )}
+        >
+          {item.diffPct > 0 ? '+' : ''}
+          {item.diffPct}%
+        </span>
       </TableCell>
       <TableCell className='text-center'>
-        {item.trend === 'new' && (
-          <Badge variant='outline' className='text-[10px] px-1.5 py-0 bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 gap-1'>
-            <LuSparkles className='w-2.5 h-2.5' /> New
-          </Badge>
-        )}
-        {item.trend === 'removed' && (
-          <Badge variant='outline' className='text-[10px] px-1.5 py-0 text-muted-foreground border-dashed'>
-            Ended
-          </Badge>
-        )}
         {item.trend === 'increased' && (
           <Badge
             variant='outline'
@@ -625,7 +608,7 @@ function CategoryDiffRow({
         )}
         {item.trend === 'unchanged' && (
           <Badge variant='outline' className='text-[10px] px-1.5 py-0 text-muted-foreground'>
-            <LuMinus className='w-2.5 h-2.5' /> Same
+            <LuMinus className='w-2.5 h-2.5' /> 0%
           </Badge>
         )}
       </TableCell>
