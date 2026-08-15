@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Loader } from '@/components/ui/loader';
 import { login } from '../actions';
 import { loginSchema } from '../schemas.client';
 import { FcGoogle } from 'react-icons/fc';
@@ -225,28 +226,15 @@ function LoginContent() {
   );
 }
 
-function LoginSkeleton() {
-  return (
-    <Card className='shadow-lg animate-pulse'>
-      <CardHeader className='space-y-1 text-center'>
-        <div className='flex justify-center mb-4'>
-          <div className='p-3 rounded-full bg-muted w-12 h-12' />
-        </div>
-        <div className='h-6 bg-muted rounded w-32 mx-auto' />
-        <div className='h-4 bg-muted rounded w-48 mx-auto mt-2' />
-      </CardHeader>
-      <CardContent className='space-y-4'>
-        <div className='h-10 bg-muted rounded' />
-        <div className='h-10 bg-muted rounded' />
-        <div className='h-10 bg-muted rounded' />
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function LoginForm() {
   return (
-    <Suspense fallback={<LoginSkeleton />}>
+    <Suspense
+      fallback={
+        <Card className='shadow-lg p-12 flex items-center justify-center'>
+          <Loader size='md' className='py-0 min-h-0' text='Loading login...' />
+        </Card>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { LuFolderOpen, LuLoader } from 'react-icons/lu';
+import { Loader } from '@/components/ui/loader';
 import MoveToFolderModal from './MoveToFolderModal';
 import SortableLink from './SortableLink';
 import type { LinkDTO } from '@/types/dto';
@@ -227,10 +228,8 @@ export default function LinkList({
 
   if (isLoading || !mounted) {
     return (
-      <div className='space-y-3'>
-        {(isLoading ? [1, 2, 3] : links).map((_, i) => (
-          <SortableLink.Skeleton key={i} />
-        ))}
+      <div className='py-12 bg-card border rounded-xl flex items-center justify-center'>
+        <Loader size='md' className='py-0 min-h-0' text='Loading links...' />
       </div>
     );
   }

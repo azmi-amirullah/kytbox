@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LuLoader } from 'react-icons/lu';
 import { useActionState } from 'react';
 
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
 
 const initialState = {
   error: '',
@@ -35,27 +35,8 @@ export function CreateTicketForm({ isLoading }: CreateTicketFormProps) {
 
   if (isLoading) {
     return (
-      <Card className='max-w-2xl mx-auto'>
-        <CardHeader>
-          <Skeleton className='h-8 w-48' />
-        </CardHeader>
-        <CardContent className='space-y-6'>
-          <div className='grid gap-2'>
-            <Skeleton className='h-4 w-20' />
-            <Skeleton className='h-10 w-full' />
-          </div>
-          <div className='grid gap-2'>
-            <Skeleton className='h-4 w-16' />
-            <Skeleton className='h-10 w-full' />
-          </div>
-          <div className='grid gap-2'>
-            <Skeleton className='h-4 w-24' />
-            <Skeleton className='h-40 w-full' />
-          </div>
-          <div className='flex justify-end'>
-            <Skeleton className='h-10 w-32' />
-          </div>
-        </CardContent>
+      <Card className='max-w-2xl mx-auto p-12'>
+        <Loader size='md' className='py-4 min-h-0' text='Loading ticket form...' />
       </Card>
     );
   }
@@ -100,7 +81,7 @@ export function CreateTicketForm({ isLoading }: CreateTicketFormProps) {
               id='message'
               name='message'
               placeholder='Describe your issue in detail...'
-              className='min-h-[150px]'
+              className='min-h-37.5'
               required
               minLength={10}
             />

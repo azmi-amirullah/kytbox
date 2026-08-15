@@ -9,7 +9,7 @@ import {
   YAxis,
 } from 'recharts';
 import { LuActivity } from 'react-icons/lu';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
 
 interface ChartData {
   label: string;
@@ -38,57 +38,39 @@ export function AnalyticsChart({
     return () => clearTimeout(timer);
   }, []);
 
-  // Show chart-area skeleton until mounted AND loading is false
-  const showChartSkeleton = isLoading || !mounted;
+  if (isLoading || !mounted) {
+    return (
+      <div className='w-full h-82.5 bg-card border rounded-xl p-6 shadow-sm flex items-center justify-center'>
+        <Loader size='md' className='py-0 min-h-0' text='Loading analytics...' />
+      </div>
+    );
+  }
 
   return (
-    <div className='w-full h-[330px] bg-card border rounded-xl p-6 shadow-sm overflow-hidden'>
+    <div className='w-full h-82.5 bg-card border rounded-xl p-6 shadow-sm overflow-hidden'>
       <div className='mb-4'>
         <div className='flex items-center justify-between mb-2'>
           <div className='flex items-center gap-2 text-muted-foreground'>
             <LuActivity className='w-4 h-4' />
-            {isLoading ? (
-              <Skeleton className='h-4 w-32 rounded' />
-            ) : (
-              <h3 className='text-sm font-medium'>
-                {title || 'Clicks over time'}
-              </h3>
-            )}
+            <h3 className='text-sm font-medium'>
+              {title || 'Clicks over time'}
+            </h3>
           </div>
-          {isLoading ? (
-            <Skeleton className='h-4 w-24 rounded' />
-          ) : (
-            dateRange && (
-              <span className='text-sm text-muted-foreground font-medium'>
-                {dateRange}
-              </span>
-            )
+          {dateRange && (
+            <span className='text-sm text-muted-foreground font-medium'>
+              {dateRange}
+            </span>
           )}
         </div>
-        {isLoading ? (
-          <Skeleton className='h-8 w-16 rounded mt-1' />
-        ) : (
-          total !== undefined && (
-            <p className='text-2xl font-bold tracking-tight'>
-              {total.toLocaleString()}
-            </p>
-          )
+        {total !== undefined && (
+          <p className='text-2xl font-bold tracking-tight'>
+            {total.toLocaleString()}
+          </p>
         )}
       </div>
 
-      <div className='h-[220px] w-full'>
-        {showChartSkeleton ? (
-          <div className='h-full w-full flex items-end gap-2 pt-4 px-2'>
-            <Skeleton className='flex-1 h-[40%] rounded-t' />
-            <Skeleton className='flex-1 h-[60%] rounded-t' />
-            <Skeleton className='flex-1 h-[30%] rounded-t' />
-            <Skeleton className='flex-1 h-[80%] rounded-t' />
-            <Skeleton className='flex-1 h-[50%] rounded-t' />
-            <Skeleton className='flex-1 h-[70%] rounded-t' />
-            <Skeleton className='flex-1 h-[45%] rounded-t' />
-          </div>
-        ) : (
-          <ResponsiveContainer width='100%' height='100%'>
+      <div className='h-55 w-full'>
+        <ResponsiveContainer width='100%' height='100%'>
             <BarChart data={data}>
               <CartesianGrid vertical={false} className='stroke-border' />
               <XAxis
@@ -131,7 +113,6 @@ export function AnalyticsChart({
               />
             </BarChart>
           </ResponsiveContainer>
-        )}
       </div>
     </div>
   );

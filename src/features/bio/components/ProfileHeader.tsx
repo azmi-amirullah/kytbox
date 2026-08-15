@@ -1,5 +1,4 @@
 import Image from 'next/image'
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import type { ThemeConfig } from '@/lib/theme/theme.types'
 
@@ -25,7 +24,7 @@ export default function ProfileHeader({
     <div className='flex flex-col items-center w-full animate-in fade-in zoom-in-95 duration-200 fill-mode-both mb-4'>
       <div className='relative inline-block mb-6'>
         {isLoading ? (
-          <Skeleton className='w-28 h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full' />
+          <div className='w-28 h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full bg-muted/60 animate-pulse' />
         ) : profile.avatar_url ? (
           <div
             className={cn(
@@ -64,8 +63,8 @@ export default function ProfileHeader({
       <div className='text-center w-full px-4'>
         {isLoading ? (
           <div className='flex flex-col items-center space-y-2 w-full'>
-            <Skeleton className='h-8 w-48 md:h-10 md:w-64 rounded-md' />
-            <Skeleton className='h-4 w-64 md:h-6 md:w-80 rounded-md' />
+            <div className='h-8 w-48 md:h-10 md:w-64 rounded-md bg-muted/60 animate-pulse' />
+            <div className='h-4 w-64 md:h-6 md:w-80 rounded-md bg-muted/60 animate-pulse' />
           </div>
         ) : (
           <>

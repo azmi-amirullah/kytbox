@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
 import { AnalyticsChart } from '@/components/analytics/AnalyticsChart';
 import {
   DateRangePicker,
@@ -290,35 +290,8 @@ export default function AnalyticsClient({
           </div>
           <div className='p-0 flex-1'>
             {isActuallyLoading ? (
-              <div className='overflow-x-auto'>
-                <table className='w-full text-sm font-medium'>
-                  <thead>
-                    <tr className='border-b bg-muted/30 text-muted-foreground'>
-                      <th className='h-12 px-4 text-left font-medium'>
-                        Link Title
-                      </th>
-                      <th className='h-12 px-4 text-left font-medium hidden md:table-cell'>
-                        URL
-                      </th>
-                      <th className='h-12 px-4 text-right font-medium'>Clicks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[1, 2, 3].map((i) => (
-                      <tr key={i} className='border-b last:border-0'>
-                        <td className='p-4'>
-                          <Skeleton className='h-4 w-32 rounded-md' />
-                        </td>
-                        <td className='p-4 hidden md:table-cell'>
-                          <Skeleton className='h-4 w-48 rounded-md' />
-                        </td>
-                        <td className='p-4 text-right'>
-                          <Skeleton className='h-4 w-12 rounded-md ml-auto' />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className='py-8 flex items-center justify-center'>
+                <Loader size='md' className='py-0 min-h-0' text='Loading analytics...' />
               </div>
             ) : topLinks.length === 0 ? (
               <div className='p-6 text-center text-muted-foreground flex items-center justify-center h-full'>

@@ -6,7 +6,6 @@ import { UserNav } from '@/components/user-nav'
 import { NotificationCenter } from '@/features/notifications'
 import { Button } from '@/components/ui/button'
 import { SearchTrigger } from '@/components/search-trigger'
-import { Skeleton } from '@/components/ui/skeleton'
 import { siteConfig } from '@/config/site'
 import { LuExternalLink } from 'react-icons/lu'
 
@@ -99,7 +98,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
 
           {!isAuth &&
             (user === undefined ? (
-              <Skeleton className='size-9 rounded-full' />
+              <div className='size-9 rounded-full bg-muted/60 animate-pulse' />
             ) : user ? (
               <div className='flex items-center gap-2 sm:gap-4'>
                 {(isLanding || isLegal) && (

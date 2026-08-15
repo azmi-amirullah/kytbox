@@ -1,6 +1,5 @@
 'use client';
 
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { IconType } from 'react-icons';
 import Link from 'next/link';
@@ -82,7 +81,7 @@ export default function StatsCard({
           <span className='text-sm font-medium truncate'>{label}</span>
         </div>
         {isLoading ? (
-          <Skeleton className='h-8 w-16 rounded-md' />
+          <div className='h-8 w-16 rounded-md bg-muted/60 animate-pulse' />
         ) : (
           <p className='text-2xl font-bold tracking-tight truncate'>{value}</p>
         )}

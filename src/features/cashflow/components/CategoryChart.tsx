@@ -2,7 +2,7 @@
 
 import { formatCurrencyCompact } from '@/lib/currency';
 import { useContainerSize } from '../lib/useContainerSize';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
 
 import { PieChart, Pie, Sector, Tooltip, Legend } from 'recharts';
 import { Card, CardContent } from '@/components/ui/card';
@@ -67,16 +67,13 @@ export function CategoryChart({ data, currency, title }: CategoryChartProps) {
         </div>
 
         {!hasData ? (
-          <div className='flex h-[350px] flex-col items-center justify-center text-muted-foreground border rounded-xl bg-muted/20 border-dashed'>
+          <div className='flex h-87.5 flex-col items-center justify-center text-muted-foreground border rounded-xl bg-muted/20 border-dashed'>
             <p className='text-sm'>No category data available</p>
           </div>
         ) : (
-          <div ref={containerRef} className='h-[350px] w-full'>
+          <div ref={containerRef} className='h-87.5 w-full'>
             {width === 0 || height === 0 ? (
-              <div className='h-full w-full flex flex-col items-center justify-center gap-6'>
-                <Skeleton className='w-[180px] h-[180px] rounded-full' />
-                <Skeleton className='w-1/2 h-4 rounded' />
-              </div>
+              <Loader size='md' className='h-full w-full py-0' text='' />
             ) : (
               <PieChart width={width} height={height}>
                 <Pie

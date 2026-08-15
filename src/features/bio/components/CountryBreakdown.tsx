@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { LuGlobe, LuChevronDown, LuChevronUp } from 'react-icons/lu';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { CountryAnalytics } from '@/types/analytics';
@@ -62,44 +62,8 @@ export default function CountryBreakdown({ countries, isLoading }: CountryBreakd
       </div>
 
       {isLoading ? (
-        <div className='space-y-4 flex-1'>
-          <Skeleton className='h-5 w-2/3 rounded-md mb-4' />
-          <div className='overflow-x-auto'>
-            <Table>
-              <TableHeader>
-                <TableRow className='hover:bg-transparent'>
-                  <TableHead>Country</TableHead>
-                  <TableHead className='text-right'>Views</TableHead>
-                  <TableHead className='text-right'>Clicks</TableHead>
-                  <TableHead className='w-[30%] text-right'>Percentage</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <Skeleton className='h-4 w-6 rounded' />
-                        <Skeleton className='h-4 w-24 rounded' />
-                      </div>
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      <Skeleton className='h-4 w-8 rounded ml-auto' />
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      <Skeleton className='h-4 w-8 rounded ml-auto' />
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex items-center gap-2 justify-end'>
-                        <Skeleton className='h-4 w-12 rounded' />
-                        <Skeleton className='h-2 w-16 rounded-full' />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+        <div className='py-8 flex-1 flex items-center justify-center'>
+          <Loader size='md' className='py-0 min-h-0' text='Loading visitor geography...' />
         </div>
       ) : countries.length === 0 ? (
         <div className='flex-1 flex flex-col items-center justify-center py-8 text-center text-muted-foreground'>

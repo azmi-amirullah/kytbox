@@ -1,7 +1,7 @@
 'use client';
 
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
 import { CashflowChartTooltip } from './CashflowChartTooltip';
 import { useContainerSize } from '../lib/useContainerSize';
 import type { MonthlyData } from '../lib/aggregateEntries';
@@ -22,16 +22,9 @@ export function IncomeExpenseChart({
     data.length === 1 && width > 0 ? Math.floor(width * 0.35) : 0;
 
   return (
-    <div ref={containerRef} className='h-[280px] w-full'>
+    <div ref={containerRef} className='h-70 w-full'>
       {width === 0 || height === 0 ? (
-        <div className='h-full w-full flex items-end gap-2 px-2 pt-4'>
-          <Skeleton className='flex-1 h-[40%] rounded-t' />
-          <Skeleton className='flex-1 h-[65%] rounded-t' />
-          <Skeleton className='flex-1 h-[30%] rounded-t' />
-          <Skeleton className='flex-1 h-[80%] rounded-t' />
-          <Skeleton className='flex-1 h-[50%] rounded-t' />
-          <Skeleton className='flex-1 h-[55%] rounded-t' />
-        </div>
+        <Loader size='md' className='h-full w-full py-0' text='' />
       ) : (
         <BarChart
           data={data}

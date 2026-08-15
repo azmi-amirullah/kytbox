@@ -10,7 +10,6 @@ import {
 } from 'react-icons/lu'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   Card,
   CardContent,
@@ -691,8 +690,8 @@ export default function AppearanceEditor({
                         key={i}
                         className='flex flex-col items-center justify-center p-3 rounded-xl border-2 border-border/50 min-h-22.5 bg-secondary/50'
                       >
-                        <Skeleton className='h-3 w-12 rounded mb-2' />
-                        <Skeleton className='w-full h-6 rounded' />
+                        <div className='h-3 w-12 rounded mb-2 bg-muted/60 animate-pulse' />
+                        <div className='w-full h-6 rounded bg-muted/60 animate-pulse' />
                       </div>
                     ))
                   : filteredThemes.map((theme) => (
@@ -744,7 +743,7 @@ export default function AppearanceEditor({
                         key={i}
                         className='flex flex-col items-center justify-center p-3 rounded-lg border-2 border-border/50 bg-secondary/50'
                       >
-                        <Skeleton className='w-full h-8 rounded' />
+                        <div className='w-full h-8 rounded bg-muted/60 animate-pulse' />
                       </div>
                     ))
                   : (
@@ -808,7 +807,7 @@ export default function AppearanceEditor({
                         key={i}
                         className='flex flex-col items-center justify-center p-3 rounded-lg border-2 border-border/50 bg-secondary/50'
                       >
-                        <Skeleton className='w-full h-8 rounded' />
+                        <div className='w-full h-8 rounded bg-muted/60 animate-pulse' />
                       </div>
                     ))
                   : (

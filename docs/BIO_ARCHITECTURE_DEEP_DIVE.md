@@ -31,22 +31,20 @@ To fit a 390px (iPhone 14) screen onto a desktop dashboard without triggering `m
 2. Applies a `scale(0.85)` transform.
 3. Automatically calculates negative margins to keep the scaled element visually centered.
 
-## 3. Unified Skeleton Architecture
+## 3. Centralized Loader Architecture
 
-We moved away from hardcoded server-side skeletons in favor of a **Prop-Driven Unified System**.
+We moved away from hardcoded mock skeletons in favor of a **Centralized Loader System** (`<Loader />`).
 
 ### 3.1 Principles
 
-- **Matched Containers**: The `loading.tsx` file for both the platform and public profile now renders the **real** client components with `isLoading={true}`.
-- **Pixel-Perfect Skeletons**:
-  - [ProfileLinks.tsx](file:///src/app/[username]/components/ProfileLinks.tsx) skeletons use `h-[60px]` to match the exact height of a LinkButton.
-  - [ProfileHeader.tsx](file:///src/app/[username]/components/ProfileHeader.tsx) skeletons use responsive height classes (e.g., `md:h-10`) to match typography drift.
+- **Matched Containers**: The `loading.tsx` file for both the platform and public profile renders the clean `<Loader />` component.
+- **Zero-Drift Components**: Rather than maintaining separate mock skeleton geometry, components use the centralized `Loader` with standard Tailwind dimensions to maintain container height without layout shift.
 
 ### 3.2 Zero-Flash Hydration (Optimization)
 
-To prevent the "Double Loading" flash (Server Shell -> Client Skeleton -> Real UI), we implemented **Single-Source Handover**:
+To prevent the "Double Loading" flash (Server Shell -> Client Flash -> Real UI), we implemented **Single-Source Handover**:
 
-1. **Public Profile**: Renders themed HTML on the server. The client hydrates directly into the real UI without showing a temporary skeleton.
+1. **Public Profile**: Renders themed HTML on the server. The client hydrates directly into the real UI without showing a temporary loader.
 2. **Dashboard Preview**: Uses the same `isLoading` state passed from the Parent.
 
 ## 4. Component Deep Dive

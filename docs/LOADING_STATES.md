@@ -1,129 +1,61 @@
-# Loading State & Skeleton Architecture
+# Loading State & Centralized Loader Architecture
 
-This document tracks the technical implementation of streaming SSR and unified skeleton states across the Kytbox platform.
+This document tracks the technical implementation of streaming SSR, route transitions, and centralized loader states across the Kytbox platform.
 
 ## 🚀 2026 Loading Manifesto (Strategic Conventions)
 
-As of Next.js 16, Kytbox follows a **Performance-First Strategy** to balance speed with stability.
+As of Next.js 16, Kytbox follows a **Clean, Zero-Maintenance Strategy** to balance speed with visual clarity.
 
-1.  **Shell Integrity**: The Root Layout [layout.tsx](../src/app/layout.tsx) wraps children in a `<Suspense fallback={null}>`. This keeps the static shell stable and ensures that `NextTopLoader` is the primary indicator during navigation.
-2.  **Segment-Level Skeletons**: To prevent "blank flashes" caused by the null root fallback, **every dynamic segment should have a `loading.tsx`**. This is a project convention to ensure that while the page streams, the user sees a stable skeleton instead of a blank space.
-3.  **Elite Coverage**: We have implemented `loading.tsx` skeletons for **all application URLs** (Platform, Admin, Account, Public) to guarantee that every transition feels branded and stable.
-4.  **Granular Streaming**: Use `<Suspense>` within components for non-critical sections (like charts) to allow the main shell to hydrate instantly.
+1. **Centralized Brand Loader**: All loading states use the centralized [`src/components/ui/loader.tsx`](../src/components/ui/loader.tsx), featuring a precision vector orbital ring and Swiss Modernist geometric anchor with WCAG 2.2 accessibility compliance.
+2. **Elimination of Mock Skeletons**: Complex pixel-mocking skeletons have been purged in favor of clean container loaders. This eliminates UI drift and maintenance debt when component layouts change.
+3. **Route Coverage**: Dynamic route segments use `loading.tsx` to render `<Loader />` or `<Loader fullScreen />`, preventing blank flashes during server streaming.
+4. **Card / Inline Loading**: Dynamic imports (like charts) and asynchronous widgets use `<Loader className="min-h-90 py-12 bg-card border rounded-xl" text="Loading..." />` or compact size variants (`size="sm" | "md" | "lg"`) to preserve container height without layout shifts (CLS).
 
 ## 🧭 Route Coverage Matrix
 
-This table summarizes our strategic choice for each route to ensure total transparency.
-
-| Route Area                      | Strategy            | Status            | Reason                                                                 |
+| Route Area                      | Strategy            | Status            | Implementation                                                         |
 | :------------------------------ | :------------------ | :---------------- | :--------------------------------------------------------------------- |
-| **Root Shell**                  | Silent Boundary     | `fallback={null}` | `NextTopLoader` is the primary indicator; prevents header duplication. |
-| **(platform) / Bio**            | Unified Skeleton    | ✅ Active         | High-complexity page; matches `DashboardClient` perfectly.             |
-| **(platform) / Analytics**      | Standalone Skeleton | ✅ Active         | Prevents blank areas during heavy data streaming.                      |
-| **(platform) / Cashflow (all)** | Standalone Skeleton | ✅ Active         | Instant grid/table skeleton for books and transaction history.         |
-| **(platform) / List (all)**     | Standalone Skeleton | ✅ Active         | Kanban grid and list skeleton for Todo, Wishlists, and Ideas.          |
-| **(platform) / App & Settings** | Standalone Skeleton | ✅ Active         | Stable layouts; provides immediate branded frame.                      |
-| **(platform) / Support (all)**  | Standalone Skeleton | ✅ Active         | Dynamic ticket data requires streaming UI for premium feel.            |
-| **(admin) / Support Admin**     | Standalone Skeleton | ✅ Active         | Ensures admin queue feels responsive during data fetch.                |
-| **(marketing) / Landing**       | Standalone Skeleton | ✅ Active         | Provides instant hero/footer frame while content hydrates.             |
-| **(auth) / Login, Signup**      | No Skeleton         | 🚫 None           | **Static Routes**. They load instantly; skeletons would never fire.    |
-| **Onboarding / Pw Update**      | No Skeleton         | 🚫 None           | **Static Routes**. Instant cache hit; no streaming required.           |
-| **Legal (Privacy, Terms)**      | No Skeleton         | 🚫 None           | **Static Routes**. Content is fully prerendered for SEO.               |
+| **Root Shell**                  | Silent Boundary     | `fallback={null}` | `NextTopLoader` is the primary top-bar indicator.                      |
+| **(platform) / Bio**            | Centralized Loader  | ✅ Active         | Route-level `<Loader />` during streaming.                             |
+| **(platform) / Analytics**      | Centralized Loader  | ✅ Active         | Card-level `<Loader />` inside `AnalyticsChart` and `AnalyticsClient`. |
+| **(platform) / Cashflow (all)** | Centralized Loader  | ✅ Active         | `<Loader className="min-h-90 ..." />` on dynamic `CashflowCharts`.     |
+| **(platform) / List (all)**     | Centralized Loader  | ✅ Active         | Clean list loading state without fragile mock cards.                   |
+| **(platform) / App & Overview** | Centralized Loader  | ✅ Active         | Suspense boundaries with card-level `<Loader />`.                      |
+| **(platform) / Support (all)**  | Centralized Loader  | ✅ Active         | Form card `<Loader />` while fetching ticket/user state.               |
+| **(admin) / Admin Queue**       | Centralized Loader  | ✅ Active         | Branded route `<Loader />`.                                            |
+| **(auth) / Login, Signup**      | Centralized Loader  | ✅ Active         | Card `<Loader text="Loading login..." />` for client boundaries.       |
+| **Onboarding / Pw Update**      | Fullscreen Loader   | ✅ Active         | `<Loader fullScreen />` for credential transitions.                    |
 
-> [!NOTE]
-> Static routes do not need `loading.tsx` because they are served as complete HTML from the cache. Dynamic routes (`◐` or `ƒ`) **must** have a skeleton to prevent the user from seeing a "blank spot" caused by the root null fallback.
+## Component Usage: `Loader`
 
-## Architecture: Unified Skeleton Pattern
+The [`Loader`](../src/components/ui/loader.tsx) component supports:
 
-Kytbox uses a **Unified Skeleton Architecture**. Instead of maintaining separate skeleton components for `loading.tsx`, we pass an `isLoading` prop directly to the primary Client Components.
+- `size?: 'sm' | 'md' | 'lg'`: Sizing tier for inline (`sm` - 20px), card widget (`md` - 36px), or page (`lg` - 48px).
+- `fullScreen?: boolean`: Renders a fixed backdrop blur overlay with `lg` size (used during auth/password redirects).
+- `text?: string`: Optional custom label rendered in Geist Mono uppercase (defaults to `'Loading...'`).
+- `variant?: 'brand' | 'minimal'`: Whether to show the central brand geometric anchor (`'brand'`) or a minimalist ring (`'minimal'`).
+- `className?: string`: Standard Tailwind classes to control container height, padding, or card background.
 
-### Benefits
-
-- **Zero Layout Shift (CLS)**: The skeleton uses the exact same grid, spacing, and dimensions as the real UI.
-- **Single Source of Truth**: UI changes made to the component automatically update the loading state.
-- **Lower Maintenance**: No need to sync two separate JSX trees.
-
-### Implementation Pattern
+### Examples
 
 ```tsx
-// 1. The main Client Component accepts isLoading
-export default function FeatureClient({ data, isLoading }: Props) {
-  return (
-    <div className='grid gap-4'>
-      {isLoading ? <Skeleton className='h-40' /> : <RealUI data={data} />}
-    </div>
-  );
-}
+import { Loader } from '@/components/ui/loader';
 
-// 2. The loading.tsx file simply renders the client in loading mode
-// This ensures that the skeleton perfectly matches the hydrated state.
+// 1. Route loading screen (loading.tsx)
 export default function Loading() {
-  return (
-    <FeatureClient
-      isLoading={true}
-      data={[]} // Pass empty/dummy data
-    />
-  );
+  return <Loader />;
 }
+
+// 2. Fullscreen overlay with custom text
+<Loader fullScreen text="Securing account..." />
+
+// 3. Dynamic card loading fallback
+<Loader className="min-h-90 py-12 bg-card border rounded-xl" text="Loading overview..." />
+
+// 4. Inline / Compact Button or Table Row
+<Loader size="sm" text="" className="py-2" />
 ```
-
-### Pixel-Perfect Matching Requirements
-
-To achieve **Zero Layout Shift**, skeletons must exactly match the hydrated UI:
-
-- **Responsive Sizing**: Skeletons must use the same `md:` and `lg:` classes as the real content (e.g., responsive font sizes, avatar dimensions).
-- **Exact Heights**: Fixed-height elements (like buttons) must have their exact height defined in the skeleton (e.g., `h-[60px]`).
-- **Standard Link Count**: Common lists (like Bio links) should show **3 skeletons** by default to prevent vertical jumping when data arrives.
-
-## Hydration & Performance Best Practices
-
-To prevent "Blank Flashes" or "Jank" during the transition from Server HTML to Client Interactivity, follow these rules:
-
-### 1. Avoid `useSearchParams` for Initial Render
-
-Components using `useSearchParams` can trigger a Suspense fallback during hydration.
-
-- **Fix**: Identify the active tab/state in the server-side `page.tsx`.
-- **Action**: Pass the initial state as a **Prop** to the client component.
-- [DashboardClient.tsx](../src/features/bio/components/DashboardClient.tsx) uses this pattern for the `activeTab`.
-
-### 2. Shared Analytics Loading State
-
-Analytics combines initial loading and transition-pending state so the dashboard can keep its layout stable while data changes.
-
-- [AnalyticsClient.tsx](../src/features/bio/components/AnalyticsClient.tsx) implementation:
-
-```tsx
-const isActuallyLoading = isLoading || isPending;
-```
-
-The derived state is passed to shared statistic cards and the country breakdown so loading and refresh states use the same skeleton layout.
-
-### 3. Zero-Flash Hydration (Public Pages)
-
-On public-facing pages that are server-rendered with a theme (like the Bio profile), a hydration guard can cause a **"Double Flash"** (Server HTML -> Client Skeleton -> Real UI).
-
-- **Rule**: If the page is server-rendered and the content is static/themed, **do not** use a hydration guard for the entire layout.
-- **Action**: Render the themed HTML immediately. The client will hydrate in the background without switching back to a skeleton.
-- [ProfileView.tsx](../src/features/bio/components/ProfileView.tsx) follows this pattern.
-
-## Reusable Components
-
-### `StatsCard`
-
-The [StatsCard](../src/features/bio/components/StatsCard.tsx) is the primary stat driver. It supports:
-
-- `isLoading`: Shows internal skeleton for label and value.
-- `hideSecondaryIcon`: Removes large decorative icons for more compact dashboards (like Analytics).
-- `variant`: Supports thematic coloring (primary, blue, green, orange).
-
-## Best Practices Checklist
-
-1.  **Match Container Hierarchy**: Ensure `loading.tsx` uses the same `max-w-*` and `px-*` wrappers as the main `page.tsx`.
-2.  **Prop-Driven Skeletons**: Pass `isLoading` down the tree. Avoid `if (loading) return <Skeleton />` at the top level to keep the layout shell intact.
-3.  **No Spinning Icons**: Use defined skeletons that hint at the final component structure.
-4.  **Clean Transitions**: Prioritize `NextTopLoader` and `Skeleton` for all states.
 
 ---
 
-_Last Updated: August 8, 2026_
+_Last Updated: August 15, 2026_

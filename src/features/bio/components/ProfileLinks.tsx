@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { LinkButton } from './LinkButton';
 import type { ThemeConfig } from '@/lib/theme/theme.types';
@@ -233,7 +232,7 @@ export default function ProfileLinks({
     return (
       <div className='w-full space-y-4'>
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className='w-full rounded-lg h-15' />
+          <div key={i} className='w-full rounded-lg h-15 bg-muted/40 animate-pulse' />
         ))}
       </div>
     );
@@ -310,7 +309,7 @@ export default function ProfileLinks({
           visibleLinks.length === 0 ? (
             <div className='w-full space-y-4 py-4'>
               {[1, 2].map((i) => (
-                <Skeleton key={i} className='w-full rounded-lg h-15' />
+                <div key={i} className='w-full rounded-lg h-15 bg-muted/40 animate-pulse' />
               ))}
             </div>
           ) : activeLinks.length > 0 ? (

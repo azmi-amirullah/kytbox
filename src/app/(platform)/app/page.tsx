@@ -5,11 +5,10 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu';
 import { KYTBOX_APPS } from '@/config/apps';
+import { Loader } from '@/components/ui/loader';
 import { QuickStats } from './components/QuickStats';
-import { QuickStatsSkeleton } from './components/QuickStatsSkeleton';
 import { QuickActions } from './components/QuickActions';
 import { ActivityFeed } from './components/ActivityFeed';
-import { ActivityFeedSkeleton } from './components/ActivityFeedSkeleton';
 
 export const metadata: Metadata = {
   title: 'Workspace',
@@ -104,7 +103,14 @@ export default async function AppHomePage() {
       </div>
 
       {/* Stats Section */}
-      <Suspense fallback={<QuickStatsSkeleton />}>
+      <Suspense
+        fallback={
+          <Loader
+            className='min-h-32 py-6 bg-card border border-border/80 rounded-2xl'
+            text='Loading stats...'
+          />
+        }
+      >
         <AsyncQuickStats
           userId={user.id}
           defaultCurrency={profile?.default_currency || null}
@@ -153,7 +159,14 @@ export default async function AppHomePage() {
       <div className='grid items-start gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]'>
         {/* Left Side: Activity Feed */}
         <div className='min-w-0'>
-          <Suspense fallback={<ActivityFeedSkeleton />}>
+          <Suspense
+            fallback={
+              <Loader
+                className='min-h-60 py-8 bg-card/70 border border-border/80 rounded-2xl'
+                text='Loading activity feed...'
+              />
+            }
+          >
             <AsyncActivityFeed userId={user.id} />
           </Suspense>
         </div>

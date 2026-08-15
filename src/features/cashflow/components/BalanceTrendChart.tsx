@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
 import { CashflowChartTooltip } from './CashflowChartTooltip';
 import { useContainerSize } from '../lib/useContainerSize';
 import type { MonthlyData } from '../lib/aggregateEntries';
@@ -24,12 +24,9 @@ export function BalanceTrendChart({ data, currency }: BalanceTrendChartProps) {
   const isNegative = data.some((d) => d.balance < 0);
 
   return (
-    <div ref={containerRef} className='h-[280px] w-full'>
+    <div ref={containerRef} className='h-70 w-full'>
       {width === 0 || height === 0 ? (
-        <div className='h-full w-full flex flex-col justify-center gap-3 px-2'>
-          <Skeleton className='w-full h-[200px] rounded' />
-          <Skeleton className='w-3/4 h-3 rounded' />
-        </div>
+        <Loader size='md' className='h-full w-full py-0' text='' />
       ) : (
         <AreaChart
           data={data}

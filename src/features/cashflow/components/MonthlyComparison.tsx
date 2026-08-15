@@ -38,7 +38,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader } from '@/components/ui/loader';
 import type { CashflowEntryDTO } from '@/types/dto';
 import {
   compareMonths,
@@ -314,12 +314,7 @@ export function MonthlyComparison({ entries, currency }: MonthlyComparisonProps)
 
         <div ref={containerRef} className='h-70 w-full'>
           {width === 0 || height === 0 ? (
-            <div className='h-full w-full flex items-end gap-3 px-2 pt-4'>
-              <Skeleton className='flex-1 h-[40%] rounded-t' />
-              <Skeleton className='flex-1 h-[65%] rounded-t' />
-              <Skeleton className='flex-1 h-[30%] rounded-t' />
-              <Skeleton className='flex-1 h-[80%] rounded-t' />
-            </div>
+            <Loader size='md' className='h-full w-full py-0' text='' />
           ) : (
             <BarChart
               data={activeChartData}

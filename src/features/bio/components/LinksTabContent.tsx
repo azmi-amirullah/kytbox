@@ -22,7 +22,6 @@ import HeaderModal from './HeaderModal';
 const QRCodeModal = dynamic(() => import('./QRCodeModal'), { ssr: false });
 import StatsCard from './StatsCard';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { linkDtoListSchema } from '../schemas.client';
 import type { LinkDTO } from '@/types/dto';
 import type { LinkClickTrend } from '../db';
@@ -241,7 +240,7 @@ export default function LinksTabContent({
       <Card className='border-border bg-card shadow-sm p-0 gap-0'>
         <div className='flex items-center justify-end px-4 py-3 sm:px-6 sm:py-4 border-b border-border/50'>
           {isLoading ? (
-            <Skeleton className='h-8 w-24 rounded-md' />
+            <div className='h-8 w-24 rounded-md bg-muted/60 animate-pulse' />
           ) : (
             <>
               <Button

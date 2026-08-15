@@ -181,7 +181,7 @@ src/
 │   ├── settings/                  # Settings actions and components
 │   └── support/                   # Support actions and components
 ├── components/
-│   ├── skeletons/                 # Reusable skeleton components
+│   ├── loaders/                   # Reusable loader components
 │   └── ui/                        # Shared shadcn/ui components
 ├── lib/
 │   ├── supabase/
@@ -337,7 +337,7 @@ See `src/lib/username.ts` for full list.
 ✅ Analytics dashboard at `/bio/analytics` (link clicks, date filtering, chart)  
 ✅ Bio Page View Tracking (Server-side via Supabase)  
 ✅ Social Link Icons (Auto-detection with 20+ platforms)  
-✅ Unified skeleton architecture for Bio & Analytics (zero-jank loading)  
+✅ Unified loader architecture for Bio & Analytics (zero-jank loading)  
 ✅ Unified Profile Component Architecture (100% parity via mobile-first CSS scaling)  
 ✅ High-Performance Custom Theme Engine (Debounced + CSS Variables)  
 ✅ Nested Folders (Drill-Down UI & Native iOS-style slide transitions)  
@@ -380,7 +380,7 @@ See `src/lib/username.ts` for full list.
   - **By Date**: Dropdown for time ranges (24h, 7d, 30d, Lifetime).
 
 - **UX & Performance (Zero-Jank)**:
-  - **Unified Skeletons**: Uses actual client components with `isLoading` props to ensure 100% layout match during loading.
+  - **Unified Loaders**: Uses centralized Loader component with `isLoading` props to ensure smooth loading.
   - **Instant Render**: Recharts animations disabled to prevent empty space flashes during data hydration.
   - **Loading State**: `AnalyticsClient` combines initial loading and transition-pending state, passing the result into shared stat cards and country breakdown components.
   - **Consistency**: Analytics stats cards use standard `rounded-2xl` and `text-sm` typography to match the main Bio dashboard.

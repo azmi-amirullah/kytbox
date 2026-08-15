@@ -64,10 +64,6 @@ export default function ProfileView({
   const { colors } = theme;
   const buttonClasses = getButtonClasses(theme, buttonStyle, buttonShape);
 
-  // Hydration guard is only needed for the dashboard preview or specific charts.
-  // We keep it for safety but remove it as a source of truth for the profile skeleton to prevent "Double Flashes".
-  const showSkeleton = isLoading;
-
   const validSocialLinks = socialLinksSchema.parse(profile.social_links);
 
   const customStyles:
@@ -115,7 +111,7 @@ export default function ProfileView({
         <ProfileHeader
           profile={profile}
           theme={theme}
-          isLoading={showSkeleton}
+          isLoading={isLoading}
         />
 
         {/* Social Grid */}
@@ -124,7 +120,7 @@ export default function ProfileView({
             socialLinks={validSocialLinks}
             theme={theme}
             className='justify-center'
-            isLoading={showSkeleton}
+            isLoading={isLoading}
           />
         </div>
 
@@ -137,12 +133,12 @@ export default function ProfileView({
           theme={theme}
           buttonClasses={buttonClasses}
           totalLinks={totalLinks}
-          isLoading={showSkeleton}
+          isLoading={isLoading}
           isInteractive={isInteractive}
         />
 
         {/* Lead Capture Subscriber Form Widget */}
-        {!showSkeleton && profile.lead_capture_enabled !== false && (
+        {!isLoading && profile.lead_capture_enabled !== false && (
           <LeadCaptureWidget
             profileId={profile.id}
             theme={theme}
