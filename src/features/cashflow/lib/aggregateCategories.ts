@@ -1,4 +1,5 @@
 import type { CashflowEntryDTO } from '@/types/dto';
+import { formatCategoryName } from '../math';
 
 const CATEGORY_COLORS: Record<string, string> = {
   // Income
@@ -7,12 +8,12 @@ const CATEGORY_COLORS: Record<string, string> = {
   Investment: 'var(--chart-2)', // Blue/Indigo
 
   // Expense
-  'Food & Dining': 'oklch(0.65 0.25 15)', // Coral Red
-  Transportation: 'oklch(0.75 0.2 80)', // Yellow/Amber
+  Food: 'oklch(0.65 0.25 15)', // Coral Red
+  Transport: 'oklch(0.75 0.2 80)', // Yellow/Amber
   'Utilities & Bills': 'oklch(0.65 0.15 210)', // Cyan/Teal
   Entertainment: 'oklch(0.6 0.15 300)', // Purple
   Shopping: 'oklch(0.7 0.15 40)', // Orange
-  'Health & Fitness': 'oklch(0.6 0.15 250)', // Light Blue
+  Health: 'oklch(0.6 0.15 250)', // Light Blue
 
   // Defaults
   Other: 'oklch(0.65 0.2 330)', // Pink
@@ -28,23 +29,8 @@ export function aggregateEntriesByCategory(
   entries.forEach((entry) => {
     if (entry.type !== filterType) return;
 
-    // Treat null or empty string as 'Uncategorized' for display
-    let category = entry.category || 'Uncategorized';
-    // Format label logic (could be done in UI, but easier here)
-    if (category === 'other') category = 'Other';
-    else if (category === 'uncategorized') category = 'Uncategorized';
-    else {
-      // Capitalize first letter
-      category = category.charAt(0).toUpperCase() + category.slice(1);
-      // Replace some special keys for better UI
-      if (category.toLowerCase() === 'food') category = 'Food & Dining';
-      if (category.toLowerCase() === 'transport') category = 'Transportation';
-      if (category.toLowerCase() === 'utilities')
-        category = 'Utilities & Bills';
-      if (category.toLowerCase() === 'health') category = 'Health & Fitness';
-    }
-
-    categoryTotals[category] = (categoryTotals[category] || 0) + entry.amount;
+    const category = formatCategoryName(entry.category);
+    categoryTotals[category] = (categoryTotals[category] || 0) + Number(entry.amount);
   });
 
   // Convert to array of objects for Recharts

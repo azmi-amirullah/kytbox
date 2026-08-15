@@ -39,6 +39,7 @@ import type { ParsedCsvRow } from '../schemas.client'
 import { importCashflowEntries } from '../actions'
 import { getCurrencySymbol } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../constants'
 
 interface ImportCsvModalProps {
   cashflowId: string
@@ -49,23 +50,6 @@ interface ImportCsvModalProps {
 }
 
 type ImportStep = 'upload' | 'mapping' | 'preview'
-
-const STANDARD_EXPENSE_CATEGORIES = [
-  { value: 'food', label: 'Food & Dining' },
-  { value: 'transport', label: 'Transportation' },
-  { value: 'utilities', label: 'Utilities & Bills' },
-  { value: 'entertainment', label: 'Entertainment' },
-  { value: 'shopping', label: 'Shopping' },
-  { value: 'health', label: 'Health & Fitness' },
-  { value: 'other', label: 'Other Expense' },
-]
-
-const STANDARD_INCOME_CATEGORIES = [
-  { value: 'salary', label: 'Salary' },
-  { value: 'freelance', label: 'Freelance' },
-  { value: 'investment', label: 'Investment' },
-  { value: 'other', label: 'Other Income' },
-]
 
 export default function ImportCsvModal({
   cashflowId,
@@ -976,8 +960,8 @@ export default function ImportCsvModal({
                                       Uncategorized
                                     </SelectItem>
                                     {(row.type === 'income'
-                                      ? STANDARD_INCOME_CATEGORIES
-                                      : STANDARD_EXPENSE_CATEGORIES
+                                      ? INCOME_CATEGORIES
+                                      : EXPENSE_CATEGORIES
                                     ).map((c) => (
                                       <SelectItem key={c.value} value={c.value}>
                                         {c.label}

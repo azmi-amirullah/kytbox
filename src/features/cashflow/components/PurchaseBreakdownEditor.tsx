@@ -12,6 +12,8 @@ import {
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
 import { getCurrencySymbol } from '@/lib/currency';
 
+import { formatCategoryName } from '../constants';
+
 export interface SplitItemInput {
   id: string;
   itemName: string;
@@ -131,8 +133,8 @@ export default function PurchaseBreakdownEditor({
                       <SelectContent>
                         <SelectItem value="General" className="text-xs">General</SelectItem>
                         {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat} className="text-xs capitalize">
-                            {cat}
+                          <SelectItem key={cat} value={cat} className="text-xs">
+                            {formatCategoryName(cat)}
                           </SelectItem>
                         ))}
                       </SelectContent>

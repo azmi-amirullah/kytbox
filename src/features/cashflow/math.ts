@@ -530,6 +530,8 @@ export function calculateDeltaPercentage(valA: number, valB: number): number {
   return Math.round((pct + Number.EPSILON) * 100) / 100;
 }
 
+export { formatCategoryName } from './constants';
+
 /**
  * Formats a 'YYYY-MM' key to a human-friendly string (e.g., 'Jul 2026').
  */

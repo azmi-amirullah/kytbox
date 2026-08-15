@@ -31,6 +31,7 @@ import type { CashflowEntryDTO, CashflowGoalDTO } from '@/types/dto'
 import { getCurrencySymbol } from '@/lib/currency'
 import * as z from 'zod/mini'
 import { entryTypeSchema, entryCategorySchema } from '../schemas.client'
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../constants'
 import PurchaseBreakdownEditor, {
   type SplitItemInput,
 } from './PurchaseBreakdownEditor'
@@ -326,16 +327,7 @@ export default function EntryModal({
                   items={splitItems}
                   onChange={handleSplitItemsChange}
                   currency={currency}
-                  categories={[
-                    'food',
-                    'transport',
-                    'utilities',
-                    'entertainment',
-                    'housing',
-                    'healthcare',
-                    'shopping',
-                    'other',
-                  ]}
+                  categories={EXPENSE_CATEGORIES.map((c) => c.value)}
                 />
               )}
             </div>
@@ -445,33 +437,20 @@ export default function EntryModal({
                       Uncategorized
                     </span>
                   </SelectItem>
-                  {type === 'income' ? (
-                    <>
-                      <SelectItem value='salary'>Salary</SelectItem>
-                      <SelectItem value='freelance'>Freelance</SelectItem>
-                      <SelectItem value='investment'>Investment</SelectItem>
-                      <SelectItem value='other'>Other Income</SelectItem>
-                    </>
-                  ) : (
-                    <>
-                      <SelectItem value='food'>Food & Dining</SelectItem>
-                      <SelectItem value='transport'>Transportation</SelectItem>
-                      <SelectItem value='utilities'>
-                        Utilities & Bills
+                  {(type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(
+                    (c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
                       </SelectItem>
-                      <SelectItem value='entertainment'>
-                        Entertainment
-                      </SelectItem>
-                      <SelectItem value='shopping'>Shopping</SelectItem>
-                      <SelectItem value='health'>Health & Fitness</SelectItem>
-                      <SelectItem value='other'>Other Expense</SelectItem>
-                      {isArchivedGoal && (
-                        <SelectItem value='archived-goal' disabled>
-                          <span className='text-muted-foreground'>
-                            Archived goal (history preserved)
-                          </span>
-                        </SelectItem>
-                      )}
+                    ),
+                  )}
+                  {type === 'expense' && isArchivedGoal && (
+                    <SelectItem value='archived-goal' disabled>
+                      <span className='text-muted-foreground'>
+                        Archived goal (history preserved)
+                      </span>
+                    </SelectItem>
+                  )}
                       {goals.length > 0 && (
                         <>
                           <div className='h-px bg-border my-1.5' />
@@ -495,8 +474,6 @@ export default function EntryModal({
                           ))}
                         </>
                       )}
-                    </>
-                  )}
                 </SelectContent>
               </Select>
             </div>

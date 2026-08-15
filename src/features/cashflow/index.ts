@@ -7,5 +7,6 @@ export * from './db';
 export { getGoalDetailData } from './goal-db';
 export * from './actions';
 export * from './math';
+export * from './constants';
 export * as schemasClient from './schemas.client';
 export * as schemasServer from './schemas.server';

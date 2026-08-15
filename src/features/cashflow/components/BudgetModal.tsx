@@ -24,16 +24,7 @@ import { upsertBudget } from '../actions'
 import type { CashflowBudgetDTO } from '@/types/dto'
 import { getCurrencySymbol } from '@/lib/currency'
 import { budgetExpenseCategorySchema } from '../schemas.client'
-
-const EXPENSE_CATEGORIES = [
-  { value: 'food', label: 'Food & Dining' },
-  { value: 'transport', label: 'Transportation' },
-  { value: 'utilities', label: 'Utilities & Bills' },
-  { value: 'entertainment', label: 'Entertainment' },
-  { value: 'shopping', label: 'Shopping' },
-  { value: 'health', label: 'Health & Fitness' },
-  { value: 'other', label: 'Other Expense' },
-] as const
+import { EXPENSE_CATEGORIES } from '../constants'
 
 interface BudgetModalProps {
   cashflowId: string

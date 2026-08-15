@@ -3,19 +3,9 @@
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { LuPencil, LuTrash2, LuLoader } from 'react-icons/lu';
-import { calculateBudgetStatus } from '../math';
+import { calculateBudgetStatus, formatCategoryName } from '../math';
 import type { CashflowBudgetDTO, CashflowEntryDTO } from '@/types/dto';
 import { formatCurrencyCompact } from '@/lib/currency';
-
-const CATEGORY_LABELS: Record<string, string> = {
-  food: 'Food & Dining',
-  transport: 'Transportation',
-  utilities: 'Utilities & Bills',
-  entertainment: 'Entertainment',
-  shopping: 'Shopping',
-  health: 'Health & Fitness',
-  other: 'Other Expense',
-};
 
 interface BudgetProgressProps {
   budget: CashflowBudgetDTO;
@@ -57,6 +47,7 @@ export default function BudgetProgress({
         ? 'text-amber-600 dark:text-amber-400'
         : 'text-emerald-600 dark:text-emerald-400';
 
+  const categoryLabel = formatCategoryName(budget.category);
 
   return (
     <div className='bg-card border rounded-xl p-4 space-y-3'>
@@ -64,7 +55,7 @@ export default function BudgetProgress({
       <div className='flex items-center justify-between gap-2'>
         <div className='flex items-center gap-2 min-w-0'>
           <span className='font-medium text-sm truncate'>
-            {CATEGORY_LABELS[budget.category] ?? budget.category}
+            {categoryLabel}
           </span>
           {isOverBudget && (
             <span className='shrink-0 text-[10px] font-bold uppercase tracking-widest bg-red-200 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded-full'>
@@ -85,7 +76,7 @@ export default function BudgetProgress({
               size='icon'
               className='h-7 w-7'
               onClick={() => onEdit(budget)}
-              aria-label={`Edit ${CATEGORY_LABELS[budget.category] ?? budget.category} budget`}
+              aria-label={`Edit ${categoryLabel} budget`}
             >
               <LuPencil className='w-3.5 h-3.5' />
             </Button>
@@ -95,7 +86,7 @@ export default function BudgetProgress({
               className='h-7 w-7 text-destructive hover:text-destructive'
               onClick={() => onDelete(budget.id)}
               disabled={isDeleting}
-              aria-label={`Delete ${CATEGORY_LABELS[budget.category] ?? budget.category} budget`}
+              aria-label={`Delete ${categoryLabel} budget`}
             >
               {isDeleting ? (
                 <LuLoader className='w-3.5 h-3.5 animate-spin' />
@@ -113,7 +104,7 @@ export default function BudgetProgress({
         aria-valuenow={Math.round(pct)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`${CATEGORY_LABELS[budget.category] ?? budget.category} budget: ${Math.round(pct)}% used`}
+        aria-label={`${categoryLabel} budget: ${Math.round(pct)}% used`}
         className='h-2 w-full rounded-full bg-secondary overflow-hidden'
       >
         <div

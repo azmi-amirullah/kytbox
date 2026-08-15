@@ -44,6 +44,7 @@ import {
   compareMonths,
   getAvailableMonths,
   formatMonthLabel,
+  formatCategoryName,
   type CategoryComparisonDiff,
 } from '../math';
 import { formatCurrencyCompact } from '@/lib/currency';
@@ -88,11 +89,12 @@ export function MonthlyComparison({ entries, currency }: MonthlyComparisonProps)
     if (!comparison) return [];
     return comparison.categories.filter((cat) => {
       if (categoryTypeFilter !== 'all' && cat.type !== categoryTypeFilter) return false;
-      if (
-        categorySearch.trim() &&
-        !cat.category.toLowerCase().includes(categorySearch.toLowerCase().trim())
-      ) {
-        return false;
+      if (categorySearch.trim()) {
+        const query = categorySearch.toLowerCase().trim();
+        const formatted = formatCategoryName(cat.category).toLowerCase();
+        if (!cat.category.toLowerCase().includes(query) && !formatted.includes(query)) {
+          return false;
+        }
       }
       return true;
     });
@@ -106,7 +108,7 @@ export function MonthlyComparison({ entries, currency }: MonthlyComparisonProps)
       .slice(0, 6);
 
     return expenseCategories.map((c) => ({
-      metric: c.category.charAt(0).toUpperCase() + c.category.slice(1),
+      metric: formatCategoryName(c.category),
       monthAAmount: c.amountA,
       monthBAmount: c.amountB,
     }));
@@ -530,8 +532,7 @@ function CategoryDiffRow({
   currency: string | null;
 }) {
   const isIncome = item.type === 'income';
-  const formattedCategory =
-    item.category.charAt(0).toUpperCase() + item.category.slice(1);
+  const formattedCategory = formatCategoryName(item.category);
 
   // Status & Trend styling
   const isGood = isIncome ? item.diff > 0 : item.diff < 0;
