@@ -9,7 +9,11 @@ import {
   LuWallet,
 } from 'react-icons/lu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { CashflowEntryDTO, CashflowWithSummaryDTO } from '@/types/dto';
+import type {
+  CashflowEntryDTO,
+  CashflowWithSummaryDTO,
+  CashflowChartAggregateDTO,
+} from '@/types/dto';
 import { aggregateEntriesByMonth } from '../lib/aggregateEntries';
 import { aggregateEntriesByCategory } from '../lib/aggregateCategories';
 import { IncomeExpenseChart } from './IncomeExpenseChart';
@@ -19,7 +23,8 @@ import { MonthlyComparison } from './MonthlyComparison';
 import { ResponsiveTabsList } from './ResponsiveTabsList';
 
 interface CashflowChartsProps {
-  entries: CashflowEntryDTO[];
+  entries?: Array<CashflowEntryDTO | CashflowChartAggregateDTO>;
+  aggregates?: CashflowChartAggregateDTO[];
   cashflows?: CashflowWithSummaryDTO[];
   currency: string | null;
 }
@@ -37,19 +42,29 @@ const DASHBOARD_COLORS = [
   'oklch(0.65 0.2 330)', // Pink
 ];
 
-export function CashflowCharts({ entries, cashflows, currency }: CashflowChartsProps) {
+export function CashflowCharts({
+  entries,
+  aggregates,
+  cashflows,
+  currency,
+}: CashflowChartsProps) {
   const [activeTab, setActiveTab] = useState('income-expense');
   const [categoryType, setCategoryType] = useState<'income' | 'expense'>('expense');
   const [cashflowType, setCashflowType] = useState<'income' | 'expense' | 'balance'>('income');
 
+  const chartDataItems = useMemo(
+    () => aggregates ?? entries ?? [],
+    [aggregates, entries]
+  );
+
   const monthlyData = useMemo(
-    () => aggregateEntriesByMonth(entries),
-    [entries],
+    () => aggregateEntriesByMonth(chartDataItems),
+    [chartDataItems],
   );
 
   const categoryData = useMemo(
-    () => aggregateEntriesByCategory(entries, categoryType),
-    [entries, categoryType],
+    () => aggregateEntriesByCategory(chartDataItems, categoryType),
+    [chartDataItems, categoryType],
   );
 
   const cashflowDistributionData = useMemo(() => {
@@ -84,7 +99,7 @@ export function CashflowCharts({ entries, cashflows, currency }: CashflowChartsP
     return baseTabs;
   }, [hasCashflows]);
 
-  if (entries.length === 0 && (!cashflows || cashflows.length === 0)) {
+  if (chartDataItems.length === 0 && (!cashflows || cashflows.length === 0)) {
     return (
       <div className='bg-card border rounded-xl p-8 text-center flex flex-col items-center justify-center'>
         <LuChartBarBig className='w-10 h-10 text-muted-foreground/40 mb-3' />
@@ -140,7 +155,7 @@ export function CashflowCharts({ entries, cashflows, currency }: CashflowChartsP
         </div>
       )}
       {activeTab === 'comparison' && (
-        <MonthlyComparison entries={entries} currency={currency} />
+        <MonthlyComparison entries={chartDataItems} currency={currency} />
       )}
       {activeTab === 'cashflows' && hasCashflows && (
         <div className='space-y-4'>

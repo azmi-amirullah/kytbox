@@ -213,13 +213,14 @@ export function mapCashflowWithSummaryToDTO(
     income: Number(row.income ?? 0),
     expense: Number(row.expense ?? 0),
     balance: Number(row.balance ?? 0),
-    entries:
-      row.entries?.map((entry) =>
-        mapCashflowEntryToDTO(
-          entry,
-          entry.goal_id ? goalTitles?.get(entry.goal_id) ?? null : undefined,
-        ),
-      ) ?? [],
+    entries: row.entries
+      ? row.entries.map((entry) =>
+          mapCashflowEntryToDTO(
+            entry,
+            entry.goal_id ? goalTitles?.get(entry.goal_id) ?? null : undefined,
+          ),
+        )
+      : [],
   };
 }
 

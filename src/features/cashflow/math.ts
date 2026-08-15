@@ -1,4 +1,8 @@
-import type { CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
+import type {
+  CashflowEntryDTO,
+  CashflowBudgetDTO,
+  CashflowChartAggregateDTO,
+} from '@/types/dto';
 
 /**
  * Enriched recurring item with calculated projection metadata.
@@ -547,14 +551,16 @@ export function formatMonthLabel(key: string): string {
 
 /**
  * Extracts and returns chronologically sorted unique months (newest first)
- * from cashflow entries.
+ * from cashflow entries or chart aggregates.
  */
-export function getAvailableMonths(entries: CashflowEntryDTO[]): AvailableMonth[] {
+export function getAvailableMonths(
+  entries: Array<CashflowEntryDTO | CashflowChartAggregateDTO>,
+): AvailableMonth[] {
   const monthMap = new Map<string, number>();
 
   for (const entry of entries) {
-    if (!entry.date || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) continue;
-    const key = entry.date.slice(0, 7);
+    const key = 'month' in entry ? entry.month : entry.date?.slice(0, 7);
+    if (!key || !/^\d{4}-\d{2}/.test(key)) continue;
     monthMap.set(key, (monthMap.get(key) || 0) + 1);
   }
 
@@ -571,12 +577,12 @@ export function getAvailableMonths(entries: CashflowEntryDTO[]): AvailableMonth[
  * Side-by-side comparison calculation for two specific months.
  * Computes income, expense, net delta, percentage changes, and category-level variances.
  *
- * @param entries - List of cashflow entries
+ * @param entries - List of cashflow entries or chart aggregates
  * @param monthAKey - Base month key in 'YYYY-MM' format (e.g. '2026-07')
  * @param monthBKey - Compare month key in 'YYYY-MM' format (e.g. '2026-08')
  */
 export function compareMonths(
-  entries: CashflowEntryDTO[],
+  entries: Array<CashflowEntryDTO | CashflowChartAggregateDTO>,
   monthAKey: string,
   monthBKey: string,
 ): MonthlyComparisonResult {
@@ -591,9 +597,10 @@ export function compareMonths(
   const categoryMapB = new Map<string, { amount: number; type: 'income' | 'expense' }>();
 
   for (const entry of entries) {
-    if (!entry.date || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) continue;
-    const monthKey = entry.date.slice(0, 7);
-    const amount = Number(entry.amount) || 0;
+    const monthKey = 'month' in entry ? entry.month : entry.date?.slice(0, 7);
+    if (!monthKey || !/^\d{4}-\d{2}/.test(monthKey)) continue;
+    const amount =
+      'total_amount' in entry ? Number(entry.total_amount) || 0 : Number(entry.amount) || 0;
     const category = entry.category?.trim() || 'uncategorized';
     const type: 'income' | 'expense' = entry.type === 'income' ? 'income' : 'expense';
     const catKey = `${category.toLowerCase()}|${type}`;

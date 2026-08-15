@@ -1,7 +1,7 @@
-import type { CashflowEntryDTO } from '@/types/dto';
+import type { CashflowEntryDTO, CashflowChartAggregateDTO } from '@/types/dto';
 import { formatCategoryName } from '../math';
 
-const CATEGORY_COLORS: Record<string, string> = {
+export const CATEGORY_COLORS: Record<string, string> = {
   // Income
   Salary: 'oklch(0.65 0.2 145)', // Green
   Freelance: 'var(--chart-1)', // Orange/Rust
@@ -21,7 +21,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function aggregateEntriesByCategory(
-  entries: CashflowEntryDTO[],
+  entries: Array<CashflowEntryDTO | CashflowChartAggregateDTO>,
   filterType: 'income' | 'expense' = 'expense',
 ) {
   const categoryTotals: Record<string, number> = {};
@@ -30,7 +30,9 @@ export function aggregateEntriesByCategory(
     if (entry.type !== filterType) return;
 
     const category = formatCategoryName(entry.category);
-    categoryTotals[category] = (categoryTotals[category] || 0) + Number(entry.amount);
+    const amount =
+      'total_amount' in entry ? Number(entry.total_amount) : Number(entry.amount);
+    categoryTotals[category] = (categoryTotals[category] || 0) + (amount || 0);
   });
 
   // Convert to array of objects for Recharts

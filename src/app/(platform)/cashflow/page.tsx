@@ -29,6 +29,7 @@ export default async function CashflowPage() {
     <div className='max-w-7xl mx-auto px-4 py-8 md:py-8 w-full'>
       <CashflowList
         cashflows={dashboardData.cashflows}
+        aggregates={dashboardData.aggregates}
         currency={dashboardData.defaultCurrency}
         currentUserId={user.id}
       />

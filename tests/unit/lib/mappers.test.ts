@@ -396,7 +396,7 @@ describe('mapCashflowWithSummaryToDTO', () => {
   it('maps nested entries through mapCashflowEntryToDTO', () => {
     const dto = mapCashflowWithSummaryToDTO({ ...baseSummary, entries: [baseCashflowEntry] });
     expect(dto.entries).toHaveLength(1);
-    expect(dto.entries[0].description).toBe('Salary');
+    expect(dto.entries?.[0].description).toBe('Salary');
   });
 
   it('maps goal labels when the summary includes authoritative goal titles', () => {
@@ -410,7 +410,7 @@ describe('mapCashflowWithSummaryToDTO', () => {
       new Map([['goal-1', 'Emergency fund']]),
     );
 
-    expect(dto.entries[0].category).toBe('Goal: Emergency fund');
+    expect(dto.entries?.[0].category).toBe('Goal: Emergency fund');
   });
 
   it('defaults entries to empty array when absent', () => {

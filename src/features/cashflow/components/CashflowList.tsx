@@ -55,16 +55,18 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
-import type { CashflowWithSummaryDTO } from '@/types/dto';
+import type { CashflowWithSummaryDTO, CashflowChartAggregateDTO } from '@/types/dto';
 
 interface CashflowListProps {
   cashflows: CashflowWithSummaryDTO[];
+  aggregates?: CashflowChartAggregateDTO[];
   currency: string | null;
   currentUserId?: string;
 }
 
 export default function CashflowList({
   cashflows,
+  aggregates = [],
   currency,
   currentUserId,
 }: CashflowListProps) {
@@ -131,9 +133,13 @@ export default function CashflowList({
   const totalExpense = flowsToCount.reduce((sum, c) => sum + c.expense, 0);
   const balance = totalIncome - totalExpense;
 
-  const activeEntries = useMemo(() => {
-    return flowsToCount.flatMap((c) => c.entries);
+  const activeCashflowIds = useMemo(() => {
+    return new Set(flowsToCount.map((c) => c.id));
   }, [flowsToCount]);
+
+  const activeAggregates = useMemo(() => {
+    return aggregates.filter((a) => activeCashflowIds.has(a.cashflow_id));
+  }, [aggregates, activeCashflowIds]);
 
   async function handleToggleInclusion(cashflowId: string) {
     // Optimistic update
@@ -513,7 +519,7 @@ export default function CashflowList({
           </p>
         </div>
         <CashflowCharts
-          entries={activeEntries}
+          aggregates={activeAggregates}
           cashflows={flowsToCount}
           currency={currency}
         />

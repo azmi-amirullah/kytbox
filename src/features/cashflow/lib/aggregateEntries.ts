@@ -1,4 +1,4 @@
-import type { CashflowEntryDTO } from '@/types/dto';
+import type { CashflowEntryDTO, CashflowChartAggregateDTO } from '@/types/dto';
 
 export interface MonthlyData {
   month: string;
@@ -9,26 +9,28 @@ export interface MonthlyData {
 }
 
 /**
- * Aggregates cashflow entries by month for chart visualization.
+ * Aggregates cashflow entries or chart aggregate buckets by month for chart visualization.
  * Returns chronologically sorted monthly data with running cumulative balance.
  */
 export function aggregateEntriesByMonth(
-  entries: CashflowEntryDTO[],
+  entries: Array<CashflowEntryDTO | CashflowChartAggregateDTO>,
 ): MonthlyData[] {
   if (entries.length === 0) return [];
 
   const monthMap = new Map<string, { income: number; expense: number }>();
 
   for (const entry of entries) {
-    const [year, month] = entry.date.split('-');
-    const key = `${year}-${month}`;
+    const key = 'month' in entry ? entry.month : entry.date?.slice(0, 7);
+    if (!key || !/^\d{4}-\d{2}/.test(key)) continue;
 
     const existing = monthMap.get(key) ?? { income: 0, expense: 0 };
+    const amount =
+      'total_amount' in entry ? Number(entry.total_amount) : Number(entry.amount);
 
     if (entry.type === 'income') {
-      existing.income += Number(entry.amount);
+      existing.income += amount;
     } else {
-      existing.expense += Number(entry.amount);
+      existing.expense += amount;
     }
 
     monthMap.set(key, existing);

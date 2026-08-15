@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader } from '@/components/ui/loader';
-import type { CashflowEntryDTO } from '@/types/dto';
+import type { CashflowEntryDTO, CashflowChartAggregateDTO } from '@/types/dto';
 import {
   compareMonths,
   getAvailableMonths,
@@ -52,7 +52,7 @@ import { useContainerSize } from '../lib/useContainerSize';
 import { cn } from '@/lib/utils';
 
 interface MonthlyComparisonProps {
-  entries: CashflowEntryDTO[];
+  entries: Array<CashflowEntryDTO | CashflowChartAggregateDTO>;
   currency: string | null;
 }
 

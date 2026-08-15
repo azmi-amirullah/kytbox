@@ -1128,6 +1128,16 @@ export type Database = {
           click_count: number
         }[]
       }
+      get_cashflow_chart_aggregates: {
+        Args: { p_cashflow_ids: string[]; p_start_date?: string }
+        Returns: {
+          cashflow_id: string
+          category: string
+          month: string
+          total_amount: number
+          type: string
+        }[]
+      }
       get_dashboard_overview: {
         Args: { p_activity_limit?: number; p_user_id: string }
         Returns: Json

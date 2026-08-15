@@ -10,17 +10,18 @@ import {
   mapBudgetToDTO,
   mapGoalToDTO,
 } from '@/lib/mappers';
-import type { CashflowEntry } from '@/types/database';
 import type {
   CashflowDTO,
   CashflowEntryDTO,
   CashflowBudgetDTO,
   CashflowGoalDTO,
   CashflowWithSummaryDTO,
+  CashflowChartAggregateDTO,
 } from '@/types/dto';
 
 export interface CashflowSummariesResult {
   cashflows: (CashflowWithSummaryDTO & { isIncluded: boolean })[];
+  aggregates: CashflowChartAggregateDTO[];
   defaultCurrency: string | null;
 }
 
@@ -95,56 +96,36 @@ export async function getCashflowDashboardData(
   const summaryIds: string[] = (cashflowSummariesData || [])
     .map((c) => c.id)
     .filter((id): id is string => Boolean(id));
-  // Fetch entries for dashboard charts
-  const entriesData: CashflowEntry[] = [];
-  const dashboardGoalTitles = new Map<string, string>();
+
+  // Fetch pre-aggregated chart buckets for dashboard charts via RPC
+  let aggregates: CashflowChartAggregateDTO[] = [];
 
   if (summaryIds.length > 0) {
-    const { data, error } = await supabase
-      .from('cashflow_entries')
-      .select(
-        'id, cashflow_id, goal_id, amount, type, category, date, description, is_recurring, recurrence_interval, yearly_calculation, created_at, cashflow_goals(id, title)'
-      )
-      .in('cashflow_id', summaryIds)
-      .order('date', { ascending: true })
-      .order('created_at', { ascending: true })
-      .limit(1000);
-    if (error) {
-      console.error('cashflow_dashboard_entry_lookup_failed', error);
+    const { data: aggregateRows, error: aggregateError } = await supabase.rpc(
+      'get_cashflow_chart_aggregates',
+      {
+        p_cashflow_ids: summaryIds,
+      }
+    );
+
+    if (aggregateError) {
+      console.error('cashflow_dashboard_aggregates_lookup_failed', aggregateError);
       throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
     }
-    if (data) {
-      for (const row of data) {
-        entriesData.push(row);
-        if (
-          'cashflow_goals' in row &&
-          row.cashflow_goals &&
-          typeof row.cashflow_goals === 'object' &&
-          'id' in row.cashflow_goals &&
-          'title' in row.cashflow_goals &&
-          typeof row.cashflow_goals.id === 'string' &&
-          typeof row.cashflow_goals.title === 'string'
-        ) {
-          dashboardGoalTitles.set(row.cashflow_goals.id, row.cashflow_goals.title);
-        }
-      }
-    }
-  }
 
-  // Group entries by cashflow_id
-  const entriesByCashflow = new Map<string, CashflowEntry[]>();
-  for (const entry of entriesData) {
-    const existing = entriesByCashflow.get(entry.cashflow_id) || [];
-    existing.push(entry);
-    entriesByCashflow.set(entry.cashflow_id, existing);
+    if (aggregateRows) {
+      aggregates = aggregateRows.map((row) => ({
+        cashflow_id: row.cashflow_id,
+        month: row.month,
+        type: row.type === 'income' ? 'income' : 'expense',
+        category: row.category,
+        total_amount: Number(row.total_amount) || 0,
+      }));
+    }
   }
 
   const cashflows = (cashflowSummariesData || []).map((c) => {
-    const entries = entriesByCashflow.get(c.id || '') || [];
-    const dto = mapCashflowWithSummaryToDTO({
-      ...c,
-      entries,
-    }, dashboardGoalTitles);
+    const dto = mapCashflowWithSummaryToDTO(c);
     return {
       ...dto,
       isIncluded: c.user_id === userId || (!!c.id && includedShareIds.has(c.id)),
@@ -153,6 +134,7 @@ export async function getCashflowDashboardData(
 
   return {
     cashflows,
+    aggregates,
     defaultCurrency: profile.default_currency,
   };
 }

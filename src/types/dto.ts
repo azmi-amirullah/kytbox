@@ -119,14 +119,23 @@ export interface CashflowGoalDTO {
   created_at: string | null
 }
 
+export interface CashflowChartAggregateDTO {
+  cashflow_id: string
+  month: string
+  type: 'income' | 'expense'
+  category: string
+  total_amount: number
+}
+
 export interface CashflowWithSummaryDTO extends CashflowDTO {
-  entries: CashflowEntryDTO[]
+  entries?: CashflowEntryDTO[]
   entryCount: number
   income: number
   expense: number
   balance: number
   isIncluded?: boolean
 }
+
 
 // ==========================================
 // LIST APP DTOs
