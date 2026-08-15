@@ -1,7 +1,7 @@
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
 import { Header } from '@/components/header';
-import { BrandLoader } from '@/components/ui/brand-loader';
+import { Loader } from '@/components/ui/loader';
 
 export default function Loading() {
   return (
@@ -10,7 +10,7 @@ export default function Loading() {
       <Header variant='dashboard' />
 
       <main className='relative z-10 max-w-7xl mx-auto px-4 mt-16 py-8 flex-1 w-full flex items-center justify-center'>
-        <BrandLoader />
+        <Loader />
       </main>
 
       <Footer />

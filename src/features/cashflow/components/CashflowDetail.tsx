@@ -70,9 +70,18 @@ import EntryModal from './EntryModal'
 import ShareModal from './ShareModal'
 import GoalCard from './GoalCard'
 import { CashflowSummaryStats } from './CashflowSummaryStats'
+import { Loader } from '@/components/ui/loader'
 const CashflowCharts = dynamic(
   () => import('./CashflowCharts').then((mod) => mod.CashflowCharts),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => (
+      <Loader
+        className='min-h-90 py-12 bg-card border rounded-xl'
+        text='Loading financial overview...'
+      />
+    ),
+  },
 )
 import { ProjectionsView } from './ProjectionsView'
 import { subscribeToPublicCashflow, removeShare } from '../actions'

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -37,9 +37,18 @@ import { formatCurrencyCompact } from '@/lib/currency';
 import dynamic from 'next/dynamic';
 import CashflowModal from './CashflowModal';
 import ShareModal from './ShareModal';
-const DashboardCharts = dynamic(
-  () => import('./DashboardCharts').then((mod) => mod.DashboardCharts),
-  { ssr: false }
+import { Loader } from '@/components/ui/loader';
+const CashflowCharts = dynamic(
+  () => import('./CashflowCharts').then((mod) => mod.CashflowCharts),
+  {
+    ssr: false,
+    loading: () => (
+      <Loader
+        className='min-h-90 py-12 bg-card border rounded-xl'
+        text='Loading financial overview...'
+      />
+    ),
+  },
 );
 import { CashflowSummaryStats } from './CashflowSummaryStats';
 import { Switch } from '@/components/ui/switch';
@@ -102,18 +111,29 @@ export default function CashflowList({
     },
   );
 
-  // Calculate overall stats for OWNED cashflows + INCLUDED shared cashflows
-  const ownedCashflows = cashflows.filter((c) => c.user_id === currentUserId);
-  const sharedCashflows = cashflows.filter((c) => c.user_id !== currentUserId);
+  const ownedCashflows = useMemo(
+    () => cashflows.filter((c) => c.user_id === currentUserId),
+    [cashflows, currentUserId],
+  );
 
-  const flowsToCount = [
-    ...ownedCashflows,
-    ...sharedCashflows.filter((c) => includedSharedIds.has(c.id)),
-  ];
+  const sharedCashflows = useMemo(
+    () => cashflows.filter((c) => c.user_id !== currentUserId),
+    [cashflows, currentUserId],
+  );
+
+  // Calculate overall stats for OWNED cashflows + INCLUDED shared cashflows
+  const flowsToCount = useMemo(() => {
+    const shared = sharedCashflows.filter((c) => includedSharedIds.has(c.id));
+    return [...ownedCashflows, ...shared];
+  }, [ownedCashflows, sharedCashflows, includedSharedIds]);
 
   const totalIncome = flowsToCount.reduce((sum, c) => sum + c.income, 0);
   const totalExpense = flowsToCount.reduce((sum, c) => sum + c.expense, 0);
   const balance = totalIncome - totalExpense;
+
+  const activeEntries = useMemo(() => {
+    return flowsToCount.flatMap((c) => c.entries);
+  }, [flowsToCount]);
 
   async function handleToggleInclusion(cashflowId: string) {
     // Optimistic update
@@ -492,10 +512,9 @@ export default function CashflowList({
             Monthly breakdown of your transactions
           </p>
         </div>
-        <DashboardCharts
-          cashflows={cashflows}
-          includedSharedIds={includedSharedIds}
-          currentUserId={currentUserId}
+        <CashflowCharts
+          entries={activeEntries}
+          cashflows={flowsToCount}
           currency={currency}
         />
       </div>

@@ -1,5 +1,5 @@
-import { BrandLoader } from '@/components/ui/brand-loader';
+import { Loader } from '@/components/ui/loader';
 
 export default function AuthLoading() {
-  return <BrandLoader />;
+  return <Loader />;
 }
