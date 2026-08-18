@@ -231,7 +231,8 @@ export default function EntryModal({
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
       link.href = blobUrl
-      link.download = `receipt-${date || 'entry'}-${sanitizedDesc || 'attachment'}.webp`
+      const ext = blob.type === 'image/jpeg' || blob.type === 'image/jpg' ? 'jpg' : 'webp'
+      link.download = `receipt-${date || 'entry'}-${sanitizedDesc || 'attachment'}.${ext}`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -302,7 +303,8 @@ export default function EntryModal({
           maxDimension: 1600,
           quality: 0.8,
         })
-        formData.append('receipt_file', compressedBlob, 'receipt.webp')
+        const ext = compressedBlob.type === 'image/webp' ? 'webp' : 'jpg'
+        formData.append('receipt_file', compressedBlob, `receipt.${ext}`)
       } catch (err) {
         console.error('Client compression failed:', err)
         if (receiptFile.size <= 1024 * 1024) {

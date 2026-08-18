@@ -109,13 +109,13 @@ export async function compressImageToWebP(
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
         cleanup()
 
-        // Attempt WebP export first
+        // Attempt WebP export first, verifying the browser actually produced WebP (Safari Canvas defaults to uncompressed PNG)
         canvas.toBlob(
           (blob) => {
-            if (blob) {
+            if (blob && blob.type === 'image/webp') {
               resolve(blob)
             } else {
-              // Fallback to JPEG if WebP export fails
+              // Fallback to JPEG if WebP is unsupported or defaulted to PNG (e.g. iOS Safari)
               canvas.toBlob(
                 (jpegBlob) => {
                   if (jpegBlob) {

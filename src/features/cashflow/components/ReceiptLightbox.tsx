@@ -119,7 +119,8 @@ export default function ReceiptLightbox({
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
       link.href = blobUrl
-      link.download = `receipt-${date || 'entry'}-${sanitizedDesc || 'attachment'}.webp`
+      const ext = blob.type === 'image/jpeg' || blob.type === 'image/jpg' ? 'jpg' : 'webp'
+      link.download = `receipt-${date || 'entry'}-${sanitizedDesc || 'attachment'}.${ext}`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)

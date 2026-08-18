@@ -518,7 +518,8 @@ export async function addEntry(formData: FormData) {
     if (!receiptFile.type.startsWith('image/')) {
       return { error: 'Invalid file type. Image only.' };
     }
-    const filePath = `${user.id}/${cashflowId}/${crypto.randomUUID()}.webp`;
+    const ext = receiptFile.type === 'image/jpeg' || receiptFile.type === 'image/jpg' ? 'jpg' : 'webp';
+    const filePath = `${user.id}/${cashflowId}/${crypto.randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage
       .from(RECEIPT_BUCKET)
       .upload(filePath, receiptFile, {
@@ -706,7 +707,8 @@ export async function updateEntry(entryId: string, formData: FormData) {
       if (!receiptFile.type.startsWith('image/')) {
         return { error: 'Invalid file type. Image only.' };
       }
-      const filePath = `${user.id}/${entry.cashflow_id}/${crypto.randomUUID()}.webp`;
+      const ext = receiptFile.type === 'image/jpeg' || receiptFile.type === 'image/jpg' ? 'jpg' : 'webp';
+      const filePath = `${user.id}/${entry.cashflow_id}/${crypto.randomUUID()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from(RECEIPT_BUCKET)
         .upload(filePath, receiptFile, {

@@ -9,12 +9,12 @@ VALUES (
   'cashflow-receipts',
   false,
   5242880, -- 5MB limit
-  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  ARRAY['image/jpeg', 'image/png', 'image/webp']
 )
 ON CONFLICT (id) DO UPDATE SET
   public = false,
   file_size_limit = 5242880,
-  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp'];
 
 -- Storage policies for cashflow-receipts bucket
 CREATE POLICY "Users can upload receipts to own folder"
