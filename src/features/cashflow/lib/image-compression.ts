@@ -13,7 +13,7 @@ export function isSupportedImageFile(file: File): boolean {
   const isHeicExtension = lowerName.endsWith('.heic') || lowerName.endsWith('.heif')
   const isHeicMime = file.type === 'image/heic' || file.type === 'image/heif'
   const isStandardImage = file.type.startsWith('image/')
-  const isImageExtension = /\.(jpe?g|png|webp|gif|bmp|svg|avif)$/i.test(lowerName)
+  const isImageExtension = /\.(jpe?g|png|webp|jfif|avif)$/i.test(lowerName)
 
   return isStandardImage || isHeicMime || isHeicExtension || isImageExtension
 }

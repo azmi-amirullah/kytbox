@@ -846,7 +846,7 @@ export default function EntryModal({
               <input
                 ref={receiptInputRef}
                 type='file'
-                accept='image/*,.heic,.heif,image/heic,image/heif'
+                accept='image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,.jpg,.jpeg,.png,.webp,.heic,.heif,.jfif,.avif'
                 className='hidden'
                 onChange={(e) => {
                   const file = e.target.files?.[0]
