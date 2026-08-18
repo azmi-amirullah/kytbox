@@ -128,7 +128,7 @@ export default function ReceiptLightbox({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-3xl w-[95vw] max-h-[92vh] flex flex-col p-0 overflow-hidden bg-background border rounded-xl shadow-2xl'>
         {/* Header: Designed for mobile-first with clear truncation & explicit close button */}
-        <DialogHeader className='px-4 py-3 sm:px-6 sm:py-4 border-b bg-muted/30 flex flex-row items-center justify-between space-y-0 gap-3'>
+        <DialogHeader className='px-4 py-3 sm:px-6 sm:py-4 border-b bg-muted/30 flex flex-row items-center justify-between space-y-0 gap-3 text-left'>
           <div className='flex items-center gap-2.5 min-w-0 flex-1'>
             <div className='w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0'>
               <LuReceipt className='w-4 h-4 sm:w-5 sm:h-5' />

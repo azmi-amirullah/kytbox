@@ -25,6 +25,7 @@ import {
 } from './schemas.server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { mapBudgetToDTO, mapGoalToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
@@ -223,6 +224,18 @@ export async function updateCashflow(cashflowId: string, formData: FormData) {
 export async function deleteCashflow(cashflowId: string) {
   const { user, supabase } = await getAuthenticatedUser();
 
+  // Retrieve any attached receipts before cascade delete removes the entries
+  const { data: entries } = await supabase
+    .from('cashflow_entries')
+    .select('receipt_url')
+    .eq('cashflow_id', cashflowId)
+    .not('receipt_url', 'is', null);
+
+  const receiptPaths =
+    entries?.flatMap((e) =>
+      typeof e.receipt_url === 'string' ? [e.receipt_url] : [],
+    ) ?? [];
+
   const { error } = await supabase
     .from('cashflows')
     .delete()
@@ -232,6 +245,17 @@ export async function deleteCashflow(cashflowId: string) {
   if (error) {
     console.error('Failed to delete cashflow:', error);
     return { error: error.message };
+  }
+
+  // Batch clean up orphaned receipt storage files
+  if (receiptPaths.length > 0) {
+    const adminSupabase = createAdminClient();
+    const { error: removeError } = await adminSupabase.storage
+      .from(RECEIPT_BUCKET)
+      .remove(receiptPaths);
+    if (removeError) {
+      console.warn('Failed to clean up receipts during cashflow deletion:', removeError);
+    }
   }
 
   revalidatePath('/cashflow');
@@ -669,10 +693,9 @@ export async function updateEntry(entryId: string, formData: FormData) {
     : amount;
 
   let nextReceiptUrl: string | null = entry.receipt_url;
+  let newlyUploadedFilePath: string | null = null;
+
   if (receiptAction === 'remove') {
-    if (entry.receipt_url) {
-      await supabase.storage.from(RECEIPT_BUCKET).remove([entry.receipt_url]);
-    }
     nextReceiptUrl = null;
   } else if (receiptAction === 'upload') {
     const receiptFile = formData.get('receipt_file');
@@ -682,9 +705,6 @@ export async function updateEntry(entryId: string, formData: FormData) {
       }
       if (!receiptFile.type.startsWith('image/')) {
         return { error: 'Invalid file type. Image only.' };
-      }
-      if (entry.receipt_url) {
-        await supabase.storage.from(RECEIPT_BUCKET).remove([entry.receipt_url]);
       }
       const filePath = `${user.id}/${entry.cashflow_id}/${crypto.randomUUID()}.webp`;
       const { error: uploadError } = await supabase.storage
@@ -698,6 +718,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
         console.error('Failed to upload replacement receipt:', uploadError);
         return { error: 'Failed to upload receipt image' };
       }
+      newlyUploadedFilePath = filePath;
       nextReceiptUrl = filePath;
     }
   }
@@ -727,8 +748,21 @@ export async function updateEntry(entryId: string, formData: FormData) {
     .eq('id', entryId);
 
   if (error) {
+    if (newlyUploadedFilePath) {
+      const adminSupabase = createAdminClient();
+      await adminSupabase.storage.from(RECEIPT_BUCKET).remove([newlyUploadedFilePath]);
+    }
     console.error('Failed to update entry:', error);
     return { error: error.message };
+  }
+
+  // Clean up old receipt file only after DB update succeeds
+  if (
+    entry.receipt_url &&
+    (receiptAction === 'remove' || (newlyUploadedFilePath && entry.receipt_url !== newlyUploadedFilePath))
+  ) {
+    const adminSupabase = createAdminClient();
+    await adminSupabase.storage.from(RECEIPT_BUCKET).remove([entry.receipt_url]);
   }
 
   if (splitItems !== null) {
@@ -794,7 +828,8 @@ export async function deleteEntry(entryId: string) {
   }
 
   if (entry.receipt_url) {
-    await supabase.storage.from(RECEIPT_BUCKET).remove([entry.receipt_url]);
+    const adminSupabase = createAdminClient();
+    await adminSupabase.storage.from(RECEIPT_BUCKET).remove([entry.receipt_url]);
   }
 
   const { error } = await supabase
@@ -856,7 +891,9 @@ export async function getReceiptSignedUrl(cashflowId: string, entryId: string) {
     return { error: 'Receipt attachment not found' };
   }
 
-  const { data: signedData, error: signError } = await supabase.storage
+  // Create signed URL via admin client after permission verification to allow shared collaborators to view receipts
+  const adminSupabase = createAdminClient();
+  const { data: signedData, error: signError } = await adminSupabase.storage
     .from(RECEIPT_BUCKET)
     .createSignedUrl(entry.receipt_url, 3600);
 
