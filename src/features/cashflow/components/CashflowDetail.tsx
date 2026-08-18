@@ -89,6 +89,7 @@ import { ProjectionsView } from './ProjectionsView'
 import { subscribeToPublicCashflow, removeShare } from '../actions'
 import BudgetManager from './BudgetManager'
 import ImportCsvModal from './ImportCsvModal'
+import ReceiptLightbox from './ReceiptLightbox'
 import { DateFilter } from './DateFilter'
 import { Input } from '@/components/ui/input'
 import {
@@ -148,6 +149,8 @@ export default function CashflowDetail({
   const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
     null,
   )
+  const [viewingReceiptEntry, setViewingReceiptEntry] =
+    useState<CashflowEntryDTO | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null)
@@ -1374,6 +1377,7 @@ export default function CashflowDetail({
                               currency={currency}
                               bookTags={tags}
                               availableTags={allUniqueTags}
+                              onViewReceipt={(e) => setViewingReceiptEntry(e)}
                             />
                           </div>
                         </TableCell>
@@ -1489,6 +1493,7 @@ export default function CashflowDetail({
                               currency={currency}
                               bookTags={tags}
                               availableTags={allUniqueTags}
+                              onViewReceipt={(e) => setViewingReceiptEntry(e)}
                             />
                           </div>
                         </div>
@@ -1813,6 +1818,19 @@ export default function CashflowDetail({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Receipt Lightbox Modal */}
+      <ReceiptLightbox
+        open={!!viewingReceiptEntry}
+        onOpenChange={(open) => {
+          if (!open) setViewingReceiptEntry(null)
+        }}
+        cashflowId={cashflow.id}
+        entryId={viewingReceiptEntry?.id ?? null}
+        description={viewingReceiptEntry?.description}
+        date={viewingReceiptEntry?.date}
+        amount={viewingReceiptEntry ? Number(viewingReceiptEntry.amount) : undefined}
+        currency={currency}
+      />
     </div>
   )
 }

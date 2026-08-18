@@ -21,6 +21,7 @@ import {
   type ImportCashflowEntryItem,
   renameCashflowTagSchema,
   deleteCashflowTagSchema,
+  getReceiptSignedUrlSchema,
 } from './schemas.server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
@@ -28,6 +29,8 @@ import { mapBudgetToDTO, mapGoalToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
+
+const RECEIPT_BUCKET = 'cashflow-receipts';
 
 export async function ensureCashflowTags(
   supabase: SupabaseClient<Database>,
@@ -482,6 +485,30 @@ export async function addEntry(formData: FormData) {
     ? Math.round(splitItems.reduce((acc, item) => acc + item.amount, 0) * 100) / 100
     : amount;
 
+  let receiptUrl: string | null = null;
+  const receiptFile = formData.get('receipt_file');
+  if (receiptFile instanceof File && receiptFile.size > 0) {
+    if (receiptFile.size > 5 * 1024 * 1024) {
+      return { error: 'Receipt file exceeds 5MB limit' };
+    }
+    if (!receiptFile.type.startsWith('image/')) {
+      return { error: 'Invalid file type. Image only.' };
+    }
+    const filePath = `${user.id}/${cashflowId}/${crypto.randomUUID()}.webp`;
+    const { error: uploadError } = await supabase.storage
+      .from(RECEIPT_BUCKET)
+      .upload(filePath, receiptFile, {
+        contentType: receiptFile.type || 'image/webp',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Failed to upload receipt:', uploadError);
+      return { error: 'Failed to upload receipt image' };
+    }
+    receiptUrl = filePath;
+  }
+
   const { data: insertedEntry, error } = await supabase
     .from('cashflow_entries')
     .insert({
@@ -499,11 +526,15 @@ export async function addEntry(formData: FormData) {
           ? yearly_calculation
           : null,
       tags: tags ?? [],
+      receipt_url: receiptUrl,
     })
     .select('id')
     .single();
 
   if (error || !insertedEntry) {
+    if (receiptUrl) {
+      await supabase.storage.from(RECEIPT_BUCKET).remove([receiptUrl]);
+    }
     console.error('Failed to add entry:', error);
     return { error: error?.message || 'Failed to create entry' };
   }
@@ -555,6 +586,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
     is_recurring,
     recurrence_interval,
     yearly_calculation,
+    receiptAction,
     tagsJson: tags,
   } = parsed.data;
 
@@ -569,7 +601,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
     checkRateLimit(actionRateLimit, user.id),
     supabase
       .from('cashflow_entries')
-      .select('cashflow_id, goal_id, category, cashflows(user_id)')
+      .select('cashflow_id, goal_id, category, receipt_url, cashflows(user_id)')
       .eq('id', entryId)
       .single(),
   ]);
@@ -636,6 +668,40 @@ export async function updateEntry(entryId: string, formData: FormData) {
     ? Math.round(splitItems.reduce((acc, item) => acc + item.amount, 0) * 100) / 100
     : amount;
 
+  let nextReceiptUrl: string | null = entry.receipt_url;
+  if (receiptAction === 'remove') {
+    if (entry.receipt_url) {
+      await supabase.storage.from(RECEIPT_BUCKET).remove([entry.receipt_url]);
+    }
+    nextReceiptUrl = null;
+  } else if (receiptAction === 'upload') {
+    const receiptFile = formData.get('receipt_file');
+    if (receiptFile instanceof File && receiptFile.size > 0) {
+      if (receiptFile.size > 5 * 1024 * 1024) {
+        return { error: 'Receipt file exceeds 5MB limit' };
+      }
+      if (!receiptFile.type.startsWith('image/')) {
+        return { error: 'Invalid file type. Image only.' };
+      }
+      if (entry.receipt_url) {
+        await supabase.storage.from(RECEIPT_BUCKET).remove([entry.receipt_url]);
+      }
+      const filePath = `${user.id}/${entry.cashflow_id}/${crypto.randomUUID()}.webp`;
+      const { error: uploadError } = await supabase.storage
+        .from(RECEIPT_BUCKET)
+        .upload(filePath, receiptFile, {
+          contentType: receiptFile.type || 'image/webp',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('Failed to upload replacement receipt:', uploadError);
+        return { error: 'Failed to upload receipt image' };
+      }
+      nextReceiptUrl = filePath;
+    }
+  }
+
   const { error } = await supabase
     .from('cashflow_entries')
     .update({
@@ -656,6 +722,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
           ? yearly_calculation
           : null,
       tags: tags ?? [],
+      receipt_url: nextReceiptUrl,
     })
     .eq('id', entryId);
 
@@ -704,10 +771,10 @@ export async function updateEntry(entryId: string, formData: FormData) {
 export async function deleteEntry(entryId: string) {
   const { user, supabase } = await getAuthenticatedUser();
 
-  // Verify entry exists
+  // Verify entry exists and get receipt_url for cleanup
   const { data: entry } = await supabase
     .from('cashflow_entries')
-    .select('cashflow_id, cashflows(user_id)')
+    .select('cashflow_id, receipt_url, cashflows(user_id)')
     .eq('id', entryId)
     .single();
 
@@ -726,6 +793,10 @@ export async function deleteEntry(entryId: string) {
     return { error: permission.error || 'Access denied' };
   }
 
+  if (entry.receipt_url) {
+    await supabase.storage.from(RECEIPT_BUCKET).remove([entry.receipt_url]);
+  }
+
   const { error } = await supabase
     .from('cashflow_entries')
     .delete()
@@ -738,6 +809,63 @@ export async function deleteEntry(entryId: string) {
 
   revalidatePath('/cashflow');
   return { success: true };
+}
+
+export async function getReceiptSignedUrl(cashflowId: string, entryId: string) {
+  const parsed = getReceiptSignedUrlSchema.safeParse({ cashflowId, entryId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const { user, supabase } = await getAuthenticatedUserOnly();
+
+  // Verify view access to the cashflow book
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id, is_public')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow) {
+    return { error: 'Cashflow book not found' };
+  }
+
+  let hasAccess = cashflow.user_id === user.id || cashflow.is_public;
+  if (!hasAccess && user.email) {
+    const { data: share } = await supabase
+      .from('cashflow_shares')
+      .select('id')
+      .eq('cashflow_id', cashflowId)
+      .eq('email', user.email.toLowerCase().trim())
+      .maybeSingle();
+    hasAccess = !!share;
+  }
+
+  if (!hasAccess) {
+    return { error: 'Access denied' };
+  }
+
+  const { data: entry } = await supabase
+    .from('cashflow_entries')
+    .select('receipt_url')
+    .eq('id', entryId)
+    .eq('cashflow_id', cashflowId)
+    .single();
+
+  if (!entry?.receipt_url) {
+    return { error: 'Receipt attachment not found' };
+  }
+
+  const { data: signedData, error: signError } = await supabase.storage
+    .from(RECEIPT_BUCKET)
+    .createSignedUrl(entry.receipt_url, 3600);
+
+  if (signError || !signedData?.signedUrl) {
+    console.error('Failed to create signed URL:', signError);
+    return { error: 'Failed to generate secure receipt link' };
+  }
+
+  return { success: true, signedUrl: signedData.signedUrl };
 }
 
 export async function toggleCashflowInclusion(

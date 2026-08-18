@@ -2,7 +2,7 @@
 
 import type { CashflowEntryDTO, CashflowTagDTO } from '@/types/dto'
 import { TagBadges } from './TagPicker'
-import { LuRepeat } from 'react-icons/lu'
+import { LuRepeat, LuPaperclip } from 'react-icons/lu'
 import { formatCurrencyCompact } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
@@ -51,6 +51,39 @@ export function EntryCategoryBadge({
     >
       {category}
     </span>
+  )
+}
+
+export function EntryReceiptBadge({
+  hasReceipt,
+  onClick,
+  className,
+}: {
+  hasReceipt?: boolean
+  onClick?: () => void
+  className?: string
+}) {
+  if (!hasReceipt) return null
+  return (
+    <button
+      type='button'
+      onClick={(e) => {
+        if (onClick) {
+          e.stopPropagation()
+          onClick()
+        }
+      }}
+      title='View receipt attachment'
+      aria-label='View receipt attachment'
+      className={cn(
+        BADGE_BASE_CLASS,
+        'gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-400/60 dark:border-amber-400/50 hover:bg-amber-500/20 transition-colors cursor-pointer',
+        className,
+      )}
+    >
+      <LuPaperclip className='w-2.5 h-2.5' />
+      <span>Receipt</span>
+    </button>
   )
 }
 
@@ -110,18 +143,24 @@ export function EntryMetadataBadges({
   currency,
   bookTags,
   availableTags,
+  onViewReceipt,
   className,
 }: {
   entry: CashflowEntryDTO
   currency?: string | null
   bookTags?: CashflowTagDTO[]
   availableTags?: string[]
+  onViewReceipt?: (entry: CashflowEntryDTO) => void
   className?: string
 }) {
   return (
     <div className={cn('flex items-center gap-1.5 flex-wrap', className)}>
       <EntryCategoryBadge category={entry.category} />
       <EntrySplitItemsBadge items={entry.items} currency={currency} />
+      <EntryReceiptBadge
+        hasReceipt={Boolean(entry.receipt_url)}
+        onClick={onViewReceipt ? () => onViewReceipt(entry) : undefined}
+      />
       {entry.is_recurring && (
         <EntryRecurringBadge interval={entry.recurrence_interval} />
       )}

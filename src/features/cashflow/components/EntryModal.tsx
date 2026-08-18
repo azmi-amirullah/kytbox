@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,9 +24,14 @@ import {
   LuCalendar,
   LuRepeat,
   LuListPlus,
+  LuPaperclip,
+  LuReceipt,
+  LuTrash2,
+  LuUpload,
+  LuDownload,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
-import { addEntry, updateEntry } from '../actions'
+import { addEntry, updateEntry, getReceiptSignedUrl } from '../actions'
 import type { CashflowEntryDTO, CashflowGoalDTO, CashflowTagDTO } from '@/types/dto'
 import { getCurrencySymbol } from '@/lib/currency'
 import * as z from 'zod/mini'
@@ -36,6 +41,8 @@ import PurchaseBreakdownEditor, {
   type SplitItemInput,
 } from './PurchaseBreakdownEditor'
 import { TagPicker } from './TagPicker'
+import { compressImageToWebP } from '../lib/image-compression'
+import ReceiptLightbox from './ReceiptLightbox'
 
 interface EntryModalProps {
   cashflowId: string
@@ -90,6 +97,16 @@ export default function EntryModal({
     'prorated' | 'exact'
   >(entry?.yearly_calculation || 'prorated')
   const [tags, setTags] = useState<string[]>(entry?.tags ?? [])
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null)
+  const [receiptAction, setReceiptAction] = useState<'keep' | 'remove' | 'upload'>('keep')
+  const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(
+    entry?.receipt_url ?? null,
+  )
+  const [existingSignedUrl, setExistingSignedUrl] = useState<string | null>(null)
+  const [isLoadingExistingThumbnail, setIsLoadingExistingThumbnail] = useState(false)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const receiptInputRef = useRef<HTMLInputElement>(null)
 
   const initialItems: SplitItemInput[] =
     entry?.items && entry.items.length > 0
@@ -139,8 +156,90 @@ export default function EntryModal({
       setIsSplit(items.length > 0)
       setSplitItems(items)
       setTags(entry?.tags ?? [])
+      setReceiptFile(null)
+      if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+      setReceiptPreviewUrl(null)
+      setReceiptAction('keep')
+      setExistingReceiptUrl(entry?.receipt_url ?? null)
+      setExistingSignedUrl(null)
+      setIsLightboxOpen(false)
       setError(null)
       setIsLoading(false)
+    }
+  }
+
+  // Fetch signed URL for thumbnail preview when editing an entry with an existing receipt
+  useEffect(() => {
+    if (!open || !entry?.id || !entry?.receipt_url) {
+      setExistingSignedUrl(null)
+      return
+    }
+    let isMounted = true
+    setIsLoadingExistingThumbnail(true)
+    getReceiptSignedUrl(cashflowId, entry.id)
+      .then((res) => {
+        if (isMounted && res.signedUrl) {
+          setExistingSignedUrl(res.signedUrl)
+        }
+      })
+      .catch(() => {
+        // Silently fall back to icon
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingExistingThumbnail(false)
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [open, entry?.id, entry?.receipt_url, cashflowId])
+
+  const handleFileSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image files (JPG, PNG, WebP) are supported')
+      return
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Image is too large (max 15MB before compression)')
+      return
+    }
+    if (receiptPreviewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl)
+    }
+    const preview = URL.createObjectURL(file)
+    setReceiptFile(file)
+    setReceiptPreviewUrl(preview)
+    setReceiptAction('upload')
+  }
+
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false)
+
+  const handleDownloadExistingReceipt = async () => {
+    if (!entry?.id) return
+    setIsDownloadingReceipt(true)
+    try {
+      const res = await getReceiptSignedUrl(cashflowId, entry.id)
+      if (res.error || !res.signedUrl) {
+        toast.error(res.error || 'Failed to access receipt')
+        return
+      }
+      const response = await fetch(res.signedUrl)
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const sanitizedDesc = (description || 'receipt')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+      link.href = blobUrl
+      link.download = `receipt-${date || 'entry'}-${sanitizedDesc || 'attachment'}.webp`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(blobUrl)
+    } catch {
+      toast.error('Failed to download receipt')
+    } finally {
+      setIsDownloadingReceipt(false)
     }
   }
 
@@ -194,6 +293,20 @@ export default function EntryModal({
     if (isRecurring) formData.append('recurrence_interval', recurrenceInterval)
     if (isRecurring && recurrenceInterval === 'yearly') {
       formData.append('yearly_calculation', yearlyCalculation)
+    }
+    formData.append('receiptAction', receiptAction)
+
+    if (receiptAction === 'upload' && receiptFile) {
+      try {
+        const compressedBlob = await compressImageToWebP(receiptFile, {
+          maxDimension: 1600,
+          quality: 0.8,
+        })
+        formData.append('receipt_file', compressedBlob, 'receipt.webp')
+      } catch (err) {
+        console.error('Client compression failed, falling back to original:', err)
+        formData.append('receipt_file', receiptFile)
+      }
     }
 
     if (isSplit) {
@@ -538,6 +651,205 @@ export default function EntryModal({
               </p>
             </div>
 
+            {/* Receipt / Attachment Upload */}
+            <div className='grid gap-2'>
+              <Label className='font-medium text-foreground/80 flex items-center gap-1.5'>
+                <LuPaperclip className='w-3.5 h-3.5 text-muted-foreground' />
+                Receipt / Attachment
+              </Label>
+
+              {/* Case 1: Existing receipt attached and not removed */}
+              {existingReceiptUrl && receiptAction === 'keep' && (
+                <div className='flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20'>
+                  <div
+                    role='button'
+                    tabIndex={0}
+                    onClick={() => (existingSignedUrl ? setIsLightboxOpen(true) : null)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        if (existingSignedUrl) setIsLightboxOpen(true)
+                      }
+                    }}
+                    className='flex items-center gap-2.5 min-w-0 cursor-pointer group/thumb flex-1 pr-2'
+                    title={existingSignedUrl ? 'Click to preview receipt in full screen' : undefined}
+                  >
+                    {existingSignedUrl ? (
+                      <div className='relative w-10 h-10 rounded border border-border bg-card overflow-hidden shrink-0 group-hover/thumb:ring-2 group-hover/thumb:ring-primary/50 transition-all'>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={existingSignedUrl}
+                          alt='Receipt thumbnail'
+                          className='w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-200'
+                        />
+                      </div>
+                    ) : isLoadingExistingThumbnail ? (
+                      <div className='w-10 h-10 rounded border border-border bg-muted/40 flex items-center justify-center shrink-0 animate-pulse'>
+                        <LuLoader className='w-4 h-4 animate-spin text-muted-foreground' />
+                      </div>
+                    ) : (
+                      <div className='w-10 h-10 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0'>
+                        <LuReceipt className='w-4 h-4' />
+                      </div>
+                    )}
+                    <div className='min-w-0'>
+                      <p className='text-xs font-medium truncate group-hover/thumb:text-primary transition-colors'>
+                        Attached Receipt
+                      </p>
+                      <p className='text-[10px] text-muted-foreground'>
+                        {existingSignedUrl ? 'Click image to preview' : 'Saved securely'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-1.5 shrink-0'>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon'
+                      className='h-7 w-7 text-muted-foreground hover:text-foreground'
+                      onClick={handleDownloadExistingReceipt}
+                      disabled={isDownloadingReceipt}
+                      title='Download receipt'
+                      aria-label='Download receipt'
+                    >
+                      {isDownloadingReceipt ? (
+                        <LuLoader className='w-3.5 h-3.5 animate-spin' />
+                      ) : (
+                        <LuDownload className='w-3.5 h-3.5' />
+                      )}
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='h-7 text-xs px-2'
+                      onClick={() => receiptInputRef.current?.click()}
+                    >
+                      Replace
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon'
+                      className='h-7 w-7 text-destructive hover:bg-destructive/10'
+                      onClick={() => {
+                        setReceiptAction('remove')
+                        setReceiptFile(null)
+                        if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+                        setReceiptPreviewUrl(null)
+                      }}
+                      title='Remove receipt'
+                    >
+                      <LuTrash2 className='w-3.5 h-3.5' />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Case 2: Newly selected file preview */}
+              {receiptPreviewUrl && receiptAction === 'upload' && (
+                <div className='flex items-center justify-between p-2.5 rounded-lg border border-primary/30 bg-primary/5'>
+                  <div
+                    role='button'
+                    tabIndex={0}
+                    onClick={() => setIsLightboxOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setIsLightboxOpen(true)
+                      }
+                    }}
+                    className='flex items-center gap-2.5 min-w-0 cursor-pointer group/newthumb flex-1 pr-2'
+                    title='Click to preview in full screen'
+                  >
+                    <div className='relative w-10 h-10 rounded border border-primary/30 bg-card overflow-hidden shrink-0 group-hover/newthumb:ring-2 group-hover/newthumb:ring-primary/50 transition-all'>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={receiptPreviewUrl}
+                        alt='Receipt preview'
+                        className='w-full h-full object-cover group-hover/newthumb:scale-110 transition-transform duration-200'
+                      />
+                    </div>
+                    <div className='min-w-0'>
+                      <p className='text-xs font-medium truncate group-hover/newthumb:text-primary transition-colors'>
+                        {receiptFile?.name || 'receipt.webp'}
+                      </p>
+                      <p className='text-[10px] text-muted-foreground'>
+                        {receiptFile
+                          ? receiptFile.size < 1024 * 1024
+                            ? `${(receiptFile.size / 1024).toFixed(1)} KB • Click to preview`
+                            : `${(receiptFile.size / (1024 * 1024)).toFixed(1)} MB • Click to preview`
+                          : 'Click to preview'}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0'
+                    onClick={() => {
+                      setReceiptAction(existingReceiptUrl ? 'keep' : 'keep')
+                      setReceiptFile(null)
+                      if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+                      setReceiptPreviewUrl(null)
+                    }}
+                    title='Cancel upload'
+                  >
+                    <LuTrash2 className='w-3.5 h-3.5' />
+                  </Button>
+                </div>
+              )}
+
+              {/* Case 3: No receipt or replaced/removed */}
+              {(!existingReceiptUrl || receiptAction === 'remove') && !receiptPreviewUrl && (
+                <div
+                  role='button'
+                  tabIndex={0}
+                  onClick={() => receiptInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      receiptInputRef.current?.click()
+                    }
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const droppedFile = e.dataTransfer.files?.[0]
+                    if (droppedFile && droppedFile.type.startsWith('image/')) {
+                      handleFileSelect(droppedFile)
+                    } else if (droppedFile) {
+                      toast.error('Only image files (JPG, PNG, WebP) are supported')
+                    }
+                  }}
+                  className='flex flex-col items-center justify-center p-4 border border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/30 rounded-lg cursor-pointer transition-colors text-center group'
+                >
+                  <LuUpload className='w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-1.5' />
+                  <p className='text-xs font-medium text-foreground/90'>
+                    Upload receipt or photo
+                  </p>
+                  <p className='text-[10px] text-muted-foreground mt-0.5'>
+                    Drag & drop or click to browse (PNG, JPG, WebP)
+                  </p>
+                </div>
+              )}
+
+              <input
+                ref={receiptInputRef}
+                type='file'
+                accept='image/*'
+                className='hidden'
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    handleFileSelect(file)
+                  }
+                  e.target.value = ''
+                }}
+              />
+            </div>
+
             {/* Recurring Switch */}
             <div className='flex items-center justify-between mt-2 p-3 bg-secondary/50 rounded-lg'>
               <div className='space-y-0.5'>
@@ -649,6 +961,22 @@ export default function EntryModal({
           </DialogFooter>
         </form>
       </DialogContent>
+      {/* Interactive Lightbox preview */}
+      <ReceiptLightbox
+        open={isLightboxOpen}
+        onOpenChange={setIsLightboxOpen}
+        previewUrl={
+          receiptAction === 'upload'
+            ? receiptPreviewUrl
+            : existingSignedUrl
+        }
+        cashflowId={cashflowId}
+        entryId={entry?.id ?? null}
+        description={description || 'Receipt'}
+        date={date}
+        amount={amount ? parseFloat(amount) : undefined}
+        currency={currency}
+      />
     </Dialog>
   )
 }

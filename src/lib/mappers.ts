@@ -190,6 +190,7 @@ export function mapCashflowEntryToDTO(
     created_at: row.created_at,
     tags: Array.isArray(row.tags) ? row.tags : [],
     items,
+    receipt_url: row.receipt_url ?? null,
   };
 }
 

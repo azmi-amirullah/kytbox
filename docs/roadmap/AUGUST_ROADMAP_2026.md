@@ -19,7 +19,7 @@
 - [x] [Day 9 — Cashflow: CSV / Bank Transaction Import & Auto-Parser](#day-9)
 - [x] [Day 10 — Cashflow: Monthly Comparison View](#day-10)
 - [x] [Day 11 — Cashflow: Custom Tags & Labels Engine](#day-11)
-- [ ] [Day 12 — Cashflow: Receipt & Attachment Upload](#day-12)
+- [x] [Day 12 — Cashflow: Receipt & Attachment Upload](#day-12)
 - [ ] [Day 13 — Cashflow: Advanced Features E2E Test Suite](#day-13)
 - [ ] [Day 14 — Weekly Sprint Audit & Financial Calculation Check](#day-14)
 - [ ] [Day 15 — List: Card Due Dates & Reminders](#day-15)
@@ -199,12 +199,16 @@
 
 <a id="day-12"></a>
 #### Day 12 — Wednesday, Aug 12 | ✨ Feature
-##### Cashflow: Receipt & Attachment Upload
+##### Cashflow: Receipt & Photo Attachment Upload
 - **Why**: Freelancers and business owners require receipt proof for tax compliance and expense audit tracking. Attaching receipt photos directly to cashflow entries (or split parent entries) prevents lost invoices and simplifies accounting.
 - **Implementation Blueprint**:
   - Add `receipt_url: string | null` column to `cashflow_entries`.
-  - Integrate Supabase Storage bucket `cashflow-receipts`.
-  - Build modal image lightbox viewer component `src/features/cashflow/components/ReceiptLightbox.tsx`.
+  - Configure Supabase Storage private bucket `cashflow-receipts` guarded by Row-Level Security (RLS) policies (`auth.uid() = (storage.foldername(name))[1]`).
+  - Image-only upload boundary (`accept="image/*"`):
+    - Strict client-side Canvas optimization pipeline: downscale photos to max `1600px` long edge with high-quality smoothing (`ctx.imageSmoothingQuality = 'high'`).
+    - Encode 100% of uploads to full-color **WebP at 0.80 quality** (~120 KB – 180 KB), guaranteeing deterministic ~8,000+ receipts capacity on Supabase Free Tier while preserving colored stamps, signatures, and merchant branding.
+  - Build modal image lightbox viewer component `src/features/cashflow/components/ReceiptLightbox.tsx` supporting pinch/click zoom, download, and signed URL retrieval.
+  - Lifecycle cleanup: automatically purge orphaned storage objects when transactions are deleted or attachments replaced.
 
 ---
 

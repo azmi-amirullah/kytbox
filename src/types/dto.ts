@@ -91,6 +91,7 @@ export interface CashflowEntryDTO {
   yearly_calculation: 'prorated' | 'exact' | null
   tags: string[]
   items?: CashflowSplitEntryDTO[]
+  receipt_url?: string | null
 }
 
 export interface CashflowShareDTO {

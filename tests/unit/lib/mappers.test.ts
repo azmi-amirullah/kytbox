@@ -102,6 +102,7 @@ const baseCashflowEntry: CashflowEntry = {
   yearly_calculation: null,
   created_at: '2026-03-01T00:00:00Z',
   tags: [],
+  receipt_url: null,
 };
 
 const baseShare: CashflowShare = {

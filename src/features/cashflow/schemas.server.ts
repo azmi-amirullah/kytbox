@@ -46,6 +46,7 @@ export const cashflowEntrySchema = z.object({
   recurrence_interval: recurrenceIntervalSchema.optional(),
   yearly_calculation: yearlyCalculationSchema.optional(),
   itemsJson: z.string().optional().nullable(),
+  receiptAction: z.enum(['keep', 'remove', 'upload']).optional().default('keep'),
   tagsJson: z
     .string()
     .optional()
@@ -67,6 +68,11 @@ export const cashflowEntrySchema = z.object({
 
 export const updateCashflowEntrySchema = cashflowEntrySchema.extend({
   cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+});
+
+export const getReceiptSignedUrlSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  entryId: z.uuid({ message: 'Invalid entry ID' }),
 });
 
 export const cashflowBudgetSchema = z.object({

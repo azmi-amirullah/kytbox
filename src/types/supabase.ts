@@ -102,6 +102,7 @@ export type Database = {
           goal_id: string | null
           id: string
           is_recurring: boolean | null
+          receipt_url: string | null
           recurrence_interval: string | null
           tags: string[]
           type: string
@@ -117,6 +118,7 @@ export type Database = {
           goal_id?: string | null
           id?: string
           is_recurring?: boolean | null
+          receipt_url?: string | null
           recurrence_interval?: string | null
           tags?: string[]
           type: string
@@ -132,6 +134,7 @@ export type Database = {
           goal_id?: string | null
           id?: string
           is_recurring?: boolean | null
+          receipt_url?: string | null
           recurrence_interval?: string | null
           tags?: string[]
           type?: string
