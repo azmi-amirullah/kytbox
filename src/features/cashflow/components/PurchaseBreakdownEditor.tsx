@@ -85,7 +85,7 @@ export default function PurchaseBreakdownEditor({
 
       {items.length === 0 ? (
         <p className="text-xs text-muted-foreground italic py-2 text-center">
-          No items added yet. Click &quot;+ Add Item&quot; to breakdown store purchases.
+          No items added yet. Click &quot;+ Add Item&quot; to breakdown transactions.
         </p>
       ) : (
         <div className="space-y-2">

@@ -236,7 +236,7 @@ export default function EntryModal({
 
       if (validItems.length === 0 && splitItems.length > 0) {
         const msg =
-          'Please add at least one item or turn off Purchase Breakdown.'
+          'Please add at least one item or turn off Transaction Breakdown.'
         setError(msg)
         toast.error(msg)
         setIsLoading(false)
@@ -323,7 +323,7 @@ export default function EntryModal({
               </div>
             </div>
 
-            {/* Purchase Breakdown Toggle */}
+            {/* Transaction Breakdown Toggle */}
             <div className='p-3 bg-secondary/50 rounded-lg space-y-3 transition-all duration-200'>
               <div className='flex items-center justify-between gap-2'>
                 <div className='space-y-0.5'>
@@ -332,7 +332,7 @@ export default function EntryModal({
                     htmlFor='split-toggle'
                   >
                     <LuListPlus className='text-muted-foreground w-4 h-4' />{' '}
-                    Purchase Breakdown
+                    Transaction Breakdown
                   </Label>
                   <p className='text-xs text-muted-foreground'>
                     Split total into individual items.
