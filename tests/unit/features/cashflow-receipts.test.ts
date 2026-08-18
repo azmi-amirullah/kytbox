@@ -124,4 +124,49 @@ describe('Cashflow Receipt Schemas & Logic', () => {
       expect(dto.receipt_url).toBeNull()
     })
   })
+
+  describe('image format detection (isSupportedImageFile & isHeicImage)', () => {
+    it('identifies standard web images and iOS HEIC files', async () => {
+      const { isSupportedImageFile, isHeicImage } = await import(
+        '@/features/cashflow/lib/image-compression'
+      )
+
+      const jpegFile = new File(['mock-data'], 'receipt.jpg', {
+        type: 'image/jpeg',
+      })
+      const pngFile = new File(['mock-data'], 'receipt.png', {
+        type: 'image/png',
+      })
+      const webpFile = new File(['mock-data'], 'receipt.webp', {
+        type: 'image/webp',
+      })
+      const heicMimeFile = new File(['mock-data'], 'IMG_1024.HEIC', {
+        type: 'image/heic',
+      })
+      const heicEmptyMimeFile = new File(['mock-data'], 'IMG_1024.heic', {
+        type: '',
+      })
+      const heifFile = new File(['mock-data'], 'photo.heif', {
+        type: 'image/heif',
+      })
+      const pdfFile = new File(['mock-data'], 'invoice.pdf', {
+        type: 'application/pdf',
+      })
+
+      expect(isSupportedImageFile(jpegFile)).toBe(true)
+      expect(isSupportedImageFile(pngFile)).toBe(true)
+      expect(isSupportedImageFile(webpFile)).toBe(true)
+      expect(isSupportedImageFile(heicMimeFile)).toBe(true)
+      expect(isSupportedImageFile(heicEmptyMimeFile)).toBe(true)
+      expect(isSupportedImageFile(heifFile)).toBe(true)
+      expect(isSupportedImageFile(pdfFile)).toBe(false)
+
+      expect(isHeicImage(heicMimeFile)).toBe(true)
+      expect(isHeicImage(heicEmptyMimeFile)).toBe(true)
+      expect(isHeicImage(heifFile)).toBe(true)
+      expect(isHeicImage(jpegFile)).toBe(false)
+      expect(isHeicImage(pngFile)).toBe(false)
+    })
+  })
 })
+

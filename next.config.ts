@@ -36,6 +36,11 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   skipProxyUrlNormalize: true,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '3mb',
+    },
+  },
   async headers() {
     return [
       {

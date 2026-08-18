@@ -41,7 +41,7 @@ import PurchaseBreakdownEditor, {
   type SplitItemInput,
 } from './PurchaseBreakdownEditor'
 import { TagPicker } from './TagPicker'
-import { compressImageToWebP } from '../lib/image-compression'
+import { compressImageToWebP, isSupportedImageFile } from '../lib/image-compression'
 import ReceiptLightbox from './ReceiptLightbox'
 
 interface EntryModalProps {
@@ -194,12 +194,12 @@ export default function EntryModal({
   }, [open, entry?.id, entry?.receipt_url, cashflowId])
 
   const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toast.error('Only image files (JPG, PNG, WebP) are supported')
+    if (!isSupportedImageFile(file)) {
+      toast.error('Only image files (JPG, PNG, WebP, HEIC) are supported')
       return
     }
-    if (file.size > 15 * 1024 * 1024) {
-      toast.error('Image is too large (max 15MB before compression)')
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Image is too large (max 25MB before compression)')
       return
     }
     if (receiptPreviewUrl) {
@@ -304,8 +304,16 @@ export default function EntryModal({
         })
         formData.append('receipt_file', compressedBlob, 'receipt.webp')
       } catch (err) {
-        console.error('Client compression failed, falling back to original:', err)
-        formData.append('receipt_file', receiptFile)
+        console.error('Client compression failed:', err)
+        if (receiptFile.size <= 1024 * 1024) {
+          formData.append('receipt_file', receiptFile)
+        } else {
+          const msg = 'Could not compress image. Please choose a photo under 1MB.'
+          setError(msg)
+          toast.error(msg)
+          setIsLoading(false)
+          return
+        }
       }
     }
 
@@ -817,10 +825,10 @@ export default function EntryModal({
                   onDrop={(e) => {
                     e.preventDefault()
                     const droppedFile = e.dataTransfer.files?.[0]
-                    if (droppedFile && droppedFile.type.startsWith('image/')) {
+                    if (droppedFile && isSupportedImageFile(droppedFile)) {
                       handleFileSelect(droppedFile)
                     } else if (droppedFile) {
-                      toast.error('Only image files (JPG, PNG, WebP) are supported')
+                      toast.error('Only image files (JPG, PNG, WebP, HEIC) are supported')
                     }
                   }}
                   className='flex flex-col items-center justify-center p-4 border border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/30 rounded-lg cursor-pointer transition-colors text-center group'
@@ -830,7 +838,7 @@ export default function EntryModal({
                     Upload receipt or photo
                   </p>
                   <p className='text-[10px] text-muted-foreground mt-0.5'>
-                    Drag & drop or click to browse (PNG, JPG, WebP)
+                    Drag & drop or click to browse (PNG, JPG, WebP, HEIC)
                   </p>
                 </div>
               )}
@@ -838,7 +846,7 @@ export default function EntryModal({
               <input
                 ref={receiptInputRef}
                 type='file'
-                accept='image/*'
+                accept='image/*,.heic,.heif,image/heic,image/heif'
                 className='hidden'
                 onChange={(e) => {
                   const file = e.target.files?.[0]

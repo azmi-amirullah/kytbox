@@ -488,8 +488,8 @@ export async function addEntry(formData: FormData) {
   let receiptUrl: string | null = null;
   const receiptFile = formData.get('receipt_file');
   if (receiptFile instanceof File && receiptFile.size > 0) {
-    if (receiptFile.size > 5 * 1024 * 1024) {
-      return { error: 'Receipt file exceeds 5MB limit' };
+    if (receiptFile.size > 2 * 1024 * 1024) {
+      return { error: 'Receipt file exceeds 2MB limit. Please upload a compressed or smaller image.' };
     }
     if (!receiptFile.type.startsWith('image/')) {
       return { error: 'Invalid file type. Image only.' };
@@ -677,8 +677,8 @@ export async function updateEntry(entryId: string, formData: FormData) {
   } else if (receiptAction === 'upload') {
     const receiptFile = formData.get('receipt_file');
     if (receiptFile instanceof File && receiptFile.size > 0) {
-      if (receiptFile.size > 5 * 1024 * 1024) {
-        return { error: 'Receipt file exceeds 5MB limit' };
+      if (receiptFile.size > 2 * 1024 * 1024) {
+        return { error: 'Receipt file exceeds 2MB limit. Please upload a compressed or smaller image.' };
       }
       if (!receiptFile.type.startsWith('image/')) {
         return { error: 'Invalid file type. Image only.' };

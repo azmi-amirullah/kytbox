@@ -16,6 +16,7 @@ import {
   LuLoader,
   LuReceipt,
   LuTriangleAlert,
+  LuX,
 } from 'react-icons/lu'
 import { getReceiptSignedUrl } from '../actions'
 import { formatCurrencyCompact } from '@/lib/currency'
@@ -125,17 +126,18 @@ export default function ReceiptLightbox({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-3xl w-[95vw] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-background border rounded-xl shadow-2xl'>
-        <DialogHeader className='px-6 py-4 border-b bg-muted/30 flex flex-row items-center justify-between space-y-0'>
-          <div className='flex items-center gap-2.5 min-w-0 pr-4'>
-            <div className='w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0'>
-              <LuReceipt className='w-5 h-5' />
+      <DialogContent className='max-w-3xl w-[95vw] max-h-[92vh] flex flex-col p-0 overflow-hidden bg-background border rounded-xl shadow-2xl'>
+        {/* Header: Designed for mobile-first with clear truncation & explicit close button */}
+        <DialogHeader className='px-4 py-3 sm:px-6 sm:py-4 border-b bg-muted/30 flex flex-row items-center justify-between space-y-0 gap-3'>
+          <div className='flex items-center gap-2.5 min-w-0 flex-1'>
+            <div className='w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0'>
+              <LuReceipt className='w-4 h-4 sm:w-5 sm:h-5' />
             </div>
-            <div className='min-w-0'>
-              <DialogTitle className='text-base font-semibold truncate'>
+            <div className='min-w-0 flex-1'>
+              <DialogTitle className='text-sm sm:text-base font-semibold truncate'>
                 {description}
               </DialogTitle>
-              <div className='flex items-center gap-2 text-xs text-muted-foreground mt-0.5'>
+              <div className='flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 truncate'>
                 {date && <span>{date}</span>}
                 {typeof amount === 'number' && (
                   <>
@@ -149,9 +151,10 @@ export default function ReceiptLightbox({
             </div>
           </div>
 
+          {/* Desktop action toolbar */}
           <div className='flex items-center gap-1.5 shrink-0'>
             {signedUrl && (
-              <>
+              <div className='hidden sm:flex items-center gap-1.5'>
                 <Button
                   type='button'
                   variant='outline'
@@ -194,16 +197,30 @@ export default function ReceiptLightbox({
                   size='sm'
                   className='h-8 gap-1.5 ml-1 text-xs'
                   onClick={handleDownload}
+                  title='Download receipt'
                 >
                   <LuDownload className='w-3.5 h-3.5' />
                   <span>Download</span>
                 </Button>
-              </>
+              </div>
             )}
+
+            {/* Explicit Close Button */}
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon'
+              className='h-8 w-8 text-muted-foreground hover:text-foreground rounded-md'
+              onClick={() => onOpenChange(false)}
+              aria-label='Close dialog'
+            >
+              <LuX className='w-4 h-4' />
+            </Button>
           </div>
         </DialogHeader>
 
-        <div className='flex-1 overflow-auto p-4 flex items-center justify-center min-h-80 max-h-[calc(90vh-130px)] bg-muted/10 relative'>
+        {/* Viewport container */}
+        <div className='flex-1 overflow-auto p-2 sm:p-4 flex items-center justify-center min-h-[45vh] max-h-[calc(92vh-130px)] bg-muted/10 relative'>
           {isLoading && (
             <div className='flex flex-col items-center gap-3 text-muted-foreground'>
               <LuLoader className='w-8 h-8 animate-spin text-primary' />
@@ -228,7 +245,7 @@ export default function ReceiptLightbox({
 
           {!isLoading && !error && signedUrl && (
             <div
-              className='transition-transform duration-200 ease-out origin-center flex items-center justify-center'
+              className='transition-transform duration-200 ease-out origin-center flex items-center justify-center max-w-full max-h-full'
               style={{
                 transform: `scale(${zoom})`,
                 cursor: zoom > 1 ? 'grab' : 'default',
@@ -238,8 +255,62 @@ export default function ReceiptLightbox({
               <img
                 src={signedUrl}
                 alt={`Receipt for ${description}`}
-                className='max-w-full max-h-[calc(90vh-160px)] object-contain rounded-md shadow-md border bg-card'
+                className='max-w-full max-h-[calc(92vh-160px)] object-contain rounded-md shadow-md border bg-card'
               />
+            </div>
+          )}
+
+          {/* Floating Mobile Toolbar (Appears at bottom of lightbox on <sm viewports) */}
+          {!isLoading && !error && signedUrl && (
+            <div className='sm:hidden absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1 rounded-full bg-background/90 backdrop-blur-md border border-border/80 shadow-xl z-20'>
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8 rounded-full'
+                onClick={handleZoomOut}
+                disabled={zoom <= 1}
+                title='Zoom out'
+                aria-label='Zoom out'
+              >
+                <LuZoomOut className='w-4 h-4' />
+              </Button>
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8 rounded-full text-xs font-semibold'
+                onClick={handleResetZoom}
+                disabled={zoom === 1}
+                title='Reset zoom'
+                aria-label='Reset zoom'
+              >
+                <LuRotateCcw className='w-3.5 h-3.5' />
+              </Button>
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8 rounded-full'
+                onClick={handleZoomIn}
+                disabled={zoom >= 3}
+                title='Zoom in'
+                aria-label='Zoom in'
+              >
+                <LuZoomIn className='w-4 h-4' />
+              </Button>
+              <div className='w-px h-4 bg-border/80 mx-0.5' />
+              <Button
+                type='button'
+                variant='default'
+                size='icon'
+                className='h-8 w-8 rounded-full shadow-xs'
+                onClick={handleDownload}
+                title='Download receipt'
+                aria-label='Download receipt'
+              >
+                <LuDownload className='w-3.5 h-3.5' />
+              </Button>
             </div>
           )}
         </div>
