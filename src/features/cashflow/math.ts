@@ -732,6 +732,19 @@ export function compareMonths(
     chartData,
   };
 }
-
-
-
+/**
+ * Filters cashflow entries by selected tags.
+ * Returns entries that contain ALL selected tags (case-insensitive AND match).
+ * If selectedTags is empty, returns the full list unchanged.
+ */
+export function filterEntriesByTags(
+  entries: CashflowEntryDTO[],
+  selectedTags: string[],
+): CashflowEntryDTO[] {
+  if (selectedTags.length === 0) return entries;
+  const lower = selectedTags.map((t) => t.toLowerCase());
+  return entries.filter((entry) => {
+    const entryTagsLower = (entry.tags ?? []).map((t) => t.toLowerCase());
+    return lower.every((tag) => entryTagsLower.includes(tag));
+  });
+}

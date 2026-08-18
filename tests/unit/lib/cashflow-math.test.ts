@@ -4,6 +4,7 @@ import {
   resolveFilterRange,
   filterEntriesByDate,
   sortEntries,
+  filterEntriesByTags,
   isCashflowSortOption,
 } from '@/features/cashflow/math';
 import type { CashflowEntryDTO, CashflowBudgetDTO } from '@/types/dto';
@@ -24,6 +25,7 @@ const createEntry = (overrides: Partial<CashflowEntryDTO>): CashflowEntryDTO => 
   is_recurring: false,
   recurrence_interval: null,
   yearly_calculation: null,
+  tags: [],
   ...overrides,
 });
 
@@ -480,6 +482,39 @@ describe('isCashflowSortOption', () => {
     expect(isCashflowSortOption('invalid')).toBe(false);
     expect(isCashflowSortOption('')).toBe(false);
     expect(isCashflowSortOption('created_at-desc')).toBe(false);
+  });
+});
+
+describe('filterEntriesByTags', () => {
+  const e1 = createEntry({ id: '1', tags: ['TaxDeductible', 'ClientA'] });
+  const e2 = createEntry({ id: '2', tags: ['ClientA', 'Office'] });
+  const e3 = createEntry({ id: '3', tags: ['Personal'] });
+  const e4 = createEntry({ id: '4', tags: [] });
+
+  const allEntries = [e1, e2, e3, e4];
+
+  it('returns all entries when selectedTags is empty', () => {
+    expect(filterEntriesByTags(allEntries, [])).toEqual(allEntries);
+  });
+
+  it('filters by single tag case-insensitively', () => {
+    const result = filterEntriesByTags(allEntries, ['taxdeductible']);
+    expect(result.map((e) => e.id)).toEqual(['1']);
+  });
+
+  it('matches multiple tags with AND logic', () => {
+    const result = filterEntriesByTags(allEntries, ['ClientA', 'TaxDeductible']);
+    expect(result.map((e) => e.id)).toEqual(['1']);
+  });
+
+  it('returns multiple matching entries for a shared tag', () => {
+    const result = filterEntriesByTags(allEntries, ['ClientA']);
+    expect(result.map((e) => e.id)).toEqual(['1', '2']);
+  });
+
+  it('returns empty array when no entries match all selected tags', () => {
+    const result = filterEntriesByTags(allEntries, ['ClientA', 'Personal']);
+    expect(result).toEqual([]);
   });
 });
 

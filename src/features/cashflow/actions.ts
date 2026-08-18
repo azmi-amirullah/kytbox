@@ -19,12 +19,74 @@ import {
   shouldPreserveExistingGoalRelation,
   importCashflowEntriesSchema,
   type ImportCashflowEntryItem,
+  renameCashflowTagSchema,
+  deleteCashflowTagSchema,
 } from './schemas.server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { mapBudgetToDTO, mapGoalToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
+import { getNextAvailableColorIndex } from './lib/tag-colors';
+
+export async function ensureCashflowTags(
+  supabase: SupabaseClient<Database>,
+  cashflowId: string,
+  userId: string,
+  tagNames: string[],
+) {
+  if (!tagNames || tagNames.length === 0) return;
+
+  const { data: existingTags, error } = await supabase
+    .from('cashflow_tags')
+    .select('id, name, color_index')
+    .eq('cashflow_id', cashflowId);
+
+  if (error) {
+    console.error('Failed to fetch cashflow_tags:', error);
+    return;
+  }
+
+  const currentTags = existingTags || [];
+  const newTagsToInsert: Array<{
+    cashflow_id: string;
+    user_id: string;
+    name: string;
+    color_index: number;
+  }> = [];
+
+  const simulatedList: Array<{ color_index: number }> = [...currentTags];
+
+  for (const rawName of tagNames) {
+    const clean = rawName.trim().replace(/^#/, '');
+    if (!clean) continue;
+
+    const exists =
+      currentTags.some((t) => t.name.toLowerCase() === clean.toLowerCase()) ||
+      newTagsToInsert.some((t) => t.name.toLowerCase() === clean.toLowerCase());
+
+    if (!exists) {
+      const nextColor = getNextAvailableColorIndex(simulatedList);
+      simulatedList.push({ color_index: nextColor });
+      newTagsToInsert.push({
+        cashflow_id: cashflowId,
+        user_id: userId,
+        name: clean,
+        color_index: nextColor,
+      });
+    }
+  }
+
+  if (newTagsToInsert.length > 0) {
+    const { error: insertErr } = await supabase
+      .from('cashflow_tags')
+      .insert(newTagsToInsert);
+
+    if (insertErr) {
+      console.error('Failed to insert cashflow_tags:', insertErr);
+    }
+  }
+}
 
 // Extracts user_id from Supabase joined relation (e.g. cashflows(user_id))
 const joinedOwnerSchema = z
@@ -365,6 +427,7 @@ export async function addEntry(formData: FormData) {
     is_recurring,
     recurrence_interval,
     yearly_calculation,
+    tagsJson: tags,
   } = parsed.data;
 
   const goalEntryError = getGoalEntryValidationError(type, category);
@@ -435,6 +498,7 @@ export async function addEntry(formData: FormData) {
         is_recurring && recurrence_interval === 'yearly'
           ? yearly_calculation
           : null,
+      tags: tags ?? [],
     })
     .select('id')
     .single();
@@ -464,6 +528,8 @@ export async function addEntry(formData: FormData) {
     await checkBudgetThresholds(supabase, cashflowId, resolvedGoal.category, user.id);
   }
 
+  await ensureCashflowTags(supabase, cashflowId, user.id, tags ?? []);
+
   revalidatePath('/cashflow');
   return { success: true };
 }
@@ -489,6 +555,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
     is_recurring,
     recurrence_interval,
     yearly_calculation,
+    tagsJson: tags,
   } = parsed.data;
 
   const goalEntryError = getGoalEntryValidationError(type, category);
@@ -588,6 +655,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
         is_recurring && recurrence_interval === 'yearly'
           ? yearly_calculation
           : null,
+      tags: tags ?? [],
     })
     .eq('id', entryId);
 
@@ -613,10 +681,12 @@ export async function updateEntry(entryId: string, formData: FormData) {
         .from('cashflow_split_entries')
         .insert(splitRows);
       if (splitError) {
-        console.error('Failed to update split entries:', splitError);
+        console.error('Failed to insert split entries on update:', splitError);
       }
     }
   }
+
+  await ensureCashflowTags(supabase, entry.cashflow_id, user.id, tags ?? []);
 
   if (type === 'expense' && resolvedGoal.category) {
     await checkBudgetThresholds(
@@ -1733,5 +1803,164 @@ export async function importCashflowEntries(
   revalidatePath('/app');
 
   return { success: true, count: data?.length || toInsert.length };
+}
+
+/**
+ * Rename a tag across all entries in a cashflow book.
+ */
+export async function renameCashflowTag(formData: FormData) {
+  const { user, supabase } = await getAuthenticatedUserOnly();
+
+  const parsed = renameCashflowTagSchema.safeParse({
+    cashflowId: formData.get('cashflowId'),
+    oldTag: formData.get('oldTag'),
+    newTag: formData.get('newTag'),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { cashflowId, oldTag, newTag } = parsed.data;
+
+  const [{ success: rateLimitOk }, permission] = await Promise.all([
+    checkRateLimit(actionRateLimit, user.id),
+    checkEditPermission(supabase, cashflowId, user),
+  ]);
+
+  if (!rateLimitOk) {
+    throw new Error('Too many requests. Please slow down.');
+  }
+
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  // Fetch all entries containing oldTag
+  const { data: entries, error: fetchError } = await supabase
+    .from('cashflow_entries')
+    .select('id, tags')
+    .eq('cashflow_id', cashflowId)
+    .contains('tags', [oldTag]);
+
+  if (fetchError) {
+    console.error('Failed to fetch entries for tag rename:', fetchError);
+    return { error: 'Failed to find entries with this tag.' };
+  }
+
+  if (!entries || entries.length === 0) {
+    return { success: true, count: 0 };
+  }
+
+  // Update each entry's tags array with deduplication
+  const updatePromises = entries.map((entry) => {
+    const updatedTags = Array.from(
+      new Set(
+        (entry.tags || []).map((t) =>
+          t.toLowerCase() === oldTag.toLowerCase() ? newTag : t,
+        ),
+      ),
+    );
+    return supabase
+      .from('cashflow_entries')
+      .update({ tags: updatedTags })
+      .eq('id', entry.id);
+  });
+
+  const results = await Promise.all(updatePromises);
+  const hasError = results.some((r) => r.error);
+  if (hasError) {
+    console.error('Failed to update some entries during tag rename');
+    return { error: 'Failed to update all entries.' };
+  }
+
+  // Update tag in cashflow_tags registry
+  await supabase
+    .from('cashflow_tags')
+    .update({ name: newTag })
+    .eq('cashflow_id', cashflowId)
+    .ilike('name', oldTag);
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+
+  return { success: true, count: entries.length };
+}
+
+/**
+ * Delete a tag across all entries in a cashflow book.
+ */
+export async function deleteCashflowTag(formData: FormData) {
+  const { user, supabase } = await getAuthenticatedUserOnly();
+
+  const parsed = deleteCashflowTagSchema.safeParse({
+    cashflowId: formData.get('cashflowId'),
+    tag: formData.get('tag'),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { cashflowId, tag } = parsed.data;
+
+  const [{ success: rateLimitOk }, permission] = await Promise.all([
+    checkRateLimit(actionRateLimit, user.id),
+    checkEditPermission(supabase, cashflowId, user),
+  ]);
+
+  if (!rateLimitOk) {
+    throw new Error('Too many requests. Please slow down.');
+  }
+
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  // Fetch all entries containing tag
+  const { data: entries, error: fetchError } = await supabase
+    .from('cashflow_entries')
+    .select('id, tags')
+    .eq('cashflow_id', cashflowId)
+    .contains('tags', [tag]);
+
+  if (fetchError) {
+    console.error('Failed to fetch entries for tag delete:', fetchError);
+    return { error: 'Failed to find entries with this tag.' };
+  }
+
+  if (!entries || entries.length === 0) {
+    return { success: true, count: 0 };
+  }
+
+  // Remove tag from each entry
+  const updatePromises = entries.map((entry) => {
+    const updatedTags = (entry.tags || []).filter(
+      (t) => t.toLowerCase() !== tag.toLowerCase(),
+    );
+    return supabase
+      .from('cashflow_entries')
+      .update({ tags: updatedTags })
+      .eq('id', entry.id);
+  });
+
+  const results = await Promise.all(updatePromises);
+  const hasError = results.some((r) => r.error);
+  if (hasError) {
+    console.error('Failed to update some entries during tag delete');
+    return { error: 'Failed to remove tag from all entries.' };
+  }
+
+  // Delete from cashflow_tags registry
+  await supabase
+    .from('cashflow_tags')
+    .delete()
+    .eq('cashflow_id', cashflowId)
+    .ilike('name', tag);
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+
+  return { success: true, count: entries.length };
 }
 

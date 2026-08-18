@@ -11,6 +11,8 @@ export type CashflowShare =
   Database['public']['Tables']['cashflow_shares']['Row'];
 export type CashflowBudget =
   Database['public']['Tables']['cashflow_budgets']['Row'];
+export type CashflowTag =
+  Database['public']['Tables']['cashflow_tags']['Row'];
 export type CashflowGoal =
   Database['public']['Tables']['cashflow_goals']['Row'];
 export type SupportTicket =

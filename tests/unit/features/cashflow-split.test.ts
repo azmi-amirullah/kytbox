@@ -83,6 +83,7 @@ describe('Cashflow Split Transactions', () => {
         recurrence_interval: null,
         yearly_calculation: null,
         created_at: '2026-08-13T10:00:00Z',
+        tags: [],
         cashflow_split_entries: [
           {
             id: 's-1',

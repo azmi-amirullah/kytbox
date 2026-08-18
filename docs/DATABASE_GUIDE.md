@@ -57,13 +57,14 @@ Analytics for link clicks (UA, Country, Referer). Used to populate the Bio analy
 - **`reorder_links(p_link_ids uuid[])`**: Bulk updates `sort_order` for an array of links.
 - **`get_analytics_chart_data(...)`**: Aggregates clicks for Bio analytics charts.
 
-### 2.3 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`, `cashflow_budgets`, `cashflow_goals`)
+### 2.3 Cashflow App (`cashflows`, `cashflow_entries`, `cashflow_shares`, `cashflow_budgets`, `cashflow_goals`, `cashflow_tags`)
 
 - **`cashflows`**: Virtual wallets/accounts.
-- **`cashflow_entries`**: Immutable transaction log.
+- **`cashflow_entries`**: Immutable transaction log. Includes `tags text[]` array column with GIN index.
 - **`cashflow_shares`**: ACL for sharing cashflows with other users by email.
 - **`cashflow_budgets`**: Monthly spending limits per category per cashflow. Unique on `(cashflow_id, category)`.
 - **`cashflow_goals`**: Savings targets scoped to cashflows with target amounts, deadlines, and soft-archive support.
+- **`cashflow_tags`**: Persistent metadata table for custom transaction labels. Unique on `(cashflow_id, lower(name))`. Tracks `color_index` (0-11) for deterministic slot-filling tag color allocation.
 
 ### 2.4 Support System (`support_tickets`, `support_messages`)
 

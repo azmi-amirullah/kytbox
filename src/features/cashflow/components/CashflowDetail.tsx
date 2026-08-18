@@ -49,12 +49,14 @@ import {
   LuImport,
   LuArrowDown,
   LuArrowUp,
+  LuTag,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
   CashflowDTO,
   CashflowEntryDTO,
   CashflowBudgetDTO,
+  CashflowTagDTO,
   CashflowGoalDTO,
 } from '@/types/dto'
 import { formatCurrencyCompact } from '@/lib/currency'
@@ -100,17 +102,22 @@ import {
   filterEntriesByDate,
   resolveFilterRange,
   sortEntries,
+  filterEntriesByTags,
   isCashflowSortOption,
   type DateFilterState,
   type CashflowSortOption,
 } from '../math'
 import { escapeCsvField } from '../lib/csv'
 import { cn } from '@/lib/utils'
+import { EntryTypeBadge, EntryMetadataBadges } from './EntryBadges'
+import { resolveTagColor, TAG_COLORS } from '../lib/tag-colors'
+import { ManageTagModal } from './ManageTagModal'
 
 interface CashflowDetailProps {
   cashflow: CashflowDTO
   entries: CashflowEntryDTO[]
   budgets: CashflowBudgetDTO[]
+  tags?: CashflowTagDTO[]
   goals?: CashflowGoalDTO[]
   currency: string | null
   currentUserId?: string
@@ -123,13 +130,14 @@ export default function CashflowDetail({
   cashflow,
   entries,
   budgets,
+  tags = [],
   goals = [],
   currency,
   currentUserId,
   initialUserRole = 'public',
   initialShareId = null,
   initialHasShare = false,
-}: CashflowDetailProps) {
+  }: CashflowDetailProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -155,6 +163,8 @@ export default function CashflowDetail({
   const [userRole] = useState<'owner' | 'edit' | 'read' | 'public'>(
     isOwner ? 'owner' : initialUserRole,
   )
+  const [isManageTagOpen, setIsManageTagOpen] = useState(false)
+  const [managingTag, setManagingTag] = useState<string | null>(null)
 
   // ── Search query ─────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('')
@@ -164,6 +174,9 @@ export default function CashflowDetail({
     'all' | 'income' | 'expense'
   >('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
+
+  // ── Tag filter ────────────────────────────────────────────────────────────
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
 
   // ── Sort option ──────────────────────────────────────────────────────────────
   const [sortBy, setSortBy] = useState<CashflowSortOption>('date-desc')
@@ -176,6 +189,38 @@ export default function CashflowDetail({
     return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [entries])
 
+  const allUniqueTags = useMemo(() => {
+    if (tags && tags.length > 0) {
+      const sortedTags = [...tags].sort((a, b) => {
+        const slotA =
+          ((a.color_index % TAG_COLORS.length) + TAG_COLORS.length) %
+          TAG_COLORS.length
+        const slotB =
+          ((b.color_index % TAG_COLORS.length) + TAG_COLORS.length) %
+          TAG_COLORS.length
+        if (slotA !== slotB) {
+          return slotA - slotB
+        }
+        return a.name.localeCompare(b.name)
+      })
+      return sortedTags.map((t) => t.name)
+    }
+    const set = new Set<string>()
+    for (const e of entries) {
+      for (const t of e.tags ?? []) {
+        if (t) set.add(t)
+      }
+    }
+    return Array.from(set).sort((a, b) => {
+      const colorA = resolveTagColor(a, tags)
+      const colorB = resolveTagColor(b, tags)
+      const idxA = TAG_COLORS.indexOf(colorA)
+      const idxB = TAG_COLORS.indexOf(colorB)
+      if (idxA !== idxB) return idxA - idxB
+      return a.localeCompare(b)
+    })
+  }, [tags, entries])
+
   // ── Date filter ──────────────────────────────────────────────────────────────
   const [filterState, setFilterState] = useState<DateFilterState>({
     preset: 'all-time',
@@ -187,7 +232,8 @@ export default function CashflowDetail({
     selectedType !== 'all' ||
     selectedCategory !== 'all' ||
     searchQuery.trim() !== '' ||
-    sortBy !== 'date-desc'
+    sortBy !== 'date-desc' ||
+    selectedTags.length > 0
 
   function clearAllFilters() {
     setFilterState({ preset: 'all-time', custom: { from: null, to: null } })
@@ -195,6 +241,7 @@ export default function CashflowDetail({
     setSelectedCategory('all')
     setSearchQuery('')
     setSortBy('date-desc')
+    setSelectedTags([])
   }
 
   const filteredEntries = useMemo(() => {
@@ -213,7 +260,8 @@ export default function CashflowDetail({
         e.description.toLowerCase().includes(query),
       )
     }
-    return sortEntries(filtered, sortBy)
+    filtered = sortEntries(filtered, sortBy)
+    return filterEntriesByTags(filtered, selectedTags)
   }, [
     entries,
     filterState,
@@ -221,6 +269,7 @@ export default function CashflowDetail({
     selectedCategory,
     searchQuery,
     sortBy,
+    selectedTags,
   ])
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -981,162 +1030,7 @@ export default function CashflowDetail({
         currency={currency}
       />
 
-      {/* Search + Filters Toolbar */}
-      {entries.length > 0 && (
-        <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center'>
-          {/* Search Input */}
-          <div className='relative flex items-center w-full lg:max-w-xs shrink-0'>
-            <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground' />
-            <Input
-              placeholder='Search entries...'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className='pl-9 pr-9 bg-card w-full'
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className='absolute right-3 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs'
-                aria-label='Clear search'
-              >
-                <LuX className='w-4 h-4' />
-              </button>
-            )}
-          </div>
-
-          {/* Select Dropdowns Wrapper (Date, Type, Category, Sort) */}
-          <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center lg:flex-1'>
-            <div
-              className={cn(
-                'grid gap-3 w-full lg:flex lg:w-auto lg:items-center',
-                uniqueCategories.length > 0
-                  ? 'grid-cols-2 sm:grid-cols-4'
-                  : 'grid-cols-2 sm:grid-cols-3',
-              )}
-            >
-              {/* Date Filter */}
-              <div className='w-full lg:w-auto'>
-                <DateFilter
-                  state={filterState}
-                  onChange={setFilterState}
-                  filteredCount={filteredEntries.length}
-                  totalCount={entries.length}
-                />
-              </div>
-
-              {/* Type Dropdown */}
-              <Select
-                value={selectedType}
-                onValueChange={(v) => {
-                  if (v === 'all' || v === 'income' || v === 'expense') {
-                    setSelectedType(v)
-                  }
-                }}
-              >
-                <SelectTrigger className='bg-card w-full lg:w-32'>
-                  <SelectValue placeholder='Type' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>All Types</SelectItem>
-                  <SelectItem value='income'>Income</SelectItem>
-                  <SelectItem value='expense'>Expense</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Category Dropdown */}
-              {uniqueCategories.length > 0 && (
-                <Select
-                  value={selectedCategory}
-                  onValueChange={setSelectedCategory}
-                >
-                  <SelectTrigger className='bg-card w-full lg:w-36'>
-                    <SelectValue placeholder='Category' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='all'>All Categories</SelectItem>
-                    {uniqueCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              {/* Sort Dropdown */}
-              <div className='w-full lg:w-auto'>
-                <Select
-                  value={sortBy}
-                  onValueChange={(v) => {
-                    if (isCashflowSortOption(v)) {
-                      setSortBy(v)
-                    }
-                  }}
-                >
-                  <SelectTrigger
-                    className='bg-card w-full lg:w-38 whitespace-nowrap'
-                    aria-label='Sort entries'
-                  >
-                    <SelectValue placeholder='Sort by' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='date-desc'>
-                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                        <span>Date</span>
-                        <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                      </span>
-                    </SelectItem>
-                    <SelectItem value='date-asc'>
-                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                        <span>Date</span>
-                        <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                      </span>
-                    </SelectItem>
-                    <SelectItem value='created-desc'>
-                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                        <span>Created</span>
-                        <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                      </span>
-                    </SelectItem>
-                    <SelectItem value='created-asc'>
-                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                        <span>Created</span>
-                        <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                      </span>
-                    </SelectItem>
-                    <SelectItem value='amount-desc'>
-                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                        <span>Amount</span>
-                        <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                      </span>
-                    </SelectItem>
-                    <SelectItem value='amount-asc'>
-                      <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                        <span>Amount</span>
-                        <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {hasActiveFilters && (
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={clearAllFilters}
-                className='gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3 self-start sm:self-center'
-              >
-                <LuX className='w-4 h-4' />
-                <span>Clear</span>
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Entries Table */}
+      {/* Entries Table & Filter Card */}
       <div className='bg-card border rounded-xl overflow-hidden relative'>
         {isPending && (
           <div className='absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10 transition-all duration-200'>
@@ -1146,6 +1040,254 @@ export default function CashflowDetail({
             </div>
           </div>
         )}
+
+        {/* Toolbar Header (inside the Card) */}
+        {entries.length > 0 && (
+          <div className='p-3.5 sm:p-4 border-b border-border/60 flex flex-col gap-2.5 bg-muted/20'>
+            {/* Row 1: Search + Filters */}
+            <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center'>
+              {/* Search Input */}
+              <div className='relative flex items-center w-full lg:max-w-xs shrink-0'>
+                <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground' />
+                <Input
+                  placeholder='Search entries...'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className='pl-9 pr-9 bg-card w-full'
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className='absolute right-3 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs cursor-pointer'
+                    aria-label='Clear search'
+                  >
+                    <LuX className='w-4 h-4' />
+                  </button>
+                )}
+              </div>
+
+              {/* Select Dropdowns Wrapper (Date, Type, Category, Sort) */}
+              <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center lg:flex-1'>
+                <div
+                  className={cn(
+                    'grid gap-3 w-full lg:flex lg:w-auto lg:items-center',
+                    uniqueCategories.length > 0
+                      ? 'grid-cols-2 sm:grid-cols-4'
+                      : 'grid-cols-2 sm:grid-cols-3',
+                  )}
+                >
+                  {/* Date Filter */}
+                  <div className='w-full lg:w-auto'>
+                    <DateFilter
+                      state={filterState}
+                      onChange={setFilterState}
+                      filteredCount={filteredEntries.length}
+                      totalCount={entries.length}
+                    />
+                  </div>
+
+                  {/* Type Dropdown */}
+                  <Select
+                    value={selectedType}
+                    onValueChange={(v) => {
+                      if (v === 'all' || v === 'income' || v === 'expense') {
+                        setSelectedType(v)
+                      }
+                    }}
+                  >
+                    <SelectTrigger className='bg-card w-full lg:w-32'>
+                      <SelectValue placeholder='Type' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='all'>All Types</SelectItem>
+                      <SelectItem value='income'>Income</SelectItem>
+                      <SelectItem value='expense'>Expense</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Category Dropdown */}
+                  {uniqueCategories.length > 0 && (
+                    <Select
+                      value={selectedCategory}
+                      onValueChange={setSelectedCategory}
+                    >
+                      <SelectTrigger className='bg-card w-full lg:w-36'>
+                        <SelectValue placeholder='Category' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='all'>All Categories</SelectItem>
+                        {uniqueCategories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {/* Sort Dropdown */}
+                  <div className='w-full lg:w-auto'>
+                    <Select
+                      value={sortBy}
+                      onValueChange={(v) => {
+                        if (isCashflowSortOption(v)) {
+                          setSortBy(v)
+                        }
+                      }}
+                    >
+                      <SelectTrigger
+                        className='bg-card w-full lg:w-38 whitespace-nowrap'
+                        aria-label='Sort entries'
+                      >
+                        <SelectValue placeholder='Sort by' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='date-desc'>
+                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                            <span>Date</span>
+                            <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                          </span>
+                        </SelectItem>
+                        <SelectItem value='date-asc'>
+                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                            <span>Date</span>
+                            <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                          </span>
+                        </SelectItem>
+                        <SelectItem value='created-desc'>
+                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                            <span>Created</span>
+                            <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                          </span>
+                        </SelectItem>
+                        <SelectItem value='created-asc'>
+                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                            <span>Created</span>
+                            <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                          </span>
+                        </SelectItem>
+                        <SelectItem value='amount-desc'>
+                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                            <span>Amount</span>
+                            <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                          </span>
+                        </SelectItem>
+                        <SelectItem value='amount-asc'>
+                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                            <span>Amount</span>
+                            <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {hasActiveFilters && (
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={clearAllFilters}
+                    className='gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3 self-start sm:self-center'
+                  >
+                    <LuX className='w-4 h-4' />
+                    <span>Clear</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Row 2: Tag Filter Strip */}
+            {allUniqueTags.length > 0 && (
+              <div className='flex flex-wrap items-center gap-1.5 pt-3 mt-1.5 border-t border-border/40'>
+                <span className='text-xs font-medium text-muted-foreground mr-1 flex items-center gap-1'>
+                  <LuTag className='w-3 h-3' /> Tags:
+                </span>
+                {allUniqueTags.map((tag) => {
+                  const isActive = selectedTags.includes(tag)
+                  const tagColor = resolveTagColor(tag, tags)
+                  return (
+                    <div
+                      key={tag}
+                      role='button'
+                      tabIndex={0}
+                      aria-pressed={isActive}
+                      onClick={() => {
+                        setSelectedTags((prev) =>
+                          isActive
+                            ? prev.filter((t) => t !== tag)
+                            : [...prev, tag],
+                        )
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setSelectedTags((prev) =>
+                            isActive
+                              ? prev.filter((t) => t !== tag)
+                              : [...prev, tag],
+                          )
+                        }
+                      }}
+                      className={cn(
+                        'group inline-flex items-center h-5 px-2 rounded text-[10px] border leading-none transition-all duration-200 shadow-2xs select-none cursor-pointer',
+                        isActive
+                          ? cn(
+                              tagColor.activeBg,
+                              tagColor.activeText,
+                              tagColor.activeBorder,
+                            )
+                          : cn(
+                              tagColor.bg,
+                              tagColor.text,
+                              tagColor.border,
+                              'font-medium hover:opacity-85',
+                            ),
+                      )}
+                    >
+                      {isActive && (
+                        <LuCheck className='w-2.5 h-2.5 mr-1 shrink-0 animate-in fade-in zoom-in-75 duration-150' />
+                      )}
+                      <span className='shrink-0'>#{tag}</span>
+                      {canEdit && (
+                        <span className='inline-flex items-center max-w-0 opacity-0 group-hover:max-w-10 group-hover:opacity-100 group-hover:pl-2 overflow-hidden transition-all duration-200 ease-out shrink-0'>
+                          <button
+                            type='button'
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setManagingTag(tag)
+                              setIsManageTagOpen(true)
+                            }}
+                            aria-label={`Manage tag ${tag}`}
+                            className={cn(
+                              'focus-visible:outline-none rounded-xs cursor-pointer inline-flex items-center justify-center hover:scale-110 transition-transform',
+                              isActive
+                                ? 'text-inherit opacity-85 hover:opacity-100'
+                                : 'opacity-70 hover:opacity-100',
+                            )}
+                            title='Rename or delete tag'
+                          >
+                            <LuPencil className='w-2.5 h-2.5' />
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+                {selectedTags.length > 0 && (
+                  <button
+                    type='button'
+                    onClick={() => setSelectedTags([])}
+                    className='text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1 cursor-pointer'
+                  >
+                    Reset tags
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {filteredEntries.length === 0 ? (
           <div className='p-12 text-center text-muted-foreground'>
             <p className='text-sm mb-4'>
@@ -1220,49 +1362,19 @@ export default function CashflowDetail({
                           })()}
                         </TableCell>
                         <TableCell className='border-r border-border/30'>
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                              entry.type === 'income'
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-                            }`}
-                          >
-                            {entry.type}
-                          </span>
+                          <EntryTypeBadge type={entry.type} />
                         </TableCell>
                         <TableCell>
                           <div className='flex items-center gap-2 flex-wrap'>
                             <span className='font-medium'>
                               {entry.description}
                             </span>
-                            {entry.category && (
-                              <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
-                                {entry.category}
-                              </span>
-                            )}
-                            {entry.items && entry.items.length > 0 && (
-                              <span
-                                className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 cursor-default'
-                                title={entry.items
-                                  .map(
-                                    (i) =>
-                                      `${i.item_name}: ${formatCurrencyCompact(i.amount, currency)}`,
-                                  )
-                                  .join('\n')}
-                              >
-                                🛒 {entry.items.length} items (
-                                {entry.items.map((i) => i.item_name).join(', ')}
-                                )
-                              </span>
-                            )}
-                            {entry.is_recurring && (
-                              <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/30'>
-                                <LuRepeat className='w-2.5 h-2.5' />
-                                <span className='capitalize text-[10px]'>
-                                  {entry.recurrence_interval}
-                                </span>
-                              </span>
-                            )}
+                            <EntryMetadataBadges
+                              entry={entry}
+                              currency={currency}
+                              bookTags={tags}
+                              availableTags={allUniqueTags}
+                            />
                           </div>
                         </TableCell>
                         <TableCell
@@ -1366,33 +1478,18 @@ export default function CashflowDetail({
                                 )
                               </span>
                             )}
-                            <span
-                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide ${
-                                entry.type === 'income'
-                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                                  : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-                              }`}
-                            >
-                              {entry.type}
-                            </span>
+                            <EntryTypeBadge type={entry.type} />
                           </div>
                           <div className='flex flex-wrap items-center gap-1.5'>
                             <span className='font-medium text-sm leading-tight overflow-wrap-anywhere'>
                               {entry.description}
                             </span>
-                            {entry.category && (
-                              <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground capitalize'>
-                                {entry.category}
-                              </span>
-                            )}
-                            {entry.is_recurring && (
-                              <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/30'>
-                                <LuRepeat className='w-2.5 h-2.5' />
-                                <span className='capitalize text-[10px]'>
-                                  {entry.recurrence_interval}
-                                </span>
-                              </span>
-                            )}
+                            <EntryMetadataBadges
+                              entry={entry}
+                              currency={currency}
+                              bookTags={tags}
+                              availableTags={allUniqueTags}
+                            />
                           </div>
                         </div>
                         <div className='text-right shrink-0 flex gap-4 items-center'>
@@ -1622,6 +1719,8 @@ export default function CashflowDetail({
         currency={currency}
         onSuccess={handleEntrySuccess}
         goals={goals}
+        availableTags={allUniqueTags}
+        bookTags={tags}
       />
 
       {/* Import CSV Modal */}
@@ -1630,6 +1729,15 @@ export default function CashflowDetail({
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
         currency={currency}
+        onSuccess={handleEntrySuccess}
+      />
+
+      {/* Manage Tag Modal */}
+      <ManageTagModal
+        cashflowId={cashflow.id}
+        tag={managingTag}
+        open={isManageTagOpen}
+        onOpenChange={setIsManageTagOpen}
         onSuccess={handleEntrySuccess}
       />
 

@@ -85,7 +85,7 @@ export default async function CashflowDetailPage({
     throw error;
   }
 
-  const { cashflow, entries, budgets, goals, profile, share } = data;
+  const { cashflow, entries, budgets, tags, goals, profile, share } = data;
 
   // 3. Access Control
   const isPublic = cashflow.is_public;
@@ -141,6 +141,7 @@ export default async function CashflowDetailPage({
           cashflow={cashflow}
           entries={entries}
           budgets={budgets}
+          tags={tags}
           goals={goals}
           currency={profile?.default_currency ?? null}
           currentUserId={user?.id}

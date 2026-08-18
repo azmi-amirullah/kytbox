@@ -6,6 +6,7 @@ import type {
   CashflowShare,
   CashflowWithSummary,
   CashflowBudget,
+  CashflowTag,
   CashflowGoal,
   List,
   ListColumn,
@@ -29,6 +30,7 @@ import type {
   CashflowSplitEntryDTO,
   CashflowShareDTO,
   CashflowBudgetDTO,
+  CashflowTagDTO,
   CashflowGoalDTO,
   CashflowWithSummaryDTO,
   ListDTO,
@@ -186,6 +188,7 @@ export function mapCashflowEntryToDTO(
       .catch(null)
       .parse(row.yearly_calculation),
     created_at: row.created_at,
+    tags: Array.isArray(row.tags) ? row.tags : [],
     items,
   };
 }
@@ -231,6 +234,16 @@ export function mapBudgetToDTO(row: CashflowBudget): CashflowBudgetDTO {
     category: row.category,
     amount: Number(row.amount),
     period: 'monthly',
+  };
+}
+
+export function mapTagToDTO(row: CashflowTag): CashflowTagDTO {
+  return {
+    id: row.id,
+    cashflow_id: row.cashflow_id,
+    name: row.name,
+    color_index: row.color_index,
+    created_at: row.created_at,
   };
 }
 

@@ -24,17 +24,17 @@ const sampleAggregates: CashflowChartAggregateDTO[] = [
 
 const sampleRawEntries: CashflowEntryDTO[] = [
   // 2026-07
-  { id: '1', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 4000, type: 'income', category: 'salary', date: '2026-07-01', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
-  { id: '2', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 1200, type: 'expense', category: 'rent', date: '2026-07-05', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
-  { id: '3', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 800, type: 'expense', category: 'food', date: '2026-07-10', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
-  { id: '4', cashflow_id: 'cf-2', goal_id: null, description: '', amount: 500, type: 'expense', category: 'travel', date: '2026-07-20', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
+  { id: '1', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 4000, type: 'income', category: 'salary', date: '2026-07-01', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
+  { id: '2', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 1200, type: 'expense', category: 'rent', date: '2026-07-05', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
+  { id: '3', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 800, type: 'expense', category: 'food', date: '2026-07-10', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
+  { id: '4', cashflow_id: 'cf-2', goal_id: null, description: '', amount: 500, type: 'expense', category: 'travel', date: '2026-07-20', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
 
   // 2026-08
-  { id: '5', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 4000, type: 'income', category: 'salary', date: '2026-08-01', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
-  { id: '6', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 600, type: 'income', category: 'freelance', date: '2026-08-03', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
-  { id: '7', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 1200, type: 'expense', category: 'rent', date: '2026-08-05', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
-  { id: '8', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 900, type: 'expense', category: 'food', date: '2026-08-12', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
-  { id: '9', cashflow_id: 'cf-2', goal_id: null, description: '', amount: 200, type: 'expense', category: 'entertainment', date: '2026-08-25', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null },
+  { id: '5', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 4000, type: 'income', category: 'salary', date: '2026-08-01', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
+  { id: '6', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 600, type: 'income', category: 'freelance', date: '2026-08-03', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
+  { id: '7', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 1200, type: 'expense', category: 'rent', date: '2026-08-05', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
+  { id: '8', cashflow_id: 'cf-1', goal_id: null, description: '', amount: 900, type: 'expense', category: 'food', date: '2026-08-12', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
+  { id: '9', cashflow_id: 'cf-2', goal_id: null, description: '', amount: 200, type: 'expense', category: 'entertainment', date: '2026-08-25', created_at: null, is_recurring: false, recurrence_interval: null, yearly_calculation: null, tags: [] },
 ];
 
 describe('Cashflow Aggregate Processing', () => {

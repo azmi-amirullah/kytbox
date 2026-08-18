@@ -19,6 +19,7 @@ const createEntry = (overrides: Partial<CashflowEntryDTO>): CashflowEntryDTO => 
   is_recurring: false,
   recurrence_interval: null,
   yearly_calculation: null,
+  tags: [],
   ...overrides,
 });
 

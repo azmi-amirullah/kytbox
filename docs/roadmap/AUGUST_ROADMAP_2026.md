@@ -17,8 +17,8 @@
 - [x] [Day 7 — Weekly Sprint Audit & Security Boundary Check](#day-7)
 - [x] [Day 8 — Cashflow: Split Transactions Engine](#day-8)
 - [x] [Day 9 — Cashflow: CSV / Bank Transaction Import & Auto-Parser](#day-9)
-- [ ] [Day 10 — Cashflow: Monthly Comparison View](#day-10)
-- [ ] [Day 11 — Cashflow: Custom Tags & Labels Engine](#day-11)
+- [x] [Day 10 — Cashflow: Monthly Comparison View](#day-10)
+- [x] [Day 11 — Cashflow: Custom Tags & Labels Engine](#day-11)
 - [ ] [Day 12 — Cashflow: Receipt & Attachment Upload](#day-12)
 - [ ] [Day 13 — Cashflow: Advanced Features E2E Test Suite](#day-13)
 - [ ] [Day 14 — Weekly Sprint Audit & Financial Calculation Check](#day-14)
@@ -188,9 +188,12 @@
 ##### Cashflow: Custom Tags & Labels Engine
 - **Why**: Standard categories (Food, Transport) are too rigid. Users need flexible multi-tag filtering across categories (e.g. tagging entries as `#TaxDeductible`, `#ClientProjectA`, or `#Vacation2026`).
 - **Implementation Blueprint**:
-  - Add `tags: string[]` array column to `cashflow_entries`.
-  - Build Tag Picker input with color badge support.
-  - Implement multi-tag filter helper `filterEntriesByTags(entries, selectedTags)`.
+  - Add `tags: text[]` array column with GIN index to `cashflow_entries` and persistent `cashflow_tags` metadata table (`id`, `cashflow_id`, `name`, `color_index`).
+  - Build slot-filling color allocation algorithm (`src/features/cashflow/lib/tag-colors.ts`) providing 12 distinct, high-contrast color tokens with sequential allocation and freed-slot reuse.
+  - Build `TagPicker.tsx` combobox with real-time predicted color preview and deduplication checks.
+  - Multi-tag toolbar filter strip with checkmark indicators and `color_index` sequential sorting.
+  - Tag management modal (`ManageTagModal.tsx`) for renaming and deleting tags across all entries with Shadcn `AlertDialog` confirmation.
+  - Implement multi-tag filter helper `filterEntriesByTags(entries, selectedTags)` in `math.ts`.
 
 ---
 

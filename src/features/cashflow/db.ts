@@ -9,11 +9,13 @@ import {
   mapCashflowEntryToDTO,
   mapBudgetToDTO,
   mapGoalToDTO,
+  mapTagToDTO,
 } from '@/lib/mappers';
 import type {
   CashflowDTO,
   CashflowEntryDTO,
   CashflowBudgetDTO,
+  CashflowTagDTO,
   CashflowGoalDTO,
   CashflowWithSummaryDTO,
   CashflowChartAggregateDTO,
@@ -29,6 +31,7 @@ export interface CashflowDetailResult {
   cashflow: CashflowDTO;
   entries: CashflowEntryDTO[];
   budgets: CashflowBudgetDTO[];
+  tags: CashflowTagDTO[];
   goals: CashflowGoalDTO[];
 }
 
@@ -178,13 +181,14 @@ export async function getCashflowDetailData(
     );
   }
 
-  // Parallelize: profile, cashflow, entries, share, budgets, goals, contributions
+  // Parallelize: profile, cashflow, entries, share, budgets, tags, goals, contributions
   const [
     profileResult,
     cashflowResult,
     entriesResult,
     shareResult,
     budgetsResult,
+    tagsResult,
     goalsResult,
     goalProgressResult,
   ] = await Promise.all([
@@ -219,6 +223,12 @@ export async function getCashflowDetailData(
             .order('category', { ascending: true })
         : Promise.resolve({ data: null, error: null }),
       supabase
+        .from('cashflow_tags')
+        .select('*')
+        .eq('cashflow_id', cashflowId)
+        .order('color_index', { ascending: true })
+        .order('created_at', { ascending: true }),
+      supabase
         .from('cashflow_goals')
         .select('*')
         .in('cashflow_id', queryIds)
@@ -246,11 +256,12 @@ export async function getCashflowDetailData(
     console.error('cashflow_entry_lookup_failed', entriesResult.error);
     throw new Error('CASHFLOW_DETAIL_LOOKUP_FAILED');
   }
-  if (profileResult.error || shareResult.error || budgetsResult.error) {
+  if (profileResult.error || shareResult.error || budgetsResult.error || tagsResult.error) {
     console.error('cashflow_detail_context_lookup_failed', {
       profile: profileResult.error,
       share: shareResult.error,
       budgets: budgetsResult.error,
+      tags: tagsResult.error,
     });
     throw new Error('CASHFLOW_DETAIL_LOOKUP_FAILED');
   }
@@ -278,6 +289,8 @@ export async function getCashflowDetailData(
     ? budgetsResult.data.map(mapBudgetToDTO)
     : [];
 
+  const tags = (tagsResult?.data ?? []).map(mapTagToDTO);
+
   const goalProgressById = new Map(
     (goalProgressResult.data ?? []).map((progress) => [
       progress.goal_id,
@@ -298,6 +311,7 @@ export async function getCashflowDetailData(
     cashflow: mapCashflowToDTO(cashflow),
     entries,
     budgets,
+    tags,
     goals,
     profile: profileResult.data,
     share: shareResult.data,

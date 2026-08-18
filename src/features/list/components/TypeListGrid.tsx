@@ -104,7 +104,7 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
 
       {/* Grid */}
       {lists.length === 0 ? (
-        <div className='flex flex-col items-center justify-center min-h-[300px] bg-card border border-dashed rounded-2xl p-8 text-center'>
+        <div className='flex flex-col items-center justify-center min-h-75 bg-card border border-dashed rounded-2xl p-8 text-center'>
           <div className='w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4'>
             <Icon className='w-8 h-8 text-muted-foreground' />
           </div>

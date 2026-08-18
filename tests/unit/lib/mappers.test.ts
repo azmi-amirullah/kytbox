@@ -101,6 +101,7 @@ const baseCashflowEntry: CashflowEntry = {
   recurrence_interval: null,
   yearly_calculation: null,
   created_at: '2026-03-01T00:00:00Z',
+  tags: [],
 };
 
 const baseShare: CashflowShare = {
@@ -346,6 +347,18 @@ describe('mapCashflowEntryToDTO', () => {
     expect(dto.category).toBeNull();
   });
 
+  it('maps tags array correctly', () => {
+    const dto = mapCashflowEntryToDTO({
+      ...baseCashflowEntry,
+      tags: ['TaxDeductible', 'ClientA'],
+    });
+    expect(dto.tags).toEqual(['TaxDeductible', 'ClientA']);
+  });
+
+  it('falls back to empty array when tags is not an array', () => {
+    const dto = mapCashflowEntryToDTO(corrupt(baseCashflowEntry, { tags: null }));
+    expect(dto.tags).toEqual([]);
+  });
 });
 
 // ==========================================

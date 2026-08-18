@@ -27,7 +27,7 @@ import {
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import { addEntry, updateEntry } from '../actions'
-import type { CashflowEntryDTO, CashflowGoalDTO } from '@/types/dto'
+import type { CashflowEntryDTO, CashflowGoalDTO, CashflowTagDTO } from '@/types/dto'
 import { getCurrencySymbol } from '@/lib/currency'
 import * as z from 'zod/mini'
 import { entryTypeSchema, entryCategorySchema } from '../schemas.client'
@@ -35,6 +35,7 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../constants'
 import PurchaseBreakdownEditor, {
   type SplitItemInput,
 } from './PurchaseBreakdownEditor'
+import { TagPicker } from './TagPicker'
 
 interface EntryModalProps {
   cashflowId: string
@@ -44,6 +45,8 @@ interface EntryModalProps {
   currency: string | null
   onSuccess: () => void
   goals?: CashflowGoalDTO[]
+  availableTags?: string[]
+  bookTags?: CashflowTagDTO[]
 }
 
 export default function EntryModal({
@@ -54,6 +57,8 @@ export default function EntryModal({
   currency,
   onSuccess,
   goals = [],
+  availableTags = [],
+  bookTags = [],
 }: EntryModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,6 +89,7 @@ export default function EntryModal({
   const [yearlyCalculation, setYearlyCalculation] = useState<
     'prorated' | 'exact'
   >(entry?.yearly_calculation || 'prorated')
+  const [tags, setTags] = useState<string[]>(entry?.tags ?? [])
 
   const initialItems: SplitItemInput[] =
     entry?.items && entry.items.length > 0
@@ -102,7 +108,12 @@ export default function EntryModal({
     entry?.goal_id && entry.goal_id === goalId && !entryGoal,
   )
 
-  if (open !== prevOpen || entry !== prevEntry) {
+  const isEntryChanged =
+    entry?.id !== prevEntry?.id ||
+    (entry === null && prevEntry !== null) ||
+    (entry !== null && prevEntry === null)
+
+  if (open !== prevOpen || isEntryChanged) {
     setPrevOpen(open)
     setPrevEntry(entry)
     if (open) {
@@ -127,6 +138,7 @@ export default function EntryModal({
           : []
       setIsSplit(items.length > 0)
       setSplitItems(items)
+      setTags(entry?.tags ?? [])
       setError(null)
       setIsLoading(false)
     }
@@ -236,21 +248,32 @@ export default function EntryModal({
       }
     }
 
-    let result
-    if (isEdit && entry) {
-      result = await updateEntry(entry.id, formData)
-    } else {
-      result = await addEntry(formData)
+    if (tags.length > 0) {
+      formData.append('tagsJson', JSON.stringify(tags))
     }
 
-    if (result?.error) {
-      setError(result.error)
-      toast.error(isEdit ? 'Failed to update entry' : 'Failed to add entry')
+    try {
+      let result
+      if (isEdit && entry) {
+        result = await updateEntry(entry.id, formData)
+      } else {
+        result = await addEntry(formData)
+      }
+
+      if (result?.error) {
+        setError(result.error)
+        toast.error(result.error || (isEdit ? 'Failed to update entry' : 'Failed to add entry'))
+        setIsLoading(false)
+      } else {
+        toast.success(isEdit ? 'Entry updated!' : 'Entry added!')
+        onOpenChange(false)
+        onSuccess()
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred'
+      setError(msg)
+      toast.error(msg)
       setIsLoading(false)
-    } else {
-      toast.success(isEdit ? 'Entry updated!' : 'Entry added!')
-      onOpenChange(false)
-      onSuccess()
     }
   }
 
@@ -409,6 +432,28 @@ export default function EntryModal({
               </Select>
             </div>
 
+            {/* Date */}
+            <div className='grid gap-2'>
+              <Label
+                htmlFor='date'
+                className='font-medium text-foreground/80 gap-0.5'
+              >
+                Date<span className='text-destructive'>*</span>
+              </Label>
+              <div className='relative'>
+                <LuCalendar className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+                <Input
+                  id='date'
+                  name='date'
+                  type='date'
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                  className='pl-9'
+                />
+              </div>
+            </div>
+
             {/* Category */}
             <div className='grid gap-2'>
               <Label className='font-medium text-foreground/80'>Category</Label>
@@ -478,26 +523,19 @@ export default function EntryModal({
               </Select>
             </div>
 
-            {/* Date */}
+            {/* Tags */}
             <div className='grid gap-2'>
-              <Label
-                htmlFor='date'
-                className='font-medium text-foreground/80 gap-0.5'
-              >
-                Date<span className='text-destructive'>*</span>
-              </Label>
-              <div className='relative'>
-                <LuCalendar className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
-                <Input
-                  id='date'
-                  name='date'
-                  type='date'
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                  className='pl-9'
-                />
-              </div>
+              <Label className='font-medium text-foreground/80'>Tags</Label>
+              <TagPicker
+                tags={tags}
+                onChange={setTags}
+                availableTags={availableTags}
+                bookTags={bookTags}
+                placeholder='e.g. TaxDeductible, ClientA…'
+              />
+              <p className='text-[11px] text-muted-foreground'>
+                Select existing or type and press Enter to create. Max 10 tags.
+              </p>
             </div>
 
             {/* Recurring Switch */}

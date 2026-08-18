@@ -46,6 +46,23 @@ export const cashflowEntrySchema = z.object({
   recurrence_interval: recurrenceIntervalSchema.optional(),
   yearly_calculation: yearlyCalculationSchema.optional(),
   itemsJson: z.string().optional().nullable(),
+  tagsJson: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => {
+      if (!val) return []
+      try {
+        const parsed = JSON.parse(val)
+        if (!Array.isArray(parsed)) return []
+        return parsed
+          .map((t: unknown) => (typeof t === 'string' ? t.trim() : ''))
+          .filter((t) => t.length > 0 && t.length <= 30)
+          .slice(0, 10)
+      } catch {
+        return []
+      }
+    }),
 });
 
 export const updateCashflowEntrySchema = cashflowEntrySchema.extend({
@@ -132,4 +149,18 @@ export const importCashflowEntriesSchema = z.object({
 
 export type ImportCashflowEntryItem = z.infer<typeof importCashflowEntryItemSchema>;
 export type ImportCashflowEntriesInput = z.infer<typeof importCashflowEntriesSchema>;
+
+export const renameCashflowTagSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  oldTag: z.string().trim().min(1, 'Old tag is required').max(30, 'Tag too long'),
+  newTag: z.string().trim().min(1, 'New tag is required').max(30, 'Tag too long'),
+});
+
+export const deleteCashflowTagSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  tag: z.string().trim().min(1, 'Tag is required').max(30, 'Tag too long'),
+});
+
+export type RenameCashflowTagInput = z.infer<typeof renameCashflowTagSchema>;
+export type DeleteCashflowTagInput = z.infer<typeof deleteCashflowTagSchema>;
 

@@ -89,6 +89,7 @@ export interface CashflowEntryDTO {
   is_recurring: boolean
   recurrence_interval: 'monthly' | 'yearly' | null
   yearly_calculation: 'prorated' | 'exact' | null
+  tags: string[]
   items?: CashflowSplitEntryDTO[]
 }
 
@@ -105,6 +106,14 @@ export interface CashflowBudgetDTO {
   category: string
   amount: number
   period: 'monthly'
+}
+
+export interface CashflowTagDTO {
+  id: string
+  cashflow_id: string
+  name: string
+  color_index: number
+  created_at: string | null
 }
 
 export interface CashflowGoalDTO {
