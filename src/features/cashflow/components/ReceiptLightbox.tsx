@@ -46,6 +46,7 @@ export default function ReceiptLightbox({
 }: ReceiptLightboxProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(previewUrl ?? null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isImgLoading, setIsImgLoading] = useState(Boolean(previewUrl || (cashflowId && entryId)))
   const [error, setError] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
 
@@ -61,6 +62,7 @@ export default function ReceiptLightbox({
     setError(null)
     setZoom(1)
     setIsLoading(Boolean(open && !previewUrl && cashflowId && entryId))
+    setIsImgLoading(Boolean(open && (previewUrl || (cashflowId && entryId))))
   }
 
   useEffect(() => {
@@ -73,13 +75,16 @@ export default function ReceiptLightbox({
         if (!isMounted) return
         if (res.error || !res.signedUrl) {
           setError(res.error || 'Failed to load receipt')
+          setIsImgLoading(false)
         } else {
           setSignedUrl(res.signedUrl)
+          setIsImgLoading(true)
         }
       })
       .catch((err) => {
         if (!isMounted) return
         setError(err instanceof Error ? err.message : 'Error loading receipt')
+        setIsImgLoading(false)
       })
       .finally(() => {
         if (isMounted) setIsLoading(false)
@@ -153,7 +158,7 @@ export default function ReceiptLightbox({
 
           {/* Desktop action toolbar */}
           <div className='flex items-center gap-1.5 shrink-0'>
-            {signedUrl && (
+            {signedUrl && !isImgLoading && !isLoading && !error && (
               <div className='hidden sm:flex items-center gap-1.5'>
                 <Button
                   type='button'
@@ -221,7 +226,7 @@ export default function ReceiptLightbox({
 
         {/* Viewport container */}
         <div className='flex-1 overflow-auto p-2 sm:p-4 flex items-center justify-center min-h-[45vh] max-h-[calc(92vh-130px)] bg-muted/10 relative'>
-          {isLoading && (
+          {(isLoading || isImgLoading) && !error && (
             <div className='flex flex-col items-center gap-3 text-muted-foreground'>
               <LuLoader className='w-8 h-8 animate-spin text-primary' />
               <p className='text-sm font-medium'>Loading receipt proof...</p>
@@ -245,7 +250,11 @@ export default function ReceiptLightbox({
 
           {!isLoading && !error && signedUrl && (
             <div
-              className='transition-transform duration-200 ease-out origin-center flex items-center justify-center max-w-full max-h-full'
+              className={
+                isImgLoading
+                  ? 'hidden'
+                  : 'transition-transform duration-200 ease-out origin-center flex items-center justify-center max-w-full max-h-full'
+              }
               style={{
                 transform: `scale(${zoom})`,
                 cursor: zoom > 1 ? 'grab' : 'default',
@@ -255,13 +264,18 @@ export default function ReceiptLightbox({
               <img
                 src={signedUrl}
                 alt={`Receipt for ${description}`}
+                onLoad={() => setIsImgLoading(false)}
+                onError={() => {
+                  setIsImgLoading(false)
+                  setError('Failed to load receipt image')
+                }}
                 className='max-w-full max-h-[calc(92vh-160px)] object-contain rounded-md shadow-md border bg-card'
               />
             </div>
           )}
 
           {/* Floating Mobile Toolbar (Appears at bottom of lightbox on <sm viewports) */}
-          {!isLoading && !error && signedUrl && (
+          {!isLoading && !isImgLoading && !error && signedUrl && (
             <div className='sm:hidden absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1 rounded-full bg-background/90 backdrop-blur-md border border-border/80 shadow-xl z-20'>
               <Button
                 type='button'
