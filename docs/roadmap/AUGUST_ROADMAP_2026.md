@@ -20,7 +20,7 @@
 - [x] [Day 10 — Cashflow: Monthly Comparison View](#day-10)
 - [x] [Day 11 — Cashflow: Custom Tags & Labels Engine](#day-11)
 - [x] [Day 12 — Cashflow: Receipt & Attachment Upload](#day-12)
-- [ ] [Day 13 — Cashflow: Advanced Features E2E Test Suite](#day-13)
+- [x] [Day 13 — Cashflow: Advanced Features E2E Test Suite](#day-13)
 - [ ] [Day 14 — Weekly Sprint Audit & Financial Calculation Check](#day-14)
 - [ ] [Day 15 — List: Card Due Dates & Reminders](#day-15)
 - [ ] [Day 16 — List: Card Subtasks & Checklist Engine](#day-16)
