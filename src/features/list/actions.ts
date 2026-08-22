@@ -519,7 +519,7 @@ export async function processTaskDueReminders(): Promise<{
 
   const { data: dueItems, error } = await supabase
     .from('list_items')
-    .select('id, title, due_date, list_id, lists!inner(id, user_id, title)')
+    .select('id, title, due_date, list_id, lists!inner(id, user_id, title, type)')
     .eq('is_completed', false)
     .eq('reminder_sent', false)
     .not('due_date', 'is', null)
@@ -549,7 +549,13 @@ export async function processTaskDueReminders(): Promise<{
         : 'overdue'
       : 'due today'
     const body = `Task "${item.title}" in list "${listOwner.title}" is ${timingText}.`
-    const linkUrl = `/list/${item.list_id}`
+    const listType =
+      'type' in listOwner && typeof listOwner.type === 'string'
+        ? listOwner.type
+        : 'todo'
+    const segment =
+      listType === 'wishlist' ? 'wishlist' : listType === 'idea' ? 'ideas' : 'todo'
+    const linkUrl = `/list/${segment}/${item.list_id}`
 
     const notifyResult = await createNotification({
       userId: listOwner.user_id,
