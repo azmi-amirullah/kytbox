@@ -30,8 +30,67 @@ import { mapBudgetToDTO, mapGoalToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
+import sharp from 'sharp';
+import * as Sentry from '@sentry/nextjs';
 
 const RECEIPT_BUCKET = 'cashflow-receipts';
+
+/**
+ * Optimizes an uploaded receipt image buffer to WebP on the server.
+ * If already compressed WebP from client (<500KB), passes through directly (0ms, no double-compression).
+ * Otherwise, auto-orients, downscales to 1600px max edge if needed, and applies 80% WebP compression.
+ */
+async function optimizeReceiptToWebP(file: File): Promise<{ buffer: Buffer; contentType: string; ext: string }> {
+  const arrayBuffer = await file.arrayBuffer();
+  const inputBuffer = Buffer.from(arrayBuffer);
+
+  // Fast-path: If the client already compressed it to a lightweight WebP (<500KB), pass through directly
+  if (file.type === 'image/webp' && file.size <= 500 * 1024) {
+    return {
+      buffer: inputBuffer,
+      contentType: 'image/webp',
+      ext: 'webp',
+    };
+  }
+
+  let result: { buffer: Buffer; contentType: string; ext: string };
+
+  try {
+    const webpBuffer = await sharp(inputBuffer)
+      .rotate()
+      .resize({
+        width: 1600,
+        height: 1600,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .webp()
+      .toBuffer();
+
+    result = {
+      buffer: webpBuffer,
+      contentType: 'image/webp',
+      ext: 'webp',
+    };
+  } catch (err) {
+    console.warn('sharp conversion failed, falling back to original buffer:', err);
+    result = {
+      buffer: inputBuffer,
+      contentType: file.type || 'image/jpeg',
+      ext: file.type === 'image/webp' ? 'webp' : 'jpg',
+    };
+  }
+
+  // Diagnostic telemetry: capture warning if final buffer exceeds 500KB threshold
+  if (result.buffer.length > 500 * 1024) {
+    Sentry.captureMessage(
+      `Receipt upload buffer exceeded 500KB threshold (${Math.round(result.buffer.length / 1024)} KB)`,
+      'warning',
+    );
+  }
+
+  return result;
+}
 
 export async function ensureCashflowTags(
   supabase: SupabaseClient<Database>,
@@ -518,12 +577,12 @@ export async function addEntry(formData: FormData) {
     if (!receiptFile.type.startsWith('image/')) {
       return { error: 'Invalid file type. Image only.' };
     }
-    const ext = receiptFile.type === 'image/jpeg' || receiptFile.type === 'image/jpg' ? 'jpg' : 'webp';
+    const { buffer, contentType, ext } = await optimizeReceiptToWebP(receiptFile);
     const filePath = `${user.id}/${cashflowId}/${crypto.randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage
       .from(RECEIPT_BUCKET)
-      .upload(filePath, receiptFile, {
-        contentType: receiptFile.type || 'image/webp',
+      .upload(filePath, buffer, {
+        contentType,
         upsert: true,
       });
 
@@ -707,12 +766,12 @@ export async function updateEntry(entryId: string, formData: FormData) {
       if (!receiptFile.type.startsWith('image/')) {
         return { error: 'Invalid file type. Image only.' };
       }
-      const ext = receiptFile.type === 'image/jpeg' || receiptFile.type === 'image/jpg' ? 'jpg' : 'webp';
+      const { buffer, contentType, ext } = await optimizeReceiptToWebP(receiptFile);
       const filePath = `${user.id}/${entry.cashflow_id}/${crypto.randomUUID()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from(RECEIPT_BUCKET)
-        .upload(filePath, receiptFile, {
-          contentType: receiptFile.type || 'image/webp',
+        .upload(filePath, buffer, {
+          contentType,
           upsert: true,
         });
 
