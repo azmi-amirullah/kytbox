@@ -318,5 +318,7 @@ export function mapListItemToDTO(row: ListItem): ListItemDTO {
     sort_order: row.sort_order,
     metadata: listItemMetadataClientSchema.parse(row.metadata),
     created_at: row.created_at,
+    due_date: row.due_date ?? null,
+    reminder_sent: row.reminder_sent ?? false,
   };
 }

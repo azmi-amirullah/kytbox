@@ -184,6 +184,8 @@ export interface ListItemDTO {
   sort_order: number
   metadata: Record<string, unknown>
   created_at: string | null
+  due_date: string | null
+  reminder_sent?: boolean
 }
 
 export interface WishlistItemMeta {

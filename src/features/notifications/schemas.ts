@@ -6,6 +6,7 @@ export const notificationTypeSchema = z.enum([
   'budget_exceeded',
   'click_milestone',
   'system',
+  'task_reminder',
 ]);
 
 export const markAsReadSchema = z.object({

@@ -138,4 +138,31 @@ describe('List Server Schemas', () => {
       expect(result.success).toBe(false);
     });
   });
+
+  describe('dueDate schemas', () => {
+    it('accepts valid YYYY-MM-DD date format and null', () => {
+      const valid = createListItemSchema.safeParse({
+        listId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        title: 'Task with Deadline',
+        dueDate: '2026-08-25',
+      });
+      expect(valid.success).toBe(true);
+
+      const nullDate = createListItemSchema.safeParse({
+        listId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        title: 'Task without Deadline',
+        dueDate: null,
+      });
+      expect(nullDate.success).toBe(true);
+    });
+
+    it('rejects malformed date formats', () => {
+      const malformed = createListItemSchema.safeParse({
+        listId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        title: 'Invalid Date Task',
+        dueDate: '25-08-2026',
+      });
+      expect(malformed.success).toBe(false);
+    });
+  });
 });

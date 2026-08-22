@@ -21,9 +21,26 @@ export const listColumnSchema = z.object({
   title: z.string().trim().min(1, 'Column name is required').max(50, 'Column name too long'),
 });
 
+export const dueDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+  .nullable()
+  .optional()
+  .or(z.literal(''));
+
 export const listItemSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(300, 'Title too long'),
   description: z.string().max(1000).optional().or(z.literal('')),
+  dueDate: dueDateSchema,
+});
+
+export const setDueDateSchema = z.object({
+  itemId: listItemIdSchema,
+  dueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+    .nullable()
+    .or(z.literal('')),
 });
 
 export const createListItemSchema = listItemSchema.extend({

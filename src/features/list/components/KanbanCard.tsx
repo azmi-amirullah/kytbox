@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { LuTrash2 } from 'react-icons/lu';
+import { LuTrash2, LuCalendar } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { ListItemDTO } from '@/types/dto';
 import { deleteItem, toggleItem } from '../actions';
+import { getDueDateInfo } from '../lib/due-date';
 import { toast } from 'react-toastify';
 import EditTodoModal from './EditTodoModal';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -38,6 +39,7 @@ export default function KanbanCard({
   const [isPending, startTransition] = useTransition();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const dueDateInfo = getDueDateInfo(item.due_date, item.is_completed);
   const {
     attributes,
     listeners,
@@ -133,6 +135,17 @@ export default function KanbanCard({
               <p className='text-xs text-muted-foreground mt-1 line-clamp-2'>
                 {item.description}
               </p>
+            )}
+            {dueDateInfo.status !== 'none' && (
+              <div className='flex items-center gap-1.5 mt-2'>
+                <span
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border ${dueDateInfo.badgeClassName}`}
+                  title={`Due: ${item.due_date}`}
+                >
+                  <LuCalendar className='w-3 h-3 shrink-0' />
+                  <span>{dueDateInfo.label}</span>
+                </span>
+              </div>
             )}
           </div>
           <Button

@@ -3,7 +3,8 @@ export type NotificationType =
   | 'budget_warning'
   | 'budget_exceeded'
   | 'click_milestone'
-  | 'system';
+  | 'system'
+  | 'task_reminder';
 
 export interface NotificationDTO {
   id: string;

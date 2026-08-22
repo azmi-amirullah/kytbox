@@ -499,6 +499,8 @@ const baseListItem: ListItem = {
   sort_order: 1024,
   metadata: { price: 99.99, currency: 'USD', purchase_url: 'https://example.com' },
   created_at: '2026-01-01T00:00:00Z',
+  due_date: '2026-08-25',
+  reminder_sent: false,
 };
 
 // ==========================================
@@ -601,6 +603,8 @@ describe('mapListItemToDTO', () => {
       purchase_url: 'https://example.com',
     });
     expect(dto.created_at).toBe('2026-01-01T00:00:00Z');
+    expect(dto.due_date).toBe('2026-08-25');
+    expect(dto.reminder_sent).toBe(false);
   });
 
   it('handles null/invalid metadata field by falling back to empty object', () => {

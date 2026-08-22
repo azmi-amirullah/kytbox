@@ -714,10 +714,12 @@ export type Database = {
           column_id: string | null
           created_at: string
           description: string | null
+          due_date: string | null
           id: string
           is_completed: boolean
           list_id: string
           metadata: Json | null
+          reminder_sent: boolean
           sort_order: number
           title: string
         }
@@ -725,10 +727,12 @@ export type Database = {
           column_id?: string | null
           created_at?: string
           description?: string | null
+          due_date?: string | null
           id?: string
           is_completed?: boolean
           list_id: string
           metadata?: Json | null
+          reminder_sent?: boolean
           sort_order?: number
           title: string
         }
@@ -736,10 +740,12 @@ export type Database = {
           column_id?: string | null
           created_at?: string
           description?: string | null
+          due_date?: string | null
           id?: string
           is_completed?: boolean
           list_id?: string
           metadata?: Json | null
+          reminder_sent?: boolean
           sort_order?: number
           title?: string
         }

@@ -17,6 +17,14 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(),
+}));
+
+vi.mock('@/features/notifications', () => ({
+  createNotification: vi.fn(),
+}));
+
 type QueryError = { message: string };
 
 type QueryResult = {
@@ -264,5 +272,26 @@ describe('List server-action security boundaries', () => {
 
     expect(result).toEqual({ error: 'Cannot delete the last column' });
     expect(state.deletes).toHaveLength(0);
+  });
+
+  it('updates task due date and resets reminder flag', async () => {
+    const { setCardDueDate } = await loadActions();
+    const state = configureAuth({
+      list_items: {
+        data: { id: itemId, list_id: listId },
+        error: null,
+      },
+      lists: {
+        data: { id: listId, type: 'todo' },
+        error: null,
+      },
+    });
+
+    const result = await setCardDueDate(itemId, '2026-08-30');
+
+    expect(result).toEqual({ success: true });
+    expect(state.updates).toEqual([
+      { due_date: '2026-08-30', reminder_sent: false },
+    ]);
   });
 });

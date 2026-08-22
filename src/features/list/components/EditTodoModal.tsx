@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { format, addDays } from 'date-fns'
 import {
   Dialog,
   DialogContent,
@@ -10,13 +11,14 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import { LuX, LuAlignLeft } from 'react-icons/lu'
+import { LuX, LuAlignLeft, LuCalendar } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import type { ListItemDTO } from '@/types/dto'
 import { updateItem, toggleItem } from '../actions'
+import { getDueDateInfo } from '../lib/due-date'
 import { toast } from 'react-toastify'
 import { Checkbox } from '@/components/ui/checkbox'
 
@@ -39,6 +41,7 @@ export default function EditTodoModal({
   const [title, setTitle] = useState(item.title)
   const [description, setDescription] = useState(item.description || '')
   const [isCompleted, setIsCompleted] = useState(item.is_completed)
+  const [dueDate, setDueDate] = useState<string | null>(item.due_date ?? null)
 
   // Reset local state synchronously when props change (avoids useEffect cascading renders)
   if (item.id !== prevItemId || open !== prevOpen) {
@@ -47,7 +50,10 @@ export default function EditTodoModal({
     setTitle(item.title)
     setDescription(item.description || '')
     setIsCompleted(item.is_completed)
+    setDueDate(item.due_date ?? null)
   }
+
+  const dueDateInfo = getDueDateInfo(dueDate, isCompleted)
 
   const handleToggleCompleted = () => {
     if (isPending) return
@@ -57,9 +63,18 @@ export default function EditTodoModal({
         toast.error(result.error)
       } else {
         setIsCompleted(!isCompleted)
-        onUpdated({ ...item, is_completed: !isCompleted })
+        onUpdated({ ...item, is_completed: !isCompleted, due_date: dueDate })
       }
     })
+  }
+
+  const handleQuickDate = (daysToAdd: number | null) => {
+    if (daysToAdd === null) {
+      setDueDate(null)
+    } else {
+      const target = addDays(new Date(), daysToAdd)
+      setDueDate(format(target, 'yyyy-MM-dd'))
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -72,6 +87,7 @@ export default function EditTodoModal({
       if (description.trim()) {
         formData.append('description', description.trim())
       }
+      formData.append('dueDate', dueDate || '')
 
       const result = await updateItem(item.id, formData)
       if (result.error) {
@@ -82,6 +98,7 @@ export default function EditTodoModal({
           title: title.trim(),
           description: description.trim() || null,
           is_completed: isCompleted,
+          due_date: dueDate || null,
         })
         onOpenChange(false)
       }
@@ -121,10 +138,79 @@ export default function EditTodoModal({
           </DialogHeader>
 
           <div className='space-y-3'>
+            {/* Due Date Row */}
+            <div className='space-y-1.5'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-3 text-muted-foreground/45'>
+                  <LuCalendar className='w-4 h-4 text-foreground/70' />
+                  <Label htmlFor='edit-due-date' className='text-foreground text-sm font-semibold'>
+                    Due Date
+                  </Label>
+                </div>
+                {dueDateInfo.status !== 'none' && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border ${dueDateInfo.badgeClassName}`}>
+                    {dueDateInfo.label}
+                  </span>
+                )}
+              </div>
+              <div className='pl-7 space-y-2'>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <Input
+                    id='edit-due-date'
+                    type='date'
+                    value={dueDate || ''}
+                    onChange={(e) => setDueDate(e.target.value || null)}
+                    className='w-auto h-8 text-xs'
+                  />
+                  <div className='flex items-center gap-1'>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='h-8 text-xs px-2'
+                      onClick={() => handleQuickDate(0)}
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='h-8 text-xs px-2'
+                      onClick={() => handleQuickDate(1)}
+                    >
+                      Tomorrow
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='h-8 text-xs px-2'
+                      onClick={() => handleQuickDate(7)}
+                    >
+                      +1 Week
+                    </Button>
+                    {dueDate && (
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='sm'
+                        className='h-8 text-xs px-2 text-muted-foreground hover:text-destructive'
+                        onClick={() => handleQuickDate(null)}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Description Row */}
             <div className='space-y-1.5'>
               <div className='flex items-center gap-3 text-muted-foreground/45'>
                 <LuAlignLeft className='w-4 h-4' />
-                <Label className='text-foreground text-base font-semibold'>
+                <Label htmlFor='edit-desc' className='text-foreground text-base font-semibold'>
                   Description
                 </Label>
               </div>

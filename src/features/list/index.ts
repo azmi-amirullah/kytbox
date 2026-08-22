@@ -6,5 +6,6 @@ export { default as IdeaDetail } from './components/IdeaDetail';
 export { default as KanbanBoard } from './components/KanbanBoard';
 
 export * from './actions';
+export * from './lib/due-date';
 export * as schemasClient from './schemas.client';
 export * as schemasServer from './schemas.server';
