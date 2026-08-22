@@ -4,60 +4,23 @@ export interface ImageCompressionOptions {
 }
 
 /**
- * Checks whether a given file is a supported image (standard web image or iOS HEIC/HEIF).
- * Handles iOS Safari edge cases where file.type can be empty or 'image/heic'.
+ * Checks whether a given file is a supported standard image (JPG, PNG, WebP, AVIF).
  */
 export function isSupportedImageFile(file: File): boolean {
   if (!file) return false
   const lowerName = file.name.toLowerCase()
-  const isHeicExtension = lowerName.endsWith('.heic') || lowerName.endsWith('.heif')
-  const isHeicMime = file.type === 'image/heic' || file.type === 'image/heif'
-  const isStandardImage = file.type.startsWith('image/')
+  const isStandardMime =
+    file.type === 'image/jpeg' ||
+    file.type === 'image/png' ||
+    file.type === 'image/webp' ||
+    file.type === 'image/avif'
   const isImageExtension = /\.(jpe?g|png|webp|jfif|avif)$/i.test(lowerName)
 
-  return isStandardImage || isHeicMime || isHeicExtension || isImageExtension
-}
-
-/**
- * Checks if a file is an Apple HEIC/HEIF format.
- */
-export function isHeicImage(file: Blob | File): boolean {
-  const type = file.type?.toLowerCase() || ''
-  const name = file instanceof File ? file.name.toLowerCase() : ''
-  return (
-    type === 'image/heic' ||
-    type === 'image/heif' ||
-    name.endsWith('.heic') ||
-    name.endsWith('.heif')
-  )
-}
-
-/**
- * Converts an Apple HEIC/HEIF file or blob into a standard JPEG Blob.
- * If the input is not HEIC, returns the original Blob/File directly.
- */
-export async function convertHeicToJpeg(file: Blob | File): Promise<Blob> {
-  if (!isHeicImage(file)) {
-    return file
-  }
-
-  try {
-    const heic2any = (await import('heic2any')).default
-    const conversionResult = await heic2any({
-      blob: file,
-      toType: 'image/jpeg',
-      quality: 0.9,
-    })
-    return Array.isArray(conversionResult) ? conversionResult[0] : conversionResult
-  } catch (err) {
-    console.warn('heic2any conversion error, attempting native canvas decode fallback:', err)
-    return file
-  }
+  return isStandardMime || isImageExtension
 }
 
 /**
  * Compresses an image File/Blob using HTML Canvas and outputs a full-color WebP Blob (or JPEG fallback).
- * Automatically converts iOS HEIC/HEIF photos to standard format before downscaling.
  * Guarantees crisp high-contrast text rendering at ~120KB-180KB for 1600px long edge.
  */
 export async function compressImageToWebP(
@@ -66,15 +29,8 @@ export async function compressImageToWebP(
 ): Promise<Blob> {
   const { maxDimension = 1600, quality = 0.8 } = options
 
-  let processableBlob: Blob = file
-
-  // Handle iOS HEIC / HEIF conversions dynamically if needed
-  if (isHeicImage(file)) {
-    processableBlob = await convertHeicToJpeg(file)
-  }
-
   return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(processableBlob)
+    const objectUrl = URL.createObjectURL(file)
     const img = new Image()
 
     const cleanup = () => {

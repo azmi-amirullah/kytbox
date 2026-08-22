@@ -125,9 +125,9 @@ describe('Cashflow Receipt Schemas & Logic', () => {
     })
   })
 
-  describe('image format detection (isSupportedImageFile & isHeicImage)', () => {
-    it('identifies standard web images and iOS HEIC files', async () => {
-      const { isSupportedImageFile, isHeicImage } = await import(
+  describe('image format detection (isSupportedImageFile)', () => {
+    it('identifies standard web images and rejects unsupported files', async () => {
+      const { isSupportedImageFile } = await import(
         '@/features/cashflow/lib/image-compression'
       )
 
@@ -140,14 +140,8 @@ describe('Cashflow Receipt Schemas & Logic', () => {
       const webpFile = new File(['mock-data'], 'receipt.webp', {
         type: 'image/webp',
       })
-      const heicMimeFile = new File(['mock-data'], 'IMG_1024.HEIC', {
-        type: 'image/heic',
-      })
-      const heicEmptyMimeFile = new File(['mock-data'], 'IMG_1024.heic', {
-        type: '',
-      })
-      const heifFile = new File(['mock-data'], 'photo.heif', {
-        type: 'image/heif',
+      const txtFile = new File(['mock-data'], 'notes.txt', {
+        type: 'text/plain',
       })
       const pdfFile = new File(['mock-data'], 'invoice.pdf', {
         type: 'application/pdf',
@@ -156,28 +150,8 @@ describe('Cashflow Receipt Schemas & Logic', () => {
       expect(isSupportedImageFile(jpegFile)).toBe(true)
       expect(isSupportedImageFile(pngFile)).toBe(true)
       expect(isSupportedImageFile(webpFile)).toBe(true)
-      expect(isSupportedImageFile(heicMimeFile)).toBe(true)
-      expect(isSupportedImageFile(heicEmptyMimeFile)).toBe(true)
-      expect(isSupportedImageFile(heifFile)).toBe(true)
+      expect(isSupportedImageFile(txtFile)).toBe(false)
       expect(isSupportedImageFile(pdfFile)).toBe(false)
-
-      expect(isHeicImage(heicMimeFile)).toBe(true)
-      expect(isHeicImage(heicEmptyMimeFile)).toBe(true)
-      expect(isHeicImage(heifFile)).toBe(true)
-      expect(isHeicImage(jpegFile)).toBe(false)
-      expect(isHeicImage(pngFile)).toBe(false)
-    })
-
-    it('passes non-HEIC images directly through convertHeicToJpeg', async () => {
-      const { convertHeicToJpeg } = await import(
-        '@/features/cashflow/lib/image-compression'
-      )
-
-      const pngFile = new File(['mock-data'], 'receipt.png', {
-        type: 'image/png',
-      })
-      const result = await convertHeicToJpeg(pngFile)
-      expect(result).toBe(pngFile)
     })
   })
 })
