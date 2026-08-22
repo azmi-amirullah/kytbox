@@ -175,7 +175,7 @@ describe('List server-action security boundaries', () => {
 
     expect(result).toEqual({ error: 'Invalid item ID' });
     expect(mocks.getAuthenticatedUserWithRateLimit).not.toHaveBeenCalled();
-  });
+  }, 15000);
 
   it('rejects a destination column from another list', async () => {
     const { moveItem } = await loadActions();

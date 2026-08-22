@@ -33,6 +33,29 @@ export function isHeicImage(file: Blob | File): boolean {
 }
 
 /**
+ * Converts an Apple HEIC/HEIF file or blob into a standard JPEG Blob.
+ * If the input is not HEIC, returns the original Blob/File directly.
+ */
+export async function convertHeicToJpeg(file: Blob | File): Promise<Blob> {
+  if (!isHeicImage(file)) {
+    return file
+  }
+
+  try {
+    const heic2any = (await import('heic2any')).default
+    const conversionResult = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.9,
+    })
+    return Array.isArray(conversionResult) ? conversionResult[0] : conversionResult
+  } catch (err) {
+    console.warn('heic2any conversion error, attempting native canvas decode fallback:', err)
+    return file
+  }
+}
+
+/**
  * Compresses an image File/Blob using HTML Canvas and outputs a full-color WebP Blob (or JPEG fallback).
  * Automatically converts iOS HEIC/HEIF photos to standard format before downscaling.
  * Guarantees crisp high-contrast text rendering at ~120KB-180KB for 1600px long edge.
@@ -45,21 +68,9 @@ export async function compressImageToWebP(
 
   let processableBlob: Blob = file
 
-  // Handle iOS HEIC / HEIF conversions dynamically
+  // Handle iOS HEIC / HEIF conversions dynamically if needed
   if (isHeicImage(file)) {
-    try {
-      const heic2any = (await import('heic2any')).default
-      const conversionResult = await heic2any({
-        blob: file,
-        toType: 'image/jpeg',
-        quality: 0.9,
-      })
-      processableBlob = Array.isArray(conversionResult)
-        ? conversionResult[0]
-        : conversionResult
-    } catch (err) {
-      console.warn('heic2any conversion error, attempting native canvas decode:', err)
-    }
+    processableBlob = await convertHeicToJpeg(file)
   }
 
   return new Promise((resolve, reject) => {

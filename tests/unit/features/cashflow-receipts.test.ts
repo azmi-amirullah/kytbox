@@ -167,6 +167,18 @@ describe('Cashflow Receipt Schemas & Logic', () => {
       expect(isHeicImage(jpegFile)).toBe(false)
       expect(isHeicImage(pngFile)).toBe(false)
     })
+
+    it('passes non-HEIC images directly through convertHeicToJpeg', async () => {
+      const { convertHeicToJpeg } = await import(
+        '@/features/cashflow/lib/image-compression'
+      )
+
+      const pngFile = new File(['mock-data'], 'receipt.png', {
+        type: 'image/png',
+      })
+      const result = await convertHeicToJpeg(pngFile)
+      expect(result).toBe(pngFile)
+    })
   })
 })
 

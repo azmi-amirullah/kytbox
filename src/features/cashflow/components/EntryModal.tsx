@@ -41,7 +41,12 @@ import PurchaseBreakdownEditor, {
   type SplitItemInput,
 } from './PurchaseBreakdownEditor'
 import { TagPicker } from './TagPicker'
-import { compressImageToWebP, isSupportedImageFile } from '../lib/image-compression'
+import {
+  compressImageToWebP,
+  convertHeicToJpeg,
+  isHeicImage,
+  isSupportedImageFile,
+} from '../lib/image-compression'
 import ReceiptLightbox from './ReceiptLightbox'
 
 interface EntryModalProps {
@@ -98,6 +103,8 @@ export default function EntryModal({
   >(entry?.yearly_calculation || 'prorated')
   const [tags, setTags] = useState<string[]>(entry?.tags ?? [])
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptProcessedBlob, setReceiptProcessedBlob] = useState<Blob | null>(null)
+  const [isProcessingReceipt, setIsProcessingReceipt] = useState(false)
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null)
   const [receiptAction, setReceiptAction] = useState<'keep' | 'remove' | 'upload'>('keep')
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(
@@ -157,6 +164,8 @@ export default function EntryModal({
       setSplitItems(items)
       setTags(entry?.tags ?? [])
       setReceiptFile(null)
+      setReceiptProcessedBlob(null)
+      setIsProcessingReceipt(false)
       if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
       setReceiptPreviewUrl(null)
       setReceiptAction('keep')
@@ -193,7 +202,7 @@ export default function EntryModal({
     }
   }, [open, entry?.id, entry?.receipt_url, cashflowId])
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     if (!isSupportedImageFile(file)) {
       toast.error('Only image files (JPG, PNG, WebP, HEIC) are supported')
       return
@@ -205,10 +214,34 @@ export default function EntryModal({
     if (receiptPreviewUrl) {
       URL.revokeObjectURL(receiptPreviewUrl)
     }
-    const preview = URL.createObjectURL(file)
+
     setReceiptFile(file)
-    setReceiptPreviewUrl(preview)
     setReceiptAction('upload')
+
+    if (isHeicImage(file)) {
+      setIsProcessingReceipt(true)
+      setReceiptPreviewUrl(null)
+      setReceiptProcessedBlob(null)
+      try {
+        const convertedBlob = await convertHeicToJpeg(file)
+        const preview = URL.createObjectURL(convertedBlob)
+        setReceiptProcessedBlob(convertedBlob)
+        setReceiptPreviewUrl(preview)
+      } catch (err) {
+        console.error('HEIC preview conversion failed:', err)
+        toast.error('Could not decode image preview')
+        const fallbackPreview = URL.createObjectURL(file)
+        setReceiptProcessedBlob(file)
+        setReceiptPreviewUrl(fallbackPreview)
+      } finally {
+        setIsProcessingReceipt(false)
+      }
+    } else {
+      setIsProcessingReceipt(false)
+      const preview = URL.createObjectURL(file)
+      setReceiptProcessedBlob(file)
+      setReceiptPreviewUrl(preview)
+    }
   }
 
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false)
@@ -274,11 +307,15 @@ export default function EntryModal({
     }
   }
 
-  const isBusy = isLoading
+  const isBusy = isLoading || isProcessingReceipt
   const isEdit = !!entry
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (isProcessingReceipt) {
+      toast.info('Please wait for receipt processing to finish')
+      return
+    }
     setIsLoading(true)
     setError(null)
 
@@ -297,9 +334,10 @@ export default function EntryModal({
     }
     formData.append('receiptAction', receiptAction)
 
-    if (receiptAction === 'upload' && receiptFile) {
+    if (receiptAction === 'upload' && (receiptProcessedBlob || receiptFile)) {
       try {
-        const compressedBlob = await compressImageToWebP(receiptFile, {
+        const fileOrBlobToCompress = receiptProcessedBlob || receiptFile!
+        const compressedBlob = await compressImageToWebP(fileOrBlobToCompress, {
           maxDimension: 1600,
           quality: 0.8,
         })
@@ -307,8 +345,9 @@ export default function EntryModal({
         formData.append('receipt_file', compressedBlob, `receipt.${ext}`)
       } catch (err) {
         console.error('Client compression failed:', err)
-        if (receiptFile.size <= 1024 * 1024) {
-          formData.append('receipt_file', receiptFile)
+        const fallback = receiptFile!
+        if (fallback.size <= 1024 * 1024) {
+          formData.append('receipt_file', fallback)
         } else {
           const msg = 'Could not compress image. Please choose a photo under 1MB.'
           setError(msg)
@@ -745,6 +784,8 @@ export default function EntryModal({
                       onClick={() => {
                         setReceiptAction('remove')
                         setReceiptFile(null)
+                        setReceiptProcessedBlob(null)
+                        setIsProcessingReceipt(false)
                         if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
                         setReceiptPreviewUrl(null)
                       }}
@@ -757,39 +798,59 @@ export default function EntryModal({
               )}
 
               {/* Case 2: Newly selected file preview */}
-              {receiptPreviewUrl && receiptAction === 'upload' && (
+              {receiptAction === 'upload' && (receiptPreviewUrl || isProcessingReceipt) && (
                 <div className='flex items-center justify-between p-2.5 rounded-lg border border-primary/30 bg-primary/5'>
                   <div
                     role='button'
                     tabIndex={0}
-                    onClick={() => setIsLightboxOpen(true)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
+                    onClick={() => {
+                      if (!isProcessingReceipt && receiptPreviewUrl) {
                         setIsLightboxOpen(true)
                       }
                     }}
-                    className='flex items-center gap-2.5 min-w-0 cursor-pointer group/newthumb flex-1 pr-2'
-                    title='Click to preview in full screen'
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        if (!isProcessingReceipt && receiptPreviewUrl) {
+                          setIsLightboxOpen(true)
+                        }
+                      }
+                    }}
+                    className={`flex items-center gap-2.5 min-w-0 flex-1 pr-2 ${
+                      isProcessingReceipt
+                        ? 'cursor-wait opacity-80'
+                        : 'cursor-pointer group/newthumb'
+                    }`}
+                    title={
+                      isProcessingReceipt
+                        ? 'Processing photo preview…'
+                        : 'Click to preview in full screen'
+                    }
                   >
-                    <div className='relative w-10 h-10 rounded border border-primary/30 bg-card overflow-hidden shrink-0 group-hover/newthumb:ring-2 group-hover/newthumb:ring-primary/50 transition-all'>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={receiptPreviewUrl}
-                        alt='Receipt preview'
-                        className='w-full h-full object-cover group-hover/newthumb:scale-110 transition-transform duration-200'
-                      />
+                    <div className='relative w-10 h-10 rounded border border-primary/30 bg-card overflow-hidden shrink-0 group-hover/newthumb:ring-2 group-hover/newthumb:ring-primary/50 transition-all flex items-center justify-center'>
+                      {isProcessingReceipt ? (
+                        <LuLoader className='w-4 h-4 animate-spin text-primary' />
+                      ) : receiptPreviewUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={receiptPreviewUrl}
+                          alt='Receipt preview'
+                          className='w-full h-full object-cover group-hover/newthumb:scale-110 transition-transform duration-200'
+                        />
+                      ) : null}
                     </div>
                     <div className='min-w-0'>
                       <p className='text-xs font-medium truncate group-hover/newthumb:text-primary transition-colors'>
                         {receiptFile?.name || 'receipt.webp'}
                       </p>
                       <p className='text-[10px] text-muted-foreground'>
-                        {receiptFile
-                          ? receiptFile.size < 1024 * 1024
-                            ? `${(receiptFile.size / 1024).toFixed(1)} KB • Click to preview`
-                            : `${(receiptFile.size / (1024 * 1024)).toFixed(1)} MB • Click to preview`
-                          : 'Click to preview'}
+                        {isProcessingReceipt
+                          ? 'Processing preview…'
+                          : receiptFile
+                            ? receiptFile.size < 1024 * 1024
+                              ? `${(receiptFile.size / 1024).toFixed(1)} KB • Click to preview`
+                              : `${(receiptFile.size / (1024 * 1024)).toFixed(1)} MB • Click to preview`
+                            : 'Click to preview'}
                       </p>
                     </div>
                   </div>
@@ -801,6 +862,8 @@ export default function EntryModal({
                     onClick={() => {
                       setReceiptAction(existingReceiptUrl ? 'keep' : 'keep')
                       setReceiptFile(null)
+                      setReceiptProcessedBlob(null)
+                      setIsProcessingReceipt(false)
                       if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
                       setReceiptPreviewUrl(null)
                     }}
@@ -812,38 +875,40 @@ export default function EntryModal({
               )}
 
               {/* Case 3: No receipt or replaced/removed */}
-              {(!existingReceiptUrl || receiptAction === 'remove') && !receiptPreviewUrl && (
-                <div
-                  role='button'
-                  tabIndex={0}
-                  onClick={() => receiptInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+              {(!existingReceiptUrl || receiptAction === 'remove') &&
+                !receiptPreviewUrl &&
+                !isProcessingReceipt && (
+                  <div
+                    role='button'
+                    tabIndex={0}
+                    onClick={() => receiptInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        receiptInputRef.current?.click()
+                      }
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
                       e.preventDefault()
-                      receiptInputRef.current?.click()
-                    }
-                  }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    const droppedFile = e.dataTransfer.files?.[0]
-                    if (droppedFile && isSupportedImageFile(droppedFile)) {
-                      handleFileSelect(droppedFile)
-                    } else if (droppedFile) {
-                      toast.error('Only image files (JPG, PNG, WebP, HEIC) are supported')
-                    }
-                  }}
-                  className='flex flex-col items-center justify-center p-4 border border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/30 rounded-lg cursor-pointer transition-colors text-center group'
-                >
-                  <LuUpload className='w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-1.5' />
-                  <p className='text-xs font-medium text-foreground/90'>
-                    Upload receipt or photo
-                  </p>
-                  <p className='text-[10px] text-muted-foreground mt-0.5'>
-                    Drag & drop or click to browse (PNG, JPG, WebP, HEIC)
-                  </p>
-                </div>
-              )}
+                      const droppedFile = e.dataTransfer.files?.[0]
+                      if (droppedFile && isSupportedImageFile(droppedFile)) {
+                        handleFileSelect(droppedFile)
+                      } else if (droppedFile) {
+                        toast.error('Only image files (JPG, PNG, WebP, HEIC) are supported')
+                      }
+                    }}
+                    className='flex flex-col items-center justify-center p-4 border border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/30 rounded-lg cursor-pointer transition-colors text-center group'
+                  >
+                    <LuUpload className='w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-1.5' />
+                    <p className='text-xs font-medium text-foreground/90'>
+                      Upload receipt or photo
+                    </p>
+                    <p className='text-[10px] text-muted-foreground mt-0.5'>
+                      Drag & drop or click to browse (PNG, JPG, WebP, HEIC)
+                    </p>
+                  </div>
+                )}
 
               <input
                 ref={receiptInputRef}
@@ -959,7 +1024,11 @@ export default function EntryModal({
                 {isBusy ? (
                   <>
                     <LuLoader className='mr-2 h-4 w-4 animate-spin' />
-                    {isEdit ? 'Saving...' : 'Adding...'}
+                    {isProcessingReceipt
+                      ? 'Processing photo…'
+                      : isEdit
+                        ? 'Saving...'
+                        : 'Adding...'}
                   </>
                 ) : isEdit ? (
                   'Save Changes'
