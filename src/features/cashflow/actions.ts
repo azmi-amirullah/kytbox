@@ -30,7 +30,6 @@ import { mapBudgetToDTO, mapGoalToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
-import sharp from 'sharp';
 import * as Sentry from '@sentry/nextjs';
 
 const RECEIPT_BUCKET = 'cashflow-receipts';
@@ -56,6 +55,8 @@ async function optimizeReceiptToWebP(file: File): Promise<{ buffer: Buffer; cont
   let result: { buffer: Buffer; contentType: string; ext: string };
 
   try {
+    const sharpModule = await import('sharp');
+    const sharp = sharpModule.default || sharpModule;
     const webpBuffer = await sharp(inputBuffer)
       .rotate()
       .resize({
@@ -64,7 +65,7 @@ async function optimizeReceiptToWebP(file: File): Promise<{ buffer: Buffer; cont
         fit: 'inside',
         withoutEnlargement: true,
       })
-      .webp()
+      .webp({ quality: 80 })
       .toBuffer();
 
     result = {

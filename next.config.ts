@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   skipProxyUrlNormalize: true,
+  serverExternalPackages: ['sharp'],
   experimental: {
     serverActions: {
       bodySizeLimit: '3mb',
