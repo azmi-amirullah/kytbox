@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import type { ListDTO, ListType } from '@/types/dto';
 import ListCard from './ListCard';
 import CreateListModal from './CreateListModal';
+import TemplatePickerModal from './TemplatePickerModal';
 import { Button } from '@/components/ui/button';
 import { LuPlus, LuLayoutGrid, LuHeart, LuLightbulb } from 'react-icons/lu';
 
@@ -48,6 +49,7 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
   const action = searchParams.get('action');
 
   const [isCreateOpen, setIsCreateOpen] = useState(action === 'create');
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
   const [prevAction, setPrevAction] = useState(action);
 
   if (action !== prevAction) {
@@ -96,10 +98,27 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
               : `${meta.singular.toLowerCase()}s`}
           </p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className='gap-2'>
-          <LuPlus className='w-4 h-4' />
-          New {meta.singular}
-        </Button>
+        <div className='flex items-center gap-2'>
+          {type === 'todo' && (
+            <Button
+              variant='outline'
+              onClick={() => setIsTemplatePickerOpen(true)}
+              className='gap-2'
+              id='open-template-picker'
+              aria-label='Browse board templates'
+            >
+              Templates
+            </Button>
+          )}
+          <Button
+            onClick={() => setIsCreateOpen(true)}
+            className='gap-2'
+            id='create-new-list'
+          >
+            <LuPlus className='w-4 h-4' aria-hidden='true' />
+            New {meta.singular}
+          </Button>
+        </div>
       </div>
 
       {/* Grid */}
@@ -113,10 +132,21 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
             onClick={() => setIsCreateOpen(true)}
             variant='outline'
             className='mt-4 gap-2'
+            id='empty-create-list'
           >
-            <LuPlus className='w-4 h-4' />
+            <LuPlus className='w-4 h-4' aria-hidden='true' />
             Create {meta.singular}
           </Button>
+          {type === 'todo' && (
+            <button
+              type='button'
+              onClick={() => setIsTemplatePickerOpen(true)}
+              className='mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors duration-150 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1'
+              id='empty-open-templates'
+            >
+              Or start from a template →
+            </button>
+          )}
         </div>
       ) : (
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -131,6 +161,14 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
         open={isCreateOpen}
         onOpenChange={handleCreateOpenChange}
       />
+
+      {type === 'todo' && (
+        <TemplatePickerModal
+          open={isTemplatePickerOpen}
+          onOpenChange={setIsTemplatePickerOpen}
+          onBlankBoard={() => setIsCreateOpen(true)}
+        />
+      )}
     </div>
   );
 }

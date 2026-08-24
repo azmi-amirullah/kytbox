@@ -24,7 +24,7 @@
 - [x] [Day 14 — Weekly Sprint Audit & Financial Calculation Check](#day-14)
 - [x] [Day 15 — List: Card Due Dates & Reminders](#day-15)
 - [x] [Day 16 — List: Card Subtasks & Checklist Engine](#day-16)
-- [ ] [Day 17 — List: Pre-built Board Templates](#day-17)
+- [x] [Day 17 — List: Pre-built Board Templates](#day-17)
 - [ ] [Day 18 — List: Card Priority Levels & Filtering](#day-18)
 - [ ] [Day 19 — List: Card Attachments](#day-19)
 - [ ] [Day 20 — List: Advanced Features E2E Test Suite](#day-20)

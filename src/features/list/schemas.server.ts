@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TEMPLATE_IDS } from './templates';
 
 export const listTypeSchema = z.enum(['todo', 'wishlist', 'idea']);
 
@@ -178,4 +179,10 @@ export const reorderSubtasksSchema = z.object({
       }
     }),
 });
+
+export const templateIdSchema = z.enum(TEMPLATE_IDS)
+
+export const createBoardFromTemplateSchema = z.object({
+  templateId: templateIdSchema,
+})
 

@@ -34,6 +34,7 @@ import {
   updateColumnSchema,
   updateItemActionSchema,
   updateListActionSchema,
+  createBoardFromTemplateSchema,
 } from './schemas.server'
 import { formatDueDateLabel } from './lib/due-date'
 import {
@@ -43,6 +44,7 @@ import {
   mapListSubtaskToDTO,
   mapListColumnToDTO,
 } from '@/lib/mappers'
+import { BOARD_TEMPLATES } from './templates'
 
 /** Sentinel title for the per-user hidden "New Idea" list */
 const NEW_IDEA_LIST_TITLE = '__new_idea__'
@@ -1266,3 +1268,98 @@ export async function reorderSubtasks(itemId: string, subtaskIds: string[]) {
   return { success: true }
 }
 
+
+// TEMPLATE ACTIONS — Board creation from pre-built templates
+// ===========================================================
+
+export async function createBoardFromTemplate(templateId: string) {
+  const parsed = createBoardFromTemplateSchema.safeParse({ templateId })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid template' }
+  }
+
+  const template = BOARD_TEMPLATES.find((t) => t.id === parsed.data.templateId)
+  if (!template) return { error: 'Template not found' }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+
+  // 1. Create the list
+  const { data: list, error: listError } = await supabase
+    .from('lists')
+    .insert({
+      user_id: user.id,
+      title: template.name,
+      type: 'todo',
+      description: template.description,
+      is_public: false,
+    })
+    .select('id')
+    .single()
+
+  if (listError || !list) {
+    return { error: 'Failed to create board' }
+  }
+
+  const listId = list.id
+
+  // 2. Insert columns
+  const { data: columns, error: colError } = await supabase
+    .from('list_columns')
+    .insert(
+      template.columns.map((col, index) => ({
+        list_id: listId,
+        title: col.title,
+        sort_order: index * 1024,
+        is_done_column: col.is_done_column,
+      }))
+    )
+    .select('id, sort_order')
+
+  if (colError || !columns || columns.length === 0) {
+    return { error: 'Failed to create columns' }
+  }
+
+  // Sort by sort_order to map starterCards by columnIndex reliably
+  const sortedColumns = [...columns].sort((a, b) => a.sort_order - b.sort_order)
+
+  // 3. Insert starter cards
+  const validStarterCards = template.starterCards.filter(
+    (c) => c.columnIndex < sortedColumns.length,
+  )
+  const cardsToInsert = validStarterCards.map((c, idx) => ({
+    list_id: listId,
+    column_id: sortedColumns[c.columnIndex].id,
+    title: c.title,
+    sort_order: idx * 1024,
+    is_completed: false,
+  }))
+
+  if (cardsToInsert.length > 0) {
+    const { data: insertedCards } = await supabase
+      .from('list_items')
+      .insert(cardsToInsert)
+      .select('id')
+
+    // 4. Insert subtasks — match by index (Supabase preserves insert order)
+    if (insertedCards && insertedCards.length > 0) {
+      const subtasksToInsert = validStarterCards.flatMap((card, idx) => {
+        if (!card.subtasks || card.subtasks.length === 0) return []
+        const insertedCard = insertedCards[idx]
+        if (!insertedCard) return []
+        return card.subtasks.map((title, position) => ({
+          item_id: insertedCard.id,
+          title,
+          position,
+          is_completed: false,
+        }))
+      })
+
+      if (subtasksToInsert.length > 0) {
+        await supabase.from('list_subtasks').insert(subtasksToInsert)
+      }
+    }
+  }
+
+  revalidatePath('/list')
+  return { success: true, data: { listId } }
+}

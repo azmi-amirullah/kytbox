@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
+import { RelativeTime } from '@/components/ui/relative-time';
 import {
   LuLayoutGrid,
   LuHeart,
@@ -177,14 +177,10 @@ export default function ListCard({ list }: ListCardProps) {
 
           {/* Updated at */}
           {list.updated_at && (
-            <p className='text-xs text-muted-foreground/70'>
-              {(() => {
-                const date = new Date(list.updated_at);
-                const now = new Date();
-                const safeDate = date > now ? now : date;
-                return formatDistanceToNow(safeDate, { addSuffix: true });
-              })()}
-            </p>
+            <RelativeTime
+              dateString={list.updated_at}
+              className='text-xs text-muted-foreground/70'
+            />
           )}
         </div>
       </div>
