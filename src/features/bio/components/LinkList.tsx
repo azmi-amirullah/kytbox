@@ -270,6 +270,7 @@ export default function LinkList({
       )}
 
       <DndContext
+        id='bio-links-dnd'
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}

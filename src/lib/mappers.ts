@@ -11,6 +11,7 @@ import type {
   List,
   ListColumn,
   ListItem,
+  ListSubtask,
   ListWithSummary,
 } from '@/types/database';
 import {
@@ -36,6 +37,7 @@ import type {
   ListDTO,
   ListColumnDTO,
   ListItemDTO,
+  ListSubtaskDTO,
 } from '@/types/dto';
 import { listItemMetadataClientSchema } from '@/lib/validation.schemas.client';
 
@@ -307,7 +309,26 @@ export function mapListColumnToDTO(row: ListColumn): ListColumnDTO {
   };
 }
 
-export function mapListItemToDTO(row: ListItem): ListItemDTO {
+export function mapListSubtaskToDTO(row: ListSubtask): ListSubtaskDTO {
+  return {
+    id: row.id,
+    item_id: row.item_id,
+    title: row.title,
+    is_completed: row.is_completed,
+    position: row.position,
+    created_at: row.created_at,
+  };
+}
+
+export function mapListItemToDTO(
+  row: ListItem & { list_subtasks?: ListSubtask[] },
+): ListItemDTO {
+  const subtasks = Array.isArray(row.list_subtasks) && row.list_subtasks.length > 0
+    ? row.list_subtasks
+        .map(mapListSubtaskToDTO)
+        .sort((a, b) => a.position - b.position || (a.created_at ?? '').localeCompare(b.created_at ?? ''))
+    : undefined;
+
   return {
     id: row.id,
     list_id: row.list_id,
@@ -320,5 +341,6 @@ export function mapListItemToDTO(row: ListItem): ListItemDTO {
     created_at: row.created_at,
     due_date: row.due_date ?? null,
     reminder_sent: row.reminder_sent ?? false,
+    subtasks,
   };
 }

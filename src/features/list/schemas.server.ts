@@ -135,3 +135,47 @@ export const wishlistMetadataSchema = z.object({
 }).catch({ price: null, currency: null, purchase_url: null });
 
 export const listItemMetadataSchema = z.record(z.string(), z.unknown()).catch({});
+
+export const listSubtaskIdSchema = z.uuid({ message: 'Invalid subtask ID' });
+
+export const subtaskTitleSchema = z
+  .string()
+  .trim()
+  .min(1, 'Subtask title is required')
+  .max(300, 'Subtask title too long');
+
+export const createSubtaskSchema = z.object({
+  itemId: listItemIdSchema,
+  title: subtaskTitleSchema,
+});
+
+export const updateSubtaskTitleSchema = z.object({
+  subtaskId: listSubtaskIdSchema,
+  title: subtaskTitleSchema,
+});
+
+export const toggleSubtaskSchema = z.object({
+  subtaskId: listSubtaskIdSchema,
+  isCompleted: z.boolean(),
+});
+
+export const deleteSubtaskSchema = z.object({
+  subtaskId: listSubtaskIdSchema,
+});
+
+export const reorderSubtasksSchema = z.object({
+  itemId: listItemIdSchema,
+  subtaskIds: z
+    .array(listSubtaskIdSchema)
+    .min(1)
+    .max(200)
+    .superRefine((subtaskIds, context) => {
+      if (new Set(subtaskIds).size !== subtaskIds.length) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Subtask IDs must be unique',
+        });
+      }
+    }),
+});
+

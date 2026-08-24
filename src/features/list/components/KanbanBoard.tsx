@@ -275,7 +275,7 @@ export default function KanbanBoard({
           Todo
         </Link>
         <span className='text-muted-foreground'>/</span>
-        <span aria-current='page' className='text-foreground font-medium truncate max-w-[200px]'>
+        <span aria-current='page' className='text-foreground font-medium truncate max-w-50'>
           {list.title}
         </span>
       </nav>
@@ -287,6 +287,7 @@ export default function KanbanBoard({
 
       {/* Board */}
       <DndContext
+        id={`kanban-board-${list.id}`}
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
@@ -313,7 +314,7 @@ export default function KanbanBoard({
           </SortableContext>
 
           {/* Add column button */}
-          <div className='min-w-[280px] shrink-0'>
+          <div className='min-w-70 shrink-0'>
             <Button
               variant='outline'
               className='w-full h-12 border-dashed gap-2'

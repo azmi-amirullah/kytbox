@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useRef, useEffect, useTransition } from 'react';
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -54,6 +54,21 @@ export default function KanbanColumn({
   const [editTitle, setEditTitle] = useState(column.title);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [, startTransition] = useTransition();
+  const addCardInputRef = useRef<HTMLInputElement>(null);
+  const editTitleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isAdding) {
+      addCardInputRef.current?.focus();
+    }
+  }, [isAdding]);
+
+  useEffect(() => {
+    if (isEditingTitle) {
+      editTitleInputRef.current?.focus();
+      editTitleInputRef.current?.select();
+    }
+  }, [isEditingTitle]);
 
   const {
     attributes,
@@ -119,7 +134,7 @@ export default function KanbanColumn({
       <div
         ref={setNodeRef}
         style={style}
-        className={`min-w-[280px] w-[280px] shrink-0 rounded-xl border p-3 flex flex-col max-h-[calc(100vh-200px)] ${columnBorderClass} ${
+        className={`min-w-70 w-70 shrink-0 rounded-xl border p-3 flex flex-col max-h-[calc(100vh-200px)] ${columnBorderClass} ${
           isDragging ? 'opacity-40 border-dashed' : ''
         }`}
       >
@@ -135,6 +150,7 @@ export default function KanbanColumn({
             )}
             {isEditingTitle ? (
               <Input
+                ref={editTitleInputRef}
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 onBlur={handleSaveTitle}
@@ -204,7 +220,7 @@ export default function KanbanColumn({
         </div>
 
         {/* Cards */}
-        <div className='flex-1 overflow-y-auto space-y-2 min-h-[40px]'>
+        <div className='flex-1 overflow-y-auto space-y-2 min-h-10'>
           <SortableContext
             items={items.map((i) => i.id)}
             strategy={verticalListSortingStrategy}
@@ -220,6 +236,7 @@ export default function KanbanColumn({
           {isAdding ? (
             <form onSubmit={handleAddCard} className='space-y-2'>
               <Input
+                ref={addCardInputRef}
                 placeholder='Card title...'
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}

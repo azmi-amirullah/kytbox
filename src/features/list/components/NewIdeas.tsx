@@ -167,7 +167,7 @@ export default function NewIdeas({
 
       {/* Items */}
       {items.length === 0 ? (
-        <div className='flex flex-col items-center justify-center min-h-[120px] bg-card border border-dashed rounded-2xl p-6 text-center'>
+        <div className='flex flex-col items-center justify-center min-h-30 bg-card border border-dashed rounded-2xl p-6 text-center'>
           <LuLightbulb className='w-8 h-8 text-muted-foreground/40 mb-2' />
           <p className='text-muted-foreground text-sm'>
             No new ideas yet. Type above to capture one.
@@ -175,6 +175,7 @@ export default function NewIdeas({
         </div>
       ) : (
         <DndContext
+          id='new-ideas-dnd'
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}

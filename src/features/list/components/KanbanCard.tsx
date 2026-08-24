@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { LuTrash2, LuCalendar } from 'react-icons/lu';
+import { LuTrash2, LuCalendar, LuListTodo } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -40,6 +40,11 @@ export default function KanbanCard({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const dueDateInfo = getDueDateInfo(item.due_date, item.is_completed);
+  const subtasks = item.subtasks ?? [];
+  const totalSubtasks = subtasks.length;
+  const completedSubtasks = subtasks.filter((s) => s.is_completed).length;
+  const isAllSubtasksCompleted = totalSubtasks > 0 && completedSubtasks === totalSubtasks;
+  const subtaskPercent = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
   const {
     attributes,
     listeners,
@@ -136,15 +141,32 @@ export default function KanbanCard({
                 {item.description}
               </p>
             )}
-            {dueDateInfo.status !== 'none' && (
-              <div className='flex items-center gap-1.5 mt-2'>
-                <span
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border ${dueDateInfo.badgeClassName}`}
-                  title={`Due: ${item.due_date}`}
-                >
-                  <LuCalendar className='w-3 h-3 shrink-0' />
-                  <span>{dueDateInfo.label}</span>
-                </span>
+            {(dueDateInfo.status !== 'none' || totalSubtasks > 0) && (
+              <div className='flex flex-wrap items-center gap-1.5 mt-2'>
+                {dueDateInfo.status !== 'none' && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border ${dueDateInfo.badgeClassName}`}
+                    title={`Due: ${item.due_date}`}
+                  >
+                    <LuCalendar className='w-3 h-3 shrink-0' />
+                    <span>{dueDateInfo.label}</span>
+                  </span>
+                )}
+                {totalSubtasks > 0 && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border ${
+                      isAllSubtasksCompleted
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
+                        : 'bg-muted/70 text-muted-foreground border-border/70'
+                    }`}
+                    title={`Subtasks: ${completedSubtasks} of ${totalSubtasks} completed (${subtaskPercent}%)`}
+                  >
+                    <LuListTodo className='w-3 h-3 shrink-0' />
+                    <span>
+                      {completedSubtasks}/{totalSubtasks}
+                    </span>
+                  </span>
+                )}
               </div>
             )}
           </div>

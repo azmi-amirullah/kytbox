@@ -174,6 +174,15 @@ export interface ListColumnDTO {
   is_done_column: boolean
 }
 
+export interface ListSubtaskDTO {
+  id: string
+  item_id: string
+  title: string
+  is_completed: boolean
+  position: number
+  created_at: string | null
+}
+
 export interface ListItemDTO {
   id: string
   list_id: string
@@ -186,6 +195,7 @@ export interface ListItemDTO {
   created_at: string | null
   due_date: string | null
   reminder_sent?: boolean
+  subtasks?: ListSubtaskDTO[]
 }
 
 export interface WishlistItemMeta {

@@ -16,11 +16,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import type { ListItemDTO } from '@/types/dto'
+import type { ListItemDTO, ListSubtaskDTO } from '@/types/dto'
 import { updateItem, toggleItem } from '../actions'
 import { getDueDateInfo } from '../lib/due-date'
 import { toast } from 'react-toastify'
 import { Checkbox } from '@/components/ui/checkbox'
+import CardChecklist from './CardChecklist'
 
 interface EditTodoModalProps {
   item: ListItemDTO
@@ -42,6 +43,7 @@ export default function EditTodoModal({
   const [description, setDescription] = useState(item.description || '')
   const [isCompleted, setIsCompleted] = useState(item.is_completed)
   const [dueDate, setDueDate] = useState<string | null>(item.due_date ?? null)
+  const [subtasks, setSubtasks] = useState(item.subtasks ?? [])
 
   // Reset local state synchronously when props change (avoids useEffect cascading renders)
   if (item.id !== prevItemId || open !== prevOpen) {
@@ -51,9 +53,22 @@ export default function EditTodoModal({
     setDescription(item.description || '')
     setIsCompleted(item.is_completed)
     setDueDate(item.due_date ?? null)
+    setSubtasks(item.subtasks ?? [])
   }
 
   const dueDateInfo = getDueDateInfo(dueDate, isCompleted)
+
+  const handleSubtasksChange = (newSubtasks: ListSubtaskDTO[]) => {
+    setSubtasks(newSubtasks)
+    onUpdated({
+      ...item,
+      title: title.trim(),
+      description: description.trim() || null,
+      is_completed: isCompleted,
+      due_date: dueDate || null,
+      subtasks: newSubtasks,
+    })
+  }
 
   const handleToggleCompleted = () => {
     if (isPending) return
@@ -63,7 +78,14 @@ export default function EditTodoModal({
         toast.error(result.error)
       } else {
         setIsCompleted(!isCompleted)
-        onUpdated({ ...item, is_completed: !isCompleted, due_date: dueDate })
+        onUpdated({
+          ...item,
+          title: title.trim(),
+          description: description.trim() || null,
+          is_completed: !isCompleted,
+          due_date: dueDate,
+          subtasks,
+        })
       }
     })
   }
@@ -99,6 +121,7 @@ export default function EditTodoModal({
           description: description.trim() || null,
           is_completed: isCompleted,
           due_date: dueDate || null,
+          subtasks,
         })
         onOpenChange(false)
       }
@@ -205,6 +228,13 @@ export default function EditTodoModal({
                 </div>
               </div>
             </div>
+
+            {/* Subtasks Checklist */}
+            <CardChecklist
+              itemId={item.id}
+              subtasks={subtasks}
+              onSubtasksChange={handleSubtasksChange}
+            />
 
             {/* Description Row */}
             <div className='space-y-1.5'>

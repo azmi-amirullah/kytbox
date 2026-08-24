@@ -7,6 +7,10 @@ import {
   moveItemSchema,
   reorderColumnsSchema,
   reorderItemsSchema,
+  createSubtaskSchema,
+  toggleSubtaskSchema,
+  updateSubtaskTitleSchema,
+  reorderSubtasksSchema,
 } from '@/features/list/schemas.server';
 
 describe('List Server Schemas', () => {
@@ -165,4 +169,46 @@ describe('List Server Schemas', () => {
       expect(malformed.success).toBe(false);
     });
   });
+
+  describe('subtask schemas', () => {
+    it('validates createSubtaskSchema with valid UUID and title', () => {
+      const valid = createSubtaskSchema.safeParse({
+        itemId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        title: 'Draft landing page copy',
+      });
+      expect(valid.success).toBe(true);
+    });
+
+    it('rejects empty or whitespace-only subtask title', () => {
+      const empty = createSubtaskSchema.safeParse({
+        itemId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        title: '   ',
+      });
+      expect(empty.success).toBe(false);
+    });
+
+    it('validates toggleSubtaskSchema and updateSubtaskTitleSchema', () => {
+      const toggle = toggleSubtaskSchema.safeParse({
+        subtaskId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        isCompleted: true,
+      });
+      expect(toggle.success).toBe(true);
+
+      const update = updateSubtaskTitleSchema.safeParse({
+        subtaskId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        title: 'Updated subtask title',
+      });
+      expect(update.success).toBe(true);
+    });
+
+    it('rejects duplicate subtask IDs during reorder', () => {
+      const subtaskId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+      const duplicate = reorderSubtasksSchema.safeParse({
+        itemId: 'a47ac10b-58cc-4372-a567-0e02b2c3d479',
+        subtaskIds: [subtaskId, subtaskId],
+      });
+      expect(duplicate.success).toBe(false);
+    });
+  });
 });
+

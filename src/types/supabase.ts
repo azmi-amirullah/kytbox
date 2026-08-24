@@ -773,6 +773,41 @@ export type Database = {
           },
         ]
       }
+      list_subtasks: {
+        Row: {
+          created_at: string
+          id: string
+          is_completed: boolean
+          item_id: string
+          position: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item_id: string
+          position?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item_id?: string
+          position?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_subtasks_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "list_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lists: {
         Row: {
           created_at: string

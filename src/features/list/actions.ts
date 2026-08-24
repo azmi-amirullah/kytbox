@@ -17,6 +17,11 @@ import {
   listColumnIdSchema,
   listIdSchema,
   listItemIdSchema,
+  createSubtaskSchema,
+  updateSubtaskTitleSchema,
+  toggleSubtaskSchema,
+  deleteSubtaskSchema,
+  reorderSubtasksSchema,
   moveItemSchema,
   moveItemToListSchema,
   reorderColumnsSchema,
@@ -35,6 +40,7 @@ import {
   mapListToDTO,
   mapListWithSummaryToDTO,
   mapListItemToDTO,
+  mapListSubtaskToDTO,
   mapListColumnToDTO,
 } from '@/lib/mappers'
 
@@ -145,6 +151,37 @@ async function getOwnedColumn(
     id: data.id,
     listId: data.list_id,
     isDoneColumn: data.is_done_column,
+  }
+}
+
+type OwnedSubtask = {
+  id: string
+  itemId: string
+  listId: string
+  listType: ListType
+}
+
+async function getOwnedSubtask(
+  supabase: ServerSupabaseClient,
+  userId: string,
+  subtaskId: string,
+): Promise<OwnedSubtask | null> {
+  const { data: subtask, error: subtaskError } = await supabase
+    .from('list_subtasks')
+    .select('id, item_id')
+    .eq('id', subtaskId)
+    .maybeSingle()
+
+  if (subtaskError || !subtask) return null
+
+  const ownedItem = await getOwnedItem(supabase, userId, subtask.item_id)
+  if (!ownedItem) return null
+
+  return {
+    id: subtask.id,
+    itemId: subtask.item_id,
+    listId: ownedItem.listId,
+    listType: ownedItem.listType,
   }
 }
 
@@ -768,7 +805,7 @@ export async function getItemsByListId(listId: string): Promise<ListItemDTO[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('list_items')
-    .select('*')
+    .select('*, list_subtasks(*)')
     .eq('list_id', listId)
     .order('sort_order', { ascending: true })
 
@@ -1076,3 +1113,156 @@ export async function toggleDoneColumn(
   revalidatePath('/list')
   return { success: true }
 }
+
+// ==========================================
+// SUBTASK ACTIONS — Checklist & subtask engine
+// ==========================================
+
+export async function createSubtask(itemId: string, title: string) {
+  const parsed = createSubtaskSchema.safeParse({ itemId, title })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId)
+  if (!ownedItem) return { error: 'Task not found' }
+
+  // Get current max position for ordering
+  const { data: maxRow } = await supabase
+    .from('list_subtasks')
+    .select('position')
+    .eq('item_id', parsed.data.itemId)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const nextPosition = (maxRow?.position ?? -1) + 1
+
+  const { data: created, error } = await supabase
+    .from('list_subtasks')
+    .insert({
+      item_id: parsed.data.itemId,
+      title: parsed.data.title,
+      is_completed: false,
+      position: nextPosition,
+    })
+    .select()
+    .single()
+
+  if (error || !created) {
+    return { error: 'Failed to create subtask' }
+  }
+
+  revalidatePath(`/list/${ownedItem.listType}/${ownedItem.listId}`)
+  revalidatePath('/list')
+  return { success: true, data: mapListSubtaskToDTO(created) }
+}
+
+export async function toggleSubtask(subtaskId: string, isCompleted: boolean) {
+  const parsed = toggleSubtaskSchema.safeParse({ subtaskId, isCompleted })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedSubtask = await getOwnedSubtask(supabase, user.id, parsed.data.subtaskId)
+  if (!ownedSubtask) return { error: 'Subtask not found' }
+
+  const { error } = await supabase
+    .from('list_subtasks')
+    .update({ is_completed: parsed.data.isCompleted })
+    .eq('id', parsed.data.subtaskId)
+
+  if (error) {
+    return { error: 'Failed to update subtask' }
+  }
+
+  revalidatePath(`/list/${ownedSubtask.listType}/${ownedSubtask.listId}`)
+  revalidatePath('/list')
+  return { success: true }
+}
+
+export async function updateSubtaskTitle(subtaskId: string, title: string) {
+  const parsed = updateSubtaskTitleSchema.safeParse({ subtaskId, title })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedSubtask = await getOwnedSubtask(supabase, user.id, parsed.data.subtaskId)
+  if (!ownedSubtask) return { error: 'Subtask not found' }
+
+  const { error } = await supabase
+    .from('list_subtasks')
+    .update({ title: parsed.data.title })
+    .eq('id', parsed.data.subtaskId)
+
+  if (error) {
+    return { error: 'Failed to update subtask title' }
+  }
+
+  revalidatePath(`/list/${ownedSubtask.listType}/${ownedSubtask.listId}`)
+  revalidatePath('/list')
+  return { success: true }
+}
+
+export async function deleteSubtask(subtaskId: string) {
+  const parsed = deleteSubtaskSchema.safeParse({ subtaskId })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedSubtask = await getOwnedSubtask(supabase, user.id, parsed.data.subtaskId)
+  if (!ownedSubtask) return { error: 'Subtask not found' }
+
+  const { error } = await supabase
+    .from('list_subtasks')
+    .delete()
+    .eq('id', parsed.data.subtaskId)
+
+  if (error) {
+    return { error: 'Failed to delete subtask' }
+  }
+
+  revalidatePath(`/list/${ownedSubtask.listType}/${ownedSubtask.listId}`)
+  revalidatePath('/list')
+  return { success: true }
+}
+
+export async function reorderSubtasks(itemId: string, subtaskIds: string[]) {
+  const parsed = reorderSubtasksSchema.safeParse({ itemId, subtaskIds })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId)
+  if (!ownedItem) return { error: 'Task not found' }
+
+  // Verify all subtasks belong to this item
+  const { data: existing, error: selectError } = await supabase
+    .from('list_subtasks')
+    .select('id')
+    .eq('item_id', parsed.data.itemId)
+    .in('id', parsed.data.subtaskIds)
+
+  if (selectError || !existing || existing.length !== parsed.data.subtaskIds.length) {
+    return { error: 'Invalid subtasks selection' }
+  }
+
+  const updates = parsed.data.subtaskIds.map((id, index) =>
+    supabase
+      .from('list_subtasks')
+      .update({ position: index })
+      .eq('id', id)
+      .eq('item_id', parsed.data.itemId),
+  )
+
+  await Promise.all(updates)
+
+  revalidatePath(`/list/${ownedItem.listType}/${ownedItem.listId}`)
+  return { success: true }
+}
+

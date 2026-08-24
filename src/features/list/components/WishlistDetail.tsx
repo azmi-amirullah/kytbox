@@ -111,7 +111,7 @@ export default function WishlistDetail({
           Wishlist
         </Link>
         <span className='text-muted-foreground'>/</span>
-        <span aria-current='page' className='text-foreground font-medium truncate max-w-[200px]'>
+        <span aria-current='page' className='text-foreground font-medium truncate max-w-50'>
           {list.title}
         </span>
       </nav>
@@ -134,7 +134,7 @@ export default function WishlistDetail({
 
       {/* Items */}
       {items.length === 0 ? (
-        <div className='flex flex-col items-center justify-center min-h-[200px] bg-card border border-dashed rounded-2xl p-8 text-center'>
+        <div className='flex flex-col items-center justify-center min-h-50 bg-card border border-dashed rounded-2xl p-8 text-center'>
           <LuHeart className='w-10 h-10 text-muted-foreground/40 mb-3' />
           <p className='text-muted-foreground text-sm'>
             No wishes yet. Add something you want!
@@ -150,6 +150,7 @@ export default function WishlistDetail({
         </div>
       ) : (
         <DndContext
+          id={`wishlist-detail-${list.id}`}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}

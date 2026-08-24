@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getAuthenticatedUserWithRateLimit: vi.fn(),
@@ -149,8 +149,13 @@ const otherColumnId = '44444444-4444-4444-8444-444444444444';
 const listId = '55555555-5555-4555-8555-555555555555';
 const otherListId = '66666666-6666-4666-8666-666666666666';
 
+let actions: typeof import('@/features/list/actions');
+
 async function loadActions() {
-  return import('@/features/list/actions');
+  if (!actions) {
+    actions = await import('@/features/list/actions');
+  }
+  return actions;
 }
 
 function configureAuth(results: Record<string, QueryResult>): FakeSupabaseState {
@@ -161,6 +166,10 @@ function configureAuth(results: Record<string, QueryResult>): FakeSupabaseState 
   });
   return state;
 }
+
+beforeAll(async () => {
+  actions = await import('@/features/list/actions');
+}, 30000);
 
 beforeEach(() => {
   mocks.getAuthenticatedUserWithRateLimit.mockReset();
@@ -175,7 +184,7 @@ describe('List server-action security boundaries', () => {
 
     expect(result).toEqual({ error: 'Invalid item ID' });
     expect(mocks.getAuthenticatedUserWithRateLimit).not.toHaveBeenCalled();
-  }, 15000);
+  }, 30000);
 
   it('rejects a destination column from another list', async () => {
     const { moveItem } = await loadActions();
