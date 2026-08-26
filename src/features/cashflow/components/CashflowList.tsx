@@ -509,21 +509,11 @@ export default function CashflowList({
       })()}
 
       {/* Dashboard Charts */}
-      <div className='space-y-4'>
-        <div>
-          <h2 className='text-lg font-bold tracking-tight'>
-            Financial Overview
-          </h2>
-          <p className='text-sm text-muted-foreground'>
-            Monthly breakdown of your transactions
-          </p>
-        </div>
-        <CashflowCharts
-          aggregates={activeAggregates}
-          cashflows={flowsToCount}
-          currency={currency}
-        />
-      </div>
+      <CashflowCharts
+        aggregates={activeAggregates}
+        cashflows={flowsToCount}
+        currency={currency}
+      />
 
       {/* Modals */}
       <CashflowModal

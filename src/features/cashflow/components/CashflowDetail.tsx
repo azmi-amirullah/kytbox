@@ -1420,18 +1420,19 @@ export default function CashflowDetail({
                         }
                       }}
                       className={cn(
-                        'group inline-flex items-center min-h-7 sm:min-h-6 px-2.5 py-1 rounded-md text-xs border leading-none transition-all duration-200 shadow-2xs select-none cursor-pointer',
+                        'group inline-flex items-center min-h-7 sm:min-h-6 px-2.5 py-1 rounded-md text-xs border leading-none transition-all duration-200 select-none cursor-pointer',
                         isActive
                           ? cn(
                               tagColor.activeBg,
                               tagColor.activeText,
                               tagColor.activeBorder,
+                              'shadow-xs ring-1 ring-black/10 dark:ring-white/20 scale-[1.02]',
                             )
                           : cn(
                               tagColor.bg,
                               tagColor.text,
                               tagColor.border,
-                              'font-medium hover:opacity-85',
+                              'shadow-2xs font-medium hover:opacity-85',
                             ),
                       )}
                     >
@@ -1615,9 +1616,9 @@ export default function CashflowDetail({
                   {paginatedEntries.map((entry) => (
                     <div
                       key={entry.id}
-                      className={cn('px-3.5 sm:px-4 py-3', canEdit ? 'pr-2' : '')}
+                      className='flex items-stretch justify-between transition-colors hover:bg-muted/10'
                     >
-                      <div className='flex items-center justify-between gap-3'>
+                      <div className='flex-1 p-3.5 sm:p-4 min-w-0 flex items-center justify-between gap-3'>
                         <div className='space-y-1.5 min-w-0 flex-1'>
                           <div className='flex items-center gap-2 flex-wrap'>
                             <span className='text-xs text-muted-foreground font-medium'>
@@ -1654,47 +1655,47 @@ export default function CashflowDetail({
                             />
                           </div>
                         </div>
-                        <div className='text-right shrink-0 flex gap-2.5 sm:gap-4 items-center'>
-                          <div
-                            className={`font-bold text-sm tabular-nums ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
-                          >
-                            {entry.type === 'income' ? '+' : '-'}
-                            {formatCurrencyCompact(
-                              Number(entry.amount),
-                              currency,
-                            )}
-                          </div>
-                          {canEdit && (
-                            <div className='flex justify-end gap-1.5 flex-col border-l border-border/50 pl-2'>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-9 w-9 rounded-md'
-                                onClick={() => openEditEntry(entry)}
-                                aria-label={`Edit entry ${entry.description}`}
-                              >
-                                <LuPencil className='w-4 h-4' />
-                              </Button>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-9 w-9 rounded-md text-destructive hover:bg-destructive/10'
-                                onClick={() => {
-                                  setIsDeletingEntryId(null)
-                                  setDeletingEntryId(entry.id)
-                                }}
-                                aria-label={`Delete entry ${entry.description}`}
-                              >
-                                {isDeletingEntryId === entry.id ? (
-                                  <LuLoader className='w-4 h-4 animate-spin' />
-                                ) : (
-                                  <LuTrash2 className='w-4 h-4' />
-                                )}
-                              </Button>
-                            </div>
+
+                        <div
+                          className={`font-bold text-sm tabular-nums shrink-0 text-right ${entry.type === 'income' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}
+                        >
+                          {entry.type === 'income' ? '+' : '-'}
+                          {formatCurrencyCompact(
+                            Number(entry.amount),
+                            currency,
                           )}
                         </div>
                       </div>
+
+                      {canEdit && (
+                        <div className='flex flex-col items-center justify-center gap-2 border-l border-border/50 px-2 sm:px-2.5 shrink-0 bg-muted/5'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-9 w-9 rounded-md'
+                            onClick={() => openEditEntry(entry)}
+                            aria-label={`Edit entry ${entry.description}`}
+                          >
+                            <LuPencil className='w-4 h-4' />
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-9 w-9 rounded-md text-destructive hover:bg-destructive/10'
+                            onClick={() => {
+                              setIsDeletingEntryId(null)
+                              setDeletingEntryId(entry.id)
+                            }}
+                            aria-label={`Delete entry ${entry.description}`}
+                          >
+                            {isDeletingEntryId === entry.id ? (
+                              <LuLoader className='w-4 h-4 animate-spin' />
+                            ) : (
+                              <LuTrash2 className='w-4 h-4' />
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1830,17 +1831,7 @@ export default function CashflowDetail({
       <ProjectionsView entries={entries} currency={currency} />
 
       {/* Charts */}
-      <div className='space-y-4'>
-        <div>
-          <h2 className='text-lg font-bold tracking-tight'>
-            Financial Overview
-          </h2>
-          <p className='text-sm text-muted-foreground'>
-            Monthly breakdown of your transactions
-          </p>
-        </div>
-        <CashflowCharts entries={filteredEntries} currency={currency} />
-      </div>
+      <CashflowCharts entries={filteredEntries} currency={currency} />
 
       {/* Budget Tracker */}
       <BudgetManager

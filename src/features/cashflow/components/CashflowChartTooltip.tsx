@@ -6,6 +6,8 @@ interface TooltipEntry {
   name?: string;
   value?: number;
   color?: string;
+  fill?: string;
+  payload?: Record<string, unknown>;
 }
 
 interface CashflowChartTooltipProps {
@@ -25,40 +27,48 @@ export function CashflowChartTooltip({
 
   const incomeEntry = payload.find((p) => p.dataKey === 'income');
   const expenseEntry = payload.find((p) => p.dataKey === 'expense');
-  const hasIncomeAndExpense = incomeEntry !== undefined && expenseEntry !== undefined;
+  const hasIncomeAndExpense =
+    incomeEntry !== undefined && expenseEntry !== undefined;
 
   const income = Number(incomeEntry?.value ?? 0);
   const expense = Number(expenseEntry?.value ?? 0);
   const net = income - expense;
   const savingsRate =
-    income > 0 ? Math.round(((Math.max(0, net) / income) * 100 + Number.EPSILON) * 10) / 10 : 0;
+    income > 0
+      ? Math.round(((Math.max(0, net) / income) * 100 + Number.EPSILON) * 10) /
+        10
+      : 0;
 
   return (
-    <div className='bg-popover border border-border text-popover-foreground p-3 rounded-lg shadow-md text-sm min-w-40'>
-      <p className='font-medium mb-1.5'>{label}</p>
-      <div className='space-y-1'>
-        {payload.map((entry) => (
-          <p
-            key={String(entry.dataKey)}
-            className='flex items-center justify-between gap-3 text-xs'
-            style={{ color: entry.color }}
-          >
-            <span className='flex items-center gap-1.5'>
-              <span
-                className='inline-block w-2 h-2 rounded-full shrink-0'
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className='capitalize'>{entry.name}:</span>
-            </span>
-            <span className='font-semibold font-mono'>
-              {formatCurrencyCompact(Number(entry.value ?? 0), currency)}
-            </span>
-          </p>
-        ))}
+    <div className='bg-popover border border-border/80 text-popover-foreground p-3 rounded-lg shadow-lg text-sm min-w-44'>
+      <p className='font-semibold text-xs text-foreground mb-2'>{label}</p>
+      <div className='space-y-1.5'>
+        {payload.map((entry) => {
+          const entryColor = entry.color ?? entry.fill ?? 'currentColor';
+          return (
+            <div
+              key={String(entry.dataKey ?? entry.name)}
+              className='flex items-center justify-between gap-3 text-xs'
+            >
+              <span className='flex items-center gap-1.5 text-muted-foreground'>
+                <span
+                  className='inline-block w-2.5 h-2.5 rounded-xs shrink-0'
+                  style={{ backgroundColor: entryColor }}
+                />
+                <span className='capitalize font-medium text-foreground/80'>
+                  {entry.name}:
+                </span>
+              </span>
+              <span className='font-semibold font-mono text-foreground'>
+                {formatCurrencyCompact(Number(entry.value ?? 0), currency)}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {hasIncomeAndExpense && (
-        <div className='border-t border-border mt-2 pt-1.5 flex items-center justify-between gap-3 text-xs'>
+        <div className='border-t border-border mt-2.5 pt-2 flex items-center justify-between gap-3 text-xs'>
           <span className='text-muted-foreground font-medium'>Net Savings:</span>
           <span
             className={cn(

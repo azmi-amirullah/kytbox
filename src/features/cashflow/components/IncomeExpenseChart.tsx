@@ -1,42 +1,72 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
-import { Loader } from '@/components/ui/loader';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { CashflowChartTooltip } from './CashflowChartTooltip';
-import { useContainerSize } from '../lib/useContainerSize';
 import type { MonthlyData } from '../lib/aggregateEntries';
+import { getCurrency } from '@/lib/currency';
 
 interface IncomeExpenseChartProps {
   data: MonthlyData[];
   currency: string | null;
 }
 
+const chartConfig = {
+  income: {
+    label: 'Income',
+    color: 'oklch(0.62 0.17 145)',
+  },
+  expense: {
+    label: 'Expense',
+    color: 'oklch(0.62 0.19 25)',
+  },
+} satisfies ChartConfig;
+
 export function IncomeExpenseChart({
   data,
   currency,
 }: IncomeExpenseChartProps) {
-  const [containerRef, width, height] = useContainerSize();
+  const currencyObj = getCurrency(currency);
 
-  // Center bars when only 1 data point by adding XAxis padding
-  const xPadding =
-    data.length === 1 && width > 0 ? Math.floor(width * 0.35) : 0;
+  const formatYAxisTick = (val: number) => {
+    if (val === 0) return '0';
+    try {
+      return new Intl.NumberFormat(currencyObj.locale, {
+        notation: 'compact',
+        compactDisplay: 'short',
+        maximumFractionDigits: 1,
+      }).format(val);
+    } catch {
+      return val >= 1000000
+        ? `${(val / 1000000).toFixed(1)}M`
+        : val >= 1000
+          ? `${(val / 1000).toFixed(0)}k`
+          : `${val}`;
+    }
+  };
 
   return (
-    <div ref={containerRef} className='h-70 w-full'>
-      {width === 0 || height === 0 ? (
-        <Loader size='md' className='h-full w-full py-0' text='' />
-      ) : (
+    <div className='w-full'>
+      <ChartContainer
+        config={chartConfig}
+        className='h-72 sm:h-80 w-full aspect-auto'
+      >
         <BarChart
+          accessibilityLayer
           data={data}
-          width={width}
-          height={height}
-          margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-          barGap={2}
+          margin={{ top: 12, right: 12, left: -4, bottom: 0 }}
+          barGap={4}
         >
           <CartesianGrid
             vertical={false}
-            className='stroke-border'
             strokeDasharray='3 3'
+            className='stroke-border/60'
           />
           <XAxis
             dataKey='month'
@@ -45,41 +75,39 @@ export function IncomeExpenseChart({
             tickLine={false}
             axisLine={false}
             minTickGap={8}
-            padding={{ left: xPadding, right: xPadding }}
           />
           <YAxis
             stroke='hsl(var(--muted-foreground))'
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v: number) =>
-              v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`
-            }
-            width={48}
+            tickFormatter={formatYAxisTick}
+            width={52}
           />
-          <Tooltip
+          <ChartTooltip
             content={<CashflowChartTooltip currency={currency} />}
-            cursor={{ fill: 'transparent' }}
+            cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
             animationDuration={150}
           />
+          <ChartLegend content={<ChartLegendContent />} />
           <Bar
             dataKey='income'
-            name='Income'
-            fill='oklch(0.65 0.2 145)'
+            name='income'
+            fill='var(--color-income)'
             radius={[4, 4, 0, 0]}
-            barSize={40}
+            maxBarSize={38}
             minPointSize={1}
           />
           <Bar
             dataKey='expense'
-            name='Expense'
-            fill='oklch(0.65 0.2 25)'
+            name='expense'
+            fill='var(--color-expense)'
             radius={[4, 4, 0, 0]}
-            barSize={40}
+            maxBarSize={38}
             minPointSize={1}
           />
         </BarChart>
-      )}
+      </ChartContainer>
     </div>
   );
 }

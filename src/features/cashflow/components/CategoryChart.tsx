@@ -5,7 +5,6 @@ import { useContainerSize } from '../lib/useContainerSize';
 import { Loader } from '@/components/ui/loader';
 
 import { PieChart, Pie, Sector, Tooltip, Legend } from 'recharts';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface CategoryData {
   name: string;
@@ -60,71 +59,78 @@ export function CategoryChart({ data, currency, title }: CategoryChartProps) {
   };
 
   return (
-    <Card className='pt-6'>
-      <CardContent>
-        <div className='mb-4 text-center pb-2'>
-          <h3 className='font-semibold tracking-tight'>{title}</h3>
-        </div>
+    <div className='w-full'>
+      <div className='mb-4 text-center pb-1'>
+        <h3 className='text-sm font-semibold tracking-tight text-foreground'>{title}</h3>
+      </div>
 
-        {!hasData ? (
-          <div className='flex h-87.5 flex-col items-center justify-center text-muted-foreground border rounded-xl bg-muted/20 border-dashed'>
-            <p className='text-sm'>No category data available</p>
-          </div>
-        ) : (
-          <div ref={containerRef} className='h-87.5 w-full'>
-            {width === 0 || height === 0 ? (
-              <Loader size='md' className='h-full w-full py-0' text='' />
-            ) : (
-              <PieChart width={width} height={height}>
-                <Pie
-                  data={data}
-                  cx='50%'
-                  cy='50%'
-                  innerRadius={75}
-                  outerRadius={115}
-                  paddingAngle={2}
-                  dataKey='value'
-                  stroke='none'
-                  shape={renderCustomSector}
-                  isAnimationActive={false}
-                />
-                <Tooltip
-                  cursor={false}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      const value = payload[0].value;
-                      const percentage = ((value / total) * 100).toFixed(1);
-                      return (
-                        <div className='bg-background border rounded-lg shadow-md p-2.5 text-sm outline-none'>
-                          <p
-                            className='font-medium'
-                            style={{ color: data.fill }}
-                          >
-                            {data.name}
-                          </p>
-                          <p className='text-muted-foreground mt-0.5'>
-                            {formatCurrencyCompact(value, currency)} (
-                            {percentage}%)
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                  isAnimationActive={false}
-                />
-                <Legend
-                  verticalAlign='bottom'
-                  height={36}
-                  iconType='circle'
-                  wrapperStyle={{ fontSize: '13px', paddingTop: '20px' }}
-                />
-              </PieChart>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {!hasData ? (
+        <div className='flex h-80 flex-col items-center justify-center text-muted-foreground border rounded-xl bg-muted/20 border-dashed'>
+          <p className='text-sm'>No category data available</p>
+        </div>
+      ) : (
+        <div ref={containerRef} className='h-80 w-full'>
+          {width === 0 || height === 0 ? (
+            <Loader size='md' className='h-full w-full py-0' text='' />
+          ) : (
+            <PieChart width={width} height={height}>
+              <Pie
+                data={data}
+                cx='50%'
+                cy='50%'
+                innerRadius={75}
+                outerRadius={115}
+                paddingAngle={2}
+                dataKey='value'
+                stroke='none'
+                shape={renderCustomSector}
+                isAnimationActive={false}
+              />
+              <Tooltip
+                cursor={false}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const rawPayload = payload[0].payload;
+                    const isObject = typeof rawPayload === 'object' && rawPayload !== null;
+                    const fillColor =
+                      isObject && 'fill' in rawPayload && typeof rawPayload.fill === 'string'
+                        ? rawPayload.fill
+                        : undefined;
+                    const itemName =
+                      isObject && 'name' in rawPayload && typeof rawPayload.name === 'string'
+                        ? rawPayload.name
+                        : '';
+                    const value = Number(payload[0].value ?? 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return (
+                      <div className='bg-popover border border-border/80 rounded-lg shadow-md p-2.5 text-xs text-popover-foreground outline-none'>
+                        <p
+                          className='font-semibold'
+                          style={{ color: fillColor }}
+                        >
+                          {itemName}
+                        </p>
+                        <p className='text-muted-foreground mt-1 font-mono font-medium'>
+                          {formatCurrencyCompact(value, currency)}{' '}
+                          <span className='text-[10px] opacity-80'>({percentage}%)</span>
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+                isAnimationActive={false}
+              />
+              <Legend
+                verticalAlign='bottom'
+                height={36}
+                iconType='circle'
+                wrapperStyle={{ fontSize: '12px', paddingTop: '16px' }}
+              />
+            </PieChart>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
