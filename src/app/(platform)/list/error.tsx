@@ -1,34 +1,39 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { ErrorState } from '@/components/ui/error-state';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react'
+import { ErrorState } from '@/components/ui/error-state'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import * as Sentry from '@sentry/nextjs'
 
 export default function ListError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
+  error: Error & { digest?: string }
+  reset: () => void
 }) {
-  const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const pathname = usePathname()
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
 
   useEffect(() => {
-    console.error('List Route Error:', error, { path: pathname });
+    console.error('List Route Error:', error, { path: pathname })
+    Sentry.captureException(error, {
+      tags: { path: pathname },
+      extra: { digest: error.digest },
+    })
 
     const checkAuth = async () => {
-      const supabase = createClient();
+      const supabase = createClient()
       const {
         data: { user },
-      } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
-    };
+      } = await supabase.auth.getUser()
+      setIsLoggedIn(!!user)
+    }
 
-    checkAuth();
-  }, [error, pathname]);
+    checkAuth()
+  }, [error, pathname])
 
   const supportLink = isLoggedIn ? (
     <Link href='/support' className='text-primary underline hover:opacity-80'>
@@ -41,10 +46,10 @@ export default function ListError({
     >
       support@kytbox.com
     </a>
-  );
+  )
 
   return (
-    <div className='flex items-center justify-center min-h-[500px] w-full p-6'>
+    <div className='flex items-center justify-center min-h-125 w-full p-6'>
       <ErrorState
         variant='card'
         title='List System Error'
@@ -58,5 +63,5 @@ export default function ListError({
         retryAction={reset}
       />
     </div>
-  );
+  )
 }

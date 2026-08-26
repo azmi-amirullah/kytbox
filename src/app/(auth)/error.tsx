@@ -1,24 +1,29 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
-import { ErrorState } from '@/components/ui/error-state';
-import { usePathname } from 'next/navigation';
+import { useEffect } from 'react'
+import { ErrorState } from '@/components/ui/error-state'
+import { usePathname } from 'next/navigation'
+import * as Sentry from '@sentry/nextjs'
 
 export default function AuthError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
+  error: Error & { digest?: string }
+  reset: () => void
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
   useEffect(() => {
-    console.error('Auth System Error:', error, { path: pathname });
-  }, [error, pathname]);
+    console.error('Auth System Error:', error, { path: pathname })
+    Sentry.captureException(error, {
+      tags: { path: pathname },
+      extra: { digest: error.digest },
+    })
+  }, [error, pathname])
 
   return (
-    <div className='flex items-center justify-center min-h-[500px] w-full p-6'>
+    <div className='flex items-center justify-center min-h-125 w-full p-6'>
       <ErrorState
         variant='card'
         title='Authentication Error'
@@ -38,5 +43,5 @@ export default function AuthError({
         retryAction={reset}
       />
     </div>
-  );
+  )
 }

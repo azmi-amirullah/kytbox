@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { redirectRateLimit } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
+import * as Sentry from '@sentry/nextjs';
 
 import { getProfileByUsername } from '@/lib/data-cache';
 
@@ -114,6 +115,9 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
       } catch (error) {
         // Log background tracking failures instead of crashing
         console.error('Failed background link tracking computation:', error);
+        Sentry.captureException(error, {
+          tags: { context: 'background_link_tracking', username, linkId },
+        });
       }
     }
   });

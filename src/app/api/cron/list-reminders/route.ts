@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processTaskDueReminders } from '@/features/list/actions';
 import { env } from '@/env';
+import * as Sentry from '@sentry/nextjs';
 
 export async function GET(request: NextRequest) {
   return handleCron(request);
@@ -31,6 +32,9 @@ async function handleCron(request: NextRequest) {
       ...result,
     });
   } catch (error: unknown) {
+    Sentry.captureException(error, {
+      tags: { route: '/api/cron/list-reminders', context: 'cron' },
+    });
     const message = error instanceof Error ? error.message : 'Unknown error during reminder processing';
     return NextResponse.json(
       { success: false, error: message },

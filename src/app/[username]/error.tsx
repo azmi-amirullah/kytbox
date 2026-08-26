@@ -5,6 +5,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import * as Sentry from '@sentry/nextjs';
 
 export default function PublicProfileError({
   error,
@@ -18,6 +19,10 @@ export default function PublicProfileError({
 
   useEffect(() => {
     console.error('Public Profile Error:', error, { path: pathname });
+    Sentry.captureException(error, {
+      tags: { path: pathname },
+      extra: { digest: error.digest },
+    });
 
     const checkAuth = async () => {
       const supabase = createClient();

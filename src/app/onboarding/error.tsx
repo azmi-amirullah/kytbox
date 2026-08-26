@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { ErrorState } from '@/components/ui/error-state';
 import { usePathname } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 
 export default function OnboardingError({
   error,
@@ -15,6 +16,10 @@ export default function OnboardingError({
 
   useEffect(() => {
     console.error('Onboarding Error:', error, { path: pathname });
+    Sentry.captureException(error, {
+      tags: { path: pathname },
+      extra: { digest: error.digest },
+    });
   }, [error, pathname]);
 
   return (
