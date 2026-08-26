@@ -52,6 +52,7 @@ import {
   LuArrowDown,
   LuArrowUp,
   LuTag,
+  LuSlidersHorizontal,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -140,7 +141,7 @@ export default function CashflowDetail({
   initialUserRole = 'public',
   initialShareId = null,
   initialHasShare = false,
-  }: CashflowDetailProps) {
+}: CashflowDetailProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -239,6 +240,18 @@ export default function CashflowDetail({
     searchQuery.trim() !== '' ||
     sortBy !== 'date-desc' ||
     selectedTags.length > 0
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (filterState.preset !== 'all-time') count++
+    if (selectedType !== 'all') count++
+    if (selectedCategory !== 'all') count++
+    if (sortBy !== 'date-desc') count++
+    if (selectedTags.length > 0) count += selectedTags.length
+    return count
+  }, [filterState, selectedType, selectedCategory, sortBy, selectedTags])
+
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
 
   function clearAllFilters() {
     setFilterState({ preset: 'all-time', custom: { from: null, to: null } })
@@ -773,9 +786,21 @@ export default function CashflowDetail({
     <div className='space-y-6'>
       {/* Breadcrumbs */}
       <div>
+        {/* Mobile Back Link */}
+        <div className='flex sm:hidden items-center mb-2'>
+          <Link
+            href='/cashflow'
+            className='inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors'
+          >
+            <LuChevronLeft className='w-4 h-4' />
+            <span>Back to Cashflow</span>
+          </Link>
+        </div>
+
+        {/* Desktop Breadcrumbs */}
         <nav
           aria-label='breadcrumb'
-          className='flex items-center gap-1 text-sm text-muted-foreground mb-2'
+          className='hidden sm:flex items-center gap-1 text-sm text-muted-foreground mb-2'
         >
           <Link href='/app' className='hover:text-foreground transition-colors'>
             Kytbox
@@ -790,79 +815,177 @@ export default function CashflowDetail({
           <span className='text-muted-foreground'>/</span>
           <span
             aria-current='page'
-            className='text-foreground font-medium truncate max-w-50'
+            className='text-foreground font-medium truncate max-w-60'
           >
             {cashflow.title}
           </span>
         </nav>
 
         {/* Header */}
-        <div className='flex flex-row items-center justify-between gap-3 w-full'>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full'>
           <div className='min-w-0 flex-1'>
-            <div className='flex items-center gap-2 sm:gap-3'>
-              <h1 className='text-3xl font-bold tracking-tight text-foreground truncate'>
-                {cashflow.title}
-              </h1>
-              {isOwner && (
+            <div className='flex items-start sm:items-center justify-between gap-2 sm:gap-3'>
+              <div className='flex items-baseline sm:items-center gap-2 flex-wrap min-w-0'>
+                <h1 className='text-2xl sm:text-3xl font-bold tracking-tight text-foreground wrap-break-word'>
+                  {cashflow.title}
+                </h1>
+                {!isOwner && (
+                  <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full shrink-0 align-middle'>
+                    {userRole === 'edit' ? 'Editor Access' : 'View Only'}
+                  </span>
+                )}
+              </div>
+
+              {/* Mobile Actions (Kebab Menu) */}
+              <div className='flex sm:hidden items-center gap-1 shrink-0'>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant='ghost'
                       size='icon'
-                      className='h-8 w-8 shrink-0'
+                      className='h-9 w-9 shrink-0'
+                      aria-label='More options'
                     >
-                      <LuEllipsisVertical className='w-4 h-4' />
+                      <LuEllipsisVertical className='w-5 h-5' />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align='start'>
+                  <DropdownMenuContent align='end' className='w-48'>
+                    {isOwner && (
+                      <DropdownMenuItem
+                        className='cursor-pointer'
+                        onClick={() => setIsShareModalOpen(true)}
+                      >
+                        <LuShare2 className='w-4 h-4 mr-2' />
+                        Share
+                      </DropdownMenuItem>
+                    )}
+                    {isOwner && (
+                      <DropdownMenuItem
+                        className='cursor-pointer'
+                        onClick={() => setIsEditModalOpen(true)}
+                      >
+                        <LuPencil className='w-4 h-4 mr-2' />
+                        Rename
+                      </DropdownMenuItem>
+                    )}
+                    {(isOwner || canEdit) && (
+                      <DropdownMenuItem
+                        className='cursor-pointer'
+                        onClick={handleDuplicateCashflow}
+                      >
+                        <LuCopy className='w-4 h-4 mr-2' />
+                        Duplicate
+                      </DropdownMenuItem>
+                    )}
+                    {canEdit && (
+                      <DropdownMenuItem
+                        className='cursor-pointer'
+                        onClick={() => setIsImportModalOpen(true)}
+                      >
+                        <LuImport className='w-4 h-4 mr-2' />
+                        Import CSV
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       className='cursor-pointer'
-                      onClick={() => setIsShareModalOpen(true)}
+                      onClick={handleExportCSV}
                     >
-                      <LuShare2 className='w-4 h-4 mr-2' />
-                      Share
+                      <LuCloudDownload className='w-4 h-4 mr-2' />
+                      Download CSV
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className='cursor-pointer'
-                      onClick={() => setIsEditModalOpen(true)}
-                    >
-                      <LuPencil className='w-4 h-4 mr-2' />
-                      Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className='cursor-pointer'
-                      onClick={handleDuplicateCashflow}
-                    >
-                      <LuCopy className='w-4 h-4 mr-2' />
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setIsDeleting(false)
-                        setDeleteDialogOpen(true)
-                      }}
-                      className='text-destructive focus:text-destructive cursor-pointer'
-                    >
-                      <LuTrash2 className='w-4 h-4 mr-2' />
-                      Delete
-                    </DropdownMenuItem>
+                    {!isOwner &&
+                      currentUserId &&
+                      (cashflow.is_public || !!shareId) && (
+                        <DropdownMenuItem
+                          className='cursor-pointer'
+                          onClick={handleBookmark}
+                        >
+                          {hasShare ? (
+                            <>
+                              <LuCheck className='w-4 h-4 mr-2 text-emerald-600' />
+                              <span>Saved to Dashboard</span>
+                            </>
+                          ) : (
+                            <>
+                              <LuBookmark className='w-4 h-4 mr-2' />
+                              <span>Add to Dashboard</span>
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      )}
+                    {isOwner && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setIsDeleting(false)
+                          setDeleteDialogOpen(true)
+                        }}
+                        className='text-destructive focus:text-destructive cursor-pointer'
+                      >
+                        <LuTrash2 className='w-4 h-4 mr-2' />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              )}
-              {!isOwner && (
-                <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full shrink-0'>
-                  {userRole === 'edit' ? 'Editor Access' : 'View Only'}
-                </span>
-              )}
+              </div>
             </div>
-            <p className='text-muted-foreground text-sm'>
+            <p className='text-muted-foreground text-sm mt-0.5'>
               {filterState.preset !== 'all-time'
                 ? `${filteredEntries.length} of ${entries.length} entries`
                 : `${entries.length} entries`}
             </p>
           </div>
 
-          <div className='flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto'>
+          {/* Desktop Actions & Kebab Menu */}
+          <div className='hidden sm:flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto'>
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='h-9 w-9 shrink-0'
+                    aria-label='More options'
+                  >
+                    <LuEllipsisVertical className='w-4 h-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuItem
+                    className='cursor-pointer'
+                    onClick={() => setIsShareModalOpen(true)}
+                  >
+                    <LuShare2 className='w-4 h-4 mr-2' />
+                    Share
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className='cursor-pointer'
+                    onClick={() => setIsEditModalOpen(true)}
+                  >
+                    <LuPencil className='w-4 h-4 mr-2' />
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className='cursor-pointer'
+                    onClick={handleDuplicateCashflow}
+                  >
+                    <LuCopy className='w-4 h-4 mr-2' />
+                    Duplicate
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setIsDeleting(false)
+                      setDeleteDialogOpen(true)
+                    }}
+                    className='text-destructive focus:text-destructive cursor-pointer'
+                  >
+                    <LuTrash2 className='w-4 h-4 mr-2' />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             {canEdit && (
               <Button
                 variant='outline'
@@ -899,9 +1022,7 @@ export default function CashflowDetail({
                 ) : (
                   <LuBookmark className='w-4 h-4' />
                 )}
-                <span className='hidden sm:inline'>
-                  {hasShare ? 'Saved' : 'Add to Dashboard'}
-                </span>
+                <span>{hasShare ? 'Saved' : 'Add to Dashboard'}</span>
               </Button>
             )}
 
@@ -915,6 +1036,19 @@ export default function CashflowDetail({
               </Button>
             )}
           </div>
+
+          {/* Mobile Primary Action Button */}
+          {canEdit && (
+            <div className='sm:hidden w-full pt-1'>
+              <Button
+                onClick={openAddEntry}
+                className='w-full gap-2 h-10 text-sm font-semibold shadow-xs'
+              >
+                <LuPlus className='w-4 h-4' />
+                <span>Add Entry</span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1048,165 +1182,216 @@ export default function CashflowDetail({
 
         {/* Toolbar Header (inside the Card) */}
         {entries.length > 0 && (
-          <div className='p-3.5 sm:p-4 border-b border-border/60 flex flex-col gap-2.5 bg-muted/20'>
-            {/* Row 1: Search + Filters */}
+          <div className='p-3.5 sm:p-4 border-b border-border/60 flex flex-col gap-3 bg-muted/20'>
+            {/* Row 1: Search + Filters Toggle (Mobile) / Full Filters (Desktop) */}
             <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center'>
-              {/* Search Input */}
-              <div className='relative flex items-center w-full lg:max-w-xs shrink-0'>
-                <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground' />
-                <Input
-                  placeholder='Search entries...'
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className='pl-9 pr-9 bg-card w-full'
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className='absolute right-3 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs cursor-pointer'
-                    aria-label='Clear search'
-                  >
-                    <LuX className='w-4 h-4' />
-                  </button>
-                )}
+              {/* Search Input & Mobile Filter Toggle */}
+              <div className='flex items-center gap-2 w-full lg:max-w-xs shrink-0'>
+                <div className='relative flex items-center flex-1'>
+                  <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none' />
+                  <Input
+                    placeholder='Search entries...'
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className='pl-9 pr-9 bg-card w-full h-10 text-sm'
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className='absolute right-2.5 p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs cursor-pointer'
+                      aria-label='Clear search'
+                    >
+                      <LuX className='w-4 h-4' />
+                    </button>
+                  )}
+                </div>
+
+                {/* Mobile Filter Toggle Button */}
+                <Button
+                  variant={activeFilterCount > 0 ? 'secondary' : 'outline'}
+                  onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
+                  className={cn(
+                    'h-10 px-3 gap-1.5 shrink-0 lg:hidden text-xs font-medium cursor-pointer',
+                    activeFilterCount > 0 &&
+                      'border-primary/50 text-primary font-semibold',
+                  )}
+                  aria-expanded={isMobileFiltersOpen}
+                  aria-label='Toggle filters'
+                >
+                  <LuSlidersHorizontal className='w-4 h-4' />
+                  <span>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className='inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full'>
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
               </div>
 
-              {/* Select Dropdowns Wrapper (Date, Type, Category, Sort) */}
-              <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center lg:flex-1'>
-                <div
-                  className={cn(
-                    'grid gap-3 w-full lg:flex lg:w-auto lg:items-center',
-                    uniqueCategories.length > 0
-                      ? 'grid-cols-2 sm:grid-cols-4'
-                      : 'grid-cols-2 sm:grid-cols-3',
-                  )}
-                >
-                  {/* Date Filter */}
-                  <div className='w-full lg:w-auto'>
-                    <DateFilter
-                      state={filterState}
-                      onChange={setFilterState}
-                      filteredCount={filteredEntries.length}
-                      totalCount={entries.length}
-                    />
-                  </div>
-
-                  {/* Type Dropdown */}
-                  <Select
-                    value={selectedType}
-                    onValueChange={(v) => {
-                      if (v === 'all' || v === 'income' || v === 'expense') {
-                        setSelectedType(v)
-                      }
-                    }}
+              {/* Select Dropdowns Wrapper (Date, Type, Category, Sort) with Smooth Grid Transition */}
+              <div
+                className={cn(
+                  'w-full lg:flex-1 grid lg:flex transition-[grid-template-rows,opacity] duration-200 ease-out',
+                  isMobileFiltersOpen
+                    ? 'grid-rows-[1fr] opacity-100'
+                    : 'grid-rows-[0fr] opacity-0 lg:grid-rows-[1fr] lg:opacity-100',
+                )}
+              >
+                <div className='overflow-hidden w-full lg:overflow-visible flex flex-col lg:flex-row lg:items-center gap-3'>
+                  <div
+                    className={cn(
+                      'grid gap-2.5 sm:gap-3 w-full lg:flex lg:w-auto lg:items-center pt-2 lg:pt-0',
+                      uniqueCategories.length > 0
+                        ? 'grid-cols-2 sm:grid-cols-4'
+                        : 'grid-cols-2 sm:grid-cols-3',
+                    )}
                   >
-                    <SelectTrigger className='bg-card w-full lg:w-32'>
-                      <SelectValue placeholder='Type' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='all'>All Types</SelectItem>
-                      <SelectItem value='income'>Income</SelectItem>
-                      <SelectItem value='expense'>Expense</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    {/* Date Filter */}
+                    <div className='w-full lg:w-auto'>
+                      <DateFilter
+                        state={filterState}
+                        onChange={setFilterState}
+                        filteredCount={filteredEntries.length}
+                        totalCount={entries.length}
+                      />
+                    </div>
 
-                  {/* Category Dropdown */}
-                  {uniqueCategories.length > 0 && (
+                    {/* Type Dropdown */}
                     <Select
-                      value={selectedCategory}
-                      onValueChange={setSelectedCategory}
-                    >
-                      <SelectTrigger className='bg-card w-full lg:w-36'>
-                        <SelectValue placeholder='Category' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='all'>All Categories</SelectItem>
-                        {uniqueCategories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-
-                  {/* Sort Dropdown */}
-                  <div className='w-full lg:w-auto'>
-                    <Select
-                      value={sortBy}
+                      value={selectedType}
                       onValueChange={(v) => {
-                        if (isCashflowSortOption(v)) {
-                          setSortBy(v)
+                        if (v === 'all' || v === 'income' || v === 'expense') {
+                          setSelectedType(v)
                         }
                       }}
                     >
-                      <SelectTrigger
-                        className='bg-card w-full lg:w-38 whitespace-nowrap'
-                        aria-label='Sort entries'
-                      >
-                        <SelectValue placeholder='Sort by' />
+                      <SelectTrigger className='bg-card w-full lg:w-32 h-10'>
+                        <SelectValue placeholder='Type' />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='date-desc'>
-                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                            <span>Date</span>
-                            <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                          </span>
-                        </SelectItem>
-                        <SelectItem value='date-asc'>
-                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                            <span>Date</span>
-                            <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                          </span>
-                        </SelectItem>
-                        <SelectItem value='created-desc'>
-                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                            <span>Created</span>
-                            <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                          </span>
-                        </SelectItem>
-                        <SelectItem value='created-asc'>
-                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                            <span>Created</span>
-                            <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                          </span>
-                        </SelectItem>
-                        <SelectItem value='amount-desc'>
-                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                            <span>Amount</span>
-                            <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                          </span>
-                        </SelectItem>
-                        <SelectItem value='amount-asc'>
-                          <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                            <span>Amount</span>
-                            <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                          </span>
-                        </SelectItem>
+                        <SelectItem value='all'>All Types</SelectItem>
+                        <SelectItem value='income'>Income</SelectItem>
+                        <SelectItem value='expense'>Expense</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                </div>
 
-                {hasActiveFilters && (
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={clearAllFilters}
-                    className='gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3 self-start sm:self-center'
-                  >
-                    <LuX className='w-4 h-4' />
-                    <span>Clear</span>
-                  </Button>
-                )}
+                    {/* Category Dropdown */}
+                    {uniqueCategories.length > 0 && (
+                      <Select
+                        value={selectedCategory}
+                        onValueChange={setSelectedCategory}
+                      >
+                        <SelectTrigger className='bg-card w-full lg:w-36 h-10'>
+                          <SelectValue placeholder='Category' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='all'>All Categories</SelectItem>
+                          {uniqueCategories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {/* Sort Dropdown */}
+                    <div className='w-full lg:w-auto'>
+                      <Select
+                        value={sortBy}
+                        onValueChange={(v) => {
+                          if (isCashflowSortOption(v)) {
+                            setSortBy(v)
+                          }
+                        }}
+                      >
+                        <SelectTrigger
+                          className='bg-card w-full lg:w-38 whitespace-nowrap h-10'
+                          aria-label='Sort entries'
+                        >
+                          <SelectValue placeholder='Sort by' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='date-desc'>
+                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                              <span>Date</span>
+                              <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                            </span>
+                          </SelectItem>
+                          <SelectItem value='date-asc'>
+                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                              <span>Date</span>
+                              <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                            </span>
+                          </SelectItem>
+                          <SelectItem value='created-desc'>
+                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                              <span>Created</span>
+                              <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                            </span>
+                          </SelectItem>
+                          <SelectItem value='created-asc'>
+                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                              <span>Created</span>
+                              <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                            </span>
+                          </SelectItem>
+                          <SelectItem value='amount-desc'>
+                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                              <span>Amount</span>
+                              <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                            </span>
+                          </SelectItem>
+                          <SelectItem value='amount-asc'>
+                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                              <span>Amount</span>
+                              <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {hasActiveFilters && (
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={clearAllFilters}
+                      className='gap-1.5 text-muted-foreground hover:text-foreground h-10 px-3 self-start sm:self-center cursor-pointer'
+                    >
+                      <LuX className='w-4 h-4' />
+                      <span>Clear Filters</span>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
+            {/* Active Filters Summary Strip on Mobile (when filters are collapsed and active) */}
+            {!isMobileFiltersOpen && activeFilterCount > 0 && (
+              <div className='flex lg:hidden items-center justify-between gap-2 pt-1 border-t border-border/30'>
+                <p className='text-xs text-muted-foreground truncate'>
+                  <span className='font-medium text-foreground'>
+                    {filteredEntries.length}
+                  </span>{' '}
+                  of {entries.length} entries matching {activeFilterCount}{' '}
+                  {activeFilterCount === 1 ? 'filter' : 'filters'}
+                </p>
+                <button
+                  onClick={clearAllFilters}
+                  className='text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer'
+                >
+                  Clear all
+                </button>
+              </div>
+            )}
+
             {/* Row 2: Tag Filter Strip */}
             {allUniqueTags.length > 0 && (
-              <div className='flex flex-wrap items-center gap-1.5 pt-3 mt-1.5 border-t border-border/40'>
-                <span className='text-xs font-medium text-muted-foreground mr-1 flex items-center gap-1'>
-                  <LuTag className='w-3 h-3' /> Tags:
+              <div className='flex flex-wrap items-center gap-1.5 pt-3 mt-1 border-t border-border/40'>
+                <span className='text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1 shrink-0'>
+                  <LuTag className='w-3.5 h-3.5' /> Tags:
                 </span>
                 {allUniqueTags.map((tag) => {
                   const isActive = selectedTags.includes(tag)
@@ -1235,7 +1420,7 @@ export default function CashflowDetail({
                         }
                       }}
                       className={cn(
-                        'group inline-flex items-center h-5 px-2 rounded text-[10px] border leading-none transition-all duration-200 shadow-2xs select-none cursor-pointer',
+                        'group inline-flex items-center min-h-7 sm:min-h-6 px-2.5 py-1 rounded-md text-xs border leading-none transition-all duration-200 shadow-2xs select-none cursor-pointer',
                         isActive
                           ? cn(
                               tagColor.activeBg,
@@ -1251,7 +1436,7 @@ export default function CashflowDetail({
                       )}
                     >
                       {isActive && (
-                        <LuCheck className='w-2.5 h-2.5 mr-1 shrink-0 animate-in fade-in zoom-in-75 duration-150' />
+                        <LuCheck className='w-3 h-3 mr-1 shrink-0 animate-in fade-in zoom-in-75 duration-150' />
                       )}
                       <span className='shrink-0'>#{tag}</span>
                       {canEdit && (
@@ -1265,14 +1450,14 @@ export default function CashflowDetail({
                             }}
                             aria-label={`Manage tag ${tag}`}
                             className={cn(
-                              'focus-visible:outline-none rounded-xs cursor-pointer inline-flex items-center justify-center hover:scale-110 transition-transform',
+                              'p-1 focus-visible:outline-none rounded-xs cursor-pointer inline-flex items-center justify-center hover:scale-110 transition-transform',
                               isActive
                                 ? 'text-inherit opacity-85 hover:opacity-100'
                                 : 'opacity-70 hover:opacity-100',
                             )}
                             title='Rename or delete tag'
                           >
-                            <LuPencil className='w-2.5 h-2.5' />
+                            <LuPencil className='w-3 h-3' />
                           </button>
                         </span>
                       )}
@@ -1283,7 +1468,7 @@ export default function CashflowDetail({
                   <button
                     type='button'
                     onClick={() => setSelectedTags([])}
-                    className='text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1 cursor-pointer'
+                    className='text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1.5 py-1 cursor-pointer'
                   >
                     Reset tags
                   </button>
@@ -1385,7 +1570,10 @@ export default function CashflowDetail({
                         </TableCell>
                         <TableCell className='text-muted-foreground text-xs border-r border-border/30 text-nowrap'>
                           {entry.created_at ? (
-                            format(new Date(entry.created_at), 'dd MMM yyyy, HH:mm')
+                            format(
+                              new Date(entry.created_at),
+                              'dd MMM yyyy, HH:mm',
+                            )
                           ) : (
                             <span className='text-muted-foreground/50'>—</span>
                           )}
@@ -1423,17 +1611,14 @@ export default function CashflowDetail({
 
               {/* Mobile Card View */}
               <div className='md:hidden'>
-                <div
-                  key={currentPage}
-                  className='divide-y divide-border'
-                >
+                <div key={currentPage} className='divide-y divide-border'>
                   {paginatedEntries.map((entry) => (
                     <div
                       key={entry.id}
-                      className={cn('px-4 py-2', canEdit ? 'pr-0' : '')}
+                      className={cn('px-3.5 sm:px-4 py-3', canEdit ? 'pr-2' : '')}
                     >
-                      <div className='flex items-center justify-between gap-4'>
-                        <div className='space-y-2 min-w-0 flex-1'>
+                      <div className='flex items-center justify-between gap-3'>
+                        <div className='space-y-1.5 min-w-0 flex-1'>
                           <div className='flex items-center gap-2 flex-wrap'>
                             <span className='text-xs text-muted-foreground font-medium'>
                               {formatAppDate(entry.date)}
@@ -1443,15 +1628,23 @@ export default function CashflowDetail({
                                 className='text-[10px] text-muted-foreground/70'
                                 title={`Created: ${new Date(entry.created_at).toLocaleString()}`}
                               >
-                                (Created {format(new Date(entry.created_at), 'dd MMM, HH:mm')})
+                                (Created{' '}
+                                {format(
+                                  new Date(entry.created_at),
+                                  'dd MMM, HH:mm',
+                                )}
+                                )
                               </span>
                             )}
                             <EntryTypeBadge type={entry.type} />
                           </div>
-                          <div className='flex flex-wrap items-center gap-1.5'>
-                            <span className='font-medium text-sm leading-tight overflow-wrap-anywhere'>
-                              {entry.description}
-                            </span>
+                          {/* Row 2: Unobstructed Entry Description */}
+                          <p className='font-semibold text-sm leading-snug text-foreground wrap-break-word'>
+                            {entry.description}
+                          </p>
+
+                          {/* Row 3: Metadata Badges (Category, Split items, Receipt, Tags) */}
+                          <div className='pt-0.5'>
                             <EntryMetadataBadges
                               entry={entry}
                               currency={currency}
@@ -1461,9 +1654,9 @@ export default function CashflowDetail({
                             />
                           </div>
                         </div>
-                        <div className='text-right shrink-0 flex gap-4 items-center'>
+                        <div className='text-right shrink-0 flex gap-2.5 sm:gap-4 items-center'>
                           <div
-                            className={`font-bold text-sm ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
+                            className={`font-bold text-sm tabular-nums ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}
                           >
                             {entry.type === 'income' ? '+' : '-'}
                             {formatCurrencyCompact(
@@ -1472,23 +1665,25 @@ export default function CashflowDetail({
                             )}
                           </div>
                           {canEdit && (
-                            <div className='flex justify-end gap-1 flex-col border-l px-2'>
+                            <div className='flex justify-end gap-1.5 flex-col border-l border-border/50 pl-2'>
                               <Button
                                 variant='ghost'
                                 size='icon'
-                                className='h-8 w-8'
+                                className='h-9 w-9 rounded-md'
                                 onClick={() => openEditEntry(entry)}
+                                aria-label={`Edit entry ${entry.description}`}
                               >
                                 <LuPencil className='w-4 h-4' />
                               </Button>
                               <Button
                                 variant='ghost'
                                 size='icon'
-                                className='h-8 w-8 text-destructive hover:bg-destructive/10'
+                                className='h-9 w-9 rounded-md text-destructive hover:bg-destructive/10'
                                 onClick={() => {
                                   setIsDeletingEntryId(null)
                                   setDeletingEntryId(entry.id)
                                 }}
+                                aria-label={`Delete entry ${entry.description}`}
                               >
                                 {isDeletingEntryId === entry.id ? (
                                   <LuLoader className='w-4 h-4 animate-spin' />
@@ -1792,7 +1987,9 @@ export default function CashflowDetail({
         entryId={viewingReceiptEntry?.id ?? null}
         description={viewingReceiptEntry?.description}
         date={viewingReceiptEntry?.date}
-        amount={viewingReceiptEntry ? Number(viewingReceiptEntry.amount) : undefined}
+        amount={
+          viewingReceiptEntry ? Number(viewingReceiptEntry.amount) : undefined
+        }
         currency={currency}
       />
     </div>

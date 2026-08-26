@@ -58,7 +58,7 @@ export function DateFilter({
           }
         }}
       >
-        <SelectTrigger className='bg-card w-full lg:w-40' aria-label='Filter by date period'>
+        <SelectTrigger className='bg-card w-full lg:w-40 h-10' aria-label='Filter by date period'>
           <SelectValue placeholder='Period' />
         </SelectTrigger>
         <SelectContent>
