@@ -14,6 +14,7 @@ import {
 } from 'react-icons/lu';
 import { updateInvoiceStatusAction, deleteInvoiceAction } from '../actions';
 import { formatCurrency } from '@/lib/currency';
+import { formatAppDate } from '@/lib/date-only';
 import { toast } from 'react-toastify';
 
 interface InvoiceTableProps {
@@ -49,18 +50,7 @@ export function InvoiceTable({
   });
 
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '-';
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return dateString;
-    }
-  };
+  const formatDate = (dateString: string) => formatAppDate(dateString);
 
   const handleMarkPaid = async (e: React.MouseEvent, invoiceId: string) => {
     e.stopPropagation();

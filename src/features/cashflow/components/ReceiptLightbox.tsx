@@ -21,6 +21,7 @@ import {
 } from 'react-icons/lu'
 import { getReceiptSignedUrl } from '../actions'
 import { formatCurrencyCompact } from '@/lib/currency'
+import { formatAppDate } from '@/lib/date-only'
 
 interface ReceiptLightboxProps {
   open: boolean
@@ -148,7 +149,7 @@ export default function ReceiptLightbox({
                 Receipt preview for {description}
               </DialogDescription>
               <div className='flex items-center gap-1.5 text-xs text-zinc-300 mt-0.5 truncate'>
-                {date && <span>{date}</span>}
+                {date && <span>{formatAppDate(date)}</span>}
                 {typeof amount === 'number' && (
                   <>
                     <span>•</span>

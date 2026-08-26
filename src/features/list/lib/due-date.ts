@@ -52,7 +52,7 @@ export function formatDueDateLabel(
   const diffDays = differenceInCalendarDays(targetDate, today);
 
   if (isCompleted) {
-    return format(targetDate, targetDate.getFullYear() === today.getFullYear() ? 'MMM d' : 'MMM d, yyyy');
+    return format(targetDate, targetDate.getFullYear() === today.getFullYear() ? 'dd MMM' : 'dd MMM yyyy');
   }
 
   if (diffDays < -1) {
@@ -69,7 +69,7 @@ export function formatDueDateLabel(
   }
 
   const isSameYear = targetDate.getFullYear() === today.getFullYear();
-  return format(targetDate, isSameYear ? 'MMM d' : 'MMM d, yyyy');
+  return format(targetDate, isSameYear ? 'dd MMM' : 'dd MMM yyyy');
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseDateOnly } from '@/lib/date-only'
+import { parseDateOnly, formatAppDate } from '@/lib/date-only'
 
 describe('parseDateOnly', () => {
   it('keeps a date-only value on its calendar day', () => {
@@ -14,5 +14,23 @@ describe('parseDateOnly', () => {
     expect(parseDateOnly('2026-01-01T12:00:00Z').toISOString()).toBe(
       '2026-01-01T12:00:00.000Z',
     )
+  })
+})
+
+describe('formatAppDate', () => {
+  it('formats YYYY-MM-DD date string to dd MMM yyyy', () => {
+    expect(formatAppDate('2026-08-25')).toBe('25 Aug 2026')
+    expect(formatAppDate('2026-01-01')).toBe('01 Jan 2026')
+  })
+
+  it('formats Date object to dd MMM yyyy', () => {
+    const date = new Date(2026, 7, 25)
+    expect(formatAppDate(date)).toBe('25 Aug 2026')
+  })
+
+  it('returns fallback for null or empty values', () => {
+    expect(formatAppDate(null)).toBe('-')
+    expect(formatAppDate(undefined)).toBe('-')
+    expect(formatAppDate('', 'N/A')).toBe('N/A')
   })
 })

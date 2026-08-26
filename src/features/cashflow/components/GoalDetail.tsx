@@ -15,7 +15,7 @@ import {
 import { LuTarget, LuSearch, LuTrendingUp, LuCalendar } from 'react-icons/lu'
 import { FiCheckCircle, FiClock, FiAlertTriangle } from 'react-icons/fi'
 import { formatCurrency } from '@/lib/currency'
-import { parseDateOnly } from '@/lib/date-only'
+import { parseDateOnly, formatAppDate } from '@/lib/date-only'
 import type { CashflowGoalDTO, CashflowEntryDTO } from '@/types/dto'
 
 interface GoalDetailProps {
@@ -136,11 +136,7 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
               {deadline && (
                 <span className='ml-2'>
                   {' · Due '}
-                  {deadline.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                  {formatAppDate(deadline)}
                 </span>
               )}
             </p>
@@ -273,11 +269,7 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
                 {filtered.map((entry) => (
                   <tr key={entry.id} className='hover:bg-muted/20 transition-colors'>
                     <td className='px-4 py-3 text-muted-foreground whitespace-nowrap'>
-                      {parseDateOnly(entry.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {formatAppDate(entry.date)}
                     </td>
                     <td className='px-4 py-3 text-muted-foreground hidden sm:table-cell max-w-xs truncate'>
                       {entry.description ?? '—'}

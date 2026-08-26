@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { NotificationDTO, NotificationType } from '../types'
 import { getNotifications, markAsRead, markAllAsRead } from '../actions'
+import { formatAppDate } from '@/lib/date-only'
 
 interface NotificationCenterProps {
   user?: {
@@ -37,7 +38,7 @@ function formatRelativeTime(dateString: string): string {
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
-  return date.toLocaleDateString()
+  return formatAppDate(date)
 }
 
 function isToday(dateString: string): boolean {

@@ -1,5 +1,6 @@
 import type { InvoiceDTO } from '../types'
 import { InvoiceStatusBadge } from './InvoiceStatusBadge'
+import { formatAppDate } from '@/lib/date-only'
 
 interface InvoicePDFViewProps {
   invoice: InvoiceDTO
@@ -13,18 +14,7 @@ export function InvoicePDFView({ invoice }: InvoicePDFViewProps) {
     }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '-'
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    } catch {
-      return dateString
-    }
-  }
+  const formatDate = (dateString: string) => formatAppDate(dateString)
 
   return (
     <div

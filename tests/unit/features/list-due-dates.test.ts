@@ -64,18 +64,18 @@ describe('List Due Date Engine', () => {
       expect(formatDueDateLabel('2026-08-16', false, baseDate)).toBe('Tomorrow');
     });
 
-    it('formats future dates in the same year as "MMM d"', () => {
-      expect(formatDueDateLabel('2026-08-25', false, baseDate)).toBe('Aug 25');
-      expect(formatDueDateLabel('2026-11-04', false, baseDate)).toBe('Nov 4');
+    it('formats future dates in the same year as "dd MMM"', () => {
+      expect(formatDueDateLabel('2026-08-25', false, baseDate)).toBe('25 Aug');
+      expect(formatDueDateLabel('2026-11-04', false, baseDate)).toBe('04 Nov');
     });
 
     it('formats future dates in a subsequent year with full year format', () => {
-      expect(formatDueDateLabel('2027-01-10', false, baseDate)).toBe('Jan 10, 2027');
+      expect(formatDueDateLabel('2027-01-10', false, baseDate)).toBe('10 Jan 2027');
     });
 
     it('formats completed items with standard date format without overdue prefix', () => {
-      expect(formatDueDateLabel('2026-08-10', true, baseDate)).toBe('Aug 10');
-      expect(formatDueDateLabel('2027-02-14', true, baseDate)).toBe('Feb 14, 2027');
+      expect(formatDueDateLabel('2026-08-10', true, baseDate)).toBe('10 Aug');
+      expect(formatDueDateLabel('2027-02-14', true, baseDate)).toBe('14 Feb 2027');
     });
   });
 

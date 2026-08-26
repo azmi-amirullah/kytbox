@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Dialog,
   DialogContent,
@@ -566,13 +567,10 @@ export default function EntryModal({
               >
                 Date<span className='text-destructive'>*</span>
               </Label>
-              <Input
+              <DatePicker
                 id='date'
-                name='date'
-                type='date'
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
+                onChange={setDate}
               />
             </div>
 

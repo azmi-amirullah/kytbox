@@ -3,6 +3,8 @@
 import { useState, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { format } from 'date-fns'
+import { formatAppDate } from '@/lib/date-only'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -1353,16 +1355,7 @@ export default function CashflowDetail({
                     {paginatedEntries.map((entry) => (
                       <TableRow key={entry.id}>
                         <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
-                          {(() => {
-                            const [eYear, eMonth, eDay] = entry.date
-                              .split('-')
-                              .map(Number)
-                            const date = new Date(eYear, eMonth - 1, eDay)
-                            return date.toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                            })
-                          })()}
+                          {formatAppDate(entry.date)}
                         </TableCell>
                         <TableCell className='border-r border-border/30'>
                           <EntryTypeBadge type={entry.type} />
@@ -1392,16 +1385,7 @@ export default function CashflowDetail({
                         </TableCell>
                         <TableCell className='text-muted-foreground text-xs border-r border-border/30 text-nowrap'>
                           {entry.created_at ? (
-                            new Date(entry.created_at).toLocaleDateString(
-                              'en-US',
-                              {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              },
-                            )
+                            format(new Date(entry.created_at), 'dd MMM yyyy, HH:mm')
                           ) : (
                             <span className='text-muted-foreground/50'>—</span>
                           )}
@@ -1452,34 +1436,14 @@ export default function CashflowDetail({
                         <div className='space-y-2 min-w-0 flex-1'>
                           <div className='flex items-center gap-2 flex-wrap'>
                             <span className='text-xs text-muted-foreground font-medium'>
-                              {(() => {
-                                const [eYear, eMonth, eDay] = entry.date
-                                  .split('-')
-                                  .map(Number)
-                                const date = new Date(eYear, eMonth - 1, eDay)
-                                return date.toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                })
-                              })()}
+                              {formatAppDate(entry.date)}
                             </span>
                             {entry.created_at && (
                               <span
                                 className='text-[10px] text-muted-foreground/70'
                                 title={`Created: ${new Date(entry.created_at).toLocaleString()}`}
                               >
-                                (Created{' '}
-                                {new Date(entry.created_at).toLocaleDateString(
-                                  'en-US',
-                                  {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  },
-                                )}
-                                )
+                                (Created {format(new Date(entry.created_at), 'dd MMM, HH:mm')})
                               </span>
                             )}
                             <EntryTypeBadge type={entry.type} />

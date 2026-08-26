@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -172,12 +173,11 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
             <Label htmlFor="goal-deadline" className="font-medium text-foreground/80">
               Target Deadline <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
             </Label>
-            <Input
+            <DatePicker
               id="goal-deadline"
-              name="deadline"
-              type="date"
               value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
+              onChange={setDeadline}
+              placeholder="Select target deadline"
             />
           </div>
 

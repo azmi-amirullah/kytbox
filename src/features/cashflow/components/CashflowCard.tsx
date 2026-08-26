@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatAppDate } from '@/lib/date-only';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -254,10 +255,7 @@ export default function CashflowCard({
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className='text-muted-foreground text-sm'>
-                      {new Date(entry.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {formatAppDate(entry.date)}
                     </TableCell>
                     <TableCell className='font-medium'>
                       {entry.description}

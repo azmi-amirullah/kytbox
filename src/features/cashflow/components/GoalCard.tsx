@@ -31,7 +31,7 @@ import { deleteGoal } from '../actions'
 import GoalModal from './GoalModal'
 import type { CashflowGoalDTO } from '@/types/dto'
 import { formatCurrency } from '@/lib/currency'
-import { parseDateOnly } from '@/lib/date-only'
+import { parseDateOnly, formatAppDate } from '@/lib/date-only'
 
 interface GoalCardProps {
   cashflowId: string
@@ -335,12 +335,7 @@ export default function GoalCard({
                     <div className='flex items-center gap-1.5'>
                       <FiCalendar className='h-3 w-3 opacity-70' />
                       <span>
-                        Deadline:{' '}
-                        {parseDateOnly(goal.deadline).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
+                        Deadline: {formatAppDate(goal.deadline)}
                       </span>
                     </div>
                     <span>

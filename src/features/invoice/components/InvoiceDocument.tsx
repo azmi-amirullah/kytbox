@@ -7,6 +7,7 @@ import {
 } from '@react-pdf/renderer'
 import type { InvoiceDTO } from '../types'
 import { ZERO_DECIMAL_CURRENCIES } from '@/lib/currency'
+import { formatAppDate } from '@/lib/date-only'
 
 // ─── Colour tokens (mirroring the Shadcn light theme) ────────────────────────
 const C = {
@@ -147,16 +148,7 @@ function fmt(amount: number, currency: string): string {
 }
 
 function fmtDate(dateString: string): string {
-  if (!dateString) return '-'
-  try {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  } catch {
-    return dateString
-  }
+  return formatAppDate(dateString)
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {

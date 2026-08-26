@@ -4,6 +4,7 @@ import { useState, useRef, useTransition, useId, useMemo, Fragment } from 'react
 import { Dialog, DialogContent, ModalHeader } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { formatAppDate } from '@/lib/date-only'
 import {
   Select,
   SelectContent,
@@ -195,13 +196,7 @@ export default function ImportCsvModal({
     )
     if (!normalized) return { raw: sampleVal, formatted: 'Invalid date format' }
 
-    const [y, m, d] = normalized.split('-').map(Number)
-    const dateObj = new Date(y, m - 1, d)
-    const formatted = dateObj.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
+    const formatted = formatAppDate(normalized)
     return { raw: sampleVal, formatted }
   }, [rawRows, mapping.dateCol, dateFormatPref, datasetDateFormat])
 

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -320,12 +321,11 @@ function InvoiceFormContent({
               >
                 Issue Date *
               </label>
-              <Input
+              <DatePicker
                 id='issue_date'
-                type='date'
-                required
                 value={issueDate}
-                onChange={(e) => setIssueDate(e.target.value)}
+                onChange={setIssueDate}
+                placeholder='Select issue date'
               />
             </div>
 
@@ -336,12 +336,11 @@ function InvoiceFormContent({
               >
                 Due Date *
               </label>
-              <Input
+              <DatePicker
                 id='due_date'
-                type='date'
-                required
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={setDueDate}
+                placeholder='Select due date'
               />
             </div>
           </div>
@@ -768,11 +767,11 @@ function InvoiceFormContent({
                   >
                     Date Signed
                   </label>
-                  <Input
+                  <DatePicker
                     id='signed_date'
-                    type='date'
                     value={signedDate}
-                    onChange={(e) => setSignedDate(e.target.value)}
+                    onChange={setSignedDate}
+                    placeholder='Select signed date'
                   />
                 </div>
               </div>

@@ -1,7 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
-import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -10,7 +9,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { 
-  resolveFilterRange, 
   type DateFilterPreset, 
   type DateFilterState,
 } from '../math'
@@ -38,8 +36,6 @@ export function DateFilter({
   state,
   onChange,
 }: DateFilterProps) {
-  const effectiveRange = useMemo(() => resolveFilterRange(state), [state])
-
   function handlePreset(preset: DateFilterPreset) {
     onChange({ ...state, preset })
   }
@@ -84,14 +80,11 @@ export function DateFilter({
             >
               From Date
             </label>
-            <Input
+            <DatePicker
               id='date-filter-from'
-              type='date'
               value={state.custom.from ?? ''}
-              max={effectiveRange.to ?? undefined}
-              onChange={(e) => handleCustomFrom(e.target.value)}
-              className='h-9 text-sm'
-              aria-label='Start date'
+              onChange={handleCustomFrom}
+              placeholder='Select start date'
             />
           </div>
           <div className='flex flex-col gap-1.5 flex-1 min-w-35'>
@@ -101,14 +94,11 @@ export function DateFilter({
             >
               To Date
             </label>
-            <Input
+            <DatePicker
               id='date-filter-to'
-              type='date'
               value={state.custom.to ?? ''}
-              min={effectiveRange.from ?? undefined}
-              onChange={(e) => handleCustomTo(e.target.value)}
-              className='h-9 text-sm'
-              aria-label='End date'
+              onChange={handleCustomTo}
+              placeholder='Select end date'
             />
           </div>
         </div>

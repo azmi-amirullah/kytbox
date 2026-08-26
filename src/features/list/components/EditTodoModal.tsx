@@ -14,6 +14,7 @@ import {
 import { LuX, LuAlignLeft, LuCalendar, LuFlag } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import type { ListItemDTO, ListSubtaskDTO, ListItemPriority } from '@/types/dto'
@@ -238,12 +239,12 @@ export default function EditTodoModal({
               </div>
               <div className='pl-7 space-y-2'>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <Input
+                  <DatePicker
                     id='edit-due-date'
-                    type='date'
                     value={dueDate || ''}
-                    onChange={(e) => setDueDate(e.target.value || null)}
+                    onChange={(val) => setDueDate(val || null)}
                     className='w-auto h-8 text-xs'
+                    placeholder='Select due date'
                   />
                   <div className='flex items-center gap-1'>
                     <Button
