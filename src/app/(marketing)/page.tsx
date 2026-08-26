@@ -119,7 +119,7 @@ const principles = [
 ]
 
 export const metadata: Metadata = {
-  title: `${siteConfig.name} — Make room for better work`,
+  title: `${siteConfig.name} · Make room for better work`,
   description: siteConfig.description,
 }
 
@@ -176,8 +176,8 @@ export default async function LandingPage() {
                   </h1>
 
                   <p className='mt-8 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl'>
-                    Kytbox brings Bio, Cashflow, List, and Invoice into one calm
-                    workspace — so you spend less time switching between tools.
+                    Bio, Cashflow, List, and Invoice in one clean workspace.
+                    Spend less time juggling tabs.
                   </p>
 
                   <div className='mt-9 flex flex-col gap-3 sm:flex-row sm:items-center'>
@@ -197,7 +197,7 @@ export default async function LandingPage() {
                       size='lg'
                       className='min-h-12 rounded-full px-7 text-base'
                     >
-                      <Link href='#platform'>See the system</Link>
+                      <Link href='#platform'>See how it works</Link>
                     </Button>
                   </div>
 
@@ -221,7 +221,7 @@ export default async function LandingPage() {
                         className='size-4 text-primary'
                         aria-hidden='true'
                       />
-                      Built for real life
+                      No complex setup
                     </span>
                   </div>
                 </div>
@@ -353,7 +353,7 @@ export default async function LandingPage() {
                         Money in view
                       </p>
                       <h3 className='mt-3 text-3xl font-semibold tracking-[-0.045em]'>
-                        Cashflow you can read.
+                        Know where your money goes.
                       </h3>
                       <p className='mt-3 leading-7 text-muted-foreground'>
                         {modules[1].description}
@@ -417,7 +417,7 @@ export default async function LandingPage() {
                         Tasks & ideas
                       </p>
                       <h3 className='mt-3 text-3xl font-semibold tracking-[-0.045em]'>
-                        Lists that get unstuck.
+                        Capture ideas, finish tasks.
                       </h3>
                       <p className='mt-3 max-w-2xl leading-7 text-white/65'>
                         {modules[2].description}
@@ -478,7 +478,7 @@ export default async function LandingPage() {
                         Get paid
                       </p>
                       <h3 className='mt-3 text-3xl font-semibold tracking-[-0.045em]'>
-                        Invoices that close.
+                        Professional invoices in seconds.
                       </h3>
                       <p className='mt-3 leading-7 text-muted-foreground'>
                         {modules[3].description}
@@ -545,11 +545,11 @@ export default async function LandingPage() {
                   </p>
                   <h2 className='mt-6 max-w-lg text-4xl font-semibold leading-[0.98] tracking-[-0.055em] sm:text-5xl'>
                     Less switching.{' '}
-                    <span className='text-muted-foreground'>More signal.</span>
+                    <span className='text-muted-foreground'>Zero clutter.</span>
                   </h2>
                   <p className='mt-6 max-w-md text-base leading-7 text-muted-foreground sm:text-lg'>
-                    Kytbox keeps the important context close without turning
-                    your workspace into another dashboard to decode.
+                    Kytbox keeps the important context close without another
+                    bloated dashboard to manage.
                   </p>
                 </div>
               </ScrollReveal>

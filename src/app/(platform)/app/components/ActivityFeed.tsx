@@ -61,7 +61,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
         Recent activity
       </h2>
       <p className='mt-2 text-sm text-muted-foreground'>
-        Across Bio, Cashflow, and List.
+        Across your active workspace.
       </p>
 
       {activities.length === 0 ? (
@@ -71,7 +71,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
           </div>
           <h3 className='text-sm font-semibold'>No activity yet</h3>
           <p className='mt-1 max-w-65 text-xs leading-5 text-muted-foreground'>
-            Your Bio, Cashflow, and List activity will appear here.
+            Your workspace activity will appear here.
           </p>
         </div>
       ) : (

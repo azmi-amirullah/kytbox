@@ -8,7 +8,7 @@ const baseUrl =
 export const siteConfig = {
   name: 'Kytbox',
   description:
-    'Kytbox brings Bio, Cashflow, and List into one calm workspace - so you spend less time switching between tools.',
+    'Kytbox brings Bio, Cashflow, List, and Invoice into one calm workspace. Less switching, more focus.',
   url: baseUrl,
   ogImage: `${baseUrl}/og.png`,
   links: {

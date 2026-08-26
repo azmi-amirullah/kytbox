@@ -17,7 +17,7 @@ export function Footer({ variant = 'dashboard' }: FooterProps) {
             <div>
               <BrandLogo className='w-fit' />
               <p className='mt-4 max-w-xs text-sm leading-6 text-muted-foreground'>
-                Bio, Cashflow, and List — together in one workspace.
+                Bio, Cashflow, List, and Invoice in one clean workspace.
               </p>
             </div>
             <nav className='flex flex-wrap gap-x-2 gap-y-1 sm:justify-end' aria-label='Footer navigation'>
