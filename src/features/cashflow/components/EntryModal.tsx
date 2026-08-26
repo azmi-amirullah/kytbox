@@ -21,7 +21,6 @@ import { Switch } from '@/components/ui/switch'
 import {
   LuLoader,
   LuFileText,
-  LuCalendar,
   LuRepeat,
   LuListPlus,
   LuPaperclip,
@@ -567,18 +566,14 @@ export default function EntryModal({
               >
                 Date<span className='text-destructive'>*</span>
               </Label>
-              <div className='relative'>
-                <LuCalendar className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
-                <Input
-                  id='date'
-                  name='date'
-                  type='date'
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                  className='pl-9'
-                />
-              </div>
+              <Input
+                id='date'
+                name='date'
+                type='date'
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
             </div>
 
             {/* Category */}
