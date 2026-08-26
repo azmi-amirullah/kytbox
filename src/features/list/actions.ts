@@ -7,7 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAuthenticatedUserWithRateLimit } from '@/lib/auth-with-rate-limit'
 import { createNotification } from '@/features/notifications'
 import type { Database } from '@/types/supabase'
-import type { ListDTO, ListItemDTO, ListType, ListColumnDTO } from '@/types/dto'
+import type { ListDTO, ListItemDTO, ListType, ListColumnDTO, ListItemPriority } from '@/types/dto'
 import {
   createListSchema,
   createListItemSchema,
@@ -28,6 +28,7 @@ import {
   reorderItemsSchema,
   seedDefaultColumnsSchema,
   setDueDateSchema,
+  setPrioritySchema,
   toggleDoneColumnSchema,
   toggleItemSchema,
   toggleListPublicSchema,
@@ -366,6 +367,7 @@ export async function addItem(formData: FormData) {
 
   const listId = String(formData.get('listId') || '')
   const rawDueDate = formData.get('dueDate') ?? formData.get('due_date')
+  const rawPriority = formData.get('priority')
 
   const payload = {
     listId,
@@ -381,6 +383,12 @@ export async function addItem(formData: FormData) {
       rawDueDate !== undefined &&
       String(rawDueDate).trim() !== ''
         ? String(rawDueDate).trim()
+        : null,
+    priority:
+      rawPriority !== null &&
+      rawPriority !== undefined &&
+      String(rawPriority).trim() !== ''
+        ? String(rawPriority).trim()
         : null,
   }
 
@@ -404,11 +412,11 @@ export async function addItem(formData: FormData) {
   }
 
   const { data: itemsData } = await supabase
-    .from('list_items')
-    .select('sort_order')
-    .eq('list_id', parsed.data.listId)
-    .order('sort_order', { ascending: false })
-    .limit(1)
+  .from('list_items')
+  .select('sort_order')
+  .eq('list_id', parsed.data.listId)
+  .order('sort_order', { ascending: false })
+  .limit(1)
 
   const nextSortOrder =
     itemsData && itemsData.length > 0 ? itemsData[0].sort_order + 1024 : 1024
@@ -434,6 +442,7 @@ export async function addItem(formData: FormData) {
       title: parsed.data.title,
       description: parsed.data.description || null,
       due_date: parsed.data.dueDate || null,
+      priority: parsed.data.priority || null,
       reminder_sent: false,
       sort_order: nextSortOrder,
       metadata,
@@ -453,10 +462,12 @@ export async function updateItem(itemId: string, formData: FormData) {
   const { supabase, user } = await getAuthenticatedUserWithRateLimit()
 
   const rawDueDate = formData.get('dueDate') ?? formData.get('due_date')
+  const rawPriority = formData.get('priority')
   const payload: {
     title: string
     description?: string
     dueDate?: string | null
+    priority?: string | null
   } = {
     title: String(formData.get('title') || ''),
     description: formData.get('description')
@@ -466,6 +477,10 @@ export async function updateItem(itemId: string, formData: FormData) {
   if (rawDueDate !== null && rawDueDate !== undefined) {
     payload.dueDate =
       String(rawDueDate).trim() !== '' ? String(rawDueDate).trim() : null
+  }
+  if (rawPriority !== null && rawPriority !== undefined) {
+    payload.priority =
+      String(rawPriority).trim() !== '' ? String(rawPriority).trim() : null
   }
 
   const parsed = updateItemActionSchema.safeParse({ ...payload, itemId })
@@ -496,6 +511,9 @@ export async function updateItem(itemId: string, formData: FormData) {
   if (parsed.data.dueDate !== undefined) {
     updatePayload.due_date = parsed.data.dueDate || null
     updatePayload.reminder_sent = false
+  }
+  if (parsed.data.priority !== undefined) {
+    updatePayload.priority = parsed.data.priority || null
   }
   if (metadata !== undefined) {
     updatePayload.metadata = metadata
@@ -538,6 +556,37 @@ export async function setCardDueDate(itemId: string, dueDate: string | null) {
 
   if (error) {
     return { error: 'Failed to update due date' }
+  }
+
+  revalidatePath('/list')
+  return { success: true }
+}
+
+export async function setCardPriority(
+  itemId: string,
+  priority: ListItemPriority | string | null,
+) {
+  const parsed = setPrioritySchema.safeParse({ itemId, priority })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId)
+  if (!ownedItem) return { error: 'Item not found' }
+
+  const normalizedPriority = parsed.data.priority ? parsed.data.priority : null
+
+  const { error } = await supabase
+    .from('list_items')
+    .update({
+      priority: normalizedPriority,
+    })
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', ownedItem.listId)
+
+  if (error) {
+    return { error: 'Failed to update priority' }
   }
 
   revalidatePath('/list')

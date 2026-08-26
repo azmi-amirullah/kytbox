@@ -11,6 +11,8 @@ import {
   toggleSubtaskSchema,
   updateSubtaskTitleSchema,
   reorderSubtasksSchema,
+  listItemPrioritySchema,
+  setPrioritySchema,
 } from '@/features/list/schemas.server';
 
 describe('List Server Schemas', () => {
@@ -208,6 +210,64 @@ describe('List Server Schemas', () => {
         subtaskIds: [subtaskId, subtaskId],
       });
       expect(duplicate.success).toBe(false);
+    });
+  });
+
+  describe('priority schemas', () => {
+    it('accepts valid priority levels: urgent, high, medium, low, null, empty string', () => {
+      expect(listItemPrioritySchema.safeParse('urgent').success).toBe(true);
+      expect(listItemPrioritySchema.safeParse('high').success).toBe(true);
+      expect(listItemPrioritySchema.safeParse('medium').success).toBe(true);
+      expect(listItemPrioritySchema.safeParse('low').success).toBe(true);
+      expect(listItemPrioritySchema.safeParse(null).success).toBe(true);
+      expect(listItemPrioritySchema.safeParse('').success).toBe(true);
+      expect(listItemPrioritySchema.safeParse(undefined).success).toBe(true);
+    });
+
+    it('rejects invalid priority strings', () => {
+      expect(listItemPrioritySchema.safeParse('critical').success).toBe(false);
+      expect(listItemPrioritySchema.safeParse('very-high').success).toBe(false);
+      expect(listItemPrioritySchema.safeParse(123).success).toBe(false);
+    });
+
+    it('validates setPrioritySchema with valid item ID and priority', () => {
+      const valid = setPrioritySchema.safeParse({
+        itemId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        priority: 'urgent',
+      });
+      expect(valid.success).toBe(true);
+
+      const clearPriority = setPrioritySchema.safeParse({
+        itemId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        priority: null,
+      });
+      expect(clearPriority.success).toBe(true);
+    });
+
+    it('rejects setPrioritySchema with invalid item ID or priority', () => {
+      const invalidId = setPrioritySchema.safeParse({
+        itemId: 'invalid-uuid',
+        priority: 'urgent',
+      });
+      expect(invalidId.success).toBe(false);
+
+      const invalidPriority = setPrioritySchema.safeParse({
+        itemId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        priority: 'super-urgent',
+      });
+      expect(invalidPriority.success).toBe(false);
+    });
+
+    it('validates createListItemSchema with priority included', () => {
+      const result = createListItemSchema.safeParse({
+        listId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        title: 'Task with priority',
+        priority: 'high',
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.priority).toBe('high');
+      }
     });
   });
 });

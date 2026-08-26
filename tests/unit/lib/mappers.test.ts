@@ -501,6 +501,7 @@ const baseListItem: ListItem = {
   created_at: '2026-01-01T00:00:00Z',
   due_date: '2026-08-25',
   reminder_sent: false,
+  priority: 'high',
 };
 
 // ==========================================
@@ -605,10 +606,16 @@ describe('mapListItemToDTO', () => {
     expect(dto.created_at).toBe('2026-01-01T00:00:00Z');
     expect(dto.due_date).toBe('2026-08-25');
     expect(dto.reminder_sent).toBe(false);
+    expect(dto.priority).toBe('high');
   });
 
   it('handles null/invalid metadata field by falling back to empty object', () => {
     const dto = mapListItemToDTO(corrupt(baseListItem, { metadata: null }));
     expect(dto.metadata).toEqual({});
+  });
+
+  it('handles invalid/null priority by mapping to null', () => {
+    const dto = mapListItemToDTO(corrupt(baseListItem, { priority: 'invalid-tier' }));
+    expect(dto.priority).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   DndContext,
@@ -21,10 +21,26 @@ import {
 } from '@dnd-kit/sortable';
 import {
   LuPlus,
+  LuArrowUpDown,
+  LuFilter,
+  LuX,
+  LuCheck,
 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { ListDTO, ListColumnDTO, ListItemDTO } from '@/types/dto';
 import { moveItem, addItem, reorderColumns } from '../actions';
+import {
+  filterAndSortItems,
+  PRIORITY_CONFIG,
+  type PriorityFilterOption,
+  type PrioritySortOption,
+} from '../lib/priority';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import AddColumnModal from './AddColumnModal';
@@ -34,6 +50,20 @@ import type { DropAnimation } from '@dnd-kit/core';
 const DROP_ANIMATION: DropAnimation = {
   duration: 150,
   easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+};
+
+const SORT_OPTIONS: { value: PrioritySortOption; label: string }[] = [
+  { value: 'manual', label: 'Manual (Default)' },
+  { value: 'priority-desc', label: 'Priority: High → Low' },
+  { value: 'priority-asc', label: 'Priority: Low → High' },
+  { value: 'due-date', label: 'Due Date' },
+];
+
+const SORT_LABELS: Record<PrioritySortOption, string> = {
+  manual: 'Manual (Default)',
+  'priority-desc': 'Priority: High → Low',
+  'priority-asc': 'Priority: Low → High',
+  'due-date': 'Due Date',
 };
 
 interface KanbanBoardProps {
@@ -51,6 +81,8 @@ export default function KanbanBoard({
   const [items, setItems] = useState(initialItems);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
+  const [filterPriority, setFilterPriority] = useState<PriorityFilterOption>('all');
+  const [sortOption, setSortOption] = useState<PrioritySortOption>('manual');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -59,16 +91,26 @@ export default function KanbanBoard({
     useSensor(KeyboardSensor),
   );
 
-  // Group items by column
+  // Live priority counts across the board
+  const priorityCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: items.length, urgent: 0, high: 0, medium: 0, low: 0 };
+    for (const item of items) {
+      if (item.priority && counts[item.priority] !== undefined) {
+        counts[item.priority]++;
+      }
+    }
+    return counts;
+  }, [items]);
+
+  // Group, filter, and sort items by column
   const itemsByColumn = useCallback(() => {
     const grouped: Record<string, ListItemDTO[]> = {};
     for (const col of columns) {
-      grouped[col.id] = items
-        .filter((item) => item.column_id === col.id)
-        .sort((a, b) => a.sort_order - b.sort_order);
+      const colItems = items.filter((item) => item.column_id === col.id);
+      grouped[col.id] = filterAndSortItems(colItems, filterPriority, sortOption);
     }
     return grouped;
-  }, [columns, items]);
+  }, [columns, items, filterPriority, sortOption]);
 
   const findColumnOfItem = (itemId: string): string | null => {
     const item = items.find((i) => i.id === itemId);
@@ -283,6 +325,94 @@ export default function KanbanBoard({
       {/* Header */}
       <div className='flex items-center justify-between'>
         <h1 className='text-3xl font-bold tracking-tight'>{list.title}</h1>
+      </div>
+
+      {/* Filter & Sort Toolbar */}
+      <div className='flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-border/50'>
+        {/* Priority Filters */}
+        <div className='flex flex-wrap items-center gap-1.5'>
+          <span className='text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1'>
+            <LuFilter className='w-3.5 h-3.5' />
+            Filter:
+          </span>
+          <Button
+            type='button'
+            variant={filterPriority === 'all' ? 'secondary' : 'ghost'}
+            size='sm'
+            className={`h-7 text-xs px-2.5 rounded-full ${
+              filterPriority === 'all'
+                ? 'bg-secondary font-semibold text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => setFilterPriority('all')}
+          >
+            All
+            <span className='ml-1 text-xs opacity-75'>({priorityCounts.all})</span>
+          </Button>
+          {(['urgent', 'high', 'medium', 'low'] as const).map((p) => {
+            const cfg = PRIORITY_CONFIG[p];
+            const isSelected = filterPriority === p;
+            const count = priorityCounts[p] || 0;
+            return (
+              <Button
+                key={p}
+                type='button'
+                variant='ghost'
+                size='sm'
+                className={`h-7 text-xs px-2.5 rounded-full border transition-all ${
+                  isSelected
+                    ? `${cfg.activeClassName} font-semibold shadow-xs`
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+                onClick={() => setFilterPriority(isSelected ? 'all' : p)}
+              >
+                <span className={`w-2 h-2 rounded-full ${cfg.dotClassName}`} />
+                {cfg.label}
+                <span className='text-xs opacity-75'>({count})</span>
+              </Button>
+            );
+          })}
+          {filterPriority !== 'all' && (
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              className='h-7 text-xs px-2 text-muted-foreground hover:text-destructive gap-1'
+              onClick={() => setFilterPriority('all')}
+            >
+              <LuX className='w-3 h-3' />
+              Reset
+            </Button>
+          )}
+        </div>
+
+        {/* Sort Dropdown */}
+        <div className='flex items-center gap-2'>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={sortOption !== 'manual' ? 'secondary' : 'outline'}
+                size='sm'
+                className={`h-7 text-xs px-2.5 gap-1.5 ${sortOption !== 'manual' ? 'border-primary/30 font-medium' : ''}`}
+              >
+                <LuArrowUpDown className='w-3.5 h-3.5' />
+                <span>Sort: {SORT_LABELS[sortOption]}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-48'>
+              {SORT_OPTIONS.map((opt) => (
+                <DropdownMenuItem
+                  key={opt.value}
+                  className='flex items-center justify-between text-xs cursor-pointer'
+                  onClick={() => setSortOption(opt.value)}
+                >
+                  <span>{opt.label}</span>
+                  {sortOption === opt.value && <LuCheck className='w-3.5 h-3.5 text-primary' />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Board */}

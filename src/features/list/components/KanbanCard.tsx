@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { LuTrash2, LuCalendar, LuListTodo } from 'react-icons/lu';
+import { LuTrash2, LuCalendar, LuListTodo, LuFlag } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import {
 import type { ListItemDTO } from '@/types/dto';
 import { deleteItem, toggleItem } from '../actions';
 import { getDueDateInfo } from '../lib/due-date';
+import { getPriorityBadgeInfo } from '../lib/priority';
 import { toast } from 'react-toastify';
 import EditTodoModal from './EditTodoModal';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -40,6 +41,7 @@ export default function KanbanCard({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const dueDateInfo = getDueDateInfo(item.due_date, item.is_completed);
+  const priorityInfo = getPriorityBadgeInfo(item.priority);
   const subtasks = item.subtasks ?? [];
   const totalSubtasks = subtasks.length;
   const completedSubtasks = subtasks.filter((s) => s.is_completed).length;
@@ -141,8 +143,17 @@ export default function KanbanCard({
                 {item.description}
               </p>
             )}
-            {(dueDateInfo.status !== 'none' || totalSubtasks > 0) && (
+            {(dueDateInfo.status !== 'none' || totalSubtasks > 0 || priorityInfo !== null) && (
               <div className='flex flex-wrap items-center gap-1.5 mt-2'>
+                {priorityInfo && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border font-medium ${priorityInfo.badgeClassName}`}
+                    title={`Priority: ${priorityInfo.label}`}
+                  >
+                    <LuFlag className='w-3 h-3 shrink-0' />
+                    <span>{priorityInfo.label}</span>
+                  </span>
+                )}
                 {dueDateInfo.status !== 'none' && (
                   <span
                     className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border ${dueDateInfo.badgeClassName}`}

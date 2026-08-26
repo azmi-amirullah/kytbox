@@ -29,10 +29,17 @@ export const dueDateSchema = z
   .optional()
   .or(z.literal(''));
 
+export const listItemPrioritySchema = z
+  .enum(['urgent', 'high', 'medium', 'low'])
+  .nullable()
+  .optional()
+  .or(z.literal(''));
+
 export const listItemSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(300, 'Title too long'),
   description: z.string().max(1000).optional().or(z.literal('')),
   dueDate: dueDateSchema,
+  priority: listItemPrioritySchema,
 });
 
 export const setDueDateSchema = z.object({
@@ -40,6 +47,14 @@ export const setDueDateSchema = z.object({
   dueDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+    .nullable()
+    .or(z.literal('')),
+});
+
+export const setPrioritySchema = z.object({
+  itemId: listItemIdSchema,
+  priority: z
+    .enum(['urgent', 'high', 'medium', 'low'])
     .nullable()
     .or(z.literal('')),
 });

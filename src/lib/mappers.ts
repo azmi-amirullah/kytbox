@@ -39,7 +39,10 @@ import type {
   ListItemDTO,
   ListSubtaskDTO,
 } from '@/types/dto';
-import { listItemMetadataClientSchema } from '@/lib/validation.schemas.client';
+import {
+  listItemMetadataClientSchema,
+  listItemPriorityClientSchema,
+} from '@/lib/validation.schemas.client';
 
 export function mapProfileToDTO(row: Profile): ProfileDTO {
   return {
@@ -341,6 +344,7 @@ export function mapListItemToDTO(
     created_at: row.created_at,
     due_date: row.due_date ?? null,
     reminder_sent: row.reminder_sent ?? false,
+    priority: listItemPriorityClientSchema.parse(row.priority),
     subtasks,
   };
 }

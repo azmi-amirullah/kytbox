@@ -18,3 +18,14 @@ export const wishlistMetadataClientSchema = z.catch(
   }),
   { price: null, currency: null, purchase_url: null }
 );
+
+export const listItemPriorityClientSchema = z.catch(
+  z.union([
+    z.literal('urgent'),
+    z.literal('high'),
+    z.literal('medium'),
+    z.literal('low'),
+    z.null(),
+  ]),
+  null
+);

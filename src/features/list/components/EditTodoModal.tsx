@@ -11,14 +11,15 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import { LuX, LuAlignLeft, LuCalendar } from 'react-icons/lu'
+import { LuX, LuAlignLeft, LuCalendar, LuFlag } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import type { ListItemDTO, ListSubtaskDTO } from '@/types/dto'
+import type { ListItemDTO, ListSubtaskDTO, ListItemPriority } from '@/types/dto'
 import { updateItem, toggleItem } from '../actions'
 import { getDueDateInfo } from '../lib/due-date'
+import { PRIORITY_OPTIONS, getPriorityBadgeInfo } from '../lib/priority'
 import { toast } from 'react-toastify'
 import { Checkbox } from '@/components/ui/checkbox'
 import CardChecklist from './CardChecklist'
@@ -43,6 +44,7 @@ export default function EditTodoModal({
   const [description, setDescription] = useState(item.description || '')
   const [isCompleted, setIsCompleted] = useState(item.is_completed)
   const [dueDate, setDueDate] = useState<string | null>(item.due_date ?? null)
+  const [priority, setPriority] = useState<ListItemPriority | null>(item.priority ?? null)
   const [subtasks, setSubtasks] = useState(item.subtasks ?? [])
 
   // Reset local state synchronously when props change (avoids useEffect cascading renders)
@@ -53,10 +55,12 @@ export default function EditTodoModal({
     setDescription(item.description || '')
     setIsCompleted(item.is_completed)
     setDueDate(item.due_date ?? null)
+    setPriority(item.priority ?? null)
     setSubtasks(item.subtasks ?? [])
   }
 
   const dueDateInfo = getDueDateInfo(dueDate, isCompleted)
+  const priorityInfo = getPriorityBadgeInfo(priority)
 
   const handleSubtasksChange = (newSubtasks: ListSubtaskDTO[]) => {
     setSubtasks(newSubtasks)
@@ -66,6 +70,7 @@ export default function EditTodoModal({
       description: description.trim() || null,
       is_completed: isCompleted,
       due_date: dueDate || null,
+      priority: priority || null,
       subtasks: newSubtasks,
     })
   }
@@ -84,6 +89,7 @@ export default function EditTodoModal({
           description: description.trim() || null,
           is_completed: !isCompleted,
           due_date: dueDate,
+          priority: priority || null,
           subtasks,
         })
       }
@@ -110,6 +116,7 @@ export default function EditTodoModal({
         formData.append('description', description.trim())
       }
       formData.append('dueDate', dueDate || '')
+      formData.append('priority', priority || '')
 
       const result = await updateItem(item.id, formData)
       if (result.error) {
@@ -121,6 +128,7 @@ export default function EditTodoModal({
           description: description.trim() || null,
           is_completed: isCompleted,
           due_date: dueDate || null,
+          priority: priority || null,
           subtasks,
         })
         onOpenChange(false)
@@ -161,6 +169,58 @@ export default function EditTodoModal({
           </DialogHeader>
 
           <div className='space-y-3'>
+            {/* Priority Row */}
+            <div className='space-y-1.5'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-3 text-muted-foreground/45'>
+                  <LuFlag className='w-4 h-4 text-foreground/70' />
+                  <Label htmlFor='edit-priority' className='text-foreground text-sm font-semibold'>
+                    Priority
+                  </Label>
+                </div>
+                {priorityInfo && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border font-medium ${priorityInfo.badgeClassName}`}>
+                    {priorityInfo.label}
+                  </span>
+                )}
+              </div>
+              <div className='pl-7'>
+                <div className='flex flex-wrap items-center gap-1.5'>
+                  {PRIORITY_OPTIONS.map((opt) => {
+                    const isSelected = priority === opt.value
+                    return (
+                      <Button
+                        key={opt.value}
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className={`h-8 text-xs px-2.5 gap-1.5 transition-all ${
+                          isSelected
+                            ? opt.activeClassName
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        onClick={() => setPriority(isSelected ? null : opt.value)}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${opt.dotClassName}`} />
+                        {opt.label}
+                      </Button>
+                    )
+                  })}
+                  {priority && (
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='sm'
+                      className='h-8 text-xs px-2 text-muted-foreground hover:text-destructive'
+                      onClick={() => setPriority(null)}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Due Date Row */}
             <div className='space-y-1.5'>
               <div className='flex items-center justify-between'>

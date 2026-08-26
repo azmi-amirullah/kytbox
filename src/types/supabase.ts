@@ -719,6 +719,7 @@ export type Database = {
           is_completed: boolean
           list_id: string
           metadata: Json | null
+          priority: string | null
           reminder_sent: boolean
           sort_order: number
           title: string
@@ -732,6 +733,7 @@ export type Database = {
           is_completed?: boolean
           list_id: string
           metadata?: Json | null
+          priority?: string | null
           reminder_sent?: boolean
           sort_order?: number
           title: string
@@ -745,6 +747,7 @@ export type Database = {
           is_completed?: boolean
           list_id?: string
           metadata?: Json | null
+          priority?: string | null
           reminder_sent?: boolean
           sort_order?: number
           title?: string

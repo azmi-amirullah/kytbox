@@ -25,7 +25,7 @@
 - [x] [Day 15 — List: Card Due Dates & Reminders](#day-15)
 - [x] [Day 16 — List: Card Subtasks & Checklist Engine](#day-16)
 - [x] [Day 17 — List: Pre-built Board Templates](#day-17)
-- [ ] [Day 18 — List: Card Priority Levels & Filtering](#day-18)
+- [x] [Day 18 — List: Card Priority Levels & Filtering](#day-18)
 - [ ] [Day 19 — List: Card Attachments](#day-19)
 - [ ] [Day 20 — List: Advanced Features E2E Test Suite](#day-20)
 - [ ] [Day 21 — Weekly Sprint Audit & Accessibility (WCAG 2.2)](#day-21)

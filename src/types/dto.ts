@@ -183,6 +183,8 @@ export interface ListSubtaskDTO {
   created_at: string | null
 }
 
+export type ListItemPriority = 'urgent' | 'high' | 'medium' | 'low'
+
 export interface ListItemDTO {
   id: string
   list_id: string
@@ -195,6 +197,7 @@ export interface ListItemDTO {
   created_at: string | null
   due_date: string | null
   reminder_sent?: boolean
+  priority?: ListItemPriority | null
   subtasks?: ListSubtaskDTO[]
 }
 

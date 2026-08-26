@@ -303,4 +303,34 @@ describe('List server-action security boundaries', () => {
       { due_date: '2026-08-30', reminder_sent: false },
     ]);
   });
+
+  it('updates task priority via setCardPriority', async () => {
+    const { setCardPriority } = await loadActions();
+    const state = configureAuth({
+      list_items: {
+        data: { id: itemId, list_id: listId },
+        error: null,
+      },
+      lists: {
+        data: { id: listId, type: 'todo' },
+        error: null,
+      },
+    });
+
+    const result = await setCardPriority(itemId, 'urgent');
+
+    expect(result).toEqual({ success: true });
+    expect(state.updates).toEqual([
+      { priority: 'urgent' },
+    ]);
+  });
+
+  it('rejects invalid priority in setCardPriority before DB call', async () => {
+    const { setCardPriority } = await loadActions();
+
+    const result = await setCardPriority(itemId, 'invalid-priority');
+
+    expect(result).toEqual({ error: 'Invalid input' });
+    expect(mocks.getAuthenticatedUserWithRateLimit).not.toHaveBeenCalled();
+  });
 });

@@ -9,5 +9,6 @@ export { default as TemplatePickerModal } from './components/TemplatePickerModal
 
 export * from './actions';
 export * from './lib/due-date';
+export * from './lib/priority';
 export * as schemasClient from './schemas.client';
 export * as schemasServer from './schemas.server';
