@@ -184,6 +184,7 @@ export interface ListSubtaskDTO {
 }
 
 export type ListItemPriority = 'urgent' | 'high' | 'medium' | 'low'
+export type ListItemRecurrenceRule = 'daily' | 'weekdays' | 'weekly' | 'monthly'
 
 export interface ListItemDTO {
   id: string
@@ -198,6 +199,7 @@ export interface ListItemDTO {
   due_date: string | null
   reminder_sent?: boolean
   priority?: ListItemPriority | null
+  recurrence_rule?: ListItemRecurrenceRule | null
   subtasks?: ListSubtaskDTO[]
 }
 

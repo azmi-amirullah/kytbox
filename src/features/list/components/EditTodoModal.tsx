@@ -11,16 +11,17 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import { LuX, LuAlignLeft, LuCalendar, LuFlag } from 'react-icons/lu'
+import { LuX, LuAlignLeft, LuCalendar, LuFlag, LuRepeat } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import type { ListItemDTO, ListSubtaskDTO, ListItemPriority } from '@/types/dto'
+import type { ListItemDTO, ListSubtaskDTO, ListItemPriority, ListItemRecurrenceRule } from '@/types/dto'
 import { updateItem, toggleItem } from '../actions'
 import { getDueDateInfo } from '../lib/due-date'
 import { PRIORITY_OPTIONS, getPriorityBadgeInfo } from '../lib/priority'
+import { RECURRENCE_OPTIONS, getRecurrenceInfo } from '../lib/recurrence'
 import { toast } from 'react-toastify'
 import { Checkbox } from '@/components/ui/checkbox'
 import CardChecklist from './CardChecklist'
@@ -46,6 +47,7 @@ export default function EditTodoModal({
   const [isCompleted, setIsCompleted] = useState(item.is_completed)
   const [dueDate, setDueDate] = useState<string | null>(item.due_date ?? null)
   const [priority, setPriority] = useState<ListItemPriority | null>(item.priority ?? null)
+  const [recurrenceRule, setRecurrenceRule] = useState<ListItemRecurrenceRule | null>(item.recurrence_rule ?? null)
   const [subtasks, setSubtasks] = useState(item.subtasks ?? [])
 
   // Reset local state synchronously when props change (avoids useEffect cascading renders)
@@ -57,11 +59,13 @@ export default function EditTodoModal({
     setIsCompleted(item.is_completed)
     setDueDate(item.due_date ?? null)
     setPriority(item.priority ?? null)
+    setRecurrenceRule(item.recurrence_rule ?? null)
     setSubtasks(item.subtasks ?? [])
   }
 
   const dueDateInfo = getDueDateInfo(dueDate, isCompleted)
   const priorityInfo = getPriorityBadgeInfo(priority)
+  const recurrenceInfo = getRecurrenceInfo(recurrenceRule)
 
   const handleSubtasksChange = (newSubtasks: ListSubtaskDTO[]) => {
     setSubtasks(newSubtasks)
@@ -72,6 +76,7 @@ export default function EditTodoModal({
       is_completed: isCompleted,
       due_date: dueDate || null,
       priority: priority || null,
+      recurrence_rule: recurrenceRule || null,
       subtasks: newSubtasks,
     })
   }
@@ -91,6 +96,7 @@ export default function EditTodoModal({
           is_completed: !isCompleted,
           due_date: dueDate,
           priority: priority || null,
+          recurrence_rule: recurrenceRule || null,
           subtasks,
         })
       }
@@ -118,6 +124,7 @@ export default function EditTodoModal({
       }
       formData.append('dueDate', dueDate || '')
       formData.append('priority', priority || '')
+      formData.append('recurrenceRule', recurrenceRule || '')
 
       const result = await updateItem(item.id, formData)
       if (result.error) {
@@ -130,6 +137,7 @@ export default function EditTodoModal({
           is_completed: isCompleted,
           due_date: dueDate || null,
           priority: priority || null,
+          recurrence_rule: recurrenceRule || null,
           subtasks,
         })
         onOpenChange(false)
@@ -286,6 +294,58 @@ export default function EditTodoModal({
                       </Button>
                     )}
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recurrence Row */}
+            <div className='space-y-1.5'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-3 text-muted-foreground/45'>
+                  <LuRepeat className='w-4 h-4 text-foreground/70' />
+                  <Label htmlFor='edit-recurrence' className='text-foreground text-sm font-semibold'>
+                    Repeat / Recurrence
+                  </Label>
+                </div>
+                {recurrenceInfo && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border font-medium ${recurrenceInfo.badgeClassName}`}>
+                    <LuRepeat className='w-3 h-3' />
+                    {recurrenceInfo.label}
+                  </span>
+                )}
+              </div>
+              <div className='pl-7'>
+                <div className='flex flex-wrap items-center gap-1.5'>
+                  {RECURRENCE_OPTIONS.map((opt) => {
+                    const isSelected = recurrenceRule === opt.value
+                    return (
+                      <Button
+                        key={opt.value}
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className={`h-8 text-xs px-2.5 gap-1.5 transition-all ${
+                          isSelected
+                            ? `${opt.badgeClassName} font-semibold shadow-xs`
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        onClick={() => setRecurrenceRule(isSelected ? null : opt.value)}
+                      >
+                        {opt.label}
+                      </Button>
+                    )
+                  })}
+                  {recurrenceRule && (
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='sm'
+                      className='h-8 text-xs px-2 text-muted-foreground hover:text-destructive'
+                      onClick={() => setRecurrenceRule(null)}
+                    >
+                      Never
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

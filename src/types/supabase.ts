@@ -720,6 +720,7 @@ export type Database = {
           list_id: string
           metadata: Json | null
           priority: string | null
+          recurrence_rule: string | null
           reminder_sent: boolean
           sort_order: number
           title: string
@@ -734,6 +735,7 @@ export type Database = {
           list_id: string
           metadata?: Json | null
           priority?: string | null
+          recurrence_rule?: string | null
           reminder_sent?: boolean
           sort_order?: number
           title: string
@@ -748,6 +750,7 @@ export type Database = {
           list_id?: string
           metadata?: Json | null
           priority?: string | null
+          recurrence_rule?: string | null
           reminder_sent?: boolean
           sort_order?: number
           title?: string

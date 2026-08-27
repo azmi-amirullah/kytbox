@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { LuTrash2, LuCalendar, LuListTodo, LuFlag } from 'react-icons/lu';
+import { LuTrash2, LuCalendar, LuListTodo, LuFlag, LuRepeat } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -19,6 +19,7 @@ import type { ListItemDTO } from '@/types/dto';
 import { deleteItem, toggleItem } from '../actions';
 import { getDueDateInfo } from '../lib/due-date';
 import { getPriorityBadgeInfo } from '../lib/priority';
+import { getRecurrenceInfo } from '../lib/recurrence';
 import { toast } from 'react-toastify';
 import EditTodoModal from './EditTodoModal';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -42,6 +43,7 @@ export default function KanbanCard({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const dueDateInfo = getDueDateInfo(item.due_date, item.is_completed);
   const priorityInfo = getPriorityBadgeInfo(item.priority);
+  const recurrenceInfo = getRecurrenceInfo(item.recurrence_rule);
   const subtasks = item.subtasks ?? [];
   const totalSubtasks = subtasks.length;
   const completedSubtasks = subtasks.filter((s) => s.is_completed).length;
@@ -87,6 +89,15 @@ export default function KanbanCard({
       const result = await toggleItem(item.id, !item.is_completed);
       if (result.error) {
         toast.error(result.error);
+      } else if (result.recurringAdvanced && result.nextDueDate) {
+        toast.success(`🎉 Recurring task completed! Next cycle due on ${result.nextDueDate}`);
+        const resetSubtasks = (item.subtasks ?? []).map((s) => ({ ...s, is_completed: false }));
+        onUpdate?.({
+          ...item,
+          is_completed: false,
+          due_date: result.nextDueDate,
+          subtasks: resetSubtasks,
+        });
       } else {
         onUpdate?.({ ...item, is_completed: !item.is_completed });
       }
@@ -143,7 +154,7 @@ export default function KanbanCard({
                 {item.description}
               </p>
             )}
-            {(dueDateInfo.status !== 'none' || totalSubtasks > 0 || priorityInfo !== null) && (
+            {(dueDateInfo.status !== 'none' || totalSubtasks > 0 || priorityInfo !== null || recurrenceInfo !== null) && (
               <div className='flex flex-wrap items-center gap-1.5 mt-2'>
                 {priorityInfo && (
                   <span
@@ -152,6 +163,15 @@ export default function KanbanCard({
                   >
                     <LuFlag className='w-3 h-3 shrink-0' />
                     <span>{priorityInfo.label}</span>
+                  </span>
+                )}
+                {recurrenceInfo && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border font-medium ${recurrenceInfo.badgeClassName}`}
+                    title={`Repeats: ${recurrenceInfo.label}`}
+                  >
+                    <LuRepeat className='w-3 h-3 shrink-0' />
+                    <span>{recurrenceInfo.shortLabel}</span>
                   </span>
                 )}
                 {dueDateInfo.status !== 'none' && (

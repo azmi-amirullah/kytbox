@@ -182,3 +182,15 @@ export const listItemPriorityClientSchema = z.catch(
   ]),
   null
 );
+
+export const listItemRecurrenceClientSchema = z.catch(
+  z.union([
+    z.literal('daily'),
+    z.literal('weekdays'),
+    z.literal('weekly'),
+    z.literal('monthly'),
+    z.null(),
+  ]),
+  null
+);
+

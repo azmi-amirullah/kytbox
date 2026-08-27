@@ -35,11 +35,18 @@ export const listItemPrioritySchema = z
   .optional()
   .or(z.literal(''));
 
+export const listItemRecurrenceSchema = z
+  .enum(['daily', 'weekdays', 'weekly', 'monthly'])
+  .nullable()
+  .optional()
+  .or(z.literal(''));
+
 export const listItemSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(300, 'Title too long'),
   description: z.string().max(1000).optional().or(z.literal('')),
   dueDate: dueDateSchema,
   priority: listItemPrioritySchema,
+  recurrenceRule: listItemRecurrenceSchema,
 });
 
 export const setDueDateSchema = z.object({
@@ -55,6 +62,14 @@ export const setPrioritySchema = z.object({
   itemId: listItemIdSchema,
   priority: z
     .enum(['urgent', 'high', 'medium', 'low'])
+    .nullable()
+    .or(z.literal('')),
+});
+
+export const setRecurrenceSchema = z.object({
+  itemId: listItemIdSchema,
+  recurrenceRule: z
+    .enum(['daily', 'weekdays', 'weekly', 'monthly'])
     .nullable()
     .or(z.literal('')),
 });

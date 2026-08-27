@@ -502,6 +502,7 @@ const baseListItem: ListItem = {
   due_date: '2026-08-25',
   reminder_sent: false,
   priority: 'high',
+  recurrence_rule: 'weekly',
 };
 
 // ==========================================
@@ -607,6 +608,7 @@ describe('mapListItemToDTO', () => {
     expect(dto.due_date).toBe('2026-08-25');
     expect(dto.reminder_sent).toBe(false);
     expect(dto.priority).toBe('high');
+    expect(dto.recurrence_rule).toBe('weekly');
   });
 
   it('handles null/invalid metadata field by falling back to empty object', () => {
@@ -617,5 +619,10 @@ describe('mapListItemToDTO', () => {
   it('handles invalid/null priority by mapping to null', () => {
     const dto = mapListItemToDTO(corrupt(baseListItem, { priority: 'invalid-tier' }));
     expect(dto.priority).toBeNull();
+  });
+
+  it('handles invalid/null recurrence_rule by mapping to null', () => {
+    const dto = mapListItemToDTO(corrupt(baseListItem, { recurrence_rule: 'invalid-rule' }));
+    expect(dto.recurrence_rule).toBeNull();
   });
 });

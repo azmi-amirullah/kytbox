@@ -26,7 +26,7 @@
 - [x] [Day 16 — List: Card Subtasks & Checklist Engine](#day-16)
 - [x] [Day 17 — List: Pre-built Board Templates](#day-17)
 - [x] [Day 18 — List: Card Priority Levels & Filtering](#day-18)
-- [ ] [Day 19 — List: Card Attachments](#day-19)
+- [x] [Day 19 — List: Recurring Tasks Engine](#day-19)
 - [ ] [Day 20 — List: Advanced Features E2E Test Suite](#day-20)
 - [ ] [Day 21 — Weekly Sprint Audit & Accessibility (WCAG 2.2)](#day-21)
 - [ ] [Day 22 — Platform: Two-Factor Authentication (TOTP 2FA Setup)](#day-22)
@@ -46,7 +46,7 @@
 
 1. **Bio App Depth & Creator Tools**: Custom Domains, SEO Metadata Editor, Lead Capture Forms, Custom Thumbnails, Pinned Links, and Sensitive Content Warnings.
 2. **Cashflow Productivity**: Receipt/Attachment Uploads, CSV/Bank Import, Monthly Comparison Views, Split Transactions, and Custom Tags/Labels.
-3. **List App Power Features**: Due Dates & Reminders, Card Subtasks/Checklists, Pre-built Board Templates, Priority Levels, and Card Attachments.
+3. **List App Power Features**: Due Dates & Reminders, Card Subtasks/Checklists, Pre-built Board Templates, Priority Levels, and Recurring Tasks Engine.
 4. **Platform Security & Growth**: Two-Factor Authentication (TOTP 2FA), Workspace Global Search (`Cmd+K`), One-Click GDPR Data Export, and Multi-language Support (`next-intl` i18n).
 
 ---
@@ -277,18 +277,19 @@
 
 <a id="day-19"></a>
 #### Day 19 — Wednesday, Aug 19 | ✨ Feature
-##### List: Card Attachments
-- **Why**: Tasks often require reference material (design mockups, PDFs, screenshots). Attaching files directly to list cards keeps project context centralized.
+##### List: Recurring Tasks Engine
+- **Why**: Daily chores, weekly sprints, and monthly administrative tasks ("Backup Database", "Submit Invoice", "Review PRs") must be repeated regularly. Without automated recurrence, users waste time recreating identical cards.
 - **Implementation Blueprint**:
-  - Create `list_card_attachments` table (`id`, `card_id`, `file_name`, `file_url`, `file_size`, `mime_type`).
-  - Integrate Supabase Storage bucket `card-attachments` with preview lightbox for images.
+  - Add `recurrence_rule: 'daily' | 'weekly' | 'monthly' | 'custom' | null` and `next_due_date: string | null` columns to `list_cards`.
+  - Build recurrence schedule picker UI in `EditTodoModal.tsx` (`Daily`, `Weekly on [Day]`, `Monthly on [Date]`, `Every X Days`).
+  - Create recurrence advancement engine `advanceRecurringCard(card)`: when a card is completed or moved to a "Done" column, automatically spawn the next cycle or advance its `due_date` while resetting checklist items.
 
 ---
 
 <a id="day-20"></a>
 #### Day 20 — Thursday, Aug 20 | 🧪 Testing
 ##### List: Advanced Features E2E Test Suite
-- **Why**: Verify drag-and-drop column movements, subtask progress calculations, priority filtering, and attachment uploads without UI regressions.
+- **Why**: Verify drag-and-drop column movements, subtask progress calculations, priority filtering, and recurring task generation without UI regressions.
 - **Implementation Blueprint**:
   - Playwright test suite `tests/e2e/list-advanced.spec.ts`.
 
@@ -413,7 +414,7 @@
 | :--- | :---: | :--- |
 | 🔗 **Bio App** | 6 | SEO Editor, Custom Thumbnails, Lead Capture, Pinned Links, Custom Domains, Bio E2E |
 | 💰 **Cashflow App** | 6 | Receipt Uploads, CSV Bank Import, Monthly Comparison, Custom Tags, Split Transactions, Cashflow E2E |
-| 📋 **List App** | 6 | Due Dates & Reminders, Subtasks, Board Templates, Priority Levels, Card Attachments, List E2E |
+| 📋 **List App** | 6 | Due Dates & Reminders, Subtasks, Board Templates, Priority Levels, Recurring Tasks, List E2E |
 | 🛡️ **Platform Security** | 6 | TOTP 2FA, 2FA Enforcement, Global Search, GDPR Data Export, Session Manager, Platform E2E |
 | 🌐 **Platform / i18n** | 3 | Internationalization Setup, Locale Translations, Retrospective & Planning |
 
@@ -469,7 +470,7 @@
 | **Wishlist Price Alerts** | Auto-scrape price from `purchase_url`, notify when price drops | 🔥🔥🔥 | ~6h |
 | **Import from Trello/Notion** | JSON/CSV import for users migrating from competitor tools | 🔥🔥 | ~4h |
 | **Card Comments** | Comment thread on each card for discussions | 🔥 | ~3h |
-| **Recurring Tasks** | "Every Monday: Review PRs". Auto-creates cards on schedule | 🔥🔥 | ~4h |
+| **Card Attachments** | Attach files and images directly to cards with Supabase Storage | 🔥 | ~4h |
 | **Archiving** | Archive completed boards instead of deleting | 🔥 | ~2h |
 | **Wishlist Price Comparison** | Compare prices across multiple stores for the same item | 🔥 | ~3h |
 | **List Sharing with ACL** | Share lists with read/edit permissions | 🔥🔥🔥 | ~5h |

@@ -42,6 +42,7 @@ import type {
 import {
   listItemMetadataClientSchema,
   listItemPriorityClientSchema,
+  listItemRecurrenceClientSchema,
 } from '@/lib/validation.schemas.client';
 
 export function mapProfileToDTO(row: Profile): ProfileDTO {
@@ -345,6 +346,7 @@ export function mapListItemToDTO(
     due_date: row.due_date ?? null,
     reminder_sent: row.reminder_sent ?? false,
     priority: listItemPriorityClientSchema.parse(row.priority),
+    recurrence_rule: listItemRecurrenceClientSchema.parse(row.recurrence_rule),
     subtasks,
   };
 }

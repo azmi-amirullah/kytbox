@@ -84,6 +84,8 @@ export default function KanbanBoard({
   const [filterPriority, setFilterPriority] = useState<PriorityFilterOption>('all');
   const [sortOption, setSortOption] = useState<PrioritySortOption>('manual');
 
+  const [dragOriginColumnId, setDragOriginColumnId] = useState<string | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
@@ -118,7 +120,9 @@ export default function KanbanBoard({
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(String(event.active.id));
+    const activeItemId = String(event.active.id);
+    setActiveId(activeItemId);
+    setDragOriginColumnId(findColumnOfItem(activeItemId));
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -169,6 +173,9 @@ export default function KanbanBoard({
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
+    const originColumnId = dragOriginColumnId;
+    setDragOriginColumnId(null);
+
     if (!over) return;
 
     const activeItemId = String(active.id);
@@ -214,6 +221,14 @@ export default function KanbanBoard({
     // Persist: check if target column is a done column
     const targetColumn = columns.find((c) => c.id === columnId);
     const isDone = targetColumn?.is_done_column || false;
+    const isChangingColumn = originColumnId !== null && originColumnId !== columnId;
+    const isEnteringDoneColumn = isChangingColumn && isDone;
+    const isRecurring = Boolean(activeItem.recurrence_rule);
+
+    // If item was dropped in place without changing position or column, no-op
+    if (!isChangingColumn && oldIndex === newIndex) {
+      return;
+    }
 
     if (oldIndex !== newIndex) {
       const reordered = arrayMove(columnItems, oldIndex, newIndex);
@@ -225,7 +240,7 @@ export default function KanbanBoard({
             ...item, 
             sort_order: idx,
             is_completed: item.id === activeItemId 
-              ? (isDone ? true : item.is_completed) 
+              ? (isEnteringDoneColumn ? (isRecurring ? false : true) : item.is_completed) 
               : item.is_completed
           })),
         ];
@@ -234,7 +249,7 @@ export default function KanbanBoard({
       setItems((prev) =>
         prev.map((item) =>
           item.id === activeItemId
-            ? { ...item, is_completed: isDone ? true : item.is_completed }
+            ? { ...item, is_completed: isEnteringDoneColumn ? (isRecurring ? false : true) : item.is_completed }
             : item,
         ),
       );
@@ -248,6 +263,31 @@ export default function KanbanBoard({
     );
     if (result.error) {
       toast.error(result.error);
+    } else if (result.recurringAdvanced && result.nextDueDate) {
+      const finalColumnId =
+        result.targetColumnId ??
+        columns.find((c) => !c.is_done_column)?.id ??
+        columnId;
+
+      toast.success(
+        `🎉 Recurring task completed! Next cycle due on ${result.nextDueDate}`,
+      );
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === activeItemId
+            ? {
+                ...item,
+                column_id: finalColumnId,
+                is_completed: false,
+                due_date: result.nextDueDate,
+                subtasks: (item.subtasks ?? []).map((s) => ({
+                  ...s,
+                  is_completed: false,
+                })),
+              }
+            : item,
+        ),
+      );
     }
   };
 

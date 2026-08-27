@@ -7,7 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAuthenticatedUserWithRateLimit } from '@/lib/auth-with-rate-limit'
 import { createNotification } from '@/features/notifications'
 import type { Database } from '@/types/supabase'
-import type { ListDTO, ListItemDTO, ListType, ListColumnDTO, ListItemPriority } from '@/types/dto'
+import type { ListDTO, ListItemDTO, ListType, ListColumnDTO, ListItemPriority, ListItemRecurrenceRule } from '@/types/dto'
 import {
   createListSchema,
   createListItemSchema,
@@ -29,6 +29,7 @@ import {
   seedDefaultColumnsSchema,
   setDueDateSchema,
   setPrioritySchema,
+  setRecurrenceSchema,
   toggleDoneColumnSchema,
   toggleItemSchema,
   toggleListPublicSchema,
@@ -38,6 +39,10 @@ import {
   createBoardFromTemplateSchema,
 } from './schemas.server'
 import { formatDueDateLabel } from './lib/due-date'
+import {
+  calculateNextRecurrenceDate,
+  isListItemRecurrenceRule,
+} from './lib/recurrence'
 import {
   mapListToDTO,
   mapListWithSummaryToDTO,
@@ -368,6 +373,7 @@ export async function addItem(formData: FormData) {
   const listId = String(formData.get('listId') || '')
   const rawDueDate = formData.get('dueDate') ?? formData.get('due_date')
   const rawPriority = formData.get('priority')
+  const rawRecurrence = formData.get('recurrenceRule') ?? formData.get('recurrence_rule')
 
   const payload = {
     listId,
@@ -389,6 +395,12 @@ export async function addItem(formData: FormData) {
       rawPriority !== undefined &&
       String(rawPriority).trim() !== ''
         ? String(rawPriority).trim()
+        : null,
+    recurrenceRule:
+      rawRecurrence !== null &&
+      rawRecurrence !== undefined &&
+      String(rawRecurrence).trim() !== ''
+        ? String(rawRecurrence).trim()
         : null,
   }
 
@@ -443,6 +455,7 @@ export async function addItem(formData: FormData) {
       description: parsed.data.description || null,
       due_date: parsed.data.dueDate || null,
       priority: parsed.data.priority || null,
+      recurrence_rule: parsed.data.recurrenceRule || null,
       reminder_sent: false,
       sort_order: nextSortOrder,
       metadata,
@@ -463,11 +476,13 @@ export async function updateItem(itemId: string, formData: FormData) {
 
   const rawDueDate = formData.get('dueDate') ?? formData.get('due_date')
   const rawPriority = formData.get('priority')
+  const rawRecurrence = formData.get('recurrenceRule') ?? formData.get('recurrence_rule')
   const payload: {
     title: string
     description?: string
     dueDate?: string | null
     priority?: string | null
+    recurrenceRule?: string | null
   } = {
     title: String(formData.get('title') || ''),
     description: formData.get('description')
@@ -481,6 +496,10 @@ export async function updateItem(itemId: string, formData: FormData) {
   if (rawPriority !== null && rawPriority !== undefined) {
     payload.priority =
       String(rawPriority).trim() !== '' ? String(rawPriority).trim() : null
+  }
+  if (rawRecurrence !== null && rawRecurrence !== undefined) {
+    payload.recurrenceRule =
+      String(rawRecurrence).trim() !== '' ? String(rawRecurrence).trim() : null
   }
 
   const parsed = updateItemActionSchema.safeParse({ ...payload, itemId })
@@ -514,6 +533,9 @@ export async function updateItem(itemId: string, formData: FormData) {
   }
   if (parsed.data.priority !== undefined) {
     updatePayload.priority = parsed.data.priority || null
+  }
+  if (parsed.data.recurrenceRule !== undefined) {
+    updatePayload.recurrence_rule = parsed.data.recurrenceRule || null
   }
   if (metadata !== undefined) {
     updatePayload.metadata = metadata
@@ -587,6 +609,37 @@ export async function setCardPriority(
 
   if (error) {
     return { error: 'Failed to update priority' }
+  }
+
+  revalidatePath('/list')
+  return { success: true }
+}
+
+export async function setCardRecurrence(
+  itemId: string,
+  recurrenceRule: ListItemRecurrenceRule | string | null,
+) {
+  const parsed = setRecurrenceSchema.safeParse({ itemId, recurrenceRule })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId)
+  if (!ownedItem) return { error: 'Item not found' }
+
+  const normalizedRecurrence = parsed.data.recurrenceRule ? parsed.data.recurrenceRule : null
+
+  const { error } = await supabase
+    .from('list_items')
+    .update({
+      recurrence_rule: normalizedRecurrence,
+    })
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', ownedItem.listId)
+
+  if (error) {
+    return { error: 'Failed to update recurrence rule' }
   }
 
   revalidatePath('/list')
@@ -685,6 +738,48 @@ export async function toggleItem(itemId: string, isCompleted: boolean) {
   const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId)
   if (!ownedItem) return { error: 'Item not found' }
 
+  // If completing a task, check if it has a recurrence rule
+  if (parsed.data.isCompleted) {
+    const { data: itemData, error: itemError } = await supabase
+      .from('list_items')
+      .select('id, due_date, recurrence_rule')
+      .eq('id', parsed.data.itemId)
+      .eq('list_id', ownedItem.listId)
+      .single()
+
+    if (!itemError && itemData?.recurrence_rule && isListItemRecurrenceRule(itemData.recurrence_rule)) {
+      const nextDueDate = calculateNextRecurrenceDate(itemData.due_date, itemData.recurrence_rule)
+
+      // Advance card: new due_date, reset reminder_sent, keep is_completed = false
+      const { error: updateError } = await supabase
+        .from('list_items')
+        .update({
+          due_date: nextDueDate,
+          reminder_sent: false,
+          is_completed: false,
+        })
+        .eq('id', parsed.data.itemId)
+        .eq('list_id', ownedItem.listId)
+
+      if (updateError) {
+        return { error: 'Failed to advance recurring task' }
+      }
+
+      // Reset all subtask checklist items under this card
+      await supabase
+        .from('list_subtasks')
+        .update({ is_completed: false })
+        .eq('item_id', parsed.data.itemId)
+
+      revalidatePath('/list')
+      return {
+        success: true,
+        recurringAdvanced: true,
+        nextDueDate,
+      }
+    }
+  }
+
   const { error } = await supabase
     .from('list_items')
     .update({ is_completed: parsed.data.isCompleted })
@@ -777,6 +872,62 @@ export async function moveItem(
     return { error: 'Item or column not found' }
   }
 
+  // Fetch current item state from DB to check if column is actually changing
+  const { data: itemData } = await supabase
+    .from('list_items')
+    .select('id, column_id, due_date, recurrence_rule, is_completed')
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', ownedItem.listId)
+    .single()
+
+  const isChangingColumn = itemData ? itemData.column_id !== parsed.data.columnId : true
+  const isEnteringDoneColumn = isChangingColumn && ownedColumn.isDoneColumn
+
+  // If moving into a done column from a different column, check if card is recurring
+  if (isEnteringDoneColumn && itemData?.recurrence_rule && isListItemRecurrenceRule(itemData.recurrence_rule)) {
+    const nextDueDate = calculateNextRecurrenceDate(itemData.due_date, itemData.recurrence_rule)
+
+    // Find the starter (first non-done) column on this board
+    const { data: boardColumns } = await supabase
+      .from('list_columns')
+      .select('id, is_done_column, sort_order')
+      .eq('list_id', ownedItem.listId)
+      .order('sort_order', { ascending: true })
+
+    const starterColumn = boardColumns?.find((c) => !c.is_done_column) ?? boardColumns?.[0] ?? ownedColumn
+    const targetReturnColumnId = starterColumn.id
+
+    const { error } = await supabase
+      .from('list_items')
+      .update({
+        column_id: targetReturnColumnId,
+        sort_order: parsed.data.sortOrder,
+        due_date: nextDueDate,
+        reminder_sent: false,
+        is_completed: false,
+      })
+      .eq('id', parsed.data.itemId)
+      .eq('list_id', ownedItem.listId)
+
+    if (error) {
+      return { error: 'Failed to move item' }
+    }
+
+    // Reset all subtask checklist items under this card
+    await supabase
+      .from('list_subtasks')
+      .update({ is_completed: false })
+      .eq('item_id', parsed.data.itemId)
+
+    revalidatePath('/list')
+    return {
+      success: true,
+      recurringAdvanced: true,
+      nextDueDate,
+      targetColumnId: targetReturnColumnId,
+    }
+  }
+
   const updatePayload: {
     column_id: string
     sort_order: number
@@ -786,9 +937,8 @@ export async function moveItem(
     sort_order: parsed.data.sortOrder,
   }
 
-  // Completion is intentionally sticky: leaving a done column does not undo completion.
-  // The destination column is authoritative; do not trust the client flag for this.
-  if (ownedColumn.isDoneColumn) {
+  // Only auto-mark completed when transitioning into a done column from another column
+  if (isEnteringDoneColumn) {
     updatePayload.is_completed = true
   }
 
