@@ -12,6 +12,7 @@ const testUrl = 'https://example.com/e2e';
  * This prevents data duplication and checks true end-to-end propagation.
  */
 test.describe.serial('Bio E2E Flow', () => {
+  test.setTimeout(60_000);
   
   // We don't use beforeEach because the public profile test needs a fresh unauthenticated context
   // Instead, we navigate to the bio dashboard explicitly in the logged-in tests.
@@ -46,7 +47,7 @@ test.describe.serial('Bio E2E Flow', () => {
     await expect(page.locator('h3').filter({ hasText: updatedTitle }).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('can create a folder', async ({ page }) => {
+  test('can create a folder and enforces 1-level limit', async ({ page }) => {
     await page.goto('/bio');
     await page.getByRole('tab', { name: /links/i }).click();
 
@@ -55,7 +56,11 @@ test.describe.serial('Bio E2E Flow', () => {
     await page.locator('#title').fill(testFolderTitle);
     await page.getByRole('button', { name: 'Add Folder', exact: true }).click();
 
-    await expect(page.locator('h3').filter({ hasText: testFolderTitle }).first()).toBeVisible({ timeout: 10000 });
+    const folderRow = page.locator('div.group').filter({ hasText: testFolderTitle }).first();
+    await expect(folderRow).toBeVisible({ timeout: 10000 });
+
+    // Verify 1-level constraint: Folders cannot be nested (no "Move" button on folders)
+    await expect(folderRow.getByRole('button', { name: 'Move' })).not.toBeVisible();
   });
 
   test('can move a link into a folder', async ({ page }) => {

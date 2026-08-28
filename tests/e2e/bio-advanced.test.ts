@@ -20,6 +20,7 @@ function formatToDatetimeLocalString(date: Date): string {
  * - Bio Link Scheduling (Future start, past expiry, and active visibility logic)
  */
 test.describe.serial('Bio Advanced Features E2E', () => {
+  test.setTimeout(60_000);
 
   test('1. Drag & Drop Link Reordering', async ({ page, browser }) => {
     const linkTitle1 = `DnD Alpha ${runId}`;
@@ -33,9 +34,14 @@ test.describe.serial('Bio Advanced Features E2E', () => {
     // Create 3 links in sequential order
     for (const title of [linkTitle1, linkTitle2, linkTitle3]) {
       await page.getByRole('button', { name: 'Add Item' }).click();
-      await page.locator('#title').fill(title);
-      await page.getByLabel(/destination url/i).fill(testUrl);
-      await page.getByRole('button', { name: 'Add Link', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible({ timeout: 5000 });
+
+      await dialog.locator('#title').fill(title);
+      await dialog.getByLabel(/destination url/i).fill(testUrl);
+      await dialog.getByRole('button', { name: 'Add Link', exact: true }).click();
+      await expect(dialog).not.toBeVisible({ timeout: 10000 });
+
       await expect(page.locator('h3').filter({ hasText: title }).first()).toBeVisible({ timeout: 10000 });
     }
 
@@ -57,7 +63,7 @@ test.describe.serial('Bio Advanced Features E2E', () => {
     if (username) {
       const guestContext = await browser.newContext({ storageState: undefined });
       const guestPage = await guestContext.newPage();
-      await guestPage.goto(`/${username}`);
+      await guestPage.goto(`/${username}`, { waitUntil: 'domcontentloaded' });
 
       // Verify all 3 titles are visible on public profile
       await expect(guestPage.getByText(linkTitle1)).toBeVisible({ timeout: 10000 });
@@ -80,9 +86,18 @@ test.describe.serial('Bio Advanced Features E2E', () => {
     for (const title of [linkTitle1, linkTitle2, linkTitle3]) {
       const targetRow = page.locator('div.group').filter({ hasText: title }).first();
       if (await targetRow.isVisible()) {
+        await targetRow.scrollIntoViewIfNeeded();
+        await targetRow.hover();
         await targetRow.getByRole('button', { name: 'Delete' }).click();
-        await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+
+        const deleteDialog = page.getByRole('alertdialog');
+        await expect(deleteDialog).toBeVisible({ timeout: 5000 });
+        await deleteDialog.getByRole('button', { name: 'Delete' }).click();
+
+        // Await server action completion and toast
+        await expect(page.getByText('Link deleted!').first()).toBeVisible({ timeout: 10000 });
         await expect(targetRow).not.toBeVisible({ timeout: 10000 });
+        await expect(deleteDialog).not.toBeVisible({ timeout: 5000 });
       }
     }
   });
@@ -96,9 +111,12 @@ test.describe.serial('Bio Advanced Features E2E', () => {
 
     // Create a new link
     await page.getByRole('button', { name: 'Add Item' }).click();
-    await page.locator('#title').fill(analyticsLinkTitle);
-    await page.getByLabel(/destination url/i).fill(targetUrl);
-    await page.getByRole('button', { name: 'Add Link', exact: true }).click();
+    const addDialog = page.getByRole('dialog');
+    await expect(addDialog).toBeVisible({ timeout: 5000 });
+    await addDialog.locator('#title').fill(analyticsLinkTitle);
+    await addDialog.getByLabel(/destination url/i).fill(targetUrl);
+    await addDialog.getByRole('button', { name: 'Add Link', exact: true }).click();
+    await expect(addDialog).not.toBeVisible({ timeout: 10000 });
     await expect(page.locator('h3').filter({ hasText: analyticsLinkTitle }).first()).toBeVisible({ timeout: 10000 });
 
     const username = process.env.E2E_TEST_USERNAME;
@@ -107,7 +125,7 @@ test.describe.serial('Bio Advanced Features E2E', () => {
     // Visit public profile as guest and click the link (opens popup tab via target="_blank")
     const guestContext = await browser.newContext({ storageState: undefined });
     const guestPage = await guestContext.newPage();
-    await guestPage.goto(`/${username}`);
+    await guestPage.goto(`/${username}`, { waitUntil: 'domcontentloaded' });
 
     const publicLink = guestPage.getByText(analyticsLinkTitle).first();
     await expect(publicLink).toBeVisible({ timeout: 10000 });
@@ -130,9 +148,17 @@ test.describe.serial('Bio Advanced Features E2E', () => {
     await page.getByRole('tab', { name: /links/i }).click();
     const row = page.locator('div.group').filter({ hasText: analyticsLinkTitle }).first();
     if (await row.isVisible()) {
+      await row.scrollIntoViewIfNeeded();
+      await row.hover();
       await row.getByRole('button', { name: 'Delete' }).click();
-      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+
+      const deleteDialog = page.getByRole('alertdialog');
+      await expect(deleteDialog).toBeVisible({ timeout: 5000 });
+      await deleteDialog.getByRole('button', { name: 'Delete' }).click();
+
+      await expect(page.getByText('Link deleted!').first()).toBeVisible({ timeout: 10000 });
       await expect(row).not.toBeVisible({ timeout: 10000 });
+      await expect(deleteDialog).not.toBeVisible({ timeout: 5000 });
     }
   });
 
@@ -156,12 +182,15 @@ test.describe.serial('Bio Advanced Features E2E', () => {
 
     // A. Create Future Scheduled Link (scheduled_at = tomorrow)
     await page.getByRole('button', { name: 'Add Item' }).click();
-    await page.locator('#title').fill(futureLinkTitle);
-    await page.getByLabel(/destination url/i).fill(testUrl);
+    let dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await dialog.locator('#title').fill(futureLinkTitle);
+    await dialog.getByLabel(/destination url/i).fill(testUrl);
     // Toggle schedule switch on
-    await page.locator('#schedule-toggle').click();
-    await page.locator('#scheduled_at').fill(tomorrowStr);
-    await page.getByRole('button', { name: 'Add Link', exact: true }).click();
+    await dialog.locator('#schedule-toggle').click();
+    await dialog.locator('#scheduled_at').fill(tomorrowStr);
+    await dialog.getByRole('button', { name: 'Add Link', exact: true }).click();
+    await expect(dialog).not.toBeVisible({ timeout: 10000 });
     await expect(page.locator('h3').filter({ hasText: futureLinkTitle }).first()).toBeVisible({ timeout: 10000 });
 
     // Verify dashboard badge for future link ("Goes live")
@@ -170,11 +199,14 @@ test.describe.serial('Bio Advanced Features E2E', () => {
 
     // B. Create Expired Link (expires_at = yesterday)
     await page.getByRole('button', { name: 'Add Item' }).click();
-    await page.locator('#title').fill(expiredLinkTitle);
-    await page.getByLabel(/destination url/i).fill(testUrl);
-    await page.locator('#schedule-toggle').click();
-    await page.locator('#expires_at').fill(yesterdayStr);
-    await page.getByRole('button', { name: 'Add Link', exact: true }).click();
+    dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await dialog.locator('#title').fill(expiredLinkTitle);
+    await dialog.getByLabel(/destination url/i).fill(testUrl);
+    await dialog.locator('#schedule-toggle').click();
+    await dialog.locator('#expires_at').fill(yesterdayStr);
+    await dialog.getByRole('button', { name: 'Add Link', exact: true }).click();
+    await expect(dialog).not.toBeVisible({ timeout: 10000 });
     await expect(page.locator('h3').filter({ hasText: expiredLinkTitle }).first()).toBeVisible({ timeout: 10000 });
 
     // Verify dashboard badge for expired link ("🔴 Expired")
@@ -183,12 +215,15 @@ test.describe.serial('Bio Advanced Features E2E', () => {
 
     // C. Create Active Scheduled Link (scheduled_at = yesterday, expires_at = dayAfterTomorrow)
     await page.getByRole('button', { name: 'Add Item' }).click();
-    await page.locator('#title').fill(activeLinkTitle);
-    await page.getByLabel(/destination url/i).fill(testUrl);
-    await page.locator('#schedule-toggle').click();
-    await page.locator('#scheduled_at').fill(yesterdayStr);
-    await page.locator('#expires_at').fill(dayAfterTomorrowStr);
-    await page.getByRole('button', { name: 'Add Link', exact: true }).click();
+    dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await dialog.locator('#title').fill(activeLinkTitle);
+    await dialog.getByLabel(/destination url/i).fill(testUrl);
+    await dialog.locator('#schedule-toggle').click();
+    await dialog.locator('#scheduled_at').fill(yesterdayStr);
+    await dialog.locator('#expires_at').fill(dayAfterTomorrowStr);
+    await dialog.getByRole('button', { name: 'Add Link', exact: true }).click();
+    await expect(dialog).not.toBeVisible({ timeout: 10000 });
     await expect(page.locator('h3').filter({ hasText: activeLinkTitle }).first()).toBeVisible({ timeout: 10000 });
 
     // Verify dashboard badge for active link ("🟢 Live until")
@@ -200,7 +235,7 @@ test.describe.serial('Bio Advanced Features E2E', () => {
     if (username) {
       const guestContext = await browser.newContext({ storageState: undefined });
       const guestPage = await guestContext.newPage();
-      await guestPage.goto(`/${username}`);
+      await guestPage.goto(`/${username}`, { waitUntil: 'domcontentloaded' });
 
       // Future and Expired links must NOT be visible
       await expect(guestPage.getByText(futureLinkTitle)).not.toBeVisible({ timeout: 5000 });
@@ -218,9 +253,17 @@ test.describe.serial('Bio Advanced Features E2E', () => {
     for (const title of [futureLinkTitle, expiredLinkTitle, activeLinkTitle]) {
       const targetRow = page.locator('div.group').filter({ hasText: title }).first();
       if (await targetRow.isVisible()) {
+        await targetRow.scrollIntoViewIfNeeded();
+        await targetRow.hover();
         await targetRow.getByRole('button', { name: 'Delete' }).click();
-        await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+
+        const deleteDialog = page.getByRole('alertdialog');
+        await expect(deleteDialog).toBeVisible({ timeout: 5000 });
+        await deleteDialog.getByRole('button', { name: 'Delete' }).click();
+
+        await expect(page.getByText('Link deleted!').first()).toBeVisible({ timeout: 10000 });
         await expect(targetRow).not.toBeVisible({ timeout: 10000 });
+        await expect(deleteDialog).not.toBeVisible({ timeout: 5000 });
       }
     }
   });

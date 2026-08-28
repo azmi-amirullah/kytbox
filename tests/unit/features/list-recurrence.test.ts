@@ -3,7 +3,6 @@ import {
   isListItemRecurrenceRule,
   getRecurrenceInfo,
   calculateNextRecurrenceDate,
-  RECURRENCE_CONFIG,
 } from '@/features/list/lib/recurrence';
 import {
   listItemRecurrenceSchema,

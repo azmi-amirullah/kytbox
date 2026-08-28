@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { redirectRateLimit } from '@/lib/upstash/redis';
+import { redirectRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import { getIp } from '@/lib/ip';
 import * as Sentry from '@sentry/nextjs';
 
@@ -21,7 +21,7 @@ export async function GET(request: Request, { params }: RedirectRouteProps) {
   // 1. Rate Limiting Check
   // Check FIRST to protect from analytics spam AND database abuse
   const ip = await getIp();
-  const { success: isNotRateLimited } = await redirectRateLimit.limit(ip);
+  const { success: isNotRateLimited } = await checkRateLimit(redirectRateLimit, ip);
 
   if (!isNotRateLimited) {
     // Return 429 Too Many Requests immediately to stop DB queries

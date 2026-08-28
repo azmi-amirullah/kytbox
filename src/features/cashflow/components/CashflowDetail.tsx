@@ -1399,28 +1399,8 @@ export default function CashflowDetail({
                   return (
                     <div
                       key={tag}
-                      role='button'
-                      tabIndex={0}
-                      aria-pressed={isActive}
-                      onClick={() => {
-                        setSelectedTags((prev) =>
-                          isActive
-                            ? prev.filter((t) => t !== tag)
-                            : [...prev, tag],
-                        )
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          setSelectedTags((prev) =>
-                            isActive
-                              ? prev.filter((t) => t !== tag)
-                              : [...prev, tag],
-                          )
-                        }
-                      }}
                       className={cn(
-                        'group inline-flex items-center min-h-7 sm:min-h-6 px-2.5 py-1 rounded-md text-xs border leading-none transition-all duration-200 select-none cursor-pointer',
+                        'group inline-flex items-center min-h-7 sm:min-h-6 rounded-md text-xs border leading-none transition-all duration-200 select-none',
                         isActive
                           ? cn(
                               tagColor.activeBg,
@@ -1436,22 +1416,36 @@ export default function CashflowDetail({
                             ),
                       )}
                     >
-                      {isActive && (
-                        <LuCheck className='w-3 h-3 mr-1 shrink-0 animate-in fade-in zoom-in-75 duration-150' />
-                      )}
-                      <span className='shrink-0'>#{tag}</span>
+                      <button
+                        type='button'
+                        aria-pressed={isActive}
+                        onClick={() => {
+                          setSelectedTags((prev) =>
+                            isActive
+                              ? prev.filter((t) => t !== tag)
+                              : [...prev, tag],
+                          )
+                        }}
+                        className='inline-flex items-center px-2.5 py-1 cursor-pointer focus-visible:outline-none'
+                      >
+                        {isActive && (
+                          <LuCheck className='w-3 h-3 mr-1 shrink-0 animate-in fade-in zoom-in-75 duration-150' />
+                        )}
+                        <span className='shrink-0'>#{tag}</span>
+                      </button>
                       {canEdit && (
-                        <span className='inline-flex items-center max-w-0 opacity-0 group-hover:max-w-10 group-hover:opacity-100 group-hover:pl-2 overflow-hidden transition-all duration-200 ease-out shrink-0'>
+                        <span className='inline-flex items-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pr-1.5 transition-opacity duration-150 shrink-0'>
                           <button
                             type='button'
                             onClick={(e) => {
+                              e.preventDefault()
                               e.stopPropagation()
                               setManagingTag(tag)
                               setIsManageTagOpen(true)
                             }}
                             aria-label={`Manage tag ${tag}`}
                             className={cn(
-                              'p-1 focus-visible:outline-none rounded-xs cursor-pointer inline-flex items-center justify-center hover:scale-110 transition-transform',
+                              'p-0.5 focus-visible:outline-none rounded-xs cursor-pointer inline-flex items-center justify-center hover:scale-110 transition-transform',
                               isActive
                                 ? 'text-inherit opacity-85 hover:opacity-100'
                                 : 'opacity-70 hover:opacity-100',

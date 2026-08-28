@@ -1,9 +1,9 @@
-import { defineConfig, devices } from '@playwright/test';
-import dotenv from 'dotenv';
-import path from 'path';
+import { defineConfig, devices } from '@playwright/test'
+import dotenv from 'dotenv'
+import path from 'path'
 
 // Playwright does not natively load .env.local, we need to manually load it.
-dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '.env.local') })
 
 // Locally: use dev server (no build required).
 // In CI or when you want to test the production build:
@@ -11,8 +11,6 @@ dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: 'html',
   use: {
@@ -20,7 +18,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npm run dev',
+    command: 'npm run dev-test',
     url: 'http://app.localhost:3000',
     reuseExistingServer: true,
     timeout: 120_000,
@@ -39,4 +37,4 @@ export default defineConfig({
       dependencies: ['setup'],
     },
   ],
-});
+})

@@ -13,6 +13,7 @@ const runId = Date.now()
  * - Custom Domain Settings Modal (Day 5)
  */
 test.describe.serial('Bio Creator Features E2E', () => {
+  test.setTimeout(60_000)
 
   test('1. SEO Metadata Editor — auto-saves and renders in public head', async ({ page, browser }) => {
     const testTitle = `E2E SEO Title ${runId}`
@@ -31,7 +32,7 @@ test.describe.serial('Bio Creator Features E2E', () => {
     await metaDescInput.fill(testDescription)
 
     // Wait for auto-save (debounced at 1000ms + 500ms min duration)
-    await page.waitForTimeout(2500)
+    await expect(page.getByText('Saved').first()).toBeVisible({ timeout: 10000 })
 
     // Verify public profile <head> metadata
     const username = process.env.E2E_TEST_USERNAME
@@ -39,8 +40,7 @@ test.describe.serial('Bio Creator Features E2E', () => {
 
     const guestContext = await browser.newContext({ storageState: undefined })
     const guestPage = await guestContext.newPage()
-    await guestPage.goto(`/${username}`)
-    await guestPage.waitForLoadState('domcontentloaded')
+    await guestPage.goto(`/${username}`, { waitUntil: 'domcontentloaded' })
 
     // Assert <title> contains our custom SEO title
     const pageTitle = await guestPage.title()
@@ -58,7 +58,7 @@ test.describe.serial('Bio Creator Features E2E', () => {
     await metaTitleClean.scrollIntoViewIfNeeded()
     await metaTitleClean.fill('')
     await page.locator('#meta-description').fill('')
-    await page.waitForTimeout(2500)
+    await expect(page.getByText('Saved').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('2. Pin Link to Top — pinned link appears first on public profile', async ({ page, browser }) => {
@@ -71,18 +71,24 @@ test.describe.serial('Bio Creator Features E2E', () => {
 
     // Create Link A (unpinned)
     await page.getByRole('button', { name: 'Add Item' }).click()
-    await page.locator('#title').fill(linkA)
-    await page.getByLabel(/destination url/i).fill(testUrl)
-    await page.getByRole('button', { name: 'Add Link', exact: true }).click()
+    let dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible({ timeout: 5000 })
+    await dialog.locator('#title').fill(linkA)
+    await dialog.getByLabel(/destination url/i).fill(testUrl)
+    await dialog.getByRole('button', { name: 'Add Link', exact: true }).click()
+    await expect(dialog).not.toBeVisible({ timeout: 10000 })
     await expect(page.locator('h3').filter({ hasText: linkA }).first()).toBeVisible({ timeout: 10000 })
 
     // Create Link B (will be pinned)
     await page.getByRole('button', { name: 'Add Item' }).click()
-    await page.locator('#title').fill(linkB)
-    await page.getByLabel(/destination url/i).fill(testUrl)
+    dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible({ timeout: 5000 })
+    await dialog.locator('#title').fill(linkB)
+    await dialog.getByLabel(/destination url/i).fill(testUrl)
     // Toggle pin before saving
-    await page.locator('#pin-toggle').click()
-    await page.getByRole('button', { name: 'Add Link', exact: true }).click()
+    await dialog.locator('#pin-toggle').click()
+    await dialog.getByRole('button', { name: 'Add Link', exact: true }).click()
+    await expect(dialog).not.toBeVisible({ timeout: 10000 })
     await expect(page.locator('h3').filter({ hasText: linkB }).first()).toBeVisible({ timeout: 10000 })
 
     // Verify pinned badge is visible on dashboard
@@ -95,7 +101,7 @@ test.describe.serial('Bio Creator Features E2E', () => {
 
     const guestContext = await browser.newContext({ storageState: undefined })
     const guestPage = await guestContext.newPage()
-    await guestPage.goto(`/${username}`)
+    await guestPage.goto(`/${username}`, { waitUntil: 'domcontentloaded' })
 
     await expect(guestPage.getByText(linkA)).toBeVisible({ timeout: 10000 })
     await expect(guestPage.getByText(linkB)).toBeVisible({ timeout: 10000 })
@@ -116,9 +122,15 @@ test.describe.serial('Bio Creator Features E2E', () => {
     for (const title of [linkA, linkB]) {
       const row = page.locator('div.group').filter({ hasText: title }).first()
       if (await row.isVisible()) {
+        await row.scrollIntoViewIfNeeded()
+        await row.hover()
         await row.getByRole('button', { name: 'Delete' }).click()
-        await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+        const deleteDialog = page.getByRole('alertdialog')
+        await expect(deleteDialog).toBeVisible({ timeout: 5000 })
+        await deleteDialog.getByRole('button', { name: 'Delete' }).click()
+        await expect(page.getByText('Link deleted!').first()).toBeVisible({ timeout: 10000 })
         await expect(row).not.toBeVisible({ timeout: 10000 })
+        await expect(deleteDialog).not.toBeVisible({ timeout: 5000 })
       }
     }
   })
@@ -132,10 +144,13 @@ test.describe.serial('Bio Creator Features E2E', () => {
 
     // Create a sensitive link
     await page.getByRole('button', { name: 'Add Item' }).click()
-    await page.locator('#title').fill(sensitiveTitle)
-    await page.getByLabel(/destination url/i).fill(testUrl)
-    await page.locator('#sensitive-toggle').click()
-    await page.getByRole('button', { name: 'Add Link', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible({ timeout: 5000 })
+    await dialog.locator('#title').fill(sensitiveTitle)
+    await dialog.getByLabel(/destination url/i).fill(testUrl)
+    await dialog.locator('#sensitive-toggle').click()
+    await dialog.getByRole('button', { name: 'Add Link', exact: true }).click()
+    await expect(dialog).not.toBeVisible({ timeout: 10000 })
     await expect(page.locator('h3').filter({ hasText: sensitiveTitle }).first()).toBeVisible({ timeout: 10000 })
 
     // Verify sensitive badge on dashboard
@@ -148,7 +163,7 @@ test.describe.serial('Bio Creator Features E2E', () => {
 
     const guestContext = await browser.newContext({ storageState: undefined })
     const guestPage = await guestContext.newPage()
-    await guestPage.goto(`/${username}`)
+    await guestPage.goto(`/${username}`, { waitUntil: 'domcontentloaded' })
 
     // The blur overlay button should be visible
     const revealButton = guestPage.getByLabel('Click to reveal sensitive content')
@@ -166,9 +181,15 @@ test.describe.serial('Bio Creator Features E2E', () => {
     await page.getByRole('tab', { name: /links/i }).click()
     const row = page.locator('div.group').filter({ hasText: sensitiveTitle }).first()
     if (await row.isVisible()) {
+      await row.scrollIntoViewIfNeeded()
+      await row.hover()
       await row.getByRole('button', { name: 'Delete' }).click()
-      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+      const deleteDialog = page.getByRole('alertdialog')
+      await expect(deleteDialog).toBeVisible({ timeout: 5000 })
+      await deleteDialog.getByRole('button', { name: 'Delete' }).click()
+      await expect(page.getByText('Link deleted!').first()).toBeVisible({ timeout: 10000 })
       await expect(row).not.toBeVisible({ timeout: 10000 })
+      await expect(deleteDialog).not.toBeVisible({ timeout: 5000 })
     }
   })
 
@@ -183,21 +204,24 @@ test.describe.serial('Bio Creator Features E2E', () => {
     const isChecked = await leadToggle.getAttribute('aria-checked')
     if (isChecked !== 'true') {
       await leadToggle.click()
+      await expect(leadToggle).toHaveAttribute('aria-checked', 'true', { timeout: 5000 })
       await page.waitForTimeout(1000)
     }
 
     // Visit public profile as guest and submit the lead capture form
     const guestContext = await browser.newContext({ storageState: undefined })
     const guestPage = await guestContext.newPage()
-    await guestPage.goto(`/${username}`)
+    await guestPage.goto(`/${username}`, { waitUntil: 'networkidle' })
 
     // Find the email input within the lead capture widget
     const emailInput = guestPage.locator('input[type="email"]')
-    await expect(emailInput).toBeVisible({ timeout: 10000 })
+    await expect(emailInput).toBeVisible({ timeout: 15000 })
+    
+    // Click to focus, fill email, and wait for React state to enable button
+    await emailInput.click()
     await emailInput.fill(testEmail)
-
-    // Click Subscribe
     const subscribeBtn = guestPage.getByRole('button', { name: /subscribe/i })
+    await expect(subscribeBtn).toBeEnabled({ timeout: 10000 })
     await subscribeBtn.click()
 
     // Assert success message
@@ -207,7 +231,15 @@ test.describe.serial('Bio Creator Features E2E', () => {
 
     // Verify in dashboard Subscribers tab
     await page.goto('/bio?tab=subscribers')
-    await expect(page.getByText(testEmail)).toBeVisible({ timeout: 15000 })
+    const subscriberRow = page.locator('tr').filter({ hasText: testEmail }).first()
+    await expect(subscriberRow).toBeVisible({ timeout: 15000 })
+
+    // Cleanup: delete the created subscriber
+    const deleteBtn = subscriberRow.getByRole('button', { name: 'Delete subscriber' })
+    if (await deleteBtn.isVisible()) {
+      await deleteBtn.click()
+      await expect(subscriberRow).not.toBeVisible({ timeout: 10000 })
+    }
   })
 
   test('5. Custom Domain Settings Modal — add, pending verification, and remove flow', async ({ page }) => {

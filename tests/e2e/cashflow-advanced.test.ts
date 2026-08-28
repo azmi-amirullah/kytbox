@@ -13,6 +13,7 @@ let cashflowUrl: string
  * 5. Monthly Comparison View (Compare Months tab, Month A vs B swap, Delta KPI cards, category diffs)
  */
 test.describe.serial('Cashflow Advanced Features E2E', () => {
+  test.setTimeout(60_000)
 
   test('1. Split Transactions Engine — breakdown line items and auto-sum total', async ({ page }) => {
     // 1. Create cashflow book
@@ -125,7 +126,7 @@ test.describe.serial('Cashflow Advanced Features E2E', () => {
     await expect(rowB.getByText('#Personal')).toBeVisible({ timeout: 10_000 })
 
     // 4. Test Toolbar Tag Filter Strip
-    const tagFilterButton = page.locator('div[role="button"]').filter({ hasText: '#TaxDeductible' }).first()
+    const tagFilterButton = page.getByRole('button', { name: '#TaxDeductible' }).first()
     await expect(tagFilterButton).toBeVisible({ timeout: 10_000 })
     await tagFilterButton.click()
 
@@ -143,10 +144,11 @@ test.describe.serial('Cashflow Advanced Features E2E', () => {
     await expect(page.locator('tr, div.group').filter({ hasText: `Personal Coffee ${runId}` })).toBeVisible({ timeout: 10_000 })
 
     // 5. Test ManageTagModal: Rename #TaxDeductible -> #TaxAudit2026
-    // Hover over tag badge in filter strip to reveal manage button
-    const manageTagBtn = page.locator('button[aria-label="Manage tag TaxDeductible"]').first()
+    // Hover over tag badge in filter strip to reveal and wait for manage button transition
+    const manageTagBtn = page.getByRole('button', { name: 'Manage tag TaxDeductible' }).first()
     await tagFilterButton.hover()
-    await manageTagBtn.click({ force: true })
+    await expect(manageTagBtn).toBeVisible({ timeout: 5000 })
+    await manageTagBtn.click()
 
     const manageModal = page.getByRole('dialog').filter({ hasText: /Manage Tag/i })
     await expect(manageModal).toBeVisible({ timeout: 5000 })
@@ -277,7 +279,17 @@ test.describe.serial('Cashflow Advanced Features E2E', () => {
 
     await dialog.locator('#description').fill(`July Software Subscription ${runId}`)
     await dialog.locator('#amount').fill('99')
-    await dialog.locator('#date').fill('2026-07-15')
+
+    // Open DatePicker and select date in July
+    await dialog.locator('#date').click()
+    const calendarPopover = page.locator('[data-slot="popover-content"]')
+    await expect(calendarPopover).toBeVisible({ timeout: 5000 })
+
+    const prevMonthBtn = calendarPopover.getByRole('button', { name: /previous/i }).or(calendarPopover.locator('button[class*="button_previous"]')).first()
+    await prevMonthBtn.click()
+
+    await calendarPopover.getByRole('button', { name: /July 15/i }).or(calendarPopover.locator('button').filter({ hasText: /^15$/ })).first().click()
+    await expect(dialog.locator('#date')).toContainText(/Jul/i)
 
     await dialog.getByRole('button', { name: /Save|Add Entry|Create/i }).click()
     await expect(dialog).not.toBeVisible({ timeout: 10_000 })

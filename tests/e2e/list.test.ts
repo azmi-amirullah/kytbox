@@ -27,8 +27,8 @@ test.describe.serial('List App E2E Flow', () => {
     await expect(boardCard).toBeVisible({ timeout: 10000 });
 
     // Open Kanban board
-    await page.getByRole('link', { name: `Open ${testTodoTitle}` }).click();
-    await expect(page).toHaveURL(/\/list\/todo\/.+/);
+    await boardCard.getByRole('link', { name: `Open ${testTodoTitle}` }).click();
+    await page.waitForURL(/\/list\/todo\/.+/, { timeout: 10000 });
 
     // Verify 4 default columns are visible
     await expect(page.getByText('Todo', { exact: true }).first()).toBeVisible();
@@ -66,8 +66,8 @@ test.describe.serial('List App E2E Flow', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 5000 });
 
     // Test drag-and-drop move to Completed column
-    const todoColumn = page.locator('div.w-\\[280px\\]').filter({ hasText: 'Todo' }).first();
-    const completedColumn = page.locator('div.w-\\[280px\\]').filter({ hasText: 'Completed' }).first();
+    const todoColumn = page.locator('div.w-70, div.w-\\[280px\\]').filter({ hasText: 'Todo' }).first();
+    const completedColumn = page.locator('div.w-70, div.w-\\[280px\\]').filter({ hasText: 'Completed' }).first();
 
     // Verify card is currently in Todo column and NOT in Completed column
     await expect(todoColumn.getByText(cardTitle).first()).toBeVisible();
@@ -116,8 +116,8 @@ test.describe.serial('List App E2E Flow', () => {
     await expect(wishlistCard).toBeVisible({ timeout: 10000 });
 
     // Open Wishlist detail
-    await page.getByRole('link', { name: `Open ${testWishlistTitle}` }).click();
-    await expect(page).toHaveURL(/\/list\/wishlist\/.+/);
+    await wishlistCard.getByRole('link', { name: `Open ${testWishlistTitle}` }).click();
+    await page.waitForURL(/\/list\/wishlist\/.+/, { timeout: 10000 });
 
     // Add wish item with title, price, and currency
     await page.getByRole('button', { name: 'Add Wish' }).first().click();
@@ -175,8 +175,9 @@ test.describe.serial('List App E2E Flow', () => {
     await expect(page.getByRole('alertdialog')).not.toBeVisible({ timeout: 5000 });
 
     // 4. Open Idea List Book detail page and verify moved idea is present
-    await ideaCard.getByRole('link', { name: `Open ${testIdeaTitle}` }).click();
-    await expect(page).toHaveURL(/\/list\/ideas\/.+/);
+    const bookLink = page.locator('div.group').filter({ hasText: testIdeaTitle }).first().getByRole('link', { name: `Open ${testIdeaTitle}` });
+    await bookLink.click();
+    await page.waitForURL(/\/list\/ideas\/.+/, { timeout: 10000 });
     await expect(page.getByText(quickIdeaText).first()).toBeVisible({ timeout: 10000 });
 
     // 5. Add another idea directly inside the book
