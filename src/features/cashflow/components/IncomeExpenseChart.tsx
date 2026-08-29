@@ -62,6 +62,7 @@ export function IncomeExpenseChart({
           data={data}
           margin={{ top: 12, right: 12, left: -4, bottom: 0 }}
           barGap={4}
+          barCategoryGap='25%'
         >
           <CartesianGrid
             vertical={false}
@@ -95,7 +96,6 @@ export function IncomeExpenseChart({
             name='income'
             fill='var(--color-income)'
             radius={[4, 4, 0, 0]}
-            maxBarSize={38}
             minPointSize={1}
           />
           <Bar
@@ -103,7 +103,6 @@ export function IncomeExpenseChart({
             name='expense'
             fill='var(--color-expense)'
             radius={[4, 4, 0, 0]}
-            maxBarSize={38}
             minPointSize={1}
           />
         </BarChart>

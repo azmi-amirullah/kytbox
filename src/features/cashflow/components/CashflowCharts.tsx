@@ -70,7 +70,7 @@ export function CashflowCharts({
   )
 
   const monthlyData = useMemo(
-    () => aggregateEntriesByMonth(chartDataItems),
+    () => aggregateEntriesByMonth(chartDataItems, 6),
     [chartDataItems],
   )
 

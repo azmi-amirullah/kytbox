@@ -69,6 +69,18 @@ describe('Cashflow Aggregate Processing', () => {
     it('returns empty array on empty input', () => {
       expect(aggregateEntriesByMonth([])).toEqual([]);
     });
+
+    it('slices to trailing limitMonths while preserving total cumulative balance', () => {
+      const result = aggregateEntriesByMonth(sampleAggregates, 1);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        month: 'Aug',
+        monthKey: '2026-08',
+        income: 4600,
+        expense: 2300,
+        balance: 3800, // Still cumulative from Jul (1500 + 2300)
+      });
+    });
   });
 
   describe('aggregateEntriesByCategory with aggregates', () => {

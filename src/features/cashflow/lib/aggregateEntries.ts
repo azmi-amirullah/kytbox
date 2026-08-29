@@ -14,6 +14,7 @@ export interface MonthlyData {
  */
 export function aggregateEntriesByMonth(
   entries: Array<CashflowEntryDTO | CashflowChartAggregateDTO>,
+  limitMonths?: number,
 ): MonthlyData[] {
   if (entries.length === 0) return [];
 
@@ -40,7 +41,7 @@ export function aggregateEntriesByMonth(
 
   let runningBalance = 0;
 
-  return sortedKeys.map((key) => {
+  const result = sortedKeys.map((key) => {
     const data = monthMap.get(key)!;
     runningBalance += data.income - data.expense;
 
@@ -59,4 +60,10 @@ export function aggregateEntriesByMonth(
       balance: runningBalance,
     };
   });
+
+  if (limitMonths !== undefined && limitMonths > 0) {
+    return result.slice(-limitMonths);
+  }
+
+  return result;
 }
