@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import { useState, useTransition } from 'react';
-import { LuTrash2, LuExternalLink } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useTransition } from 'react'
+import { LuTrash2, LuExternalLink } from 'react-icons/lu'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,19 +13,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import type { ListItemDTO } from '@/types/dto';
-import { toggleItem, deleteItem } from '../actions';
-import { toast } from 'react-toastify';
-import { wishlistMetadataClientSchema } from '../schemas.client';
-import EditWishlistItemModal from './EditWishlistItemModal';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from '@/components/ui/alert-dialog'
+import type { ListItemDTO } from '@/types/dto'
+import { toggleItem, deleteItem } from '../actions'
+import { toast } from 'react-toastify'
+import { wishlistMetadataClientSchema } from '../schemas.client'
+import EditWishlistItemModal from './EditWishlistItemModal'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface WishlistItemRowProps {
-  item: ListItemDTO;
-  onUpdate: (item: ListItemDTO) => void;
-  onDelete: (itemId: string) => void;
+  item: ListItemDTO
+  onUpdate: (item: ListItemDTO) => void
+  onDelete: (itemId: string) => void
 }
 
 export default function WishlistItemRow({
@@ -33,9 +33,9 @@ export default function WishlistItemRow({
   onUpdate,
   onDelete,
 }: WishlistItemRowProps) {
-  const [isPending, startTransition] = useTransition();
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPending, startTransition] = useTransition()
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const {
     attributes,
@@ -47,43 +47,43 @@ export default function WishlistItemRow({
   } = useSortable({
     id: item.id,
     disabled: isPending,
-  });
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? 'none' : transition,
     touchAction: 'none',
-  };
+  }
 
-  const { price: rawPrice, currency: rawCurrency, purchase_url: rawUrl } = wishlistMetadataClientSchema.parse(item.metadata);
-  const price = rawPrice ?? 0;
-  const currency = rawCurrency ?? '';
-  const purchaseUrl = rawUrl ?? undefined;
+  const { price: rawPrice, currency: rawCurrency, purchase_url: rawUrl } = wishlistMetadataClientSchema.parse(item.metadata)
+  const price = rawPrice ?? 0
+  const currency = rawCurrency ?? ''
+  const purchaseUrl = rawUrl ?? undefined
 
   const handleToggle = () => {
-    if (isPending) return;
+    if (isPending) return
     startTransition(async () => {
-      const result = await toggleItem(item.id, !item.is_completed);
+      const result = await toggleItem(item.id, !item.is_completed)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        onUpdate({ ...item, is_completed: !item.is_completed });
+        onUpdate({ ...item, is_completed: !item.is_completed })
       }
-    });
-  };
+    })
+  }
 
   const handleDelete = () => {
-    if (isPending) return;
+    if (isPending) return
     startTransition(async () => {
-      const result = await deleteItem(item.id);
+      const result = await deleteItem(item.id)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        onDelete(item.id);
-        setIsDeleteDialogOpen(false);
+        onDelete(item.id)
+        setIsDeleteDialogOpen(false)
       }
-    });
-  };
+    })
+  }
 
   return (
     <>
@@ -92,18 +92,10 @@ export default function WishlistItemRow({
         style={style}
         {...attributes}
         {...listeners}
-        className={`group flex items-center gap-3 p-4 bg-card border rounded-xl transition-all duration-300 cursor-pointer hover:border-pink-500/30 ${
+        className={`group flex items-center gap-3 p-4 bg-card border rounded-xl transition-all duration-300 hover:border-pink-500/30 ${
           item.is_completed ? 'opacity-60' : ''
         } ${isDragging ? 'shadow-md border-pink-500/30 opacity-50 z-50' : ''}`}
-        role='button'
-        tabIndex={0}
-        onClick={() => setIsEditOpen(true)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsEditOpen(true);
-          }
-        }}
+        role='listitem'
       >
         <Checkbox
           checked={item.is_completed}
@@ -114,7 +106,19 @@ export default function WishlistItemRow({
           aria-label={`Mark "${item.title}" as ${item.is_completed ? 'not purchased' : 'purchased'}`}
         />
 
-        <div className='flex-1 min-w-0'>
+        <div
+          role='button'
+          tabIndex={0}
+          onClick={() => setIsEditOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setIsEditOpen(true)
+            }
+          }}
+          className='flex-1 min-w-0 cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm'
+          aria-label={`Edit wish "${item.title}"`}
+        >
           <span
             className={`text-sm font-medium transition-all duration-300 ${
               item.is_completed ? 'line-through text-muted-foreground' : ''
@@ -147,7 +151,7 @@ export default function WishlistItemRow({
               href={purchaseUrl}
               target='_blank'
               rel='noopener noreferrer'
-              className='text-muted-foreground hover:text-primary transition-colors'
+              className='text-muted-foreground hover:text-primary transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded'
               aria-label={`Open purchase link for "${item.title}"`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -160,8 +164,8 @@ export default function WishlistItemRow({
             size='icon'
             className={`h-7 w-7 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity text-muted-foreground hover:text-destructive ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
             onClick={(e) => {
-              e.stopPropagation();
-              setIsDeleteDialogOpen(true);
+              e.stopPropagation()
+              setIsDeleteDialogOpen(true)
             }}
             aria-label={`Delete "${item.title}"`}
           >
@@ -189,8 +193,8 @@ export default function WishlistItemRow({
             <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
+                e.stopPropagation()
+                handleDelete()
               }}
               disabled={isPending}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
@@ -201,5 +205,5 @@ export default function WishlistItemRow({
         </AlertDialogContent>
       </AlertDialog>
     </>
-  );
+  )
 }

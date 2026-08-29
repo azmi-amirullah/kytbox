@@ -183,9 +183,9 @@ export default function EditTodoModal({
               <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-3 text-muted-foreground/45'>
                   <LuFlag className='w-4 h-4 text-foreground/70' />
-                  <Label htmlFor='edit-priority' className='text-foreground text-sm font-semibold'>
+                  <span className='text-foreground text-sm font-semibold'>
                     Priority
-                  </Label>
+                  </span>
                 </div>
                 {priorityInfo && (
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border font-medium ${priorityInfo.badgeClassName}`}>
@@ -194,7 +194,7 @@ export default function EditTodoModal({
                 )}
               </div>
               <div className='pl-7'>
-                <div className='flex flex-wrap items-center gap-1.5'>
+                <div className='flex flex-wrap items-center gap-1.5' role='group' aria-label='Task priority'>
                   {PRIORITY_OPTIONS.map((opt) => {
                     const isSelected = priority === opt.value
                     return (
@@ -203,6 +203,7 @@ export default function EditTodoModal({
                         type='button'
                         variant='outline'
                         size='sm'
+                        aria-pressed={isSelected}
                         className={`h-8 text-xs px-2.5 gap-1.5 transition-all ${
                           isSelected
                             ? opt.activeClassName
@@ -222,6 +223,7 @@ export default function EditTodoModal({
                       size='sm'
                       className='h-8 text-xs px-2 text-muted-foreground hover:text-destructive'
                       onClick={() => setPriority(null)}
+                      aria-label='Clear task priority'
                     >
                       Clear
                     </Button>
@@ -261,6 +263,7 @@ export default function EditTodoModal({
                       size='sm'
                       className='h-8 text-xs px-2'
                       onClick={() => handleQuickDate(0)}
+                      aria-label='Set due date to today'
                     >
                       Today
                     </Button>
@@ -270,6 +273,7 @@ export default function EditTodoModal({
                       size='sm'
                       className='h-8 text-xs px-2'
                       onClick={() => handleQuickDate(1)}
+                      aria-label='Set due date to tomorrow'
                     >
                       Tomorrow
                     </Button>
@@ -279,6 +283,7 @@ export default function EditTodoModal({
                       size='sm'
                       className='h-8 text-xs px-2'
                       onClick={() => handleQuickDate(7)}
+                      aria-label='Set due date to one week from today'
                     >
                       +1 Week
                     </Button>
@@ -289,6 +294,7 @@ export default function EditTodoModal({
                         size='sm'
                         className='h-8 text-xs px-2 text-muted-foreground hover:text-destructive'
                         onClick={() => handleQuickDate(null)}
+                        aria-label='Clear due date'
                       >
                         Clear
                       </Button>
@@ -303,9 +309,9 @@ export default function EditTodoModal({
               <div className='flex items-center justify-between'>
                 <div className='flex items-center gap-3 text-muted-foreground/45'>
                   <LuRepeat className='w-4 h-4 text-foreground/70' />
-                  <Label htmlFor='edit-recurrence' className='text-foreground text-sm font-semibold'>
+                  <span className='text-foreground text-sm font-semibold'>
                     Repeat / Recurrence
-                  </Label>
+                  </span>
                 </div>
                 {recurrenceInfo && (
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border font-medium ${recurrenceInfo.badgeClassName}`}>
@@ -315,7 +321,7 @@ export default function EditTodoModal({
                 )}
               </div>
               <div className='pl-7'>
-                <div className='flex flex-wrap items-center gap-1.5'>
+                <div className='flex flex-wrap items-center gap-1.5' role='group' aria-label='Task recurrence schedule'>
                   {RECURRENCE_OPTIONS.map((opt) => {
                     const isSelected = recurrenceRule === opt.value
                     return (
@@ -324,6 +330,7 @@ export default function EditTodoModal({
                         type='button'
                         variant='outline'
                         size='sm'
+                        aria-pressed={isSelected}
                         className={`h-8 text-xs px-2.5 gap-1.5 transition-all ${
                           isSelected
                             ? `${opt.badgeClassName} font-semibold shadow-xs`
@@ -342,6 +349,7 @@ export default function EditTodoModal({
                       size='sm'
                       className='h-8 text-xs px-2 text-muted-foreground hover:text-destructive'
                       onClick={() => setRecurrenceRule(null)}
+                      aria-label='Clear recurrence schedule'
                     >
                       Never
                     </Button>

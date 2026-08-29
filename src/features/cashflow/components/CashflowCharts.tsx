@@ -9,7 +9,7 @@ import {
   LuWallet,
   LuArrowDownUp,
 } from 'react-icons/lu'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   Card,
   CardHeader,
@@ -132,122 +132,149 @@ export function CashflowCharts({
 
   return (
     <Card className='gap-0 py-0 rounded-xl overflow-hidden shadow-xs'>
-      <CardHeader className='p-4 sm:p-5 border-b border-border/40 pb-4'>
-        <div className='flex flex-wrap items-center justify-between gap-4 sm:gap-6'>
-          <div className='shrink-0'>
-            <CardTitle className='text-base sm:text-lg font-bold tracking-tight flex items-center gap-2'>
-              <LuChartBarBig className='w-5 h-5 text-primary shrink-0' />
-              Financial Overview
-            </CardTitle>
-            <CardDescription className='text-xs text-muted-foreground mt-0.5'>
-              Monthly breakdown of your transactions
-            </CardDescription>
-          </div>
-          <div className='w-full sm:w-auto'>
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              aria-label='Cashflow charts'
-            >
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        aria-label='Cashflow charts'
+      >
+        <CardHeader className='p-4 sm:p-5 border-b border-border/40 pb-4'>
+          <div className='flex flex-wrap items-center justify-between gap-4 sm:gap-6'>
+            <div className='shrink-0'>
+              <CardTitle className='text-base sm:text-lg font-bold tracking-tight flex items-center gap-2'>
+                <LuChartBarBig className='w-5 h-5 text-primary shrink-0' />
+                Financial Overview
+              </CardTitle>
+              <CardDescription className='text-xs text-muted-foreground mt-0.5'>
+                Monthly breakdown of your transactions
+              </CardDescription>
+            </div>
+            <div className='w-full sm:w-auto'>
               <ResponsiveTabsList
                 tabs={tabs}
                 value={activeTab}
                 onValueChange={setActiveTab}
               />
-            </Tabs>
+            </div>
           </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
 
-      <CardContent className='p-4 sm:p-6'>
-        {activeTab === 'income-expense' && (
-          <IncomeExpenseChart data={monthlyData} currency={currency} />
-        )}
-        {activeTab === 'balance-trend' && (
-          <BalanceTrendChart data={monthlyData} currency={currency} />
-        )}
-        {activeTab === 'categories' && (
-          <div className='space-y-4'>
-            <div className='flex justify-center'>
+        <CardContent className='p-4 sm:p-6'>
+          <TabsContent value='income-expense' className='m-0 outline-none'>
+            <IncomeExpenseChart data={monthlyData} currency={currency} />
+          </TabsContent>
+          <TabsContent value='balance-trend' className='m-0 outline-none'>
+            <BalanceTrendChart data={monthlyData} currency={currency} />
+          </TabsContent>
+          <TabsContent value='categories' className='m-0 outline-none'>
+            <div className='space-y-4'>
               <Tabs
                 value={categoryType}
                 onValueChange={(val) => {
                   if (val === 'income' || val === 'expense')
                     setCategoryType(val)
                 }}
-                className='w-auto'
+                className='w-full'
               >
-                <TabsList className='h-8 bg-muted/60 p-0.5 rounded-lg'>
-                  <TabsTrigger
-                    value='income'
-                    className='text-xs px-3 rounded-md'
-                  >
-                    Income
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value='expense'
-                    className='text-xs px-3 rounded-md'
-                  >
-                    Expense
-                  </TabsTrigger>
-                </TabsList>
+                <div className='flex justify-center'>
+                  <TabsList className='h-8 bg-muted/60 p-0.5 rounded-lg'>
+                    <TabsTrigger
+                      value='income'
+                      className='text-xs px-3 rounded-md'
+                    >
+                      Income
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value='expense'
+                      className='text-xs px-3 rounded-md'
+                    >
+                      Expense
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value='income' className='mt-4 outline-none'>
+                  <CategoryChart
+                    data={categoryData}
+                    currency={currency}
+                    title='Income Breakdown'
+                  />
+                </TabsContent>
+                <TabsContent value='expense' className='mt-4 outline-none'>
+                  <CategoryChart
+                    data={categoryData}
+                    currency={currency}
+                    title='Expense Breakdown'
+                  />
+                </TabsContent>
               </Tabs>
             </div>
-            <CategoryChart
-              data={categoryData}
-              currency={currency}
-              title={`${categoryType === 'income' ? 'Income' : 'Expense'} Breakdown`}
-            />
-          </div>
-        )}
-        {activeTab === 'comparison' && (
-          <MonthlyComparison entries={chartDataItems} currency={currency} />
-        )}
-        {activeTab === 'cashflows' && hasCashflows && (
-          <div className='space-y-4'>
-            <div className='flex justify-center'>
-              <Tabs
-                value={cashflowType}
-                onValueChange={(val) => {
-                  if (
-                    val === 'income' ||
-                    val === 'expense' ||
-                    val === 'balance'
-                  )
-                    setCashflowType(val)
-                }}
-                className='w-auto'
-              >
-                <TabsList className='h-8 bg-muted/60 p-0.5 rounded-lg'>
-                  <TabsTrigger
-                    value='income'
-                    className='text-xs px-3 rounded-md'
-                  >
-                    Income
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value='expense'
-                    className='text-xs px-3 rounded-md'
-                  >
-                    Expense
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value='balance'
-                    className='text-xs px-3 rounded-md'
-                  >
-                    Balance
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            <CategoryChart
-              data={cashflowDistributionData}
-              currency={currency}
-              title={`${cashflowType === 'income' ? 'Income' : cashflowType === 'expense' ? 'Expense' : 'Balance'} by Cashflow`}
-            />
-          </div>
-        )}
-      </CardContent>
+          </TabsContent>
+          <TabsContent value='comparison' className='m-0 outline-none'>
+            <MonthlyComparison entries={chartDataItems} currency={currency} />
+          </TabsContent>
+          {hasCashflows && (
+            <TabsContent value='cashflows' className='m-0 outline-none'>
+              <div className='space-y-4'>
+                <Tabs
+                  value={cashflowType}
+                  onValueChange={(val) => {
+                    if (
+                      val === 'income' ||
+                      val === 'expense' ||
+                      val === 'balance'
+                    )
+                      setCashflowType(val)
+                  }}
+                  className='w-full'
+                >
+                  <div className='flex justify-center'>
+                    <TabsList className='h-8 bg-muted/60 p-0.5 rounded-lg'>
+                      <TabsTrigger
+                        value='income'
+                        className='text-xs px-3 rounded-md'
+                      >
+                        Income
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value='expense'
+                        className='text-xs px-3 rounded-md'
+                      >
+                        Expense
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value='balance'
+                        className='text-xs px-3 rounded-md'
+                      >
+                        Balance
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                  <TabsContent value='income' className='mt-4 outline-none'>
+                    <CategoryChart
+                      data={cashflowDistributionData}
+                      currency={currency}
+                      title='Income by Cashflow'
+                    />
+                  </TabsContent>
+                  <TabsContent value='expense' className='mt-4 outline-none'>
+                    <CategoryChart
+                      data={cashflowDistributionData}
+                      currency={currency}
+                      title='Expense by Cashflow'
+                    />
+                  </TabsContent>
+                  <TabsContent value='balance' className='mt-4 outline-none'>
+                    <CategoryChart
+                      data={cashflowDistributionData}
+                      currency={currency}
+                      title='Balance by Cashflow'
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </TabsContent>
+          )}
+        </CardContent>
+      </Tabs>
     </Card>
   )
 }

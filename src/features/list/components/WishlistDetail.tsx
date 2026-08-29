@@ -159,7 +159,11 @@ export default function WishlistDetail({
             items={items.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className='space-y-2'>
+            <div
+              role='list'
+              aria-label='Wishlist items'
+              className='space-y-2'
+            >
               {items.map((item) => (
                 <WishlistItemRow
                   key={item.id}

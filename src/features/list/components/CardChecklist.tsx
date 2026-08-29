@@ -177,6 +177,7 @@ export default function CardChecklist({
               }`}
               style={{ width: `${percent}%` }}
               role='progressbar'
+              aria-label='Subtasks completion progress'
               aria-valuenow={percent}
               aria-valuemin={0}
               aria-valuemax={100}

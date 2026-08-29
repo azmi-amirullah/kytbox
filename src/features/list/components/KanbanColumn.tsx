@@ -1,12 +1,12 @@
-'use client';
+'use client'
 
-import { useState, useRef, useEffect, useTransition } from 'react';
+import { useState, useRef, useEffect, useTransition } from 'react'
 import {
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   LuPlus,
   LuEllipsisVertical,
@@ -14,29 +14,29 @@ import {
   LuTrash2,
   LuCircleCheck,
   LuCircle,
-} from 'react-icons/lu';
+} from 'react-icons/lu'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import type { ListColumnDTO, ListItemDTO } from '@/types/dto';
-import { updateColumn, toggleDoneColumn } from '../actions';
-import KanbanCard from './KanbanCard';
-import DeleteColumnDialog from './DeleteColumnDialog';
-import { toast } from 'react-toastify';
+} from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import type { ListColumnDTO, ListItemDTO } from '@/types/dto'
+import { updateColumn, toggleDoneColumn } from '../actions'
+import KanbanCard from './KanbanCard'
+import DeleteColumnDialog from './DeleteColumnDialog'
+import { toast } from 'react-toastify'
 
 interface KanbanColumnProps {
-  column: ListColumnDTO;
-  items: ListItemDTO[];
-  onAddCard: (columnId: string, title: string) => void;
-  onColumnDeleted: (columnId: string) => void;
-  onColumnUpdated: (column: ListColumnDTO) => void;
-  onItemUpdated: (item: ListItemDTO) => void;
-  onItemDeleted: (itemId: string) => void;
+  column: ListColumnDTO
+  items: ListItemDTO[]
+  onAddCard: (columnId: string, title: string) => void
+  onColumnDeleted: (columnId: string) => void
+  onColumnUpdated: (column: ListColumnDTO) => void
+  onItemUpdated: (item: ListItemDTO) => void
+  onItemDeleted: (itemId: string) => void
 }
 
 export default function KanbanColumn({
@@ -48,27 +48,27 @@ export default function KanbanColumn({
   onItemUpdated,
   onItemDeleted,
 }: KanbanColumnProps) {
-  const [isAdding, setIsAdding] = useState(false);
-  const [newCardTitle, setNewCardTitle] = useState('');
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editTitle, setEditTitle] = useState(column.title);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [, startTransition] = useTransition();
-  const addCardInputRef = useRef<HTMLInputElement>(null);
-  const editTitleInputRef = useRef<HTMLInputElement>(null);
+  const [isAdding, setIsAdding] = useState(false)
+  const [newCardTitle, setNewCardTitle] = useState('')
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editTitle, setEditTitle] = useState(column.title)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [, startTransition] = useTransition()
+  const addCardInputRef = useRef<HTMLInputElement>(null)
+  const editTitleInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isAdding) {
-      addCardInputRef.current?.focus();
+      addCardInputRef.current?.focus()
     }
-  }, [isAdding]);
+  }, [isAdding])
 
   useEffect(() => {
     if (isEditingTitle) {
-      editTitleInputRef.current?.focus();
-      editTitleInputRef.current?.select();
+      editTitleInputRef.current?.focus()
+      editTitleInputRef.current?.select()
     }
-  }, [isEditingTitle]);
+  }, [isEditingTitle])
 
   const {
     attributes,
@@ -77,57 +77,63 @@ export default function KanbanColumn({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: column.id });
+  } = useSortable({
+    id: column.id,
+    attributes: {
+      role: 'region',
+      tabIndex: -1,
+    },
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-  };
+  }
 
   const handleAddCard = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCardTitle.trim()) return;
-    onAddCard(column.id, newCardTitle.trim());
-    setNewCardTitle('');
-    setIsAdding(false);
-  };
+    e.preventDefault()
+    if (!newCardTitle.trim()) return
+    onAddCard(column.id, newCardTitle.trim())
+    setNewCardTitle('')
+    setIsAdding(false)
+  }
 
   const handleSaveTitle = () => {
-    if (!editTitle.trim()) return;
+    if (!editTitle.trim()) return
 
     startTransition(async () => {
-      const result = await updateColumn(column.id, editTitle.trim());
+      const result = await updateColumn(column.id, editTitle.trim())
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        onColumnUpdated({ ...column, title: editTitle.trim() });
-        setIsEditingTitle(false);
+        onColumnUpdated({ ...column, title: editTitle.trim() })
+        setIsEditingTitle(false)
       }
-    });
-  };
+    })
+  }
 
   const handleToggleDone = () => {
     startTransition(async () => {
-      const result = await toggleDoneColumn(column.id, !column.is_done_column);
+      const result = await toggleDoneColumn(column.id, !column.is_done_column)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
         onColumnUpdated({
           ...column,
           is_done_column: !column.is_done_column,
-        });
+        })
       }
-    });
-  };
+    })
+  }
 
   // Green accent for done columns
   const columnBorderClass = column.is_done_column
     ? 'border-emerald-500/30 bg-emerald-500/5'
-    : 'border-border bg-muted/30';
+    : 'border-border bg-muted/30'
 
   const headerClass = column.is_done_column
     ? 'text-emerald-600 dark:text-emerald-400'
-    : '';
+    : ''
 
   return (
     <>
@@ -155,14 +161,15 @@ export default function KanbanColumn({
                 onChange={(e) => setEditTitle(e.target.value)}
                 onBlur={handleSaveTitle}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveTitle();
+                  if (e.key === 'Enter') handleSaveTitle()
                   if (e.key === 'Escape') {
-                    setEditTitle(column.title);
-                    setIsEditingTitle(false);
+                    setEditTitle(column.title)
+                    setIsEditingTitle(false)
                   }
                 }}
                 className='h-7 text-sm font-semibold'
                 maxLength={50}
+                aria-label='Edit column name'
               />
             ) : (
               <button
@@ -220,7 +227,11 @@ export default function KanbanColumn({
         </div>
 
         {/* Cards */}
-        <div className='flex-1 overflow-y-auto space-y-2 min-h-10'>
+        <div
+          role='list'
+          aria-label={`${column.title} cards`}
+          className='flex-1 overflow-y-auto space-y-2 min-h-10'
+        >
           <SortableContext
             items={items.map((i) => i.id)}
             strategy={verticalListSortingStrategy}
@@ -241,10 +252,11 @@ export default function KanbanColumn({
                 value={newCardTitle}
                 onChange={(e) => setNewCardTitle(e.target.value)}
                 maxLength={300}
+                aria-label='Card title'
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') {
-                    setNewCardTitle('');
-                    setIsAdding(false);
+                    setNewCardTitle('')
+                    setIsAdding(false)
                   }
                 }}
               />
@@ -257,8 +269,8 @@ export default function KanbanColumn({
                   variant='ghost'
                   size='sm'
                   onClick={() => {
-                    setNewCardTitle('');
-                    setIsAdding(false);
+                    setNewCardTitle('')
+                    setIsAdding(false)
                   }}
                 >
                   Cancel
@@ -286,5 +298,5 @@ export default function KanbanColumn({
         onDeleted={onColumnDeleted}
       />
     </>
-  );
+  )
 }

@@ -157,7 +157,11 @@ export default function IdeaDetail({ list, initialItems }: IdeaDetailProps) {
             items={items.map((item) => item.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className='space-y-2'>
+            <div
+              role='list'
+              aria-label='Idea items'
+              className='space-y-2'
+            >
               {items.map((item) => (
                 <IdeaItemRow
                   key={item.id}

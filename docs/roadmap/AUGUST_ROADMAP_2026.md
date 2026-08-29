@@ -28,7 +28,7 @@
 - [x] [Day 18 — List: Card Priority Levels & Filtering](#day-18)
 - [x] [Day 19 — List: Recurring Tasks Engine](#day-19)
 - [x] [Day 20 — List: Advanced Features E2E Test Suite](#day-20)
-- [ ] [Day 21 — Weekly Sprint Audit & Accessibility (WCAG 2.2)](#day-21)
+- [x] [Day 21 — Weekly Sprint Audit & Accessibility (WCAG 2.2)](#day-21)
 - [ ] [Day 22 — Platform: Two-Factor Authentication (TOTP 2FA Setup)](#day-22)
 - [ ] [Day 23 — Platform: 2FA Challenge & Recovery Codes](#day-23)
 - [ ] [Day 24 — Platform: Workspace Global Search (`Cmd+K`)](#day-24)

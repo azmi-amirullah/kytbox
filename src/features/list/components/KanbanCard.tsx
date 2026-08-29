@@ -1,10 +1,10 @@
-'use client';
+'use client'
 
-import { useState, useTransition } from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { LuTrash2, LuCalendar, LuListTodo, LuFlag, LuRepeat } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
+import { useState, useTransition } from 'react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { LuTrash2, LuCalendar, LuListTodo, LuFlag, LuRepeat } from 'react-icons/lu'
+import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,22 +14,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import type { ListItemDTO } from '@/types/dto';
-import { deleteItem, toggleItem } from '../actions';
-import { getDueDateInfo } from '../lib/due-date';
-import { getPriorityBadgeInfo } from '../lib/priority';
-import { getRecurrenceInfo } from '../lib/recurrence';
-import { toast } from 'react-toastify';
-import EditTodoModal from './EditTodoModal';
-import { Checkbox } from '@/components/ui/checkbox';
-
+} from '@/components/ui/alert-dialog'
+import type { ListItemDTO } from '@/types/dto'
+import { deleteItem, toggleItem } from '../actions'
+import { getDueDateInfo } from '../lib/due-date'
+import { getPriorityBadgeInfo } from '../lib/priority'
+import { getRecurrenceInfo } from '../lib/recurrence'
+import { toast } from 'react-toastify'
+import EditTodoModal from './EditTodoModal'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface KanbanCardProps {
-  item: ListItemDTO;
-  isDragging?: boolean;
-  onUpdate?: (item: ListItemDTO) => void;
-  onDelete: (itemId: string) => void;
+  item: ListItemDTO
+  isDragging?: boolean
+  onUpdate?: (item: ListItemDTO) => void
+  onDelete: (itemId: string) => void
 }
 
 export default function KanbanCard({
@@ -38,17 +37,17 @@ export default function KanbanCard({
   onUpdate,
   onDelete,
 }: KanbanCardProps) {
-  const [isPending, startTransition] = useTransition();
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const dueDateInfo = getDueDateInfo(item.due_date, item.is_completed);
-  const priorityInfo = getPriorityBadgeInfo(item.priority);
-  const recurrenceInfo = getRecurrenceInfo(item.recurrence_rule);
-  const subtasks = item.subtasks ?? [];
-  const totalSubtasks = subtasks.length;
-  const completedSubtasks = subtasks.filter((s) => s.is_completed).length;
-  const isAllSubtasksCompleted = totalSubtasks > 0 && completedSubtasks === totalSubtasks;
-  const subtaskPercent = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+  const [isPending, startTransition] = useTransition()
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const dueDateInfo = getDueDateInfo(item.due_date, item.is_completed)
+  const priorityInfo = getPriorityBadgeInfo(item.priority)
+  const recurrenceInfo = getRecurrenceInfo(item.recurrence_rule)
+  const subtasks = item.subtasks ?? []
+  const totalSubtasks = subtasks.length
+  const completedSubtasks = subtasks.filter((s) => s.is_completed).length
+  const isAllSubtasksCompleted = totalSubtasks > 0 && completedSubtasks === totalSubtasks
+  const subtaskPercent = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0
   const {
     attributes,
     listeners,
@@ -59,50 +58,54 @@ export default function KanbanCard({
   } = useSortable({
     id: item.id,
     disabled: isPending,
+    attributes: {
+      role: 'listitem',
+      tabIndex: -1,
+    },
     transition: {
       duration: 150,
       easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
     },
-  });
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-  };
+  }
 
   const handleDelete = () => {
-    if (isPending) return;
+    if (isPending) return
     startTransition(async () => {
-      const result = await deleteItem(item.id);
+      const result = await deleteItem(item.id)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else {
-        onDelete(item.id);
-        setIsDeleteDialogOpen(false);
+        onDelete(item.id)
+        setIsDeleteDialogOpen(false)
       }
-    });
-  };
+    })
+  }
 
   const handleToggle = () => {
-    if (isPending) return;
+    if (isPending) return
     startTransition(async () => {
-      const result = await toggleItem(item.id, !item.is_completed);
+      const result = await toggleItem(item.id, !item.is_completed)
       if (result.error) {
-        toast.error(result.error);
+        toast.error(result.error)
       } else if (result.recurringAdvanced && result.nextDueDate) {
-        toast.success(`🎉 Recurring task completed! Next cycle due on ${result.nextDueDate}`);
-        const resetSubtasks = (item.subtasks ?? []).map((s) => ({ ...s, is_completed: false }));
+        toast.success(`🎉 Recurring task completed! Next cycle due on ${result.nextDueDate}`)
+        const resetSubtasks = (item.subtasks ?? []).map((s) => ({ ...s, is_completed: false }))
         onUpdate?.({
           ...item,
           is_completed: false,
           due_date: result.nextDueDate,
           subtasks: resetSubtasks,
-        });
+        })
       } else {
-        onUpdate?.({ ...item, is_completed: !item.is_completed });
+        onUpdate?.({ ...item, is_completed: !item.is_completed })
       }
-    });
-  };
+    })
+  }
 
   return (
     <>
@@ -133,8 +136,8 @@ export default function KanbanCard({
             onClick={() => setIsEditOpen(true)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setIsEditOpen(true);
+                e.preventDefault()
+                setIsEditOpen(true)
               }
             }}
             className='flex-1 text-left min-w-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 rounded p-0.5 cursor-pointer'
@@ -206,8 +209,8 @@ export default function KanbanCard({
             size='icon'
             className={`h-6 w-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0 ${isPending ? 'cursor-wait' : 'cursor-pointer'}`}
             onClick={(e) => {
-              e.stopPropagation();
-              setIsDeleteDialogOpen(true);
+              e.stopPropagation()
+              setIsDeleteDialogOpen(true)
             }}
             onPointerDown={(e) => e.stopPropagation()}
             aria-label={`Delete "${item.title}"`}
@@ -236,8 +239,8 @@ export default function KanbanCard({
             <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
+                e.stopPropagation()
+                handleDelete()
               }}
               disabled={isPending}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
@@ -248,5 +251,5 @@ export default function KanbanCard({
         </AlertDialogContent>
       </AlertDialog>
     </>
-  );
+  )
 }
