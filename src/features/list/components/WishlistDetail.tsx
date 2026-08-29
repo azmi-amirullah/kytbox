@@ -97,23 +97,25 @@ export default function WishlistDetail({
 
   return (
     <div className='space-y-6'>
-      {/* Breadcrumbs */}
-      <BreadcrumbNav title={list.title} />
+      {/* Header Section */}
+      <div className='space-y-1.5 sm:space-y-2'>
+        <BreadcrumbNav title={list.title} />
 
-      {/* Header */}
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-3xl font-bold tracking-tight'>{list.title}</h1>
-          {list.description && (
-            <p className='text-sm text-muted-foreground mt-1'>
-              {list.description}
-            </p>
-          )}
+        {/* Header */}
+        <div className='flex items-center justify-between'>
+          <div>
+            <h1 className='text-3xl font-bold tracking-tight'>{list.title}</h1>
+            {list.description && (
+              <p className='text-sm text-muted-foreground mt-1'>
+                {list.description}
+              </p>
+            )}
+          </div>
+          <Button onClick={() => setIsAddOpen(true)} className='gap-2 shrink-0'>
+            <LuPlus className='w-4 h-4' />
+            Add Wish
+          </Button>
         </div>
-        <Button onClick={() => setIsAddOpen(true)} className='gap-2 shrink-0'>
-          <LuPlus className='w-4 h-4' />
-          Add Wish
-        </Button>
       </div>
 
       {/* Items */}

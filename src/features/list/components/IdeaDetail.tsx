@@ -92,15 +92,17 @@ export default function IdeaDetail({ list, initialItems }: IdeaDetailProps) {
 
   return (
     <div className='space-y-6'>
-      {/* Breadcrumbs */}
-      <BreadcrumbNav title={list.title} />
+      {/* Header Section */}
+      <div className='space-y-1.5 sm:space-y-2'>
+        <BreadcrumbNav title={list.title} />
 
-      {/* Header */}
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>{list.title}</h1>
-        {list.description && (
-          <p className='text-sm text-muted-foreground mt-1'>{list.description}</p>
-        )}
+        {/* Header */}
+        <div>
+          <h1 className='text-3xl font-bold tracking-tight'>{list.title}</h1>
+          {list.description && (
+            <p className='text-sm text-muted-foreground mt-1'>{list.description}</p>
+          )}
+        </div>
       </div>
 
       {/* Add idea form */}

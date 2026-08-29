@@ -13,6 +13,8 @@ import {
   LuPencil,
   LuTrash2,
   LuLoader,
+  LuArrowUpRight,
+  LuArrowDownRight,
 } from 'react-icons/lu'
 import {
   DropdownMenu,
@@ -212,14 +214,15 @@ export default function CashflowList({
 
   return (
     <div className='space-y-6'>
-      {/* Breadcrumbs */}
-      <BreadcrumbNav />
-        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
-          <div>
-            <h1 className='text-3xl font-bold tracking-tight text-foreground'>
+      {/* Header Section */}
+      <div className='space-y-1.5 sm:space-y-2'>
+        <BreadcrumbNav />
+        <div className='flex items-center justify-between gap-3'>
+          <div className='min-w-0 flex-1'>
+            <h1 className='text-3xl font-bold tracking-tight text-foreground truncate'>
               Cashflow
             </h1>
-            <p className='text-muted-foreground mt-1'>
+            <p className='text-sm sm:text-base text-muted-foreground mt-1 truncate'>
               Track your income and expenses
             </p>
           </div>
@@ -228,6 +231,7 @@ export default function CashflowList({
             New Cashflow
           </Button>
         </div>
+      </div>
 
       {/* Summary Stats */}
       <CashflowSummaryStats
@@ -239,215 +243,172 @@ export default function CashflowList({
 
       {/* Cashflow Sections */}
       {(() => {
-        const renderCashflowItem = (cashflow: CashflowWithSummaryDTO) => (
-          <div
-            key={cashflow.id}
-            className='group relative bg-card border rounded-2xl p-4 sm:p-5 hover:border-primary/40 hover:shadow-lg transition-all overflow-hidden'
-          >
-            <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full min-w-0'>
-              {/* Title & Icon & Actions Header */}
-              <div className='flex items-center justify-between gap-3 min-w-0 flex-1'>
-                <div className='flex items-center gap-3.5 min-w-0'>
-                  <div className='p-2.5 sm:p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0'>
-                    <LuWallet className='w-5 h-5 sm:w-6 sm:h-6' />
-                  </div>
-                  <div className='min-w-0 flex-1'>
-                    <h2 className='font-bold text-base sm:text-lg lg:text-xl group-hover:text-primary transition-colors truncate'>
-                      <Link
-                        href={`/cashflow/${cashflow.id}`}
-                        className='focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
-                      >
-                        {cashflow.title}
-                      </Link>
-                    </h2>
-                    <p className='text-xs sm:text-sm text-muted-foreground font-medium truncate'>
-                      {cashflow.entryCount} transactions
-                    </p>
-                  </div>
-                </div>
+        const renderCashflowItem = (cashflow: CashflowWithSummaryDTO) => {
+          const isPositive = cashflow.balance > 0
+          const isNegative = cashflow.balance < 0
 
-                {/* Action Menu on Mobile/Tablet */}
-                <div className='lg:hidden shrink-0 flex items-center'>
-                  {currentUserId === cashflow.user_id ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        asChild
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                        }}
-                      >
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 rounded-full cursor-pointer'
-                          aria-label={'Actions for ' + cashflow.title}
-                        >
-                          <LuEllipsisVertical
-                            className='w-4 h-4'
-                            aria-hidden='true'
-                          />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align='end'
-                        onCloseAutoFocus={(e) => e.preventDefault()}
-                      >
-                        <DropdownMenuItem
-                          className='cursor-pointer'
-                          onClick={(e) => openShare(e, cashflow)}
-                        >
-                          <LuShare2 className='w-3.5 h-3.5 mr-2' />
-                          Share
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className='cursor-pointer'
-                          onClick={(e) => openEdit(e, cashflow)}
-                        >
-                          <LuPencil className='w-3.5 h-3.5 mr-2' />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className='text-destructive focus:text-destructive cursor-pointer'
-                          onClick={(e) => openDelete(e, cashflow)}
-                        >
-                          <LuTrash2 className='w-3.5 h-3.5 mr-2' />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <div className='flex items-center gap-2'>
-                      <Switch
-                        id={`include-mobile-${cashflow.id}`}
-                        aria-label={`Include ${cashflow.title} in totals`}
-                        checked={includedSharedIds.has(cashflow.id)}
-                        onCheckedChange={() =>
-                          handleToggleInclusion(cashflow.id)
-                        }
-                        className='scale-75 data-[state=checked]:bg-primary'
-                      />
+          return (
+            <div
+              key={cashflow.id}
+              className='group relative bg-card border rounded-2xl p-3.5 sm:p-4.5 hover:border-primary/40 hover:shadow-md transition-all overflow-hidden'
+            >
+              <div className='flex flex-col gap-3 w-full min-w-0'>
+                {/* Header Row: Left (Icon + Title + Txns), Right (Balance + Action Menu) */}
+                <div className='flex items-center justify-between gap-3 min-w-0'>
+                  {/* Title & Icon */}
+                  <div className='flex items-center gap-3 min-w-0 flex-1'>
+                    <div className='p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 border border-emerald-500/15'>
+                      <LuWallet className='w-4.5 h-4.5 sm:w-5 sm:h-5' />
                     </div>
-                  )}
-                </div>
-              </div>
+                    <div className='min-w-0 flex-1'>
+                      <h2 className='font-semibold text-base sm:text-lg group-hover:text-primary transition-colors truncate'>
+                        <Link
+                          href={`/cashflow/${cashflow.id}`}
+                          className='focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
+                        >
+                          {cashflow.title}
+                        </Link>
+                      </h2>
+                      <p className='text-xs text-muted-foreground font-medium truncate'>
+                        {cashflow.entryCount} transactions
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Stats Section: Grid of 3 columns */}
-              <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-border/50 shrink-0 min-w-0'>
-                <div className='grid grid-cols-3 gap-2 sm:gap-4 flex-1 min-w-0'>
-                  {/* Income */}
-                  <div className='flex flex-col min-w-0 lg:items-end'>
-                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate'>
-                      Income
+                  {/* Right: Net Balance with single up/down icon & Action Menu */}
+                  <div className='flex items-center gap-2 sm:gap-3 shrink-0'>
+                    <div
+                      title={`Balance: ${isPositive ? '+' : ''}${cashflow.balance.toLocaleString()}`}
+                      className='flex items-center gap-1 text-right'
+                    >
+                      {isPositive && (
+                        <LuArrowUpRight className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' />
+                      )}
+                      {isNegative && (
+                        <LuArrowDownRight className='w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0' />
+                      )}
+                      <span
+                        className={cn(
+                          'text-sm sm:text-base font-semibold tracking-tight tabular-nums truncate',
+                          isPositive
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : isNegative
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-muted-foreground',
+                        )}
+                      >
+                        {isPositive ? '+' : ''}
+                        {formatCurrencyCompact(cashflow.balance, currency)}
+                      </span>
+                    </div>
+
+                    {/* Action Menu on Mobile / Desktop */}
+                    <div className='shrink-0 flex items-center'>
+                      {currentUserId === cashflow.user_id ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            asChild
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              e.preventDefault()
+                            }}
+                          >
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              className='h-8 w-8 rounded-full cursor-pointer'
+                              aria-label={'Actions for ' + cashflow.title}
+                            >
+                              <LuEllipsisVertical
+                                className='w-4 h-4'
+                                aria-hidden='true'
+                              />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align='end'
+                            onCloseAutoFocus={(e) => e.preventDefault()}
+                          >
+                            <DropdownMenuItem
+                              className='cursor-pointer'
+                              onClick={(e) => openShare(e, cashflow)}
+                            >
+                              <LuShare2 className='w-3.5 h-3.5 mr-2' />
+                              Share
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className='cursor-pointer'
+                              onClick={(e) => openEdit(e, cashflow)}
+                            >
+                              <LuPencil className='w-3.5 h-3.5 mr-2' />
+                              Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className='text-destructive focus:text-destructive cursor-pointer'
+                              onClick={(e) => openDelete(e, cashflow)}
+                            >
+                              <LuTrash2 className='w-3.5 h-3.5 mr-2' />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <div className='flex items-center gap-1.5'>
+                          <Switch
+                            id={`include-${cashflow.id}`}
+                            aria-label={`Include ${cashflow.title} in totals`}
+                            checked={includedSharedIds.has(cashflow.id)}
+                            onCheckedChange={() =>
+                              handleToggleInclusion(cashflow.id)
+                            }
+                            className='scale-75 data-[state=checked]:bg-primary'
+                          />
+                          <Label
+                            htmlFor={`include-${cashflow.id}`}
+                            className='cursor-pointer text-[10px] font-medium text-muted-foreground uppercase tracking-wider hidden sm:inline'
+                          >
+                            Include
+                          </Label>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Metric Row: Dual Inflow / Outflow Pills */}
+                <div className='grid grid-cols-2 gap-2 pt-2.5 border-t border-border/40'>
+                  {/* Inflow Pill */}
+                  <div className='flex items-center justify-between px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/15 text-xs min-w-0'>
+                    <span className='text-muted-foreground font-medium flex items-center gap-1 truncate'>
+                      <LuArrowUpRight className='w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0' />
+                      <span className='truncate'>Inflow</span>
                     </span>
-                    <span className='text-xs sm:text-sm lg:text-base font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums truncate'>
+                    <span
+                      title={`+${cashflow.income.toLocaleString()}`}
+                      className='font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums truncate pl-1'
+                    >
                       +{formatCurrencyCompact(cashflow.income, currency)}
                     </span>
                   </div>
 
-                  {/* Expense */}
-                  <div className='flex flex-col min-w-0 lg:items-end'>
-                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate'>
-                      Expense
+                  {/* Outflow Pill */}
+                  <div className='flex items-center justify-between px-2.5 sm:px-3 py-1.5 rounded-lg bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/15 text-xs min-w-0'>
+                    <span className='text-muted-foreground font-medium flex items-center gap-1 truncate'>
+                      <LuArrowDownRight className='w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0' />
+                      <span className='truncate'>Outflow</span>
                     </span>
-                    <span className='text-xs sm:text-sm lg:text-base font-semibold text-rose-600 dark:text-rose-400 tabular-nums truncate'>
+                    <span
+                      title={`-${cashflow.expense.toLocaleString()}`}
+                      className='font-semibold text-rose-600 dark:text-rose-400 tabular-nums truncate pl-1'
+                    >
                       -{formatCurrencyCompact(cashflow.expense, currency)}
                     </span>
                   </div>
-
-                  {/* Balance */}
-                  <div className='flex flex-col min-w-0 lg:items-end'>
-                    <span className='text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate'>
-                      Balance
-                    </span>
-                    <span
-                      className={cn(
-                        'text-xs sm:text-sm lg:text-base font-black tracking-tight tabular-nums truncate',
-                        cashflow.balance >= 0
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-rose-600 dark:text-rose-400',
-                      )}
-                    >
-                      {cashflow.balance >= 0 ? '+' : ''}
-                      {formatCurrencyCompact(cashflow.balance, currency)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Desktop Action Menu */}
-                <div className='hidden lg:flex items-center shrink-0 pl-2'>
-                  {currentUserId === cashflow.user_id ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        asChild
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                        }}
-                      >
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 rounded-full cursor-pointer'
-                          aria-label={'Actions for ' + cashflow.title}
-                        >
-                          <LuEllipsisVertical
-                            className='w-4 h-4'
-                            aria-hidden='true'
-                          />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align='end'
-                        onCloseAutoFocus={(e) => e.preventDefault()}
-                      >
-                        <DropdownMenuItem
-                          className='cursor-pointer'
-                          onClick={(e) => openShare(e, cashflow)}
-                        >
-                          <LuShare2 className='w-3.5 h-3.5 mr-2' />
-                          Share
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className='cursor-pointer'
-                          onClick={(e) => openEdit(e, cashflow)}
-                        >
-                          <LuPencil className='w-3.5 h-3.5 mr-2' />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className='text-destructive focus:text-destructive cursor-pointer'
-                          onClick={(e) => openDelete(e, cashflow)}
-                        >
-                          <LuTrash2 className='w-3.5 h-3.5 mr-2' />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <div className='flex items-center gap-2'>
-                      <Switch
-                        id={`include-${cashflow.id}`}
-                        aria-label={`Include ${cashflow.title} in totals`}
-                        checked={includedSharedIds.has(cashflow.id)}
-                        onCheckedChange={() =>
-                          handleToggleInclusion(cashflow.id)
-                        }
-                        className='scale-75 data-[state=checked]:bg-primary'
-                      />
-                      <Label
-                        htmlFor={`include-${cashflow.id}`}
-                        className='cursor-pointer text-[10px] font-medium text-muted-foreground uppercase tracking-wider'
-                      >
-                        Include
-                      </Label>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
-          </div>
-        )
+          )
+        }
 
         if (cashflows.length === 0) {
           return (

@@ -343,12 +343,14 @@ export default function KanbanBoard({
 
   return (
     <div className='space-y-6'>
-      {/* Breadcrumbs */}
-      <BreadcrumbNav title={list.title} />
+      {/* Header Section */}
+      <div className='space-y-1.5 sm:space-y-2'>
+        <BreadcrumbNav title={list.title} />
 
-      {/* Header */}
-      <div className='flex items-center justify-between'>
-        <h1 className='text-3xl font-bold tracking-tight'>{list.title}</h1>
+        {/* Header */}
+        <div className='flex items-center justify-between'>
+          <h1 className='text-3xl font-bold tracking-tight'>{list.title}</h1>
+        </div>
       </div>
 
       {/* Filter & Sort Toolbar */}

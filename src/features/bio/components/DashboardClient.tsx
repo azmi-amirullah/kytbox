@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { bioTabSchema, socialLinksSchema } from '../schemas.client'
 import { LuEye, LuLink, LuPalette, LuUsers, LuSettings } from 'react-icons/lu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav'
 import LinksTabContent from './LinksTabContent'
 import PhonePreview from './PhonePreview'
 import AppearanceEditor from './AppearanceEditor'
@@ -133,18 +133,9 @@ export default function DashboardClient({
     <div className='grid lg:grid-cols-[1fr_440px] gap-4 lg:gap-8'>
       {/* Left Column: Editor */}
       <div className='space-y-4 md:space-y-6 min-w-0'>
-        {/* Breadcrumb + Title */}
-        <div>
-          <nav className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
-            <Link
-              href='/app'
-              className='hover:text-foreground transition-colors'
-            >
-              Kytbox
-            </Link>
-            <span className='text-muted-foreground'>/</span>
-            <span className='text-foreground font-medium'>Bio</span>
-          </nav>
+        {/* Header Section */}
+        <div className='space-y-1.5 sm:space-y-2'>
+          <BreadcrumbNav />
           <div className='flex items-center justify-between gap-4'>
             <div>
               <h1 className='text-3xl font-bold tracking-tight text-foreground'>

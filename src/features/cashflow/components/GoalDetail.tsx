@@ -86,23 +86,24 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
 
   return (
     <div className='space-y-6'>
-      {/* Breadcrumbs */}
-      <BreadcrumbNav
-        items={[
-          { label: 'Cashflow', href: '/cashflow' },
-          ...(goal.cashflow_id && goal.cashflow_title
-            ? [
-                {
-                  label: goal.cashflow_title,
-                  href: `/cashflow/${goal.cashflow_id}`,
-                },
-              ]
-            : []),
-          { label: goal.title },
-        ]}
-      />
+      {/* Header Section */}
+      <div className='space-y-1.5 sm:space-y-2'>
+        <BreadcrumbNav
+          items={[
+            { label: 'Cashflow', href: '/cashflow' },
+            ...(goal.cashflow_id && goal.cashflow_title
+              ? [
+                  {
+                    label: goal.cashflow_title,
+                    href: `/cashflow/${goal.cashflow_id}`,
+                  },
+                ]
+              : []),
+            { label: goal.title },
+          ]}
+        />
 
-      {/* Header */}
+        {/* Header */}
         <div className='flex items-center gap-3'>
           <div className='flex-1 min-w-0'>
             <div className='flex items-center gap-2 flex-wrap'>
@@ -128,6 +129,7 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
             </p>
           </div>
         </div>
+      </div>
 
       {/* Progress Card */}
       <motion.div

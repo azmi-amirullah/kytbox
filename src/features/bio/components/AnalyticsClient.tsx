@@ -2,11 +2,8 @@
 
 import { useState, useEffect, useTransition, useRef } from 'react';
 import type { ComponentType } from 'react';
-import Link from 'next/link';
 import {
   LuMousePointer2,
-  LuChevronRight,
-  LuArrowLeft,
   LuLink,
   LuChevronDown,
   LuGlobe,
@@ -14,6 +11,7 @@ import {
   LuPercent,
 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,39 +106,21 @@ export default function AnalyticsClient({
     <div className='space-y-4 md:space-y-6'>
       {/* Header + Actions */}
       <div className='flex flex-col gap-4 md:gap-6'>
-        <div>
-          <nav className='flex items-center gap-1 text-xs sm:text-sm text-muted-foreground mb-3 md:mb-4'>
-            <Link
-              href='/app'
-              className='hover:text-foreground transition-colors'
-            >
-              Kytbox
-            </Link>
-            <LuChevronRight className='w-3 h-3' />
-            <Link
-              href='/bio'
-              className='hover:text-foreground transition-colors'
-            >
-              Bio
-            </Link>
-            <LuChevronRight className='w-3 h-3' />
-            <span className='text-foreground font-medium'>Analytics</span>
-          </nav>
-
-          <div className='flex items-center gap-2 md:gap-4 mb-1 md:mb-2'>
-            <Button variant='ghost' size='icon' asChild className='-ml-2'>
-              <Link href='/bio'>
-                <LuArrowLeft className='w-5! h-5!' />
-              </Link>
-            </Button>
+        <div className='space-y-1.5 sm:space-y-2'>
+          <BreadcrumbNav
+            items={[
+              { label: 'Bio', href: '/bio' },
+              { label: 'Analytics' },
+            ]}
+          />
+          <div>
             <h1 className='text-2xl md:text-3xl font-bold tracking-tight'>
               Analytics
             </h1>
+            <p className='text-sm text-muted-foreground mt-1'>
+              Track your link performance and audience engagement.
+            </p>
           </div>
-
-          <p className='text-sm text-muted-foreground'>
-            Track your link performance and audience engagement.
-          </p>
         </div>
 
         <div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3'>

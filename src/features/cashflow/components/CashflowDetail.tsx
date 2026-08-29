@@ -796,10 +796,11 @@ export default function CashflowDetail({
 
   return (
     <div className='space-y-6'>
-      {/* Breadcrumbs */}
-      <BreadcrumbNav title={cashflow.title} />
+      {/* Header Section */}
+      <div className='space-y-1.5 sm:space-y-2'>
+        <BreadcrumbNav title={cashflow.title} />
 
-      {/* Header */}
+        {/* Header */}
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full'>
           <div className='min-w-0 flex-1'>
             <div className='flex items-start sm:items-center justify-between gap-2 sm:gap-3'>
@@ -1028,6 +1029,7 @@ export default function CashflowDetail({
             </div>
           )}
         </div>
+      </div>
 
       {/* Recurring Entry Generation Banner */}
       {(() => {

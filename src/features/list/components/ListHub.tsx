@@ -54,15 +54,15 @@ const TYPE_CONFIG: {
 export default function ListHub({ counts }: ListHubProps) {
   return (
     <div className='space-y-8'>
-      {/* Breadcrumbs */}
-      <BreadcrumbNav />
-
-      {/* Header */}
-      <div>
-        <h1 className='text-2xl font-bold tracking-tight'>List</h1>
-        <p className='text-muted-foreground mt-1'>
-          Organize your tasks, wishes, and ideas in one place.
-        </p>
+      {/* Header Section */}
+      <div className='space-y-1.5 sm:space-y-2'>
+        <BreadcrumbNav />
+        <div>
+          <h1 className='text-2xl font-bold tracking-tight'>List</h1>
+          <p className='text-muted-foreground mt-1'>
+            Organize your tasks, wishes, and ideas in one place.
+          </p>
+        </div>
       </div>
 
       {/* Type Cards */}

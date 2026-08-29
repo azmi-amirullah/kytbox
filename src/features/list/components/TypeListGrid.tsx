@@ -74,40 +74,42 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
 
   return (
     <div className='space-y-6'>
-      {/* Breadcrumbs */}
-      <BreadcrumbNav backLabel='Back to Lists' />
+      {/* Header Section */}
+      <div className='space-y-1.5 sm:space-y-2'>
+        <BreadcrumbNav backLabel='Lists' />
 
-      {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
-        <div>
-          <h1 className='text-2xl font-bold tracking-tight'>{meta.label}</h1>
-          <p className='text-muted-foreground text-sm mt-1'>
-            {lists.length}{' '}
-            {lists.length === 1
-              ? meta.singular.toLowerCase()
-              : `${meta.singular.toLowerCase()}s`}
-          </p>
-        </div>
-        <div className='flex items-center gap-2'>
-          {type === 'todo' && (
+        {/* Header */}
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+          <div>
+            <h1 className='text-2xl font-bold tracking-tight'>{meta.label}</h1>
+            <p className='text-muted-foreground text-sm mt-1'>
+              {lists.length}{' '}
+              {lists.length === 1
+                ? meta.singular.toLowerCase()
+                : `${meta.singular.toLowerCase()}s`}
+            </p>
+          </div>
+          <div className='flex items-center gap-2'>
+            {type === 'todo' && (
+              <Button
+                variant='outline'
+                onClick={() => setIsTemplatePickerOpen(true)}
+                className='gap-2'
+                id='open-template-picker'
+                aria-label='Browse board templates'
+              >
+                Templates
+              </Button>
+            )}
             <Button
-              variant='outline'
-              onClick={() => setIsTemplatePickerOpen(true)}
+              onClick={() => setIsCreateOpen(true)}
               className='gap-2'
-              id='open-template-picker'
-              aria-label='Browse board templates'
+              id='create-new-list'
             >
-              Templates
+              <LuPlus className='w-4 h-4' aria-hidden='true' />
+              New {meta.singular}
             </Button>
-          )}
-          <Button
-            onClick={() => setIsCreateOpen(true)}
-            className='gap-2'
-            id='create-new-list'
-          >
-            <LuPlus className='w-4 h-4' aria-hidden='true' />
-            New {meta.singular}
-          </Button>
+          </div>
         </div>
       </div>
 
