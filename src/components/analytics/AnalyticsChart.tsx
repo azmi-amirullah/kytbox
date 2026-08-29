@@ -69,8 +69,13 @@ export function AnalyticsChart({
         )}
       </div>
 
-      <div className='h-55 w-full'>
-        <ResponsiveContainer width='100%' height='100%'>
+      <div className='h-55 w-full min-w-0'>
+        <ResponsiveContainer
+          width='100%'
+          height='100%'
+          minWidth={0}
+          initialDimension={{ width: 320, height: 200 }}
+        >
             <BarChart data={data}>
               <CartesianGrid vertical={false} className='stroke-border' />
               <XAxis

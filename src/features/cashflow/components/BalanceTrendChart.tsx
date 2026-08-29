@@ -52,7 +52,7 @@ export function BalanceTrendChart({ data, currency }: BalanceTrendChartProps) {
   };
 
   return (
-    <div className='w-full'>
+    <div className='w-full min-w-0'>
       <ChartContainer
         config={chartConfig}
         className='h-72 sm:h-80 w-full aspect-auto'
