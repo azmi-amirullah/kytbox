@@ -1125,7 +1125,10 @@ export default function CashflowDetail({
         }
 
         return (
-          <div className='bg-emerald-50/30 border border-emerald-200/30 dark:bg-emerald-950/10 dark:border-emerald-800/20 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
+          <div
+            suppressHydrationWarning
+            className='bg-emerald-50/30 border border-emerald-200/30 dark:bg-emerald-950/10 dark:border-emerald-800/20 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4'
+          >
             <div className='flex items-center gap-3 flex-1'>
               <div className='p-2 bg-emerald-50/50 border border-emerald-200/30 dark:bg-emerald-950/40 rounded-lg text-emerald-600 dark:text-emerald-400 shrink-0 self-start sm:self-center'>
                 <LuRepeat className='w-5 h-5 animate-pulse' />
@@ -1577,10 +1580,15 @@ export default function CashflowDetail({
                         </TableCell>
                         <TableCell className='text-muted-foreground text-xs border-r border-border/30 text-nowrap'>
                           {entry.created_at ? (
-                            format(
-                              new Date(entry.created_at),
-                              'dd MMM yyyy, HH:mm',
-                            )
+                            <time
+                              dateTime={entry.created_at}
+                              suppressHydrationWarning
+                            >
+                              {format(
+                                new Date(entry.created_at),
+                                'dd MMM yyyy, HH:mm',
+                              )}
+                            </time>
                           ) : (
                             <span className='text-muted-foreground/50'>—</span>
                           )}
@@ -1631,7 +1639,9 @@ export default function CashflowDetail({
                               {formatAppDate(entry.date)}
                             </span>
                             {entry.created_at && (
-                              <span
+                              <time
+                                dateTime={entry.created_at}
+                                suppressHydrationWarning
                                 className='text-[10px] text-muted-foreground/70'
                                 title={`Created: ${new Date(entry.created_at).toLocaleString()}`}
                               >
@@ -1641,7 +1651,7 @@ export default function CashflowDetail({
                                   'dd MMM, HH:mm',
                                 )}
                                 )
-                              </span>
+                              </time>
                             )}
                             <EntryTypeBadge type={entry.type} />
                           </div>
