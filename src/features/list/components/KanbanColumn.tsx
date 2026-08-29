@@ -140,7 +140,7 @@ export default function KanbanColumn({
       <div
         ref={setNodeRef}
         style={style}
-        className={`min-w-70 w-70 shrink-0 rounded-xl border p-3 flex flex-col max-h-[calc(100vh-200px)] ${columnBorderClass} ${
+        className={`min-w-70 w-70 shrink-0 rounded-xl border p-3 flex flex-col max-h-[calc(100vh-140px)] ${columnBorderClass} ${
           isDragging ? 'opacity-40 border-dashed' : ''
         }`}
       >
@@ -230,7 +230,7 @@ export default function KanbanColumn({
         <div
           role='list'
           aria-label={`${column.title} cards`}
-          className='flex-1 overflow-y-auto space-y-2 min-h-10'
+          className='flex-1 overflow-y-auto space-y-2 min-h-10 pr-1 custom-scrollbar'
         >
           <SortableContext
             items={items.map((i) => i.id)}

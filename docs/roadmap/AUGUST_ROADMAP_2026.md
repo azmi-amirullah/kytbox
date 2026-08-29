@@ -29,8 +29,8 @@
 - [x] [Day 19 — List: Recurring Tasks Engine](#day-19)
 - [x] [Day 20 — List: Advanced Features E2E Test Suite](#day-20)
 - [x] [Day 21 — Weekly Sprint Audit & Accessibility (WCAG 2.2)](#day-21)
-- [ ] [Day 22 — Platform: Two-Factor Authentication (TOTP 2FA Setup)](#day-22)
-- [ ] [Day 23 — Platform: 2FA Challenge & Recovery Codes](#day-23)
+- [x] [Day 22 — List: Interactive Calendar View (`Month / Week Grid`)](#day-22)
+- [ ] [Day 23 — Cashflow: Financial PDF Statement & Monthly Report Generator](#day-23)
 - [ ] [Day 24 — Platform: Workspace Global Search (`Cmd+K`)](#day-24)
 - [ ] [Day 25 — Platform: One-Click GDPR Data Export](#day-25)
 - [ ] [Day 26 — Platform: Session Management Dashboard](#day-26)
@@ -45,9 +45,9 @@
 ## 🎯 Strategic Goals
 
 1. **Bio App Depth & Creator Tools**: Custom Domains, SEO Metadata Editor, Lead Capture Forms, Custom Thumbnails, Pinned Links, and Sensitive Content Warnings.
-2. **Cashflow Productivity**: Receipt/Attachment Uploads, CSV/Bank Import, Monthly Comparison Views, Split Transactions, and Custom Tags/Labels.
-3. **List App Power Features**: Due Dates & Reminders, Card Subtasks/Checklists, Pre-built Board Templates, Priority Levels, and Recurring Tasks Engine.
-4. **Platform Security & Growth**: Two-Factor Authentication (TOTP 2FA), Workspace Global Search (`Cmd+K`), One-Click GDPR Data Export, and Multi-language Support (`next-intl` i18n).
+2. **Cashflow Productivity**: Receipt/Attachment Uploads, CSV/Bank Import, Monthly Comparison Views, Split Transactions, Custom Tags/Labels, and Financial PDF Statement Generator.
+3. **List App Power Features**: Due Dates & Reminders, Card Subtasks/Checklists, Pre-built Board Templates, Priority Levels, Recurring Tasks Engine, and Interactive Calendar View.
+4. **Platform Power & Global Accessibility**: Workspace Global Search (`Cmd+K`), One-Click GDPR Data Export, Session Management, and Multi-language Support (`next-intl` i18n).
 
 ---
 
@@ -304,27 +304,28 @@
 
 ---
 
-### Week 4 — Platform Security & Search Features (Aug 22 - Aug 28)
+### Week 4 — Power Productivity, Search & Data Portability (Aug 22 - Aug 28)
 
 <a id="day-22"></a>
-#### Day 22 — Saturday, Aug 22 | 🛡️ Security
-##### Platform: Two-Factor Authentication (TOTP 2FA Setup)
-- **Why**: Account security is paramount. Time-based One-Time Password (TOTP) 2FA using Google Authenticator / 1Password builds user trust and protects sensitive financial/bio data.
+#### Day 22 — Saturday, Aug 22 | ✨ Feature
+##### List: Interactive Calendar View (`Month / Week Grid`)
+- **Why**: Kanban boards are great for status workflows, but fail at visualizing time horizons and deadlines. An interactive calendar view maps cards with `due_date` onto a month/week grid, allowing users to spot crunch days, reschedule cards via drag/drop or click, and view overdue items at a glance.
 - **Implementation Blueprint**:
-  - Add `two_factor_secret`, `two_factor_enabled: boolean` columns to `profiles`.
-  - Generate QR code string using `otplib` and render SVG via `qrcode` npm package.
-  - Verify TOTP token on setup completion.
+  - Build responsive Calendar view component `src/features/list/components/CalendarView.tsx`.
+  - Integrate date grid computation (Month / Week toggle) grouping cards by `due_date`.
+  - Add quick status toggle, priority badges, and click-to-edit modal opening from calendar tiles.
+  - Integrate view mode switcher (`Kanban` | `Calendar`) in board header.
 
 ---
 
 <a id="day-23"></a>
-#### Day 23 — Sunday, Aug 23 | 🛡️ Security
-##### Platform: 2FA Challenge at Auth Boundary & Recovery Codes
-- **Why**: Enabling 2FA must enforce a verification code prompt during login and sensitive account changes, alongside 10 single-use emergency recovery codes if users lose their authenticator device.
+#### Day 23 — Sunday, Aug 23 | ✨ Feature
+##### Cashflow: Financial PDF Statement & Monthly Report Generator
+- **Why**: Financial data locked inside the app is useless when filing taxes, auditing expenses with an accountant, or sharing summaries with partners. A one-click printable / PDF statement report packages monthly totals, category breakdowns, top expenses, and split transactions into a clean, professional document.
 - **Implementation Blueprint**:
-  - Store hashed `recovery_codes: string[]` on `profiles`.
-  - Middleware/proxy 2FA session verification flag `is_2fa_verified`.
-  - Build recovery code generation modal `RecoveryCodesModal.tsx`.
+  - Build dedicated print-optimized report template / component `src/features/cashflow/components/FinancialReportModal.tsx`.
+  - Include summary KPI strip (Total Income, Total Expense, Net Savings, Savings Rate), category distribution summary table, and itemized transaction ledger.
+  - Implement browser print pipeline with `@media print` stylesheets and PDF download trigger (`window.print()` / formatted document download).
 
 ---
 
@@ -413,9 +414,9 @@
 | Category | Days | Primary Deliverables |
 | :--- | :---: | :--- |
 | 🔗 **Bio App** | 6 | SEO Editor, Custom Thumbnails, Lead Capture, Pinned Links, Custom Domains, Bio E2E |
-| 💰 **Cashflow App** | 6 | Receipt Uploads, CSV Bank Import, Monthly Comparison, Custom Tags, Split Transactions, Cashflow E2E |
-| 📋 **List App** | 6 | Due Dates & Reminders, Subtasks, Board Templates, Priority Levels, Recurring Tasks, List E2E |
-| 🛡️ **Platform Security** | 6 | TOTP 2FA, 2FA Enforcement, Global Search, GDPR Data Export, Session Manager, Platform E2E |
+| 💰 **Cashflow App** | 7 | Receipt Uploads, CSV Bank Import, Monthly Comparison, Custom Tags, Split Transactions, PDF Report Export, Cashflow E2E |
+| 📋 **List App** | 7 | Due Dates & Reminders, Subtasks, Board Templates, Priority Levels, Recurring Tasks, Calendar View, List E2E |
+| 🛡️ **Platform & Search** | 4 | Global Search (Cmd+K), GDPR Data Export, Session Manager, Platform E2E |
 | 🌐 **Platform / i18n** | 3 | Internationalization Setup, Locale Translations, Retrospective & Planning |
 
 ---
@@ -450,7 +451,6 @@
 | Idea | Description | Impact | Effort |
 | --- | --- | --- | --- |
 | **Bulk Edit/Delete** | Select multiple entries → change category, delete, or shift dates | 🔥🔥 | ~3h |
-| **PDF Report Export** | Generate a formatted PDF summary (income, expense, charts, budgets) | 🔥🔥 | ~4h |
 | **Expense Splitting** | Splitwise-style shared expenses ("Alice owes Bob $20 for dinner") | 🔥🔥 | ~6h |
 | **Net Worth Tracker** | Track total assets + liabilities across all cashflow books | 🔥🔥 | ~4h |
 | **Currency Conversion** | Multi-currency cashflows with auto-conversion rates | 🔥 | ~5h |
@@ -465,7 +465,6 @@
 
 | Idea | Description | Impact | Effort |
 | --- | --- | --- | --- |
-| **Calendar View** | View Todo cards with due dates on a calendar grid | 🔥🔥 | ~5h |
 | **Assign to Collaborators** | Assign cards to specific people when sharing is active | 🔥🔥 | ~4h |
 | **Wishlist Price Alerts** | Auto-scrape price from `purchase_url`, notify when price drops | 🔥🔥🔥 | ~6h |
 | **Import from Trello/Notion** | JSON/CSV import for users migrating from competitor tools | 🔥🔥 | ~4h |
@@ -482,6 +481,7 @@
 
 | Idea | Description | Impact | Effort |
 | --- | --- | --- | --- |
+| **Two-Factor Auth (TOTP 2FA)** | Authenticator app 2FA (QR code setup + recovery codes) for enterprise security | 🔥🔥 | ~6h |
 | **Browser Extension** | Quick-add links to Bio from any webpage | 🔥🔥 | ~6h |
 | **Telegram/Discord Bot** | Add cashflow entries or check bio stats from chat | 🔥🔥 | ~5h |
 | **API Access + Webhooks** | Public developer API for integrations and webhooks | 🔥🔥 | ~6h |

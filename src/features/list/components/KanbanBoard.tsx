@@ -24,6 +24,8 @@ import {
   LuFilter,
   LuX,
   LuCheck,
+  LuColumns2,
+  LuCalendar,
 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
@@ -44,6 +46,7 @@ import {
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import AddColumnModal from './AddColumnModal';
+import CalendarView from './CalendarView';
 import { toast } from 'react-toastify';
 import type { DropAnimation } from '@dnd-kit/core';
 
@@ -79,6 +82,7 @@ export default function KanbanBoard({
 }: KanbanBoardProps) {
   const [columns, setColumns] = useState(initialColumns);
   const [items, setItems] = useState(initialItems);
+  const [viewMode, setViewMode] = useState<'kanban' | 'calendar'>('kanban');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
   const [filterPriority, setFilterPriority] = useState<PriorityFilterOption>('all');
@@ -348,165 +352,209 @@ export default function KanbanBoard({
         <BreadcrumbNav title={list.title} />
 
         {/* Header */}
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-wrap items-center justify-between gap-3'>
           <h1 className='text-3xl font-bold tracking-tight'>{list.title}</h1>
-        </div>
-      </div>
 
-      {/* Filter & Sort Toolbar */}
-      <div className='flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-border/50'>
-        {/* Priority Filters */}
-        <div className='flex flex-wrap items-center gap-1.5'>
-          <span className='text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1'>
-            <LuFilter className='w-3.5 h-3.5' />
-            Filter:
-          </span>
-          <Button
-            type='button'
-            variant={filterPriority === 'all' ? 'secondary' : 'ghost'}
-            size='sm'
-            className={`h-7 text-xs px-2.5 rounded-full ${
-              filterPriority === 'all'
-                ? 'bg-secondary font-semibold text-foreground shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            onClick={() => setFilterPriority('all')}
-          >
-            All
-            <span className='ml-1 text-xs opacity-75'>({priorityCounts.all})</span>
-          </Button>
-          {(['urgent', 'high', 'medium', 'low'] as const).map((p) => {
-            const cfg = PRIORITY_CONFIG[p];
-            const isSelected = filterPriority === p;
-            const count = priorityCounts[p] || 0;
-            return (
-              <Button
-                key={p}
-                type='button'
-                variant='ghost'
-                size='sm'
-                className={`h-7 text-xs px-2.5 rounded-full border transition-all ${
-                  isSelected
-                    ? `${cfg.activeClassName} font-semibold shadow-xs`
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
-                onClick={() => setFilterPriority(isSelected ? 'all' : p)}
-              >
-                <span className={`w-2 h-2 rounded-full ${cfg.dotClassName}`} />
-                {cfg.label}
-                <span className='text-xs opacity-75'>({count})</span>
-              </Button>
-            );
-          })}
-          {filterPriority !== 'all' && (
+          {/* View Mode Switcher: Kanban vs Calendar */}
+          <div className='flex items-center rounded-lg border border-border/80 p-0.5 bg-muted/40 shadow-2xs'>
             <Button
               type='button'
-              variant='ghost'
+              variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
               size='sm'
-              className='h-7 text-xs px-2 text-muted-foreground hover:text-destructive gap-1'
-              onClick={() => setFilterPriority('all')}
+              className={`h-8 px-3 text-xs font-medium rounded-md gap-1.5 transition-all ${
+                viewMode === 'kanban'
+                  ? 'bg-background text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setViewMode('kanban')}
             >
-              <LuX className='w-3 h-3' />
-              Reset
+              <LuColumns2 className='w-3.5 h-3.5' />
+              <span>Kanban</span>
             </Button>
-          )}
-        </div>
-
-        {/* Sort Dropdown */}
-        <div className='flex items-center gap-2'>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant={sortOption !== 'manual' ? 'secondary' : 'outline'}
-                size='sm'
-                className={`h-7 text-xs px-2.5 gap-1.5 ${sortOption !== 'manual' ? 'border-primary/30 font-medium' : ''}`}
-              >
-                <LuArrowUpDown className='w-3.5 h-3.5' />
-                <span>Sort: {SORT_LABELS[sortOption]}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-48'>
-              {SORT_OPTIONS.map((opt) => (
-                <DropdownMenuItem
-                  key={opt.value}
-                  className='flex items-center justify-between text-xs cursor-pointer'
-                  onClick={() => setSortOption(opt.value)}
-                >
-                  <span>{opt.label}</span>
-                  {sortOption === opt.value && <LuCheck className='w-3.5 h-3.5 text-primary' />}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Board */}
-      <DndContext
-        id={`kanban-board-${list.id}`}
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <div className='flex items-start gap-4 overflow-x-auto pb-4 -mx-4 px-4'>
-          <SortableContext
-            items={columns.map((c) => c.id)}
-            strategy={horizontalListSortingStrategy}
-          >
-            {columns.map((column) => (
-              <KanbanColumn
-                key={column.id}
-                column={column}
-                items={grouped[column.id] || []}
-                onAddCard={handleAddCard}
-                onColumnDeleted={handleColumnDeleted}
-                onColumnUpdated={handleColumnUpdated}
-                onItemUpdated={handleItemUpdated}
-                onItemDeleted={handleItemDeleted}
-              />
-            ))}
-          </SortableContext>
-
-          {/* Add column button */}
-          <div className='min-w-70 shrink-0'>
             <Button
-              variant='outline'
-              className='w-full h-12 border-dashed gap-2'
-              onClick={() => setIsAddColumnOpen(true)}
+              type='button'
+              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+              size='sm'
+              className={`h-8 px-3 text-xs font-medium rounded-md gap-1.5 transition-all ${
+                viewMode === 'calendar'
+                  ? 'bg-background text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setViewMode('calendar')}
             >
-              <LuPlus className='w-4 h-4' />
-              Add Column
+              <LuCalendar className='w-3.5 h-3.5' />
+              <span>Calendar</span>
             </Button>
           </div>
         </div>
+      </div>
 
-        <DragOverlay dropAnimation={DROP_ANIMATION}>
-          {activeItem ? (
-            <KanbanCard item={activeItem} isDragging onDelete={() => {}} />
-          ) : activeColumn ? (
-            <div className='opacity-80 rotate-1 scale-105 shadow-2xl'>
-              <KanbanColumn
-                column={activeColumn}
-                items={grouped[activeColumn.id] || []}
-                onAddCard={() => {}}
-                onColumnDeleted={() => {}}
-                onColumnUpdated={() => {}}
-                onItemUpdated={() => {}}
-                onItemDeleted={() => {}}
-              />
+      {viewMode === 'calendar' ? (
+        <CalendarView
+          list={list}
+          columns={columns}
+          items={items}
+          onItemUpdated={handleItemUpdated}
+          onItemAdded={(newItem) => setItems((prev) => [...prev, newItem])}
+        />
+      ) : (
+        <>
+          {/* Filter & Sort Toolbar */}
+          <div className='flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-border/50'>
+            {/* Priority Filters */}
+            <div className='flex flex-wrap items-center gap-1.5'>
+              <span className='text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1'>
+                <LuFilter className='w-3.5 h-3.5' />
+                Filter:
+              </span>
+              <Button
+                type='button'
+                variant={filterPriority === 'all' ? 'secondary' : 'ghost'}
+                size='sm'
+                className={`h-7 text-xs px-2.5 rounded-full ${
+                  filterPriority === 'all'
+                    ? 'bg-secondary font-semibold text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={() => setFilterPriority('all')}
+              >
+                All
+                <span className='ml-1 text-xs opacity-75'>({priorityCounts.all})</span>
+              </Button>
+              {(['urgent', 'high', 'medium', 'low'] as const).map((p) => {
+                const cfg = PRIORITY_CONFIG[p];
+                const isSelected = filterPriority === p;
+                const count = priorityCounts[p] || 0;
+                return (
+                  <Button
+                    key={p}
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className={`h-7 text-xs px-2.5 rounded-full border transition-all ${
+                      isSelected
+                        ? `${cfg.activeClassName} font-semibold shadow-xs`
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                    onClick={() => setFilterPriority(isSelected ? 'all' : p)}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${cfg.dotClassName}`} />
+                    {cfg.label}
+                    <span className='text-xs opacity-75'>({count})</span>
+                  </Button>
+                );
+              })}
+              {filterPriority !== 'all' && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  className='h-7 text-xs px-2 text-muted-foreground hover:text-destructive gap-1'
+                  onClick={() => setFilterPriority('all')}
+                >
+                  <LuX className='w-3 h-3' />
+                  Reset
+                </Button>
+              )}
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
 
-      <AddColumnModal
-        listId={list.id}
-        open={isAddColumnOpen}
-        onOpenChange={setIsAddColumnOpen}
-        onColumnAdded={handleColumnAdded}
-      />
+            {/* Sort Dropdown */}
+            <div className='flex items-center gap-2'>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={sortOption !== 'manual' ? 'secondary' : 'outline'}
+                    size='sm'
+                    className={`h-7 text-xs px-2.5 gap-1.5 ${sortOption !== 'manual' ? 'border-primary/30 font-medium' : ''}`}
+                  >
+                    <LuArrowUpDown className='w-3.5 h-3.5' />
+                    <span>Sort: {SORT_LABELS[sortOption]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end' className='w-48'>
+                  {SORT_OPTIONS.map((opt) => (
+                    <DropdownMenuItem
+                      key={opt.value}
+                      className='flex items-center justify-between text-xs cursor-pointer'
+                      onClick={() => setSortOption(opt.value)}
+                    >
+                      <span>{opt.label}</span>
+                      {sortOption === opt.value && <LuCheck className='w-3.5 h-3.5 text-primary' />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Board */}
+          <DndContext
+            id={`kanban-board-${list.id}`}
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <div className='flex items-start gap-4 overflow-x-auto pb-4 -mx-4 px-4'>
+              <SortableContext
+                items={columns.map((c) => c.id)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {columns.map((column) => (
+                  <KanbanColumn
+                    key={column.id}
+                    column={column}
+                    items={grouped[column.id] || []}
+                    onAddCard={handleAddCard}
+                    onColumnDeleted={handleColumnDeleted}
+                    onColumnUpdated={handleColumnUpdated}
+                    onItemUpdated={handleItemUpdated}
+                    onItemDeleted={handleItemDeleted}
+                  />
+                ))}
+              </SortableContext>
+
+              {/* Add column button */}
+              <div className='min-w-70 shrink-0'>
+                <Button
+                  variant='outline'
+                  className='w-full h-12 border-dashed gap-2'
+                  onClick={() => setIsAddColumnOpen(true)}
+                >
+                  <LuPlus className='w-4 h-4' />
+                  Add Column
+                </Button>
+              </div>
+            </div>
+
+            <DragOverlay dropAnimation={DROP_ANIMATION}>
+              {activeItem ? (
+                <KanbanCard item={activeItem} isDragging onDelete={() => {}} />
+              ) : activeColumn ? (
+                <div className='opacity-80 rotate-1 scale-105 shadow-2xl'>
+                  <KanbanColumn
+                    column={activeColumn}
+                    items={grouped[activeColumn.id] || []}
+                    onAddCard={() => {}}
+                    onColumnDeleted={() => {}}
+                    onColumnUpdated={() => {}}
+                    onItemUpdated={() => {}}
+                    onItemDeleted={() => {}}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+
+          <AddColumnModal
+            listId={list.id}
+            open={isAddColumnOpen}
+            onOpenChange={setIsAddColumnOpen}
+            onColumnAdded={handleColumnAdded}
+          />
+        </>
+      )}
     </div>
   );
 }
