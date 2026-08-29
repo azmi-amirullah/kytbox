@@ -17,11 +17,18 @@ export default function CashflowRootError({
   const pathname = usePathname()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
 
+  const isNetworkError =
+    error?.message?.toLowerCase().includes('load failed') ||
+    error?.message?.toLowerCase().includes('failed to fetch') ||
+    error?.message?.toLowerCase().includes('networkerror') ||
+    error?.name === 'AbortError'
+
   useEffect(() => {
     console.error('Cashflow Route Error:', error, { path: pathname })
     Sentry.captureException(error, {
-      tags: { path: pathname },
+      tags: { path: pathname, is_network_error: isNetworkError ? 'true' : 'false' },
       extra: { digest: error.digest },
+      level: isNetworkError ? 'warning' : 'error',
     })
 
     const checkAuth = async () => {
@@ -33,7 +40,7 @@ export default function CashflowRootError({
     }
 
     checkAuth()
-  }, [error, pathname])
+  }, [error, pathname, isNetworkError])
 
   const supportLink = isLoggedIn ? (
     <Link href='/support' className='text-primary underline hover:opacity-80'>
@@ -52,13 +59,20 @@ export default function CashflowRootError({
     <div className='flex items-center justify-center min-h-125 w-full p-6'>
       <ErrorState
         variant='card'
-        title='Cashflow System Error'
+        title={isNetworkError ? 'Connection Interrupted' : 'Cashflow System Error'}
         context={pathname}
         description={
-          <>
-            We couldn&apos;t load the cashflow details. Please try again or
-            contact us at {supportLink}.
-          </>
+          isNetworkError ? (
+            <>
+              We couldn&apos;t refresh the view because the network connection was interrupted.
+              Any saved changes are safe in your account.
+            </>
+          ) : (
+            <>
+              We couldn&apos;t load the cashflow details. Please try again or
+              contact us at {supportLink}.
+            </>
+          )
         }
         retryAction={reset}
       />

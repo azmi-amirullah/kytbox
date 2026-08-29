@@ -1,8 +1,7 @@
-'use client';
+'use client'
 
-import { useState, useTransition, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { useState, useTransition, useMemo } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,20 +11,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { LuPlus, LuLoader, LuChartBar } from 'react-icons/lu';
-import { toast } from 'react-toastify';
-import { deleteBudget } from '../actions';
-import type { CashflowBudgetDTO, CashflowEntryDTO } from '@/types/dto';
-import BudgetProgress from './BudgetProgress';
-import BudgetModal from './BudgetModal';
+} from '@/components/ui/alert-dialog'
+import { LuPlus, LuLoader, LuChartBar } from 'react-icons/lu'
+import { toast } from 'react-toastify'
+import { deleteBudget } from '../actions'
+import type { CashflowBudgetDTO, CashflowEntryDTO } from '@/types/dto'
+import BudgetProgress from './BudgetProgress'
+import BudgetModal from './BudgetModal'
 
 interface BudgetManagerProps {
-  cashflowId: string;
-  budgets: CashflowBudgetDTO[];
-  entries: CashflowEntryDTO[];
-  currency: string | null;
-  canEdit: boolean;
+  cashflowId: string
+  budgets: CashflowBudgetDTO[]
+  entries: CashflowEntryDTO[]
+  currency: string | null
+  canEdit: boolean
 }
 
 export default function BudgetManager({
@@ -35,67 +34,66 @@ export default function BudgetManager({
   currency,
   canEdit,
 }: BudgetManagerProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPending, startTransition] = useTransition()
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<CashflowBudgetDTO | null>(
     null,
-  );
-  const [modalKey, setModalKey] = useState(0);
-  const [deletingBudgetId, setDeletingBudgetId] = useState<string | null>(null);
-  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  )
+  const [modalKey, setModalKey] = useState(0)
+  const [deletingBudgetId, setDeletingBudgetId] = useState<string | null>(null)
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null)
 
   // Sort budgets by spend percentage descending (highest risk first)
   const sortedBudgets = useMemo(() => {
-    if (budgets.length === 0) return budgets;
+    if (budgets.length === 0) return budgets
 
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
 
     return [...budgets].sort((a, b) => {
       const spentFor = (item: CashflowBudgetDTO) =>
         entries
           .filter((e) => {
             if (e.type !== 'expense' || e.category !== item.category)
-              return false;
-            const [year, month] = e.date.split('-').map(Number);
-            return year === currentYear && month - 1 === currentMonth;
+              return false
+            const [year, month] = e.date.split('-').map(Number)
+            return year === currentYear && month - 1 === currentMonth
           })
-          .reduce((sum, e) => sum + Number(e.amount), 0);
+          .reduce((sum, e) => sum + Number(e.amount), 0)
 
-      const pctA = a.amount > 0 ? spentFor(a) / a.amount : 0;
-      const pctB = b.amount > 0 ? spentFor(b) / b.amount : 0;
-      return pctB - pctA;
-    });
-  }, [budgets, entries]);
+      const pctA = a.amount > 0 ? spentFor(a) / a.amount : 0
+      const pctB = b.amount > 0 ? spentFor(b) / b.amount : 0
+      return pctB - pctA
+    })
+  }, [budgets, entries])
 
   function openAdd() {
-    setEditingBudget(null);
-    setModalKey((k) => k + 1);
-    setIsModalOpen(true);
+    setEditingBudget(null)
+    setModalKey((k) => k + 1)
+    setIsModalOpen(true)
   }
 
   function openEdit(budget: CashflowBudgetDTO) {
-    setEditingBudget(budget);
-    setModalKey((k) => k + 1);
-    setIsModalOpen(true);
+    setEditingBudget(budget)
+    setModalKey((k) => k + 1)
+    setIsModalOpen(true)
   }
 
   async function handleDelete(budgetId: string) {
-    setIsDeletingId(budgetId);
+    setIsDeletingId(budgetId)
     startTransition(async () => {
-      const result = await deleteBudget(budgetId);
+      const result = await deleteBudget(budgetId)
       if (result.error) {
-        toast.error('Failed to delete budget');
-        setIsDeletingId(null);
-        setDeletingBudgetId(null);
+        toast.error('Failed to delete budget')
+        setIsDeletingId(null)
+        setDeletingBudgetId(null)
       } else {
-        toast.success('Budget removed');
-        setDeletingBudgetId(null);
-        router.refresh();
+        toast.success('Budget removed')
+        setDeletingBudgetId(null)
+        setIsDeletingId(null)
       }
-    });
+    })
   }
 
   return (
@@ -112,7 +110,12 @@ export default function BudgetManager({
           </p>
         </div>
         {canEdit && (
-          <Button onClick={openAdd} variant='outline' size='sm' className='gap-2'>
+          <Button
+            onClick={openAdd}
+            variant='outline'
+            size='sm'
+            className='gap-2'
+          >
             <LuPlus className='w-4 h-4' />
             Set Budget
           </Button>
@@ -125,7 +128,12 @@ export default function BudgetManager({
           <LuChartBar className='w-8 h-8 mx-auto mb-3 opacity-30' />
           <p className='text-sm mb-3'>No budgets set yet.</p>
           {canEdit && (
-            <Button onClick={openAdd} variant='outline' size='sm' className='gap-2'>
+            <Button
+              onClick={openAdd}
+              variant='outline'
+              size='sm'
+              className='gap-2'
+            >
               <LuPlus className='w-4 h-4' />
               Set your first budget
             </Button>
@@ -175,11 +183,11 @@ export default function BudgetManager({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
-                e.preventDefault();
-                if (deletingBudgetId) handleDelete(deletingBudgetId);
+                e.preventDefault()
+                if (deletingBudgetId) handleDelete(deletingBudgetId)
               }}
               disabled={!!isDeletingId && isPending}
-              className='bg-destructive text-white hover:bg-destructive/90 min-w-[80px]'
+              className='bg-destructive text-white hover:bg-destructive/90 min-w-20'
             >
               {isDeletingId && isPending ? (
                 <div className='flex items-center gap-2'>
@@ -194,5 +202,5 @@ export default function BudgetManager({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

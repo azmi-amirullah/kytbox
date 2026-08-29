@@ -53,7 +53,7 @@ interface EntryModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currency: string | null
-  onSuccess: () => void
+  onSuccess?: (entry?: CashflowEntryDTO | null) => void
   goals?: CashflowGoalDTO[]
   availableTags?: string[]
   bookTags?: CashflowTagDTO[]
@@ -394,7 +394,7 @@ export default function EntryModal({
       } else {
         toast.success(isEdit ? 'Entry updated!' : 'Entry added!')
         onOpenChange(false)
-        onSuccess()
+        onSuccess?.(result?.entry ?? null)
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'An unexpected error occurred'

@@ -1,9 +1,9 @@
-'use client';
+'use client'
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { useState, useMemo } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 import {
   LuPlus,
   LuWallet,
@@ -12,13 +12,13 @@ import {
   LuPencil,
   LuTrash2,
   LuLoader,
-} from 'react-icons/lu';
+} from 'react-icons/lu'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,16 +28,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'react-toastify';
-import { deleteCashflow } from '../actions';
-import { toggleCashflowInclusion } from '../actions';
+} from '@/components/ui/alert-dialog'
+import { toast } from 'react-toastify'
+import { deleteCashflow } from '../actions'
+import { toggleCashflowInclusion } from '../actions'
 // import type { Cashflow } from '@/types/supabase';
-import { formatCurrencyCompact } from '@/lib/currency';
-import dynamic from 'next/dynamic';
-import CashflowModal from './CashflowModal';
-import ShareModal from './ShareModal';
-import { Loader } from '@/components/ui/loader';
+import { formatCurrencyCompact } from '@/lib/currency'
+import dynamic from 'next/dynamic'
+import CashflowModal from './CashflowModal'
+import ShareModal from './ShareModal'
+import { Loader } from '@/components/ui/loader'
 const CashflowCharts = dynamic(
   () => import('./CashflowCharts').then((mod) => mod.CashflowCharts),
   {
@@ -49,19 +49,22 @@ const CashflowCharts = dynamic(
       />
     ),
   },
-);
-import { CashflowSummaryStats } from './CashflowSummaryStats';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+)
+import { CashflowSummaryStats } from './CashflowSummaryStats'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
-import type { CashflowWithSummaryDTO, CashflowChartAggregateDTO } from '@/types/dto';
+import type {
+  CashflowWithSummaryDTO,
+  CashflowChartAggregateDTO,
+} from '@/types/dto'
 
 interface CashflowListProps {
-  cashflows: CashflowWithSummaryDTO[];
-  aggregates?: CashflowChartAggregateDTO[];
-  currency: string | null;
-  currentUserId?: string;
+  cashflows: CashflowWithSummaryDTO[]
+  aggregates?: CashflowChartAggregateDTO[]
+  currency: string | null
+  currentUserId?: string
 }
 
 export default function CashflowList({
@@ -70,157 +73,157 @@ export default function CashflowList({
   currency,
   currentUserId,
 }: CashflowListProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const action = searchParams.get('action');
+  const searchParams = useSearchParams()
+  const action = searchParams.get('action')
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(action === 'add');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(action === 'add')
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [activeCashflow, setActiveCashflow] =
-    useState<CashflowWithSummaryDTO | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [prevAction, setPrevAction] = useState(action);
+    useState<CashflowWithSummaryDTO | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [prevAction, setPrevAction] = useState(action)
 
   if (action !== prevAction) {
-    setPrevAction(action);
+    setPrevAction(action)
     if (action === 'add') {
-      setIsCreateModalOpen(true);
+      setIsCreateModalOpen(true)
     }
   }
 
   const handleCreateOpenChange = (open: boolean) => {
-    setIsCreateModalOpen(open);
+    setIsCreateModalOpen(open)
     if (!open && action === 'add') {
-      const params = new URLSearchParams(window.location.search);
-      params.delete('action');
-      const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
-      window.history.replaceState(null, '', newUrl);
+      const params = new URLSearchParams(window.location.search)
+      params.delete('action')
+      const newUrl = params.toString()
+        ? `?${params.toString()}`
+        : window.location.pathname
+      window.history.replaceState(null, '', newUrl)
     }
-  };
+  }
 
   // Initialize from props
   const [includedSharedIds, setIncludedSharedIds] = useState<Set<string>>(
     () => {
-      const included = new Set<string>();
+      const included = new Set<string>()
       cashflows.forEach((c) => {
         if (c.user_id !== currentUserId && c.isIncluded) {
-          included.add(c.id);
+          included.add(c.id)
         }
-      });
-      return included;
+      })
+      return included
     },
-  );
+  )
 
   const ownedCashflows = useMemo(
     () => cashflows.filter((c) => c.user_id === currentUserId),
     [cashflows, currentUserId],
-  );
+  )
 
   const sharedCashflows = useMemo(
     () => cashflows.filter((c) => c.user_id !== currentUserId),
     [cashflows, currentUserId],
-  );
+  )
 
   // Calculate overall stats for OWNED cashflows + INCLUDED shared cashflows
   const flowsToCount = useMemo(() => {
-    const shared = sharedCashflows.filter((c) => includedSharedIds.has(c.id));
-    return [...ownedCashflows, ...shared];
-  }, [ownedCashflows, sharedCashflows, includedSharedIds]);
+    const shared = sharedCashflows.filter((c) => includedSharedIds.has(c.id))
+    return [...ownedCashflows, ...shared]
+  }, [ownedCashflows, sharedCashflows, includedSharedIds])
 
-  const totalIncome = flowsToCount.reduce((sum, c) => sum + c.income, 0);
-  const totalExpense = flowsToCount.reduce((sum, c) => sum + c.expense, 0);
-  const balance = totalIncome - totalExpense;
+  const totalIncome = flowsToCount.reduce((sum, c) => sum + c.income, 0)
+  const totalExpense = flowsToCount.reduce((sum, c) => sum + c.expense, 0)
+  const balance = totalIncome - totalExpense
 
   const activeCashflowIds = useMemo(() => {
-    return new Set(flowsToCount.map((c) => c.id));
-  }, [flowsToCount]);
+    return new Set(flowsToCount.map((c) => c.id))
+  }, [flowsToCount])
 
   const activeAggregates = useMemo(() => {
-    return aggregates.filter((a) => activeCashflowIds.has(a.cashflow_id));
-  }, [aggregates, activeCashflowIds]);
+    return aggregates.filter((a) => activeCashflowIds.has(a.cashflow_id))
+  }, [aggregates, activeCashflowIds])
 
   async function handleToggleInclusion(cashflowId: string) {
     // Optimistic update
-    const isIncluded = !includedSharedIds.has(cashflowId);
+    const isIncluded = !includedSharedIds.has(cashflowId)
 
     setIncludedSharedIds((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (isIncluded) {
-        next.add(cashflowId);
+        next.add(cashflowId)
       } else {
-        next.delete(cashflowId);
+        next.delete(cashflowId)
       }
-      return next;
-    });
+      return next
+    })
 
     // Server update
-    const result = await toggleCashflowInclusion(cashflowId, isIncluded);
+    const result = await toggleCashflowInclusion(cashflowId, isIncluded)
     if (result?.error) {
-      toast.error('Failed to save preference');
+      toast.error('Failed to save preference')
       // Revert if failed
       setIncludedSharedIds((prev) => {
-        const next = new Set(prev);
+        const next = new Set(prev)
         if (!isIncluded) {
-          next.add(cashflowId);
+          next.add(cashflowId)
         } else {
-          next.delete(cashflowId);
+          next.delete(cashflowId)
         }
-        return next;
-      });
-    } else {
-      router.refresh();
+        return next
+      })
     }
   }
 
   async function handleDelete() {
-    if (!activeCashflow) return;
-    setIsDeleting(true);
-    const result = await deleteCashflow(activeCashflow.id);
+    if (!activeCashflow) return
+    setIsDeleting(true)
+    const result = await deleteCashflow(activeCashflow.id)
     if (result.error) {
-      toast.error('Failed to delete cashflow');
-      setIsDeleting(false);
+      toast.error('Failed to delete cashflow')
+      setIsDeleting(false)
     } else {
-      setDeleteDialogOpen(false);
-      toast.success('Cashflow deleted');
-      router.refresh();
-      // We don't setIsDeleting(false) here because the dialog is closing
+      setDeleteDialogOpen(false)
+      setIsDeleting(false)
+      toast.success('Cashflow deleted')
     }
   }
 
   function openShare(e: React.MouseEvent, cashflow: CashflowWithSummaryDTO) {
-    e.stopPropagation();
-    setActiveCashflow(cashflow);
-    setIsShareModalOpen(true);
+    e.stopPropagation()
+    setActiveCashflow(cashflow)
+    setIsShareModalOpen(true)
   }
 
   function openEdit(e: React.MouseEvent, cashflow: CashflowWithSummaryDTO) {
-    e.stopPropagation();
-    setActiveCashflow(cashflow);
-    setIsEditModalOpen(true);
+    e.stopPropagation()
+    setActiveCashflow(cashflow)
+    setIsEditModalOpen(true)
   }
 
   function openDelete(e: React.MouseEvent, cashflow: CashflowWithSummaryDTO) {
-    e.stopPropagation();
-    setActiveCashflow(cashflow);
-    setIsDeleting(false);
-    setDeleteDialogOpen(true);
+    e.stopPropagation()
+    setActiveCashflow(cashflow)
+    setIsDeleting(false)
+    setDeleteDialogOpen(true)
   }
 
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
       <div>
-        <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground mb-2'>
-          <Link
-            href='/app'
-            className='hover:text-foreground transition-colors'
-          >
+        <nav
+          aria-label='breadcrumb'
+          className='flex items-center gap-1 text-sm text-muted-foreground mb-2'
+        >
+          <Link href='/app' className='hover:text-foreground transition-colors'>
             Kytbox
           </Link>
           <span className='text-muted-foreground'>/</span>
-          <span aria-current='page' className='text-foreground font-medium'>Cashflow</span>
+          <span aria-current='page' className='text-foreground font-medium'>
+            Cashflow
+          </span>
         </nav>
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
           <div>
@@ -282,8 +285,8 @@ export default function CashflowList({
                       <DropdownMenuTrigger
                         asChild
                         onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
+                          e.stopPropagation()
+                          e.preventDefault()
                         }}
                       >
                         <Button
@@ -292,7 +295,10 @@ export default function CashflowList({
                           className='h-8 w-8 rounded-full cursor-pointer'
                           aria-label={'Actions for ' + cashflow.title}
                         >
-                          <LuEllipsisVertical className='w-4 h-4' aria-hidden='true' />
+                          <LuEllipsisVertical
+                            className='w-4 h-4'
+                            aria-hidden='true'
+                          />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -323,9 +329,7 @@ export default function CashflowList({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : (
-                    <div
-                      className='flex items-center gap-2'
-                    >
+                    <div className='flex items-center gap-2'>
                       <Switch
                         id={`include-mobile-${cashflow.id}`}
                         aria-label={`Include ${cashflow.title} in totals`}
@@ -373,7 +377,7 @@ export default function CashflowList({
                         'text-xs sm:text-sm lg:text-base font-black tracking-tight tabular-nums truncate',
                         cashflow.balance >= 0
                           ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-rose-600 dark:text-rose-400'
+                          : 'text-rose-600 dark:text-rose-400',
                       )}
                     >
                       {cashflow.balance >= 0 ? '+' : ''}
@@ -389,8 +393,8 @@ export default function CashflowList({
                       <DropdownMenuTrigger
                         asChild
                         onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
+                          e.stopPropagation()
+                          e.preventDefault()
                         }}
                       >
                         <Button
@@ -399,7 +403,10 @@ export default function CashflowList({
                           className='h-8 w-8 rounded-full cursor-pointer'
                           aria-label={'Actions for ' + cashflow.title}
                         >
-                          <LuEllipsisVertical className='w-4 h-4' aria-hidden='true' />
+                          <LuEllipsisVertical
+                            className='w-4 h-4'
+                            aria-hidden='true'
+                          />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -430,9 +437,7 @@ export default function CashflowList({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : (
-                    <div
-                      className='flex items-center gap-2'
-                    >
+                    <div className='flex items-center gap-2'>
                       <Switch
                         id={`include-${cashflow.id}`}
                         aria-label={`Include ${cashflow.title} in totals`}
@@ -454,7 +459,7 @@ export default function CashflowList({
               </div>
             </div>
           </div>
-        );
+        )
 
         if (cashflows.length === 0) {
           return (
@@ -474,7 +479,7 @@ export default function CashflowList({
                 Create Cashflow
               </Button>
             </div>
-          );
+          )
         }
 
         return (
@@ -505,7 +510,7 @@ export default function CashflowList({
               </div>
             )}
           </div>
-        );
+        )
       })()}
 
       {/* Dashboard Charts */}
@@ -550,8 +555,8 @@ export default function CashflowList({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
-                e.preventDefault();
-                handleDelete();
+                e.preventDefault()
+                handleDelete()
               }}
               disabled={isDeleting}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
@@ -569,5 +574,5 @@ export default function CashflowList({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

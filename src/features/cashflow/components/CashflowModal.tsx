@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,14 +28,12 @@ export default function CashflowModal({
   open,
   onOpenChange,
 }: CashflowModalProps) {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
   const [title, setTitle] = useState(cashflow?.title || '')
 
-  const isBusy = isLoading || isPending
+  const isBusy = isLoading
   const isEdit = mode === 'edit'
 
   useEffect(() => {
@@ -73,9 +70,6 @@ export default function CashflowModal({
     } else {
       toast.success(isEdit ? 'Cashflow updated!' : 'Cashflow created!')
       onOpenChange(false)
-      startTransition(() => {
-        router.refresh()
-      })
     }
   }
 

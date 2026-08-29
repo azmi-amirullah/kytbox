@@ -79,11 +79,20 @@ export default function CashflowCard({
 
   const isOwner = currentUserId === cashflow.user_id;
 
+  // ── Synchronized local entries state ─────────────────────────────────────────
+  const [localEntries, setLocalEntries] = useState<CashflowEntryDTO[]>(entries);
+  const [prevEntriesProp, setPrevEntriesProp] = useState(entries);
+
+  if (entries !== prevEntriesProp) {
+    setPrevEntriesProp(entries);
+    setLocalEntries(entries);
+  }
+
   // Calculate card stats
-  const income = entries
+  const income = localEntries
     .filter((e) => e.type === 'income')
     .reduce((sum, e) => sum + Number(e.amount), 0);
-  const expense = entries
+  const expense = localEntries
     .filter((e) => e.type === 'expense')
     .reduce((sum, e) => sum + Number(e.amount), 0);
   const balance = income - expense;
@@ -98,9 +107,8 @@ export default function CashflowCard({
         setDeleteDialogOpen(false);
       } else {
         setDeleteDialogOpen(false);
+        setIsDeleting(false);
         toast.success('Cashflow deleted');
-        router.refresh();
-        // Keep isDeleting true to prevent flicker before refresh updates UI
       }
     });
   }
@@ -119,19 +127,20 @@ export default function CashflowCard({
 
   async function handleDeleteEntry(entryId: string) {
     setIsDeletingEntryId(entryId);
-    startTransition(async () => {
+    try {
       const result = await deleteEntry(entryId);
       if (result.error) {
         toast.error('Failed to delete entry');
-        setIsDeletingEntryId(null);
-        setDeletingEntryId(null);
       } else {
-        setDeletingEntryId(null);
+        setLocalEntries((prev) => prev.filter((e) => e.id !== entryId));
         toast.success('Entry deleted');
-        router.refresh();
-        // Keep isDeletingEntryId true to prevent flicker before refresh updates UI
       }
-    });
+    } catch {
+      toast.error('Failed to delete entry');
+    } finally {
+      setDeletingEntryId(null);
+      setIsDeletingEntryId(null);
+    }
   }
 
   function openEditEntry(entry: CashflowEntryDTO) {
@@ -144,10 +153,16 @@ export default function CashflowCard({
     setIsEntryModalOpen(true);
   }
 
-  function handleEntrySuccess() {
-    startTransition(() => {
-      router.refresh();
-    });
+  function handleEntrySuccess(savedEntry?: CashflowEntryDTO | null) {
+    if (savedEntry) {
+      setLocalEntries((prev) => {
+        const exists = prev.some((e) => e.id === savedEntry.id);
+        if (exists) {
+          return prev.map((e) => (e.id === savedEntry.id ? savedEntry : e));
+        }
+        return [savedEntry, ...prev];
+      });
+    }
   }
 
   return (
@@ -236,7 +251,7 @@ export default function CashflowCard({
             <LuLoader className='w-5 h-5 animate-spin text-primary' />
           </div>
         )}
-        {entries.length === 0 ? (
+        {localEntries.length === 0 ? (
           <div className='p-8 text-center text-muted-foreground'>
             <p className='text-sm'>No entries yet. Add your first transaction.</p>
           </div>
@@ -252,7 +267,7 @@ export default function CashflowCard({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map((entry) => (
+                {localEntries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className='text-muted-foreground text-sm'>
                       {formatAppDate(entry.date)}
@@ -333,7 +348,7 @@ export default function CashflowCard({
         <BudgetManager
           cashflowId={cashflow.id}
           budgets={budgets}
-          entries={entries}
+          entries={localEntries}
           currency={currency}
           canEdit={isOwner}
         />

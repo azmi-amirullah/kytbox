@@ -26,7 +26,7 @@ import {
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { mapBudgetToDTO, mapGoalToDTO } from '@/lib/mappers';
+import { mapBudgetToDTO, mapGoalToDTO, mapCashflowEntryToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
@@ -278,6 +278,7 @@ export async function updateCashflow(cashflowId: string, formData: FormData) {
   }
 
   revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
   return { success: true };
 }
 
@@ -319,6 +320,7 @@ export async function deleteCashflow(cashflowId: string) {
   }
 
   revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
   return { success: true };
 }
 
@@ -613,7 +615,7 @@ export async function addEntry(formData: FormData) {
       tags: tags ?? [],
       receipt_url: receiptUrl,
     })
-    .select('id')
+    .select('*, cashflow_split_entries(*)')
     .single();
 
   if (error || !insertedEntry) {
@@ -631,12 +633,15 @@ export async function addEntry(formData: FormData) {
       category: item.category || null,
       amount: item.amount,
     }));
-    const { error: splitError } = await supabase
+    const { data: insertedSplits, error: splitError } = await supabase
       .from('cashflow_split_entries')
-      .insert(splitRows);
+      .insert(splitRows)
+      .select('*');
 
     if (splitError) {
       console.error('Failed to insert split entries:', splitError);
+    } else if (insertedSplits) {
+      insertedEntry.cashflow_split_entries = insertedSplits;
     }
   }
 
@@ -647,7 +652,14 @@ export async function addEntry(formData: FormData) {
   await ensureCashflowTags(supabase, cashflowId, user.id, tags ?? []);
 
   revalidatePath('/cashflow');
-  return { success: true };
+  revalidatePath(`/cashflow/${cashflowId}`);
+
+  const goalTitle = resolvedGoal.category?.startsWith('Goal:')
+    ? resolvedGoal.category.replace(/^Goal:\s*/, '')
+    : undefined;
+  const entryDTO = mapCashflowEntryToDTO(insertedEntry, goalTitle);
+
+  return { success: true, entry: entryDTO };
 }
 
 export async function updateEntry(entryId: string, formData: FormData) {
@@ -861,7 +873,20 @@ export async function updateEntry(entryId: string, formData: FormData) {
   }
 
   revalidatePath('/cashflow');
-  return { success: true };
+  revalidatePath(`/cashflow/${entry.cashflow_id}`);
+
+  const { data: updatedEntry } = await supabase
+    .from('cashflow_entries')
+    .select('*, cashflow_split_entries(*)')
+    .eq('id', entryId)
+    .single();
+
+  const goalTitle = resolvedGoal.category?.startsWith('Goal:')
+    ? resolvedGoal.category.replace(/^Goal:\s*/, '')
+    : undefined;
+  const entryDTO = updatedEntry ? mapCashflowEntryToDTO(updatedEntry, goalTitle) : null;
+
+  return { success: true, entry: entryDTO };
 }
 
 export async function deleteEntry(entryId: string) {
@@ -905,7 +930,8 @@ export async function deleteEntry(entryId: string) {
   }
 
   revalidatePath('/cashflow');
-  return { success: true };
+  revalidatePath(`/cashflow/${entry.cashflow_id}`);
+  return { success: true, id: entryId };
 }
 
 export async function getReceiptSignedUrl(cashflowId: string, entryId: string) {
@@ -1024,6 +1050,7 @@ export async function toggleCashflowInclusion(
   }
 
   revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
   return { success: true };
 }
 
@@ -1066,6 +1093,7 @@ export async function upsertBudget(formData: FormData) {
   await checkBudgetThresholds(supabase, cashflowId, category, user.id);
 
   revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
   return { success: true };
 }
 
@@ -1080,7 +1108,7 @@ export async function deleteBudget(budgetId: string) {
   // Verify ownership via join
   const { data: budget } = await supabase
     .from('cashflow_budgets')
-    .select('id, cashflows(user_id)')
+    .select('id, cashflow_id, cashflows(user_id)')
     .eq('id', budgetId)
     .single();
 
@@ -1104,6 +1132,9 @@ export async function deleteBudget(budgetId: string) {
   }
 
   revalidatePath('/cashflow');
+  if (budget?.cashflow_id) {
+    revalidatePath(`/cashflow/${budget.cashflow_id}`);
+  }
   return { success: true };
 }
 
@@ -1270,6 +1301,9 @@ export async function removeShare(shareId: string) {
   }
 
   revalidatePath('/cashflow');
+  if (share?.cashflow_id) {
+    revalidatePath(`/cashflow/${share.cashflow_id}`);
+  }
   return { success: true };
 }
 
@@ -1308,6 +1342,9 @@ export async function updateShareRole(shareId: string, role: 'read' | 'edit') {
   }
 
   revalidatePath('/cashflow');
+  if (share?.cashflow_id) {
+    revalidatePath(`/cashflow/${share.cashflow_id}`);
+  }
   return { success: true };
 }
 

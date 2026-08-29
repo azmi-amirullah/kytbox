@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -48,9 +47,7 @@ export default function GoalCard({
   isOwner,
   cashflows = [],
 }: GoalCardProps) {
-  const router = useRouter()
   const shouldReduceMotion = useReducedMotion()
-  const [, startTransition] = useTransition()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<CashflowGoalDTO | null>(null)
@@ -91,9 +88,6 @@ export default function GoalCard({
 
       setArchiveDialogGoal(null)
       toast.success('Savings goal archived')
-      startTransition(() => {
-        router.refresh()
-      })
     } catch (error) {
       console.error('Failed to archive savings goal:', error)
       toast.error('Failed to archive savings goal')

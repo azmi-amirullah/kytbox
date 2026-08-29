@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,13 +42,11 @@ interface GoalFormProps {
 }
 
 function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }: GoalFormProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isEdit = !!goal;
-  const isBusy = isLoading || isPending;
+  const isBusy = isLoading;
 
   const [title, setTitle] = useState(goal?.title ?? '');
   const [targetAmount, setTargetAmount] = useState(goal?.target_amount?.toString() ?? '');
@@ -82,9 +79,6 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
     } else {
       toast.success(isEdit ? 'Savings goal updated!' : 'Savings goal created!');
       setIsLoading(false);
-      startTransition(() => {
-        router.refresh();
-      });
       onClose();
     }
   }

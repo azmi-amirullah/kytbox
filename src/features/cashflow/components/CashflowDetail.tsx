@@ -163,6 +163,15 @@ export default function CashflowDetail({
 
   const isOwner = currentUserId === cashflow.user_id
 
+  // ── Synchronized local entries state (updated instantly on API response) ───
+  const [localEntries, setLocalEntries] = useState<CashflowEntryDTO[]>(entries)
+  const [prevEntriesProp, setPrevEntriesProp] = useState(entries)
+
+  if (entries !== prevEntriesProp) {
+    setPrevEntriesProp(entries)
+    setLocalEntries(entries)
+  }
+
   // Initialize state from server props
   const [hasShare, setHasShare] = useState(initialHasShare)
   const [shareId, setShareId] = useState<string | null>(initialShareId)
@@ -189,11 +198,11 @@ export default function CashflowDetail({
 
   const uniqueCategories = useMemo(() => {
     const set = new Set<string>()
-    for (const e of entries) {
+    for (const e of localEntries) {
       if (e.category) set.add(e.category)
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [entries])
+  }, [localEntries])
 
   const allUniqueTags = useMemo(() => {
     if (tags && tags.length > 0) {
@@ -212,7 +221,7 @@ export default function CashflowDetail({
       return sortedTags.map((t) => t.name)
     }
     const set = new Set<string>()
-    for (const e of entries) {
+    for (const e of localEntries) {
       for (const t of e.tags ?? []) {
         if (t) set.add(t)
       }
@@ -225,7 +234,7 @@ export default function CashflowDetail({
       if (idxA !== idxB) return idxA - idxB
       return a.localeCompare(b)
     })
-  }, [tags, entries])
+  }, [tags, localEntries])
 
   // ── Date filter ──────────────────────────────────────────────────────────────
   const [filterState, setFilterState] = useState<DateFilterState>({
@@ -264,7 +273,7 @@ export default function CashflowDetail({
 
   const filteredEntries = useMemo(() => {
     const range = resolveFilterRange(filterState)
-    let filtered = filterEntriesByDate(entries, range)
+    let filtered = filterEntriesByDate(localEntries, range)
 
     if (selectedType !== 'all') {
       filtered = filtered.filter((e) => e.type === selectedType)
@@ -281,7 +290,7 @@ export default function CashflowDetail({
     filtered = sortEntries(filtered, sortBy)
     return filterEntriesByTags(filtered, selectedTags)
   }, [
-    entries,
+    localEntries,
     filterState,
     selectedType,
     selectedCategory,
@@ -436,8 +445,8 @@ export default function CashflowDetail({
     const currentMonthName = `${now.toLocaleDateString('en-US', { month: 'long' })} ${now.getFullYear()}`
 
     // Group all entries by description + type (case-insensitive) to find the absolute latest entry of each series
-    const latestSeriesMap = new Map<string, (typeof entries)[number]>()
-    for (const entry of entries) {
+    const latestSeriesMap = new Map<string, (typeof localEntries)[number]>()
+    for (const entry of localEntries) {
       const key = `${entry.description.trim().toLowerCase()}|${entry.type}`
       const existing = latestSeriesMap.get(key)
       if (!existing || entry.date > existing.date) {
@@ -458,7 +467,7 @@ export default function CashflowDetail({
       }
 
     // Get all entries for the current month
-    const existingThisMonth = entries.filter((e) => {
+    const existingThisMonth = localEntries.filter((e) => {
       const [year, month] = e.date.split('-').map(Number)
       return year === currentYear && month - 1 === currentMonth
     })
@@ -471,7 +480,7 @@ export default function CashflowDetail({
 
     // Create a lookup for past entries to see what is missing in past months
     const pastExistingSet = new Set(
-      entries
+      localEntries
         .filter((e) => {
           const [year, month] = e.date.split('-').map(Number)
           return (
@@ -557,7 +566,7 @@ export default function CashflowDetail({
       pastMonthsList: Array.from(pastMonthsSet),
       currentMonthName,
     }
-  }, [entries, userRole])
+  }, [localEntries, userRole])
 
   async function handleGenerateRecurring() {
     setIsGeneratingRecurring(true)
@@ -575,7 +584,6 @@ export default function CashflowDetail({
           toast.success(
             `Generated ${result.generated} recurring ${result.generated === 1 ? 'entry' : 'entries'}`,
           )
-          router.refresh()
         } else {
           toast.info('No recurring entries to generate')
         }
@@ -606,7 +614,6 @@ export default function CashflowDetail({
           toast.success(
             `Generated ${result.generated} past recurring ${result.generated === 1 ? 'entry' : 'entries'}`,
           )
-          router.refresh()
         } else {
           toast.info('No past recurring entries to generate')
         }
@@ -660,19 +667,20 @@ export default function CashflowDetail({
 
   async function handleDeleteEntry(entryId: string) {
     setIsDeletingEntryId(entryId)
-    startTransition(async () => {
+    try {
       const result = await deleteEntry(entryId)
       if (result.error) {
         toast.error('Failed to delete entry')
-        setIsDeletingEntryId(null)
-        setDeletingEntryId(null)
       } else {
-        setDeletingEntryId(null)
+        setLocalEntries((prev) => prev.filter((e) => e.id !== entryId))
         toast.success('Entry deleted')
-        router.refresh()
-        // Keep isDeletingEntryId true to prevent flicker before refresh updates UI
       }
-    })
+    } catch {
+      toast.error('Failed to delete entry')
+    } finally {
+      setDeletingEntryId(null)
+      setIsDeletingEntryId(null)
+    }
   }
 
   async function handleBookmark() {
@@ -686,7 +694,6 @@ export default function CashflowDetail({
           toast.success('Removed from dashboard')
           setHasShare(false)
           setShareId(null)
-          router.refresh()
         }
       } else {
         // Add bookmark
@@ -699,7 +706,6 @@ export default function CashflowDetail({
           if (result.data) {
             setShareId(result.data.id)
           }
-          router.refresh()
         }
       }
     })
@@ -715,10 +721,16 @@ export default function CashflowDetail({
     setIsEntryModalOpen(true)
   }
 
-  function handleEntrySuccess() {
-    startTransition(() => {
-      router.refresh()
-    })
+  function handleEntrySuccess(savedEntry?: CashflowEntryDTO | null) {
+    if (savedEntry) {
+      setLocalEntries((prev) => {
+        const exists = prev.some((e) => e.id === savedEntry.id)
+        if (exists) {
+          return prev.map((e) => (e.id === savedEntry.id ? savedEntry : e))
+        }
+        return [savedEntry, ...prev]
+      })
+    }
   }
 
   function handleExportCSV() {
@@ -1181,7 +1193,7 @@ export default function CashflowDetail({
         )}
 
         {/* Toolbar Header (inside the Card) */}
-        {entries.length > 0 && (
+        {localEntries.length > 0 && (
           <div className='p-3.5 sm:p-4 border-b border-border/60 flex flex-col gap-3 bg-muted/20'>
             {/* Row 1: Search + Filters Toggle (Mobile) / Full Filters (Desktop) */}
             <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center'>
@@ -1252,7 +1264,7 @@ export default function CashflowDetail({
                         state={filterState}
                         onChange={setFilterState}
                         filteredCount={filteredEntries.length}
-                        totalCount={entries.length}
+                        totalCount={localEntries.length}
                       />
                     </div>
 
@@ -1375,7 +1387,7 @@ export default function CashflowDetail({
                   <span className='font-medium text-foreground'>
                     {filteredEntries.length}
                   </span>{' '}
-                  of {entries.length} entries matching {activeFilterCount}{' '}
+                  of {localEntries.length} entries matching {activeFilterCount}{' '}
                   {activeFilterCount === 1 ? 'filter' : 'filters'}
                 </p>
                 <button
@@ -1476,13 +1488,13 @@ export default function CashflowDetail({
         {filteredEntries.length === 0 ? (
           <div className='p-12 text-center text-muted-foreground'>
             <p className='text-sm mb-4'>
-              {entries.length === 0
+              {localEntries.length === 0
                 ? 'No entries yet. Add your first transaction.'
                 : hasActiveFilters
                   ? 'No entries match your filters.'
                   : 'No entries match the selected date range.'}
             </p>
-            {entries.length === 0 ? (
+            {localEntries.length === 0 ? (
               <Button
                 onClick={openAddEntry}
                 variant='outline'
@@ -1822,7 +1834,7 @@ export default function CashflowDetail({
       </div>
 
       {/* Projections View — always uses unfiltered entries (recurring logic is time-aware) */}
-      <ProjectionsView entries={entries} currency={currency} />
+      <ProjectionsView entries={localEntries} currency={currency} />
 
       {/* Charts */}
       <CashflowCharts entries={filteredEntries} currency={currency} />
@@ -1831,7 +1843,7 @@ export default function CashflowDetail({
       <BudgetManager
         cashflowId={cashflow.id}
         budgets={budgets}
-        entries={entries}
+        entries={localEntries}
         currency={currency}
         canEdit={canEdit}
       />

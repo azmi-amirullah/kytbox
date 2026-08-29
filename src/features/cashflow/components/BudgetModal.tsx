@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,13 +40,11 @@ export default function BudgetModal({
   onOpenChange,
   currency,
 }: BudgetModalProps) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const isEdit = !!budget
-  const isBusy = isLoading || isPending
+  const isBusy = isLoading
 
   const [category, setCategory] = useState(
     budgetExpenseCategorySchema.parse(budget?.category),
@@ -77,9 +74,6 @@ export default function BudgetModal({
     } else {
       toast.success(isEdit ? 'Budget updated!' : 'Budget created!')
       setIsLoading(false)
-      startTransition(() => {
-        router.refresh()
-      })
       onOpenChange(false)
     }
   }
