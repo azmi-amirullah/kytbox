@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav'
 import {
   LuPlus,
   LuWallet,
@@ -212,19 +213,7 @@ export default function CashflowList({
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
-      <div>
-        <nav
-          aria-label='breadcrumb'
-          className='flex items-center gap-1 text-sm text-muted-foreground mb-2'
-        >
-          <Link href='/app' className='hover:text-foreground transition-colors'>
-            Kytbox
-          </Link>
-          <span className='text-muted-foreground'>/</span>
-          <span aria-current='page' className='text-foreground font-medium'>
-            Cashflow
-          </span>
-        </nav>
+      <BreadcrumbNav />
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
           <div>
             <h1 className='text-3xl font-bold tracking-tight text-foreground'>
@@ -239,7 +228,6 @@ export default function CashflowList({
             New Cashflow
           </Button>
         </div>
-      </div>
 
       {/* Summary Stats */}
       <CashflowSummaryStats

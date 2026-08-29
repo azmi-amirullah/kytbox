@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import type { ListDTO, ListType } from '@/types/dto';
 import ListCard from './ListCard';
 import CreateListModal from './CreateListModal';
 import TemplatePickerModal from './TemplatePickerModal';
 import { Button } from '@/components/ui/button';
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { LuPlus, LuLayoutGrid, LuHeart, LuLightbulb } from 'react-icons/lu';
 
 interface TypeListGridProps {
@@ -75,17 +75,7 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
-      <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground'>
-        <Link href='/app' className='hover:text-foreground transition-colors'>
-          Kytbox
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <Link href='/list' className='hover:text-foreground transition-colors'>
-          List
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <span aria-current='page' className='text-foreground font-medium'>{meta.label}</span>
-      </nav>
+      <BreadcrumbNav backLabel='Back to Lists' />
 
       {/* Header */}
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>

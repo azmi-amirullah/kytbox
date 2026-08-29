@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
 import { LuPlus, LuLightbulb } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { Input } from '@/components/ui/input';
 import type { ListDTO, ListItemDTO } from '@/types/dto';
 import { addItem, reorderItems } from '../actions';
@@ -93,23 +93,7 @@ export default function IdeaDetail({ list, initialItems }: IdeaDetailProps) {
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
-      <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground'>
-        <Link href='/app' className='hover:text-foreground transition-colors'>
-          Kytbox
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <Link href='/list' className='hover:text-foreground transition-colors'>
-          List
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <Link href='/list/ideas' className='hover:text-foreground transition-colors'>
-          Ideas
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <span aria-current='page' className='text-foreground font-medium truncate max-w-50'>
-          {list.title}
-        </span>
-      </nav>
+      <BreadcrumbNav title={list.title} />
 
       {/* Header */}
       <div>

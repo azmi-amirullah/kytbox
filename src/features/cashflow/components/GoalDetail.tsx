@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav'
 import {
   Select,
   SelectContent,
@@ -87,36 +87,22 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
-      <div>
-        <nav
-          aria-label='breadcrumb'
-          className='flex items-center gap-1 text-sm text-muted-foreground mb-2'
-        >
-          <Link href='/app' className='hover:text-foreground transition-colors'>
-            Kytbox
-          </Link>
-          <span className='text-muted-foreground'>/</span>
-          <Link href='/cashflow' className='hover:text-foreground transition-colors'>
-            Cashflow
-          </Link>
-          {goal.cashflow_title && (
-            <>
-              <span className='text-muted-foreground'>/</span>
-              <Link
-                href={`/cashflow/${goal.cashflow_id}`}
-                className='hover:text-foreground transition-colors truncate max-w-50'
-              >
-                {goal.cashflow_title}
-              </Link>
-            </>
-          )}
-          <span className='text-muted-foreground'>/</span>
-          <span aria-current='page' className='text-foreground font-medium truncate max-w-50'>
-            {goal.title}
-          </span>
-        </nav>
+      <BreadcrumbNav
+        items={[
+          { label: 'Cashflow', href: '/cashflow' },
+          ...(goal.cashflow_id && goal.cashflow_title
+            ? [
+                {
+                  label: goal.cashflow_title,
+                  href: `/cashflow/${goal.cashflow_id}`,
+                },
+              ]
+            : []),
+          { label: goal.title },
+        ]}
+      />
 
-        {/* Header */}
+      {/* Header */}
         <div className='flex items-center gap-3'>
           <div className='flex-1 min-w-0'>
             <div className='flex items-center gap-2 flex-wrap'>
@@ -142,7 +128,6 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
             </p>
           </div>
         </div>
-      </div>
 
       {/* Progress Card */}
       <motion.div

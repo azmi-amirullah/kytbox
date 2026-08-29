@@ -2,10 +2,10 @@
 
 import { useState, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { format } from 'date-fns'
 import { formatAppDate } from '@/lib/date-only'
 import { Button } from '@/components/ui/button'
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav'
 import {
   Table,
   TableBody,
@@ -797,43 +797,9 @@ export default function CashflowDetail({
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
-      <div>
-        {/* Mobile Back Link */}
-        <div className='flex sm:hidden items-center mb-2'>
-          <Link
-            href='/cashflow'
-            className='inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors'
-          >
-            <LuChevronLeft className='w-4 h-4' />
-            <span>Back to Cashflow</span>
-          </Link>
-        </div>
+      <BreadcrumbNav title={cashflow.title} />
 
-        {/* Desktop Breadcrumbs */}
-        <nav
-          aria-label='breadcrumb'
-          className='hidden sm:flex items-center gap-1 text-sm text-muted-foreground mb-2'
-        >
-          <Link href='/app' className='hover:text-foreground transition-colors'>
-            Kytbox
-          </Link>
-          <span className='text-muted-foreground'>/</span>
-          <Link
-            href='/cashflow'
-            className='hover:text-foreground transition-colors'
-          >
-            Cashflow
-          </Link>
-          <span className='text-muted-foreground'>/</span>
-          <span
-            aria-current='page'
-            className='text-foreground font-medium truncate max-w-60'
-          >
-            {cashflow.title}
-          </span>
-        </nav>
-
-        {/* Header */}
+      {/* Header */}
         <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full'>
           <div className='min-w-0 flex-1'>
             <div className='flex items-start sm:items-center justify-between gap-2 sm:gap-3'>
@@ -1062,7 +1028,6 @@ export default function CashflowDetail({
             </div>
           )}
         </div>
-      </div>
 
       {/* Recurring Entry Generation Banner */}
       {(() => {

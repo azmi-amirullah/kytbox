@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import Link from 'next/link';
 import {
   DndContext,
   closestCenter,
@@ -27,6 +26,7 @@ import {
   LuCheck,
 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -344,23 +344,7 @@ export default function KanbanBoard({
   return (
     <div className='space-y-6'>
       {/* Breadcrumbs */}
-      <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground'>
-        <Link href='/app' className='hover:text-foreground transition-colors'>
-          Kytbox
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <Link href='/list' className='hover:text-foreground transition-colors'>
-          List
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <Link href='/list/todo' className='hover:text-foreground transition-colors'>
-          Todo
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <span aria-current='page' className='text-foreground font-medium truncate max-w-50'>
-          {list.title}
-        </span>
-      </nav>
+      <BreadcrumbNav title={list.title} />
 
       {/* Header */}
       <div className='flex items-center justify-between'>

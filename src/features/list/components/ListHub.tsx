@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { LuLayoutGrid, LuHeart, LuLightbulb } from 'react-icons/lu';
 import type { ListType } from '@/types/dto';
 
@@ -54,15 +55,7 @@ export default function ListHub({ counts }: ListHubProps) {
   return (
     <div className='space-y-8'>
       {/* Breadcrumbs */}
-      <nav aria-label='breadcrumb' className='flex items-center gap-1 text-sm text-muted-foreground'>
-        <Link href='/app' className='hover:text-foreground transition-colors'>
-          Kytbox
-        </Link>
-        <span className='text-muted-foreground'>/</span>
-        <span aria-current='page' className='text-foreground font-medium'>
-          List
-        </span>
-      </nav>
+      <BreadcrumbNav />
 
       {/* Header */}
       <div>
