@@ -1,16 +1,7 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-
-const CommandPalette = dynamic(
-  () => import('@/components/command-palette').then((mod) => mod.CommandPalette),
-  { ssr: false }
-);
-
-const OnboardingTour = dynamic(
-  () => import('@/components/onboarding-tour').then((mod) => mod.OnboardingTour),
-  { ssr: false }
-);
+import { CommandPalette } from '@/components/command-palette';
+import { OnboardingTour } from '@/components/onboarding-tour';
 
 interface PlatformOverlaysProps {
   hasCompletedOnboarding?: boolean | null;

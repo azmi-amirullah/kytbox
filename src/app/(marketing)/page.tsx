@@ -159,77 +159,75 @@ export default async function LandingPage() {
 
           <div className='mx-auto max-w-7xl'>
             <div className='grid items-center gap-14 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:gap-12'>
-              <ScrollReveal>
-                <div className='max-w-2xl'>
-                  <div className='mb-7 inline-flex min-h-9 items-center gap-2 rounded-full border border-primary/20 bg-card/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary shadow-sm backdrop-blur'>
-                    <span
-                      className='h-2 w-2 rounded-full bg-signal'
+              <div className='max-w-2xl animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both'>
+                <div className='mb-7 inline-flex min-h-9 items-center gap-2 rounded-full border border-primary/20 bg-card/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary shadow-sm backdrop-blur'>
+                  <span
+                    className='h-2 w-2 rounded-full bg-signal'
+                    aria-hidden='true'
+                  />
+                  Kytbox v{pkg.version.split('.').slice(0, 2).join('.')} is
+                  live
+                </div>
+
+                <h1 className='max-w-3xl text-[clamp(3.25rem,8vw,7rem)] font-semibold leading-[0.9] tracking-[-0.075em] text-foreground'>
+                  Make room for{' '}
+                  <span className='text-primary'>better work.</span>
+                </h1>
+
+                <p className='mt-8 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl'>
+                  Bio, Cashflow, List, and Invoice in one clean workspace.
+                  Spend less time juggling tabs.
+                </p>
+
+                <div className='mt-9 flex flex-col gap-3 sm:flex-row sm:items-center'>
+                  <Button
+                    asChild
+                    size='lg'
+                    className='min-h-12 rounded-full px-7 text-base shadow-lg shadow-primary/20'
+                  >
+                    <a href={ctaHref}>
+                      Open your kit
+                      <LuArrowRight className='size-5' aria-hidden='true' />
+                    </a>
+                  </Button>
+                  <Button
+                    asChild
+                    variant='outline'
+                    size='lg'
+                    className='min-h-12 rounded-full px-7 text-base'
+                  >
+                    <Link href='#platform'>See how it works</Link>
+                  </Button>
+                </div>
+
+                <div className='mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground'>
+                  <span className='inline-flex items-center gap-2'>
+                    <LuCheck
+                      className='size-4 text-primary'
                       aria-hidden='true'
                     />
-                    Kytbox v{pkg.version.split('.').slice(0, 2).join('.')} is
-                    live
-                  </div>
-
-                  <h1 className='max-w-3xl text-[clamp(3.25rem,8vw,7rem)] font-semibold leading-[0.9] tracking-[-0.075em] text-foreground'>
-                    Make room for{' '}
-                    <span className='text-primary'>better work.</span>
-                  </h1>
-
-                  <p className='mt-8 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl'>
-                    Bio, Cashflow, List, and Invoice in one clean workspace.
-                    Spend less time juggling tabs.
-                  </p>
-
-                  <div className='mt-9 flex flex-col gap-3 sm:flex-row sm:items-center'>
-                    <Button
-                      asChild
-                      size='lg'
-                      className='min-h-12 rounded-full px-7 text-base shadow-lg shadow-primary/20'
-                    >
-                      <a href={ctaHref}>
-                        Open your kit
-                        <LuArrowRight className='size-5' aria-hidden='true' />
-                      </a>
-                    </Button>
-                    <Button
-                      asChild
-                      variant='outline'
-                      size='lg'
-                      className='min-h-12 rounded-full px-7 text-base'
-                    >
-                      <Link href='#platform'>See how it works</Link>
-                    </Button>
-                  </div>
-
-                  <div className='mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground'>
-                    <span className='inline-flex items-center gap-2'>
-                      <LuCheck
-                        className='size-4 text-primary'
-                        aria-hidden='true'
-                      />
-                      No credit card
-                    </span>
-                    <span className='inline-flex items-center gap-2'>
-                      <LuCheck
-                        className='size-4 text-primary'
-                        aria-hidden='true'
-                      />
-                      Free core tools
-                    </span>
-                    <span className='inline-flex items-center gap-2'>
-                      <LuCheck
-                        className='size-4 text-primary'
-                        aria-hidden='true'
-                      />
-                      No complex setup
-                    </span>
-                  </div>
+                    No credit card
+                  </span>
+                  <span className='inline-flex items-center gap-2'>
+                    <LuCheck
+                      className='size-4 text-primary'
+                      aria-hidden='true'
+                    />
+                    Free core tools
+                  </span>
+                  <span className='inline-flex items-center gap-2'>
+                    <LuCheck
+                      className='size-4 text-primary'
+                      aria-hidden='true'
+                    />
+                    No complex setup
+                  </span>
                 </div>
-              </ScrollReveal>
+              </div>
 
-              <ScrollReveal direction='right' delay={0.12}>
+              <div className='animate-in fade-in slide-in-from-bottom-3 duration-700 fill-mode-both'>
                 <WorkspacePreview />
-              </ScrollReveal>
+              </div>
             </div>
 
             <div className='mt-4 grid gap-5 border-t border-border/80 pt-4 text-sm text-muted-foreground sm:grid-cols-[1fr_auto] sm:items-center'>

@@ -1,9 +1,7 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import NextTopLoader from 'nextjs-toploader';
 import '@/sentry.client.config';
-
-const NextTopLoader = dynamic(() => import('nextjs-toploader'), { ssr: false });
 
 export function ClientTopLoader({ nonce }: { nonce: string }) {
   return (

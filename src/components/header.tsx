@@ -84,7 +84,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
               rel='noopener noreferrer'
               title='View Public Profile'
               aria-label='View Public Profile'
-              className='flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-secondary/40 px-0 text-xs font-medium text-foreground transition-all hover:bg-secondary/80 sm:min-w-0 sm:px-3'
+              className='flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-full border border-border/80 bg-secondary/40 px-0 text-xs font-medium text-foreground transition-all hover:bg-secondary/80 sm:h-9 sm:w-auto sm:px-3'
             >
               <span className='hidden sm:inline'>{user.username}</span>
               <LuExternalLink

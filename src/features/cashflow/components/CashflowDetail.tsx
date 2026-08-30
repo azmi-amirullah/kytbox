@@ -54,6 +54,7 @@ import {
   LuTag,
   LuSlidersHorizontal,
   LuFileText,
+  LuRotateCcw,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -94,7 +95,7 @@ import { subscribeToPublicCashflow, removeShare } from '../actions'
 import BudgetManager from './BudgetManager'
 import ImportCsvModal from './ImportCsvModal'
 import ReceiptLightbox from './ReceiptLightbox'
-import { DateFilter } from './DateFilter'
+import { DateFilter, DateFilterCustomRange } from './DateFilter'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -1184,214 +1185,284 @@ export default function CashflowDetail({
 
         {/* Toolbar Header (inside the Card) */}
         {localEntries.length > 0 && (
-          <div className='p-3.5 sm:p-4 border-b border-border/60 flex flex-col gap-3 bg-muted/20'>
-            {/* Row 1: Search + Filters Toggle (Mobile) / Full Filters (Desktop) */}
-            <div className='flex flex-col gap-3 w-full lg:flex-row lg:items-center'>
-              {/* Search Input & Mobile Filter Toggle */}
-              <div className='flex items-center gap-2 w-full lg:max-w-xs shrink-0'>
-                <div className='relative flex items-center flex-1'>
-                  <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none' />
-                  <Input
-                    placeholder='Search entries...'
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className='pl-9 pr-9 bg-card w-full h-10 text-sm'
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className='absolute right-2.5 p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs cursor-pointer'
-                      aria-label='Clear search'
-                    >
-                      <LuX className='w-4 h-4' />
-                    </button>
-                  )}
-                </div>
-
-                {/* Mobile Filter Toggle Button */}
-                <Button
-                  variant={activeFilterCount > 0 ? 'secondary' : 'outline'}
-                  onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
-                  className={cn(
-                    'h-10 px-3 gap-1.5 shrink-0 lg:hidden text-xs font-medium cursor-pointer',
-                    activeFilterCount > 0 &&
-                      'border-primary/50 text-primary font-semibold',
-                  )}
-                  aria-expanded={isMobileFiltersOpen}
-                  aria-label='Toggle filters'
-                >
-                  <LuSlidersHorizontal className='w-4 h-4' />
-                  <span>Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className='inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full'>
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </Button>
-              </div>
-
-              {/* Select Dropdowns Wrapper (Date, Type, Category, Sort) with Smooth Grid Transition */}
-              <div
-                className={cn(
-                  'w-full lg:flex-1 grid lg:flex transition-[grid-template-rows,opacity] duration-200 ease-out',
-                  isMobileFiltersOpen
-                    ? 'grid-rows-[1fr] opacity-100'
-                    : 'grid-rows-[0fr] opacity-0 lg:grid-rows-[1fr] lg:opacity-100',
-                )}
-              >
-                <div className='overflow-hidden w-full lg:overflow-visible flex flex-col lg:flex-row lg:items-center gap-3'>
-                  <div
-                    className={cn(
-                      'grid gap-2.5 sm:gap-3 w-full lg:flex lg:w-auto lg:items-center pt-2 lg:pt-0',
-                      uniqueCategories.length > 0
-                        ? 'grid-cols-2 sm:grid-cols-4'
-                        : 'grid-cols-2 sm:grid-cols-3',
-                    )}
-                  >
-                    {/* Date Filter */}
-                    <div className='w-full lg:w-auto'>
-                      <DateFilter
-                        state={filterState}
-                        onChange={setFilterState}
-                        filteredCount={filteredEntries.length}
-                        totalCount={localEntries.length}
-                      />
-                    </div>
-
-                    {/* Type Dropdown */}
-                    <Select
-                      value={selectedType}
-                      onValueChange={(v) => {
-                        if (v === 'all' || v === 'income' || v === 'expense') {
-                          setSelectedType(v)
-                        }
-                      }}
-                    >
-                      <SelectTrigger className='bg-card w-full lg:w-32 h-10'>
-                        <SelectValue placeholder='Type' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='all'>All Types</SelectItem>
-                        <SelectItem value='income'>Income</SelectItem>
-                        <SelectItem value='expense'>Expense</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {/* Category Dropdown */}
-                    {uniqueCategories.length > 0 && (
-                      <Select
-                        value={selectedCategory}
-                        onValueChange={setSelectedCategory}
+          <div className='border-b border-border/60 flex flex-col bg-muted/15'>
+            {/* Main Controls Section */}
+            <div className='p-3 sm:p-4 flex flex-col gap-3'>
+              {/* Main Toolbar Row */}
+              <div className='flex flex-col lg:flex-row lg:items-center gap-2.5 sm:gap-3 w-full'>
+                {/* Search Input & Mobile Filter Toggle */}
+                <div className='flex items-center gap-2 w-full lg:flex-1 min-w-50'>
+                  <div className='relative flex items-center flex-1'>
+                    <LuSearch className='absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none' />
+                    <Input
+                      placeholder='Search entries...'
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className='pl-9 pr-9 bg-card w-full h-9 text-xs sm:text-sm rounded-lg'
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className='absolute right-2.5 p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xs cursor-pointer'
+                        aria-label='Clear search'
                       >
-                        <SelectTrigger className='bg-card w-full lg:w-36 h-10'>
-                          <SelectValue placeholder='Category' />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value='all'>All Categories</SelectItem>
-                          {uniqueCategories.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <LuX className='w-4 h-4' />
+                      </button>
                     )}
-
-                    {/* Sort Dropdown */}
-                    <div className='w-full lg:w-auto'>
-                      <Select
-                        value={sortBy}
-                        onValueChange={(v) => {
-                          if (isCashflowSortOption(v)) {
-                            setSortBy(v)
-                          }
-                        }}
-                      >
-                        <SelectTrigger
-                          className='bg-card w-full lg:w-38 whitespace-nowrap h-10'
-                          aria-label='Sort entries'
-                        >
-                          <SelectValue placeholder='Sort by' />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value='date-desc'>
-                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                              <span>Date</span>
-                              <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                            </span>
-                          </SelectItem>
-                          <SelectItem value='date-asc'>
-                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                              <span>Date</span>
-                              <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                            </span>
-                          </SelectItem>
-                          <SelectItem value='created-desc'>
-                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                              <span>Created</span>
-                              <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                            </span>
-                          </SelectItem>
-                          <SelectItem value='created-asc'>
-                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                              <span>Created</span>
-                              <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                            </span>
-                          </SelectItem>
-                          <SelectItem value='amount-desc'>
-                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                              <span>Amount</span>
-                              <LuArrowDown className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                            </span>
-                          </SelectItem>
-                          <SelectItem value='amount-asc'>
-                            <span className='flex items-center gap-1.5 whitespace-nowrap'>
-                              <span>Amount</span>
-                              <LuArrowUp className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                            </span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
 
-                  {hasActiveFilters && (
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      onClick={clearAllFilters}
-                      className='gap-1.5 text-muted-foreground hover:text-foreground h-10 px-3 self-start sm:self-center cursor-pointer'
-                    >
-                      <LuX className='w-4 h-4' />
-                      <span>Clear Filters</span>
-                    </Button>
+                  {/* Mobile Filter Toggle Button */}
+                  <Button
+                    variant={activeFilterCount > 0 ? 'secondary' : 'outline'}
+                    size='sm'
+                    onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
+                    className={cn(
+                      'h-9 px-3 gap-1.5 shrink-0 lg:hidden text-xs font-medium cursor-pointer rounded-lg',
+                      activeFilterCount > 0 &&
+                        'border-primary/50 text-primary font-semibold',
+                    )}
+                    aria-expanded={isMobileFiltersOpen}
+                    aria-label='Toggle filters'
+                  >
+                    <LuSlidersHorizontal className='w-3.5 h-3.5' />
+                    <span>Filters</span>
+                    {activeFilterCount > 0 && (
+                      <span className='inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full'>
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Select Dropdowns Wrapper (Date, Type, Category, Sort, Reset) with Smooth Grid Transition */}
+                <div
+                  className={cn(
+                    'w-full lg:w-auto shrink-0 grid lg:flex items-center transition-[grid-template-rows,opacity] duration-200 ease-out',
+                    isMobileFiltersOpen
+                      ? 'grid-rows-[1fr] opacity-100'
+                      : 'grid-rows-[0fr] opacity-0 lg:grid-rows-[1fr] lg:opacity-100',
                   )}
+                >
+                  <div className='overflow-hidden w-full lg:overflow-visible flex flex-col gap-2.5'>
+                    {/* Dropdowns Row / Grid */}
+                    <div className='flex flex-col lg:flex-row lg:items-center gap-2'>
+                      <div
+                        className={cn(
+                          'grid gap-2 w-full lg:flex lg:w-auto lg:items-center',
+                          uniqueCategories.length > 0
+                            ? 'grid-cols-2 sm:grid-cols-4'
+                            : 'grid-cols-2 sm:grid-cols-3',
+                        )}
+                      >
+                        {/* Date Filter */}
+                        <div className='w-full lg:w-36 xl:w-40'>
+                          <DateFilter
+                            state={filterState}
+                            onChange={setFilterState}
+                            filteredCount={filteredEntries.length}
+                            totalCount={localEntries.length}
+                          />
+                        </div>
+
+                        {/* Type Dropdown */}
+                        <div className='w-full lg:w-28 xl:w-32'>
+                          <Select
+                            value={selectedType}
+                            onValueChange={(v) => {
+                              if (
+                                v === 'all' ||
+                                v === 'income' ||
+                                v === 'expense'
+                              ) {
+                                setSelectedType(v)
+                              }
+                            }}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                'bg-card w-full h-9 text-xs sm:text-sm whitespace-nowrap transition-colors rounded-lg',
+                                selectedType !== 'all' &&
+                                  'border-primary/60 bg-primary/5 text-primary [&>svg]:text-primary font-medium shadow-xs',
+                              )}
+                            >
+                              <SelectValue placeholder='Type' />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='all'>All Types</SelectItem>
+                              <SelectItem value='income'>Income</SelectItem>
+                              <SelectItem value='expense'>Expense</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Category Dropdown */}
+                        {uniqueCategories.length > 0 && (
+                          <div className='w-full lg:w-36 xl:w-40'>
+                            <Select
+                              value={selectedCategory}
+                              onValueChange={setSelectedCategory}
+                            >
+                              <SelectTrigger
+                                className={cn(
+                                  'bg-card w-full h-9 text-xs sm:text-sm whitespace-nowrap transition-colors rounded-lg',
+                                  selectedCategory !== 'all' &&
+                                    'border-primary/60 bg-primary/5 text-primary [&>svg]:text-primary font-medium shadow-xs',
+                                )}
+                              >
+                                <SelectValue placeholder='Category' />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value='all'>
+                                  All Categories
+                                </SelectItem>
+                                {uniqueCategories.map((cat) => (
+                                  <SelectItem key={cat} value={cat}>
+                                    {cat}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {/* Sort Dropdown */}
+                        <div className='w-full lg:w-32 xl:w-36'>
+                          <Select
+                            value={sortBy}
+                            onValueChange={(v) => {
+                              if (isCashflowSortOption(v)) {
+                                setSortBy(v)
+                              }
+                            }}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                'bg-card w-full h-9 text-xs sm:text-sm whitespace-nowrap transition-colors rounded-lg',
+                                sortBy !== 'date-desc' &&
+                                  'border-primary/60 bg-primary/5 text-primary [&>svg]:text-primary font-medium shadow-xs',
+                              )}
+                              aria-label='Sort entries'
+                            >
+                              <SelectValue placeholder='Sort by' />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='date-desc'>
+                                <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                                  <span>Date</span>
+                                  <LuArrowDown className='w-3.5 h-3.5 text-current shrink-0' />
+                                </span>
+                              </SelectItem>
+                              <SelectItem value='date-asc'>
+                                <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                                  <span>Date</span>
+                                  <LuArrowUp className='w-3.5 h-3.5 text-current shrink-0' />
+                                </span>
+                              </SelectItem>
+                              <SelectItem value='created-desc'>
+                                <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                                  <span>Created</span>
+                                  <LuArrowDown className='w-3.5 h-3.5 text-current shrink-0' />
+                                </span>
+                              </SelectItem>
+                              <SelectItem value='created-asc'>
+                                <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                                  <span>Created</span>
+                                  <LuArrowUp className='w-3.5 h-3.5 text-current shrink-0' />
+                                </span>
+                              </SelectItem>
+                              <SelectItem value='amount-desc'>
+                                <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                                  <span>Amount</span>
+                                  <LuArrowDown className='w-3.5 h-3.5 text-current shrink-0' />
+                                </span>
+                              </SelectItem>
+                              <SelectItem value='amount-asc'>
+                                <span className='flex items-center gap-1.5 whitespace-nowrap'>
+                                  <span>Amount</span>
+                                  <LuArrowUp className='w-3.5 h-3.5 text-current shrink-0' />
+                                </span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Desktop Inline Reset Button */}
+                      {hasActiveFilters && (
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={clearAllFilters}
+                          className='hidden lg:inline-flex h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground gap-1.5 shrink-0 whitespace-nowrap rounded-lg cursor-pointer'
+                          title='Reset all active filters'
+                        >
+                          <LuRotateCcw className='w-3.5 h-3.5' />
+                          <span>Reset</span>
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Mobile Custom Date Range & Reset Row */}
+                    {(filterState.preset === 'custom' || hasActiveFilters) && (
+                      <div className='lg:hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-0.5 w-full'>
+                        <DateFilterCustomRange
+                          state={filterState}
+                          onChange={setFilterState}
+                        />
+
+                        {/* Mobile Drawer Compact Reset Button */}
+                        {hasActiveFilters && (
+                          <div className='flex items-center justify-end w-full sm:w-auto ml-auto shrink-0 sm:self-center'>
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              onClick={clearAllFilters}
+                              className='h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground gap-1.5 rounded-lg cursor-pointer'
+                            >
+                              <LuRotateCcw className='w-3.5 h-3.5' />
+                              <span>Reset</span>
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Active Filters Summary Strip on Mobile (when filters are collapsed and active) */}
-            {!isMobileFiltersOpen && activeFilterCount > 0 && (
-              <div className='flex lg:hidden items-center justify-between gap-2 pt-1 border-t border-border/30'>
-                <p className='text-xs text-muted-foreground truncate'>
-                  <span className='font-medium text-foreground'>
-                    {filteredEntries.length}
-                  </span>{' '}
-                  of {localEntries.length} entries matching {activeFilterCount}{' '}
-                  {activeFilterCount === 1 ? 'filter' : 'filters'}
-                </p>
-                <button
-                  onClick={clearAllFilters}
-                  className='text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer'
-                >
-                  Clear all
-                </button>
-              </div>
-            )}
+              {/* Desktop Custom Date Range Picker (rendered as sleek sub-row) */}
+              {filterState.preset === 'custom' && (
+                <div className='hidden lg:block'>
+                  <DateFilterCustomRange
+                    state={filterState}
+                    onChange={setFilterState}
+                  />
+                </div>
+              )}
+
+              {/* Active Filters Summary Strip on Mobile (when filters are collapsed and active) */}
+              {!isMobileFiltersOpen && activeFilterCount > 0 && (
+                <div className='flex lg:hidden items-center justify-between gap-2 pt-1 border-t border-border/30'>
+                  <p className='text-xs text-muted-foreground truncate'>
+                    <span className='font-medium text-foreground'>
+                      {filteredEntries.length}
+                    </span>{' '}
+                    of {localEntries.length} entries matching {activeFilterCount}{' '}
+                    {activeFilterCount === 1 ? 'filter' : 'filters'}
+                  </p>
+                  <button
+                    onClick={clearAllFilters}
+                    className='text-xs text-primary font-medium hover:underline shrink-0 cursor-pointer'
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Row 2: Tag Filter Strip */}
             {allUniqueTags.length > 0 && (
-              <div className='flex flex-wrap items-center gap-1.5 pt-3 mt-1 border-t border-border/40'>
+              <div className='flex flex-wrap items-center gap-1.5 px-3 sm:px-4 py-2.5 border-t border-border/40 bg-muted/10'>
                 <span className='text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1 shrink-0'>
                   <LuTag className='w-3.5 h-3.5' /> Tags:
                 </span>
