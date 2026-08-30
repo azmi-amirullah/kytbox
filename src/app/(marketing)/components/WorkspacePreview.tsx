@@ -71,16 +71,16 @@ const appTools = [
     color: 'bg-accent text-accent-foreground',
   },
   {
-    name: 'Invoice',
-    description: 'Create professional invoices & statements',
-    icon: LuFileText,
-    color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  },
-  {
     name: 'List',
     description: 'Organize tasks, wishlists, and ideas',
     icon: LuListTodo,
     color: 'bg-secondary text-secondary-foreground',
+  },
+  {
+    name: 'Invoice',
+    description: 'Create professional invoices & statements',
+    icon: LuFileText,
+    color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   },
 ]
 

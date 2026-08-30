@@ -748,3 +748,214 @@ export function filterEntriesByTags(
     return lower.every((tag) => entryTagsLower.includes(tag));
   });
 }
+
+/**
+ * Category breakdown item for financial reports.
+ */
+export interface CategorySummaryItem {
+  category: string;
+  type: 'income' | 'expense';
+  total: number;
+  percentage: number;
+  count: number;
+}
+
+/**
+ * Top expense item for quick financial spotlights.
+ */
+export interface TopExpenseItem {
+  id: string;
+  description: string;
+  category: string | null;
+  amount: number;
+  date: string;
+  tags: string[];
+}
+
+/**
+ * Full calculated dataset for financial PDF statements and monthly reports.
+ */
+export interface FinancialReportData {
+  title: string;
+  periodLabel: string;
+  dateRange: {
+    from: string | null;
+    to: string | null;
+  };
+  generatedAt: string;
+  currency: string;
+  kpi: {
+    totalIncome: number;
+    totalExpense: number;
+    netSavings: number;
+    savingsRate: number;
+    totalTransactions: number;
+    incomeCount: number;
+    expenseCount: number;
+    splitItemsCount: number;
+  };
+  expenseCategories: CategorySummaryItem[];
+  incomeCategories: CategorySummaryItem[];
+  topExpenses: TopExpenseItem[];
+  entries: CashflowEntryDTO[];
+}
+
+export interface FinancialReportOptions {
+  range: DateRange;
+  periodLabel?: string;
+  currency?: string | null;
+  now?: Date;
+}
+
+/**
+ * Generates structured financial report data from cashflow entries.
+ * Calculates totals, net savings, savings rate, category distributions,
+ * top expenses, and filtered itemized ledgers.
+ */
+export function generateFinancialReportData(
+  title: string,
+  entries: CashflowEntryDTO[],
+  options: FinancialReportOptions,
+): FinancialReportData {
+  const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+  const now = options.now || new Date();
+  const currency = options.currency || 'USD';
+
+  const filtered = filterEntriesByDate(entries, options.range);
+
+  // Sort chronological for statement ledger (date-asc, then created_at-asc)
+  const sortedEntries = [...filtered].sort((a, b) => {
+    const dateComp = a.date.localeCompare(b.date);
+    if (dateComp !== 0) return dateComp;
+    return (a.created_at || '').localeCompare(b.created_at || '');
+  });
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+  let incomeCount = 0;
+  let expenseCount = 0;
+  let splitItemsCount = 0;
+
+  const expenseCategoryMap = new Map<string, { total: number; count: number }>();
+  const incomeCategoryMap = new Map<string, { total: number; count: number }>();
+
+  for (const entry of sortedEntries) {
+    const amount = Number(entry.amount) || 0;
+    const cat = entry.category?.trim() || 'uncategorized';
+    if (entry.items && entry.items.length > 0) {
+      splitItemsCount += entry.items.length;
+    }
+
+    if (entry.type === 'income') {
+      totalIncome += amount;
+      incomeCount += 1;
+      const cur = incomeCategoryMap.get(cat) || { total: 0, count: 0 };
+      incomeCategoryMap.set(cat, {
+        total: cur.total + amount,
+        count: cur.count + 1,
+      });
+    } else {
+      totalExpense += amount;
+      expenseCount += 1;
+      const cur = expenseCategoryMap.get(cat) || { total: 0, count: 0 };
+      expenseCategoryMap.set(cat, {
+        total: cur.total + amount,
+        count: cur.count + 1,
+      });
+    }
+  }
+
+  totalIncome = round2(totalIncome);
+  totalExpense = round2(totalExpense);
+  const netSavings = round2(totalIncome - totalExpense);
+  const savingsRate =
+    totalIncome > 0 ? round2((Math.max(0, netSavings) / totalIncome) * 100) : 0;
+
+  const expenseCategories: CategorySummaryItem[] = [];
+  for (const [cat, data] of expenseCategoryMap.entries()) {
+    const total = round2(data.total);
+    const percentage = totalExpense > 0 ? round2((total / totalExpense) * 100) : 0;
+    expenseCategories.push({
+      category: cat,
+      type: 'expense',
+      total,
+      percentage,
+      count: data.count,
+    });
+  }
+  expenseCategories.sort((a, b) => b.total - a.total);
+
+  const incomeCategories: CategorySummaryItem[] = [];
+  for (const [cat, data] of incomeCategoryMap.entries()) {
+    const total = round2(data.total);
+    const percentage = totalIncome > 0 ? round2((total / totalIncome) * 100) : 0;
+    incomeCategories.push({
+      category: cat,
+      type: 'income',
+      total,
+      percentage,
+      count: data.count,
+    });
+  }
+  incomeCategories.sort((a, b) => b.total - a.total);
+
+  // Top 5 largest expenses
+  const topExpenses: TopExpenseItem[] = sortedEntries
+    .filter((e) => e.type !== 'income')
+    .sort((a, b) => Number(b.amount) - Number(a.amount))
+    .slice(0, 5)
+    .map((e) => ({
+      id: e.id,
+      description: e.description,
+      category: e.category,
+      amount: Number(e.amount) || 0,
+      date: e.date,
+      tags: e.tags || [],
+    }));
+
+  // Resolve period label
+  let periodLabel = options.periodLabel;
+  if (!periodLabel) {
+    if (!options.range.from && !options.range.to) {
+      periodLabel = 'All Time';
+    } else if (options.range.from && options.range.to) {
+      if (options.range.from.slice(0, 7) === options.range.to.slice(0, 7) && options.range.from.endsWith('-01')) {
+        // Full single month
+        periodLabel = formatMonthLabel(options.range.from.slice(0, 7));
+      } else {
+        periodLabel = `${options.range.from} to ${options.range.to}`;
+      }
+    } else if (options.range.from) {
+      periodLabel = `From ${options.range.from}`;
+    } else if (options.range.to) {
+      periodLabel = `Up to ${options.range.to}`;
+    } else {
+      periodLabel = 'Statement Period';
+    }
+  }
+
+  const generatedAt = now.toISOString();
+
+  return {
+    title: title || 'Cashflow Statement',
+    periodLabel,
+    dateRange: options.range,
+    generatedAt,
+    currency,
+    kpi: {
+      totalIncome,
+      totalExpense,
+      netSavings,
+      savingsRate,
+      totalTransactions: sortedEntries.length,
+      incomeCount,
+      expenseCount,
+      splitItemsCount,
+    },
+    expenseCategories,
+    incomeCategories,
+    topExpenses,
+    entries: sortedEntries,
+  };
+}
+

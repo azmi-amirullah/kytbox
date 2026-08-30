@@ -30,7 +30,7 @@
 - [x] [Day 20 — List: Advanced Features E2E Test Suite](#day-20)
 - [x] [Day 21 — Weekly Sprint Audit & Accessibility (WCAG 2.2)](#day-21)
 - [x] [Day 22 — List: Interactive Calendar View (`Month / Week Grid`)](#day-22)
-- [ ] [Day 23 — Cashflow: Financial PDF Statement & Monthly Report Generator](#day-23)
+- [x] [Day 23 — Cashflow: Financial PDF Statement & Monthly Report Generator](#day-23)
 - [ ] [Day 24 — Platform: Workspace Global Search (`Cmd+K`)](#day-24)
 - [ ] [Day 25 — Platform: One-Click GDPR Data Export](#day-25)
 - [ ] [Day 26 — Platform: Session Management Dashboard](#day-26)
@@ -474,6 +474,7 @@
 | **Wishlist Price Comparison** | Compare prices across multiple stores for the same item | 🔥 | ~3h |
 | **List Sharing with ACL** | Share lists with read/edit permissions | 🔥🔥🔥 | ~5h |
 | **Kanban WIP Limits** | Set maximum cards per column ("In Progress: max 3") | 🔥 | ~2h |
+| **Task Date Ranges & Timeline View** | Support `start_date` + multi-day spanning Gantt bars across calendar & timeline | 🔥🔥 | ~5h |
 
 ---
 

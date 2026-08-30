@@ -31,15 +31,6 @@ export const KYTBOX_APPS: KytboxApp[] = [
     color: 'bg-accent text-accent-foreground',
   },
   {
-    id: 'invoice',
-    name: 'Invoice',
-    description: 'Create professional invoices & export PDF statements',
-    href: '/invoice',
-    icon: LuFileText,
-    status: 'active',
-    color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  },
-  {
     id: 'list',
     name: 'List',
     description: 'Organize tasks, wishlists, and ideas',
@@ -47,6 +38,15 @@ export const KYTBOX_APPS: KytboxApp[] = [
     icon: LuListTodo,
     status: 'active',
     color: 'bg-secondary text-secondary-foreground',
+  },
+  {
+    id: 'invoice',
+    name: 'Invoice',
+    description: 'Create professional invoices & export PDF statements',
+    href: '/invoice',
+    icon: LuFileText,
+    status: 'active',
+    color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   },
   {
     id: 'track',

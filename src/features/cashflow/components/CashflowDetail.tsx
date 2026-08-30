@@ -53,6 +53,7 @@ import {
   LuArrowUp,
   LuTag,
   LuSlidersHorizontal,
+  LuFileText,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -116,6 +117,7 @@ import { cn } from '@/lib/utils'
 import { EntryTypeBadge, EntryMetadataBadges } from './EntryBadges'
 import { resolveTagColor, TAG_COLORS } from '../lib/tag-colors'
 import { ManageTagModal } from './ManageTagModal'
+import { FinancialReportModal } from './FinancialReportModal'
 
 interface CashflowDetailProps {
   cashflow: CashflowDTO
@@ -149,6 +151,7 @@ export default function CashflowDetail({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
     null,
   )
@@ -867,6 +870,13 @@ export default function CashflowDetail({
                     )}
                     <DropdownMenuItem
                       className='cursor-pointer'
+                      onClick={() => setIsReportModalOpen(true)}
+                    >
+                      <LuFileText className='w-4 h-4 mr-2' />
+                      Financial Report
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className='cursor-pointer'
                       onClick={handleExportCSV}
                     >
                       <LuCloudDownload className='w-4 h-4 mr-2' />
@@ -976,6 +986,16 @@ export default function CashflowDetail({
                 <span className='hidden md:inline'>Import CSV</span>
               </Button>
             )}
+
+            <Button
+              variant='outline'
+              onClick={() => setIsReportModalOpen(true)}
+              className='gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm'
+              title='Financial Report & Statement'
+            >
+              <LuFileText className='w-4 h-4' />
+              <span className='hidden md:inline'>Financial Report</span>
+            </Button>
 
             <Button
               variant='outline'
@@ -1416,7 +1436,7 @@ export default function CashflowDetail({
                         <span className='shrink-0'>#{tag}</span>
                       </button>
                       {canEdit && (
-                        <span className='inline-flex items-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pr-1.5 transition-opacity duration-150 shrink-0'>
+                        <span className='inline-flex items-center max-w-0 opacity-0 overflow-hidden group-hover:max-w-6 group-hover:opacity-100 group-hover:pr-1.5 group-focus-within:max-w-6 group-focus-within:opacity-100 group-focus-within:pr-1.5 transition-all duration-150 shrink-0'>
                           <button
                             type='button'
                             onClick={(e) => {
@@ -1877,6 +1897,7 @@ export default function CashflowDetail({
         open={isManageTagOpen}
         onOpenChange={setIsManageTagOpen}
         onSuccess={handleEntrySuccess}
+        bookTags={tags}
       />
 
       {/* Delete Cashflow Dialog */}
@@ -1965,6 +1986,15 @@ export default function CashflowDetail({
           viewingReceiptEntry ? Number(viewingReceiptEntry.amount) : undefined
         }
         currency={currency}
+      />
+      {/* Financial Report & Statement Modal */}
+      <FinancialReportModal
+        cashflow={cashflow}
+        entries={localEntries}
+        currency={currency}
+        activeFilterState={filterState}
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
       />
     </div>
   )
