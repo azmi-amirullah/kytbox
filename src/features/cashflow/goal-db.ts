@@ -23,7 +23,6 @@ export async function getGoalDetailData(
       .from('cashflow_goals')
       .select('*')
       .eq('id', goalId)
-      .eq('is_deleted', false)
       .maybeSingle(),
     supabase.from('profiles').select('default_currency').eq('id', userId).single(),
   ])

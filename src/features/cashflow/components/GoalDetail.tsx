@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { LuTarget, LuSearch, LuTrendingUp, LuCalendar } from 'react-icons/lu'
-import { FiCheckCircle, FiClock, FiAlertTriangle } from 'react-icons/fi'
+import { FiCheckCircle, FiClock, FiAlertTriangle, FiArchive } from 'react-icons/fi'
 import { formatCurrency } from '@/lib/currency'
 import { parseDateOnly, formatAppDate } from '@/lib/date-only'
 import type { CashflowGoalDTO, CashflowEntryDTO } from '@/types/dto'
@@ -81,14 +81,27 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
     })
   }, [entries, searchQuery, selectedMonth])
 
-  const statusIcon = isCompleted
+  const isArchived = Boolean(goal.is_archived)
+
+  const statusIcon = isArchived
+    ? <FiArchive className='w-5 h-5 text-muted-foreground' />
+    : isCompleted
     ? <FiCheckCircle className='w-5 h-5 text-emerald-500' />
     : isOverdue
     ? <FiAlertTriangle className='w-5 h-5 text-destructive' />
     : <FiClock className='w-5 h-5 text-amber-500' />
 
-  const statusLabel = isCompleted ? 'Completed' : isOverdue ? 'Overdue' : 'On Track'
-  const statusVariant: 'default' | 'destructive' | 'secondary' = isCompleted
+  const statusLabel = isArchived
+    ? 'Archived'
+    : isCompleted
+    ? 'Completed'
+    : isOverdue
+    ? 'Overdue'
+    : 'On Track'
+
+  const statusVariant: 'default' | 'destructive' | 'secondary' | 'outline' = isArchived
+    ? 'outline'
+    : isCompleted
     ? 'default'
     : isOverdue
     ? 'destructive'
@@ -140,6 +153,15 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
           </div>
         </div>
       </div>
+
+      {isArchived && (
+        <div className='flex items-center gap-2.5 rounded-xl border border-border/80 bg-muted/40 p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground backdrop-blur-xs'>
+          <FiArchive className='h-4 w-4 shrink-0 text-muted-foreground' />
+          <span>
+            This savings goal is archived. Historical contribution records are preserved, but active contributions and recurring deductions are paused.
+          </span>
+        </div>
+      )}
 
       {/* Progress Card */}
       <motion.div

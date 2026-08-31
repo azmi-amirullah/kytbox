@@ -124,8 +124,12 @@ export default function EntryModal({
   const [isSplit, setIsSplit] = useState(initialItems.length > 0)
   const [splitItems, setSplitItems] = useState<SplitItemInput[]>(initialItems)
 
+  const activeGoals = goals.filter((goal) => !goal.is_archived)
+
   const isArchivedGoal = Boolean(
-    entry?.goal_id && entry.goal_id === goalId && !entryGoal,
+    entry?.goal_id &&
+      entry.goal_id === goalId &&
+      (!entryGoal || Boolean(entryGoal.is_archived)),
   )
 
   const isEntryChanged =
@@ -404,11 +408,11 @@ export default function EntryModal({
     }
   }
 
-  const selectedGoalIndex = goals.findIndex((goal) => goal.id === goalId)
+  const selectedGoal = goals.find((goal) => goal.id === goalId)
   const categorySelectValue = isArchivedGoal
     ? 'archived-goal'
-    : selectedGoalIndex >= 0
-      ? `goal-option-${selectedGoalIndex}`
+    : selectedGoal && !selectedGoal.is_archived
+      ? `goal-${selectedGoal.id}`
       : category || 'uncategorized'
 
   return (
@@ -580,8 +584,8 @@ export default function EntryModal({
               <Select
                 value={categorySelectValue}
                 onValueChange={(v) => {
-                  const selectedGoal = goals.find(
-                    (_, index) => `goal-option-${index}` === v,
+                  const selectedGoal = activeGoals.find(
+                    (g) => `goal-${g.id}` === v,
                   )
                   if (selectedGoal) {
                     setType('expense')
@@ -616,29 +620,29 @@ export default function EntryModal({
                       </span>
                     </SelectItem>
                   )}
-                      {goals.length > 0 && (
-                        <>
-                          <div className='h-px bg-border my-1.5' />
-                          <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
-                            Savings Goals
-                          </div>
-                          {goals.map((g, index) => (
-                            <SelectItem
-                              key={g.id}
-                              value={`goal-option-${index}`}
-                            >
-                              <span className='flex flex-col items-start'>
-                                <span>Goal: {g.title}</span>
-                                {g.cashflow_title && (
-                                  <span className='text-[10px] text-muted-foreground'>
-                                    Cashflow: {g.cashflow_title}
-                                  </span>
-                                )}
+                  {activeGoals.length > 0 && (
+                    <>
+                      <div className='h-px bg-border my-1.5' />
+                      <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                        Savings Goals
+                      </div>
+                      {activeGoals.map((g) => (
+                        <SelectItem
+                          key={g.id}
+                          value={`goal-${g.id}`}
+                        >
+                          <span className='flex flex-col items-start'>
+                            <span>Goal: {g.title}</span>
+                            {g.cashflow_title && (
+                              <span className='text-[10px] text-muted-foreground'>
+                                Cashflow: {g.cashflow_title}
                               </span>
-                            </SelectItem>
-                          ))}
-                        </>
-                      )}
+                            )}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

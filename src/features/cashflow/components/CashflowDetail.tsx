@@ -1198,7 +1198,7 @@ export default function CashflowDetail({
             {/* Main Controls Section */}
             <div className='p-3 sm:p-4 flex flex-col gap-3'>
               {/* Main Toolbar Row */}
-              <div className='flex flex-col lg:flex-row lg:items-center gap-2.5 sm:gap-3 w-full'>
+              <div className='flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-3 w-full'>
                 {/* Search Input & Mobile Filter Toggle */}
                 <div className='flex items-center gap-2 w-full lg:flex-1 min-w-50'>
                   <div className='relative flex items-center flex-1'>
@@ -1243,16 +1243,23 @@ export default function CashflowDetail({
                   </Button>
                 </div>
 
-                {/* Select Dropdowns Wrapper (Date, Type, Category, Sort, Reset) with Smooth Grid Transition */}
+                {/* Select Dropdowns Wrapper (Date, Type, Category, Sort, Reset) with Coordinated Grid & Opacity Transition */}
                 <div
                   className={cn(
-                    'w-full lg:w-auto shrink-0 grid lg:flex items-center transition-[grid-template-rows,opacity] duration-200 ease-out',
+                    'w-full lg:w-auto shrink-0 grid lg:flex items-start lg:items-center transition-[grid-template-rows,opacity,visibility] duration-200 ease-out',
                     isMobileFiltersOpen
-                      ? 'grid-rows-[1fr] opacity-100'
-                      : 'grid-rows-[0fr] opacity-0 lg:grid-rows-[1fr] lg:opacity-100',
+                      ? 'grid-rows-[1fr] opacity-100 pointer-events-auto visible'
+                      : 'grid-rows-[0fr] opacity-0 pointer-events-none invisible lg:grid-rows-[1fr] lg:opacity-100 lg:pointer-events-auto lg:visible',
                   )}
                 >
-                  <div className='overflow-hidden w-full lg:overflow-visible flex flex-col gap-2.5'>
+                  <div
+                    className={cn(
+                      'min-h-0 overflow-hidden w-full lg:overflow-visible flex flex-col gap-2.5 transition-all duration-200 ease-out',
+                      isMobileFiltersOpen
+                        ? 'pt-2.5 lg:pt-0 opacity-100'
+                        : 'pt-0 opacity-0 lg:opacity-100',
+                    )}
+                  >
                     {/* Dropdowns Row / Grid */}
                     <div className='flex flex-col lg:flex-row lg:items-center gap-2'>
                       <div

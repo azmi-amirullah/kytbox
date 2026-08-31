@@ -270,6 +270,7 @@ export function mapGoalToDTO(
     contribution_count: Math.max(0, Number(contributionCount)),
     deadline: row.deadline ?? null,
     created_at: row.created_at,
+    is_archived: Boolean(row.is_deleted),
   };
 }
 

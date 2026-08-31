@@ -127,6 +127,7 @@ export interface CashflowGoalDTO {
   contribution_count: number
   deadline: string | null
   created_at: string | null
+  is_archived?: boolean
 }
 
 export interface CashflowChartAggregateDTO {

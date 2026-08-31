@@ -29,8 +29,7 @@ export async function generateMetadata({ params }: GoalDetailPageProps): Promise
     .from('cashflow_goals')
     .select('title')
     .eq('id', goalId)
-    .eq('is_deleted', false)
-    .single()
+    .maybeSingle()
   if (error) {
     console.error('cashflow_goal_metadata_lookup_failed', error)
   }

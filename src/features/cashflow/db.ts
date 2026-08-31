@@ -232,7 +232,6 @@ export async function getCashflowDetailData(
         .from('cashflow_goals')
         .select('*')
         .in('cashflow_id', queryIds)
-        .eq('is_deleted', false)
         .order('created_at', { ascending: true }),
       supabase
         .from('cashflow_goal_progress')

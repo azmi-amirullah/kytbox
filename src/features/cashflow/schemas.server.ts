@@ -108,6 +108,8 @@ export const updateCashflowGoalSchema = cashflowGoalSchema.extend({
 export const deleteCashflowGoalSchema = z.object({
   goalId: z.uuid({ message: 'Invalid goal ID' }),
 });
+export const archiveCashflowGoalSchema = deleteCashflowGoalSchema;
+export const unarchiveCashflowGoalSchema = deleteCashflowGoalSchema;
 
 export function getGoalEntryValidationError(
   type: 'income' | 'expense',

@@ -179,6 +179,21 @@ describe('Cashflow Server Schemas', () => {
       expect(goal.cashflow_title).toBe('Personal Budget');
       expect(goal.saved_amount).toBe(0);
       expect(goal.contribution_count).toBe(0);
+      expect(goal.is_archived).toBe(false);
+    });
+
+    it('maps is_deleted to is_archived correctly', () => {
+      const archivedGoal = mapGoalToDTO({
+        id: 'goal-id-2',
+        cashflow_id: 'cashflow-id',
+        title: 'Old Vacation Goal',
+        target_amount: 2000,
+        deadline: null,
+        is_deleted: true,
+        created_at: '2026-01-01T00:00:00.000Z',
+      });
+
+      expect(archivedGoal.is_archived).toBe(true);
     });
   });
 

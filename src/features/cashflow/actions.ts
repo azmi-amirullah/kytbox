@@ -14,7 +14,8 @@ import {
   generateRecurringSchema,
   cashflowGoalSchema,
   updateCashflowGoalSchema,
-  deleteCashflowGoalSchema,
+  archiveCashflowGoalSchema,
+  unarchiveCashflowGoalSchema,
   getGoalEntryValidationError,
   shouldPreserveExistingGoalRelation,
   importCashflowEntriesSchema,
@@ -1852,10 +1853,10 @@ export async function updateGoal(formData: FormData) {
   return { goal: mapGoalToDTO(goal) };
 }
 
-export async function deleteGoal(goalId: string, cashflowId: string) {
+export async function archiveGoal(goalId: string, cashflowId: string) {
   const { user, supabase } = await getAuthenticatedUser();
 
-  const parsed = deleteCashflowGoalSchema.safeParse({ goalId });
+  const parsed = archiveCashflowGoalSchema.safeParse({ goalId });
   const parsedCashflowId = z.uuid().safeParse(cashflowId);
 
   if (!parsed.success || !parsedCashflowId.success) {
@@ -1900,6 +1901,57 @@ export async function deleteGoal(goalId: string, cashflowId: string) {
   revalidatePath(`/cashflow/goal/${goalId}`);
   return { success: true };
 }
+
+export async function unarchiveGoal(goalId: string, cashflowId: string) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const parsed = unarchiveCashflowGoalSchema.safeParse({ goalId });
+  const parsedCashflowId = z.uuid().safeParse(cashflowId);
+
+  if (!parsed.success || !parsedCashflowId.success) {
+    return { error: 'Invalid goal ID or cashflow ID' };
+  }
+
+  if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
+    return { error: 'Only the cashflow owner can manage savings goals' };
+  }
+
+  const { data: goal, error: goalLookupError } = await supabase
+    .from('cashflow_goals')
+    .select('id')
+    .eq('id', goalId)
+    .eq('cashflow_id', cashflowId)
+    .eq('is_deleted', true)
+    .maybeSingle();
+
+  if (goalLookupError) {
+    console.error('Failed to find goal to unarchive:', goalLookupError);
+    return { error: 'Failed to unarchive goal' };
+  }
+
+  if (!goal) {
+    return { error: 'Savings goal not found or already active' };
+  }
+
+  const { error } = await supabase
+    .from('cashflow_goals')
+    .update({ is_deleted: false })
+    .eq('id', goalId)
+    .eq('cashflow_id', cashflowId)
+    .eq('is_deleted', true);
+
+  if (error) {
+    console.error('Failed to unarchive goal:', error);
+    return { error: 'Failed to unarchive goal' };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  revalidatePath(`/cashflow/goal/${goalId}`);
+  return { success: true };
+}
+
+export const deleteGoal = archiveGoal;
 
 export async function duplicateCashflow(cashflowId: string) {
   const { user, supabase } = await getAuthenticatedUser();
