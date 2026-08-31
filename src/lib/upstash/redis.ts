@@ -56,6 +56,14 @@ export const subscribeRateLimit = new Ratelimit({
   prefix: '@kytbox/subscribe-ratelimit',
 });
 
+// Rate limiter for GDPR data export (5 requests per hour per user)
+export const exportRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '1h'),
+  analytics: true,
+  prefix: '@kytbox/export-ratelimit',
+});
+
 /**
  * Helper to check rate limits while automatically bypassing during tests/E2E runs.
  */

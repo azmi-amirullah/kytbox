@@ -342,6 +342,54 @@ export function resolveFilterRange(
   }
 }
 
+const MONTH_NAMES_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/**
+ * Returns a human-friendly month label for the active date preset (e.g., "Aug 2026", "Jul 2026", "Jun – Aug 2026").
+ */
+export function getDateFilterPresetMonthLabel(
+  state: DateFilterState,
+  today: Date = new Date()
+): string {
+  const y = today.getFullYear();
+  const m = today.getMonth();
+
+  switch (state.preset) {
+    case 'this-month':
+      return `${MONTH_NAMES_SHORT[m]} ${y}`;
+    case 'last-month': {
+      const lm = m === 0 ? 11 : m - 1;
+      const ly = m === 0 ? y - 1 : y;
+      return `${MONTH_NAMES_SHORT[lm]} ${ly}`;
+    }
+    case 'last-3-months': {
+      const threeMonthsAgoDate = new Date(y, m - 2, 1);
+      const sm = threeMonthsAgoDate.getMonth();
+      const sy = threeMonthsAgoDate.getFullYear();
+      return sy !== y
+        ? `${MONTH_NAMES_SHORT[sm]} ${sy} – ${MONTH_NAMES_SHORT[m]} ${y}`
+        : `${MONTH_NAMES_SHORT[sm]} – ${MONTH_NAMES_SHORT[m]} ${y}`;
+    }
+    case 'custom':
+    case 'all-time':
+    default:
+      return '';
+  }
+}
+
 /**
  * Filters a list of entries by a date range.
  * 

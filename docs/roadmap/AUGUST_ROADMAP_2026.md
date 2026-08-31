@@ -32,7 +32,7 @@
 - [x] [Day 22 — List: Interactive Calendar View (`Month / Week Grid`)](#day-22)
 - [x] [Day 23 — Cashflow: Financial PDF Statement & Monthly Report Generator](#day-23)
 - [x] [Day 24 — Platform: Workspace Global Search (`Cmd+K`)](#day-24)
-- [ ] [Day 25 — Platform: One-Click GDPR Data Export](#day-25)
+- [x] [Day 25 — Platform: One-Click GDPR Data Export](#day-25)
 - [ ] [Day 26 — Platform: Session Management Dashboard](#day-26)
 - [ ] [Day 27 — Platform: Security & Search E2E Test Suite](#day-27)
 - [ ] [Day 28 — Weekly Sprint Audit & System Integrity Verification](#day-28)
@@ -454,7 +454,6 @@
 | **Expense Splitting** | Splitwise-style shared expenses ("Alice owes Bob $20 for dinner") | 🔥🔥 | ~6h |
 | **Net Worth Tracker** | Track total assets + liabilities across all cashflow books | 🔥🔥 | ~4h |
 | **Currency Conversion** | Multi-currency cashflows with auto-conversion rates | 🔥 | ~5h |
-| **Cashflow Sharing via Public Link** | Send a link, recipient views/edits without needing an account | 🔥🔥 | ~4h |
 | **Cashflow Templates** | Pre-built templates ("Freelancer Monthly", "Household Budget") | 🔥🔥 | ~2h |
 | **Financial Insights** | AI-generated insights ("Your food spending is 30% higher than last month") | 🔥🔥🔥 | ~4h |
 | **Debt Snowball/Avalanche Tracker** | Track multiple debts with payoff strategies | 🔥🔥 | ~5h |

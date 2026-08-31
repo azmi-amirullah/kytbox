@@ -55,6 +55,7 @@ import {
   LuSlidersHorizontal,
   LuFileText,
   LuRotateCcw,
+  LuCalendar,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -107,6 +108,7 @@ import {
 import {
   filterEntriesByDate,
   resolveFilterRange,
+  getDateFilterPresetMonthLabel,
   sortEntries,
   filterEntriesByTags,
   isCashflowSortOption,
@@ -272,6 +274,11 @@ export default function CashflowDetail({
     if (selectedTags.length > 0) count += selectedTags.length
     return count
   }, [filterState, selectedType, selectedCategory, sortBy, selectedTags])
+
+  const monthLabel = useMemo(
+    () => getDateFilterPresetMonthLabel(filterState),
+    [filterState],
+  )
 
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
 
@@ -1420,15 +1427,40 @@ export default function CashflowDetail({
 
                     {/* Mobile Custom Date Range & Reset Row */}
                     {(filterState.preset === 'custom' || hasActiveFilters) && (
-                      <div className='lg:hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-0.5 w-full'>
-                        <DateFilterCustomRange
-                          state={filterState}
-                          onChange={setFilterState}
-                        />
+                      <div
+                        className={cn(
+                          'lg:hidden gap-2 pt-0.5 w-full',
+                          filterState.preset === 'custom'
+                            ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between'
+                            : 'flex items-center justify-between',
+                        )}
+                      >
+                        {filterState.preset === 'custom' ? (
+                          <DateFilterCustomRange
+                            state={filterState}
+                            onChange={setFilterState}
+                          />
+                        ) : (
+                          monthLabel ? (
+                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium px-0.5'>
+                              <LuCalendar className='w-3.5 h-3.5 text-primary/70 shrink-0' />
+                              <span>{monthLabel}</span>
+                            </div>
+                          ) : (
+                            <div />
+                          )
+                        )}
 
                         {/* Mobile Drawer Compact Reset Button */}
                         {hasActiveFilters && (
-                          <div className='flex items-center justify-end w-full sm:w-auto ml-auto shrink-0 sm:self-center'>
+                          <div
+                            className={cn(
+                              'flex items-center justify-end shrink-0',
+                              filterState.preset === 'custom'
+                                ? 'w-full sm:w-auto ml-auto sm:self-center'
+                                : 'w-auto ml-auto self-center',
+                            )}
+                          >
                             <Button
                               variant='ghost'
                               size='sm'

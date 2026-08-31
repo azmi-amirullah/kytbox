@@ -2,6 +2,7 @@ import {
   calculateProjections, 
   calculateBudgetStatus,
   resolveFilterRange,
+  getDateFilterPresetMonthLabel,
   filterEntriesByDate,
   sortEntries,
   filterEntriesByTags,
@@ -375,6 +376,25 @@ describe('resolveFilterRange', () => {
     expect(range.to).toBeNull();
   });
 });
+
+describe('getDateFilterPresetMonthLabel', () => {
+  it('formats month labels for "this-month", "last-month", and "last-3-months"', () => {
+    // TODAY = 2026-03-15 (March 2026)
+    expect(getDateFilterPresetMonthLabel({ preset: 'this-month', custom: { from: null, to: null } }, TODAY)).toBe('Mar 2026');
+    expect(getDateFilterPresetMonthLabel({ preset: 'last-month', custom: { from: null, to: null } }, TODAY)).toBe('Feb 2026');
+    expect(getDateFilterPresetMonthLabel({ preset: 'last-3-months', custom: { from: null, to: null } }, TODAY)).toBe('Jan – Mar 2026');
+    expect(getDateFilterPresetMonthLabel({ preset: 'all-time', custom: { from: null, to: null } }, TODAY)).toBe('');
+    expect(getDateFilterPresetMonthLabel({ preset: 'custom', custom: { from: '2026-03-01', to: '2026-03-15' } }, TODAY)).toBe('');
+  });
+
+  it('handles cross-year boundaries cleanly', () => {
+    const JAN_2027 = new Date('2027-01-15T12:00:00Z');
+    expect(getDateFilterPresetMonthLabel({ preset: 'this-month', custom: { from: null, to: null } }, JAN_2027)).toBe('Jan 2027');
+    expect(getDateFilterPresetMonthLabel({ preset: 'last-month', custom: { from: null, to: null } }, JAN_2027)).toBe('Dec 2026');
+    expect(getDateFilterPresetMonthLabel({ preset: 'last-3-months', custom: { from: null, to: null } }, JAN_2027)).toBe('Nov 2026 – Jan 2027');
+  });
+});
+
 
 describe('filterEntriesByDate', () => {
   const entries = [

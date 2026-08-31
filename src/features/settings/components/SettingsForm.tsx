@@ -14,6 +14,8 @@ import {
   LuCheck,
   LuInfo,
   LuChevronsUpDown,
+  LuDownload,
+  LuShieldCheck,
 } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,7 +81,9 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
 
@@ -186,6 +190,35 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
       router.refresh();
     }
     setIsUploading(false);
+  }
+
+  async function handleExportData() {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      const response = await fetch('/api/user/export');
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to export data');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      a.download = `kytbox-export-${dateStr}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to export data archive';
+      setExportError(message);
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   return (
@@ -356,7 +389,7 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder='Tell us about yourself...'
-                  className='pl-9 min-h-[100px] resize-none'
+                  className='pl-9 min-h-25 resize-none'
                   maxLength={160}
                 />
               </div>
@@ -458,6 +491,50 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
               )}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Export Workspace Data */}
+      <Card>
+        <CardHeader>
+          <div className='flex items-center gap-2'>
+            <LuShieldCheck className='h-5 w-5 text-primary' />
+            <CardTitle className='text-lg'>Export Workspace Data</CardTitle>
+          </div>
+          <CardDescription>
+            Download a complete archive of your profile, bio links, cashflows, lists, and invoices in standard JSON format.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          {exportError && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className='p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm'
+            >
+              {exportError}
+            </motion.div>
+          )}
+
+          <Button
+            type='button'
+            variant='outline'
+            onClick={handleExportData}
+            disabled={isExporting}
+            className='w-full sm:w-auto flex items-center gap-2'
+          >
+            {isExporting ? (
+              <>
+                <LuLoader className='w-4 h-4 animate-spin' />
+                Packaging Data Archive...
+              </>
+            ) : (
+              <>
+                <LuDownload className='w-4 h-4' />
+                Export All Data (ZIP)
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
     </div>
