@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
+import { PlatformOverlays } from '@/components/platform-overlays';
 import { getCashflowDetailData, CashflowDetail, schemasServer } from '@/features/cashflow';
 import { connection } from 'next/server';
 
@@ -152,6 +153,7 @@ export default async function CashflowDetailPage({
       </main>
 
       <Footer />
+      <PlatformOverlays hasCompletedOnboarding={true} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useTransition, useMemo, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { formatAppDate } from '@/lib/date-only'
 import { Button } from '@/components/ui/button'
@@ -186,7 +186,16 @@ export default function CashflowDetail({
   const [managingTag, setManagingTag] = useState<string | null>(null)
 
   // ── Search query ─────────────────────────────────────────────────────────────
-  const [searchQuery, setSearchQuery] = useState('')
+  const searchParams = useSearchParams()
+  const initialQuery = searchParams.get('q') || searchParams.get('search') || ''
+  const [searchQuery, setSearchQuery] = useState(initialQuery)
+
+  useEffect(() => {
+    const q = searchParams.get('q') || searchParams.get('search')
+    if (q !== null) {
+      setSearchQuery(q)
+    }
+  }, [searchParams])
 
   // ── Type / Category filters ────────────────────────────────────────────────
   const [selectedType, setSelectedType] = useState<

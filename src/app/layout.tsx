@@ -103,7 +103,12 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html
+      lang='en'
+      suppressHydrationWarning
+      data-scroll-behavior='smooth'
+      className='scroll-smooth'
+    >
       <head>
         {supabaseUrl && (
           <>

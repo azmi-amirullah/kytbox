@@ -1,6 +1,7 @@
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { BackgroundBlobs } from '@/components/background-blobs';
+import { PlatformOverlays } from '@/components/platform-overlays';
 import { createClient } from '@/lib/supabase/server';
 import { connection } from 'next/server';
 import { ReactNode } from 'react';
@@ -61,6 +62,7 @@ export default async function AdminLayout({
 
       <main className='relative z-10 flex-1 w-full'>{children}</main>
       <Footer />
+      <PlatformOverlays hasCompletedOnboarding={true} />
     </div>
   );
 }

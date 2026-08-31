@@ -1,9 +1,20 @@
 'use client';
 
+import * as React from 'react';
 import NextTopLoader from 'nextjs-toploader';
 import '@/sentry.client.config';
 
 export function ClientTopLoader({ nonce }: { nonce: string }) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <NextTopLoader
       color='var(--primary)'

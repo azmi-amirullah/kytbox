@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LinkButton } from './LinkButton';
 import type { ThemeConfig } from '@/lib/theme/theme.types';
@@ -65,9 +66,18 @@ export default function ProfileLinks({
     setLinks(initialLinks);
   }, [initialLinks, totalLinks]);
 
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') || searchParams.get('search') || '';
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [folderLimit, setFolderLimit] = useState(50);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+
+  useEffect(() => {
+    const q = searchParams.get('q') || searchParams.get('search');
+    if (q !== null) {
+      setSearchQuery(q);
+    }
+  }, [searchParams]);
 
   const [folderCounts, setFolderCounts] = useState<Record<string, number>>({});
   const [loadingFolder, setLoadingFolder] = useState<string | null>(null);

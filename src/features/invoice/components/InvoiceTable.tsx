@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { InvoiceDTO } from '../types';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,10 @@ export function InvoiceTable({
   onCreateNew,
   onRefresh,
 }: InvoiceTableProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchParams = useSearchParams();
+  const queryParam = searchParams.get('q') || searchParams.get('search') || '';
+  const [userSearchTerm, setUserSearchTerm] = useState<string | null>(null);
+  const searchTerm = userSearchTerm !== null ? userSearchTerm : queryParam;
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -90,7 +94,7 @@ export function InvoiceTable({
             type='text'
             placeholder='Search invoice # or client name...'
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => setUserSearchTerm(e.target.value)}
             className='w-full rounded-xl border border-border/80 bg-card pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring'
           />
         </div>

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -25,8 +26,17 @@ interface GoalDetailProps {
 }
 
 export default function GoalDetail({ goal, entries, currency }: GoalDetailProps) {
-  const [searchQuery, setSearchQuery] = useState('')
+  const searchParams = useSearchParams()
+  const initialQuery = searchParams.get('q') || searchParams.get('search') || ''
+  const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [selectedMonth, setSelectedMonth] = useState('all')
+
+  useEffect(() => {
+    const q = searchParams.get('q') || searchParams.get('search')
+    if (q !== null) {
+      setSearchQuery(q)
+    }
+  }, [searchParams])
 
   const totalSaved = goal.saved_amount
   const progress = Math.min(100, Math.max(0, (totalSaved / goal.target_amount) * 100))

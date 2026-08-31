@@ -31,7 +31,7 @@
 - [x] [Day 21 — Weekly Sprint Audit & Accessibility (WCAG 2.2)](#day-21)
 - [x] [Day 22 — List: Interactive Calendar View (`Month / Week Grid`)](#day-22)
 - [x] [Day 23 — Cashflow: Financial PDF Statement & Monthly Report Generator](#day-23)
-- [ ] [Day 24 — Platform: Workspace Global Search (`Cmd+K`)](#day-24)
+- [x] [Day 24 — Platform: Workspace Global Search (`Cmd+K`)](#day-24)
 - [ ] [Day 25 — Platform: One-Click GDPR Data Export](#day-25)
 - [ ] [Day 26 — Platform: Session Management Dashboard](#day-26)
 - [ ] [Day 27 — Platform: Security & Search E2E Test Suite](#day-27)
