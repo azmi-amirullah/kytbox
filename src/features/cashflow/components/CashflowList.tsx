@@ -15,6 +15,8 @@ import {
   LuLoader,
   LuArrowUpRight,
   LuArrowDownRight,
+  LuRotateCcw,
+  LuEyeOff,
 } from 'react-icons/lu'
 import {
   DropdownMenu,
@@ -33,8 +35,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { toast } from 'react-toastify'
-import { deleteCashflow } from '../actions'
-import { toggleCashflowInclusion } from '../actions'
+import {
+  deleteCashflow,
+  toggleCashflowInclusion,
+  toggleCashflowPin,
+} from '../actions'
 // import type { Cashflow } from '@/types/supabase';
 import { formatCurrencyCompact } from '@/lib/currency'
 import dynamic from 'next/dynamic'
@@ -87,6 +92,9 @@ export default function CashflowList({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [prevAction, setPrevAction] = useState(action)
+  const [sharedTab, setSharedTab] = useState<'active' | 'hidden'>('active')
+  const [isPendingPinId, setIsPendingPinId] = useState<string | null>(null)
+  const [pinnedOverrides, setPinnedOverrides] = useState<Record<string, boolean>>({})
 
   if (action !== prevAction) {
     setPrevAction(action)
@@ -125,16 +133,34 @@ export default function CashflowList({
     [cashflows, currentUserId],
   )
 
-  const sharedCashflows = useMemo(
+  const allSharedCashflows = useMemo(
     () => cashflows.filter((c) => c.user_id !== currentUserId),
     [cashflows, currentUserId],
   )
 
-  // Calculate overall stats for OWNED cashflows + INCLUDED shared cashflows
+  const activeSharedCashflows = useMemo(
+    () =>
+      allSharedCashflows.filter((c) => {
+        const isPinned = pinnedOverrides[c.id] ?? c.isPinned ?? true
+        return isPinned
+      }),
+    [allSharedCashflows, pinnedOverrides],
+  )
+
+  const hiddenSharedCashflows = useMemo(
+    () =>
+      allSharedCashflows.filter((c) => {
+        const isPinned = pinnedOverrides[c.id] ?? c.isPinned ?? true
+        return !isPinned
+      }),
+    [allSharedCashflows, pinnedOverrides],
+  )
+
+  // Calculate overall stats for OWNED cashflows + INCLUDED active shared cashflows
   const flowsToCount = useMemo(() => {
-    const shared = sharedCashflows.filter((c) => includedSharedIds.has(c.id))
+    const shared = activeSharedCashflows.filter((c) => includedSharedIds.has(c.id))
     return [...ownedCashflows, ...shared]
-  }, [ownedCashflows, sharedCashflows, includedSharedIds])
+  }, [ownedCashflows, activeSharedCashflows, includedSharedIds])
 
   const totalIncome = flowsToCount.reduce((sum, c) => sum + c.income, 0)
   const totalExpense = flowsToCount.reduce((sum, c) => sum + c.expense, 0)
@@ -176,6 +202,48 @@ export default function CashflowList({
         }
         return next
       })
+    }
+  }
+
+  async function handleTogglePin(cashflowId: string, isPinned: boolean) {
+    setIsPendingPinId(cashflowId)
+    const prevPinned = pinnedOverrides[cashflowId] ?? activeSharedCashflows.some((c) => c.id === cashflowId)
+    const prevIncluded = includedSharedIds.has(cashflowId)
+
+    // Optimistic update
+    setPinnedOverrides((prev) => ({ ...prev, [cashflowId]: isPinned }))
+    if (!isPinned) {
+      setIncludedSharedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(cashflowId)
+        return next
+      })
+    }
+
+    try {
+      const result = await toggleCashflowPin(cashflowId, isPinned)
+      if (result?.error) {
+        toast.error(result.error || 'Failed to update visibility')
+        // Revert
+        setPinnedOverrides((prev) => ({ ...prev, [cashflowId]: prevPinned }))
+        if (prevIncluded) {
+          setIncludedSharedIds((prev) => new Set(prev).add(cashflowId))
+        }
+      } else {
+        toast.success(
+          isPinned
+            ? 'Cashflow restored to dashboard'
+            : 'Cashflow hidden from dashboard',
+        )
+      }
+    } catch {
+      toast.error('Failed to update visibility')
+      setPinnedOverrides((prev) => ({ ...prev, [cashflowId]: prevPinned }))
+      if (prevIncluded) {
+        setIncludedSharedIds((prev) => new Set(prev).add(cashflowId))
+      }
+    } finally {
+      setIsPendingPinId(null)
     }
   }
 
@@ -246,29 +314,48 @@ export default function CashflowList({
         const renderCashflowItem = (cashflow: CashflowWithSummaryDTO) => {
           const isPositive = cashflow.balance > 0
           const isNegative = cashflow.balance < 0
+          const isOwned = currentUserId === cashflow.user_id
+          const isItemPinned = pinnedOverrides[cashflow.id] ?? cashflow.isPinned ?? true
 
           return (
             <div
               key={cashflow.id}
-              className='group relative bg-card border rounded-2xl p-3.5 sm:p-4.5 hover:border-primary/40 hover:shadow-md transition-all overflow-hidden'
+              className={cn(
+                'group relative bg-card border rounded-2xl p-3.5 sm:p-4.5 hover:border-primary/40 hover:shadow-md transition-all overflow-hidden',
+                !isItemPinned && 'border-dashed bg-muted/10 opacity-90',
+              )}
             >
               <div className='flex flex-col gap-3 w-full min-w-0'>
                 {/* Header Row: Left (Icon + Title + Txns), Right (Balance + Action Menu) */}
                 <div className='flex items-center justify-between gap-3 min-w-0'>
                   {/* Title & Icon */}
                   <div className='flex items-center gap-3 min-w-0 flex-1'>
-                    <div className='p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 border border-emerald-500/15'>
+                    <div
+                      className={cn(
+                        'p-2 sm:p-2.5 rounded-xl shrink-0 border',
+                        isItemPinned
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/15'
+                          : 'bg-muted text-muted-foreground border-border/40',
+                      )}
+                    >
                       <LuWallet className='w-4.5 h-4.5 sm:w-5 sm:h-5' />
                     </div>
                     <div className='min-w-0 flex-1'>
-                      <h2 className='font-semibold text-base sm:text-lg group-hover:text-primary transition-colors truncate'>
-                        <Link
-                          href={`/cashflow/${cashflow.id}`}
-                          className='focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
-                        >
-                          {cashflow.title}
-                        </Link>
-                      </h2>
+                      <div className='flex items-center gap-2 flex-wrap min-w-0'>
+                        <h2 className='font-semibold text-base sm:text-lg group-hover:text-primary transition-colors truncate'>
+                          <Link
+                            href={`/cashflow/${cashflow.id}`}
+                            className='focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
+                          >
+                            {cashflow.title}
+                          </Link>
+                        </h2>
+                        {!isItemPinned && (
+                          <span className='text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full shrink-0'>
+                            Hidden
+                          </span>
+                        )}
+                      </div>
                       <p className='text-xs text-muted-foreground font-medium truncate'>
                         {cashflow.entryCount} transactions
                       </p>
@@ -304,7 +391,7 @@ export default function CashflowList({
 
                     {/* Action Menu on Mobile / Desktop */}
                     <div className='shrink-0 flex items-center'>
-                      {currentUserId === cashflow.user_id ? (
+                      {isOwned ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             asChild
@@ -352,23 +439,80 @@ export default function CashflowList({
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                      ) : !isItemPinned ? (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            e.preventDefault()
+                            handleTogglePin(cashflow.id, true)
+                          }}
+                          disabled={isPendingPinId === cashflow.id}
+                          className='gap-1.5 h-8 text-xs font-semibold hover:bg-emerald-500/10 hover:text-emerald-600 hover:border-emerald-500/30 cursor-pointer'
+                        >
+                          {isPendingPinId === cashflow.id ? (
+                            <LuLoader className='w-3.5 h-3.5 animate-spin' />
+                          ) : (
+                            <LuRotateCcw className='w-3.5 h-3.5' />
+                          )}
+                          <span>Restore</span>
+                        </Button>
                       ) : (
-                        <div className='flex items-center gap-1.5'>
-                          <Switch
-                            id={`include-${cashflow.id}`}
-                            aria-label={`Include ${cashflow.title} in totals`}
-                            checked={includedSharedIds.has(cashflow.id)}
-                            onCheckedChange={() =>
-                              handleToggleInclusion(cashflow.id)
-                            }
-                            className='scale-75 data-[state=checked]:bg-primary'
-                          />
-                          <Label
-                            htmlFor={`include-${cashflow.id}`}
-                            className='cursor-pointer text-[10px] font-medium text-muted-foreground uppercase tracking-wider hidden sm:inline'
-                          >
-                            Include
-                          </Label>
+                        <div className='flex items-center gap-1 sm:gap-2'>
+                          <div className='flex items-center gap-1.5'>
+                            <Switch
+                              id={`include-${cashflow.id}`}
+                              aria-label={`Include ${cashflow.title} in totals`}
+                              checked={includedSharedIds.has(cashflow.id)}
+                              onCheckedChange={() =>
+                                handleToggleInclusion(cashflow.id)
+                              }
+                              className='scale-75 data-[state=checked]:bg-primary'
+                            />
+                            <Label
+                              htmlFor={`include-${cashflow.id}`}
+                              className='cursor-pointer text-[10px] font-medium text-muted-foreground uppercase tracking-wider hidden sm:inline'
+                            >
+                              Include
+                            </Label>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              asChild
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                              }}
+                            >
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='h-8 w-8 rounded-full cursor-pointer text-muted-foreground hover:text-foreground'
+                                aria-label={'Actions for ' + cashflow.title}
+                              >
+                                <LuEllipsisVertical
+                                  className='w-4 h-4'
+                                  aria-hidden='true'
+                                />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align='end'
+                              onCloseAutoFocus={(e) => e.preventDefault()}
+                            >
+                              <DropdownMenuItem
+                                className='cursor-pointer text-muted-foreground hover:text-foreground'
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleTogglePin(cashflow.id, false)
+                                }}
+                              >
+                                <LuEyeOff className='w-3.5 h-3.5 mr-2' />
+                                Hide from dashboard
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       )}
                     </div>
@@ -443,19 +587,73 @@ export default function CashflowList({
             )}
 
             {/* Shared With Me Section */}
-            {sharedCashflows.length > 0 && (
+            {allSharedCashflows.length > 0 && (
               <div className='space-y-4'>
-                <div className='flex items-center gap-2 mb-2 pt-2'>
-                  <div className='p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500'>
-                    <LuShare2 className='w-4 h-4' />
+                <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2 pt-2'>
+                  <div className='flex items-center gap-2'>
+                    <div className='p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500'>
+                      <LuShare2 className='w-4 h-4' />
+                    </div>
+                    <h2 className='text-lg font-bold tracking-tight'>
+                      Shared with me
+                    </h2>
                   </div>
-                  <h2 className='text-lg font-bold tracking-tight'>
-                    Shared with me
-                  </h2>
+
+                  {(hiddenSharedCashflows.length > 0 || sharedTab === 'hidden') && (
+                    <div className='inline-flex items-center rounded-lg bg-muted/60 p-0.5 border border-border/40 text-xs font-medium self-start sm:self-auto'>
+                      <button
+                        type='button'
+                        onClick={() => setSharedTab('active')}
+                        className={cn(
+                          'px-2.5 py-1 rounded-md transition-all cursor-pointer',
+                          sharedTab === 'active'
+                            ? 'bg-background text-foreground shadow-xs font-semibold'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        Active ({activeSharedCashflows.length})
+                      </button>
+                      <button
+                        type='button'
+                        onClick={() => setSharedTab('hidden')}
+                        className={cn(
+                          'px-2.5 py-1 rounded-md transition-all cursor-pointer',
+                          sharedTab === 'hidden'
+                            ? 'bg-background text-foreground shadow-xs font-semibold'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        Hidden ({hiddenSharedCashflows.length})
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className='grid gap-4'>
-                  {sharedCashflows.map(renderCashflowItem)}
-                </div>
+
+                {sharedTab === 'active' ? (
+                  activeSharedCashflows.length > 0 ? (
+                    <div className='grid gap-4'>
+                      {activeSharedCashflows.map(renderCashflowItem)}
+                    </div>
+                  ) : (
+                    <div className='bg-card border border-dashed rounded-xl p-8 text-center'>
+                      <p className='text-sm text-muted-foreground'>
+                        No active shared cashflows. Check the Hidden tab to restore previously unpinned cashflows.
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  hiddenSharedCashflows.length > 0 ? (
+                    <div className='grid gap-4'>
+                      {hiddenSharedCashflows.map(renderCashflowItem)}
+                    </div>
+                  ) : (
+                    <div className='bg-card border border-dashed rounded-xl p-8 text-center'>
+                      <p className='text-sm text-muted-foreground'>
+                        No hidden cashflows.
+                      </p>
+                    </div>
+                  )
+                )}
               </div>
             )}
           </div>

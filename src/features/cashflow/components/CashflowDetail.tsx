@@ -657,6 +657,49 @@ export default function CashflowDetail({
     .reduce((sum, e) => sum + Number(e.amount), 0)
   const balance = income - expense
 
+  async function handleBookmark() {
+    startTransition(async () => {
+      if (hasShare && shareId) {
+        // Remove bookmark
+        const result = await removeShare(shareId)
+        if (result.error) {
+          toast.error(result.error)
+        } else {
+          toast.success('Removed from dashboard')
+          setHasShare(false)
+          // For public guest bookmarks, share row is deleted; for invited collaborators, keep shareId intact.
+          if (userRole === 'public') {
+            setShareId(null)
+          }
+        }
+      } else {
+        // Add bookmark
+        const result = await subscribeToPublicCashflow(cashflow.id)
+        if (result.error) {
+          toast.error(result.error)
+        } else {
+          toast.success('Added to your dashboard')
+          setHasShare(true)
+          if (result.data) {
+            setShareId(result.data.id)
+          }
+        }
+      }
+    })
+  }
+
+  function handleDuplicateCashflow() {
+    startTransition(async () => {
+      const result = await duplicateCashflow(cashflow.id)
+      if (result.error) {
+        toast.error(result.error)
+      } else if (result.id) {
+        toast.success('Cashflow duplicated!')
+        router.push(`/cashflow/${result.id}`)
+      }
+    })
+  }
+
   async function handleDeleteCashflow() {
     setIsDeleting(true)
     startTransition(async () => {
@@ -667,20 +710,9 @@ export default function CashflowDetail({
         setDeleteDialogOpen(false)
       } else {
         setDeleteDialogOpen(false)
+        setIsDeleting(false)
         toast.success('Cashflow deleted')
         router.push('/cashflow')
-      }
-    })
-  }
-
-  async function handleDuplicateCashflow() {
-    startTransition(async () => {
-      const result = await duplicateCashflow(cashflow.id)
-      if (result.error) {
-        toast.error(result.error)
-      } else if (result.id) {
-        toast.success('Cashflow duplicated!')
-        router.push(`/cashflow/${result.id}`)
       }
     })
   }
@@ -701,34 +733,6 @@ export default function CashflowDetail({
       setDeletingEntryId(null)
       setIsDeletingEntryId(null)
     }
-  }
-
-  async function handleBookmark() {
-    startTransition(async () => {
-      if (hasShare && shareId) {
-        // Remove bookmark
-        const result = await removeShare(shareId)
-        if (result.error) {
-          toast.error(result.error)
-        } else {
-          toast.success('Removed from dashboard')
-          setHasShare(false)
-          setShareId(null)
-        }
-      } else {
-        // Add bookmark
-        const result = await subscribeToPublicCashflow(cashflow.id)
-        if (result.error) {
-          toast.error(result.error)
-        } else {
-          toast.success('Added to your dashboard')
-          setHasShare(true)
-          if (result.data) {
-            setShareId(result.data.id)
-          }
-        }
-      }
-    })
   }
 
   function openEditEntry(entry: CashflowEntryDTO) {
@@ -821,35 +825,29 @@ export default function CashflowDetail({
         <BreadcrumbNav title={cashflow.title} />
 
         {/* Header */}
-        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full'>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 w-full'>
+          {/* Left: Title + 3-Dot Menu + (Access Badges + Transaction Count) */}
           <div className='min-w-0 flex-1'>
-            <div className='flex items-start sm:items-center justify-between gap-2 sm:gap-3'>
-              <div className='flex items-baseline sm:items-center gap-2 flex-wrap min-w-0'>
-                <h1 className='text-2xl sm:text-3xl font-bold tracking-tight text-foreground wrap-break-word'>
-                  {cashflow.title}
-                </h1>
-                {!isOwner && (
-                  <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full shrink-0 align-middle'>
-                    {userRole === 'edit' ? 'Editor Access' : 'View Only'}
-                  </span>
-                )}
-              </div>
+            <div className='flex items-baseline gap-1 flex-wrap min-w-0'>
+              <h1 className='text-2xl sm:text-3xl font-bold tracking-tight text-foreground wrap-break-word'>
+                {cashflow.title}
+              </h1>
 
-              {/* Mobile Actions (Kebab Menu) */}
-              <div className='flex sm:hidden items-center gap-1 shrink-0'>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-9 w-9 shrink-0'
-                      aria-label='More options'
-                    >
-                      <LuEllipsisVertical className='w-5 h-5' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end' className='w-48'>
-                    {isOwner && (
+              {/* 3-Dot Options Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='h-7 w-7 rounded-full shrink-0 cursor-pointer text-muted-foreground hover:text-foreground self-baseline translate-y-0.5'
+                    aria-label='More options'
+                  >
+                    <LuEllipsisVertical className='w-4 h-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end' className='w-48'>
+                  {isOwner && (
+                    <>
                       <DropdownMenuItem
                         className='cursor-pointer'
                         onClick={() => setIsShareModalOpen(true)}
@@ -857,8 +855,6 @@ export default function CashflowDetail({
                         <LuShare2 className='w-4 h-4 mr-2' />
                         Share
                       </DropdownMenuItem>
-                    )}
-                    {isOwner && (
                       <DropdownMenuItem
                         className='cursor-pointer'
                         onClick={() => setIsEditModalOpen(true)}
@@ -866,8 +862,6 @@ export default function CashflowDetail({
                         <LuPencil className='w-4 h-4 mr-2' />
                         Rename
                       </DropdownMenuItem>
-                    )}
-                    {(isOwner || canEdit) && (
                       <DropdownMenuItem
                         className='cursor-pointer'
                         onClick={handleDuplicateCashflow}
@@ -875,196 +869,103 @@ export default function CashflowDetail({
                         <LuCopy className='w-4 h-4 mr-2' />
                         Duplicate
                       </DropdownMenuItem>
-                    )}
-                    {canEdit && (
-                      <DropdownMenuItem
-                        className='cursor-pointer'
-                        onClick={() => setIsImportModalOpen(true)}
-                      >
-                        <LuImport className='w-4 h-4 mr-2' />
-                        Import CSV
-                      </DropdownMenuItem>
-                    )}
+                    </>
+                  )}
+                  {!isOwner && canEdit && (
                     <DropdownMenuItem
                       className='cursor-pointer'
-                      onClick={() => setIsReportModalOpen(true)}
+                      onClick={handleDuplicateCashflow}
                     >
-                      <LuFileText className='w-4 h-4 mr-2' />
-                      Financial Report
+                      <LuCopy className='w-4 h-4 mr-2' />
+                      Duplicate
                     </DropdownMenuItem>
+                  )}
+                  {canEdit && (
                     <DropdownMenuItem
                       className='cursor-pointer'
-                      onClick={handleExportCSV}
+                      onClick={() => setIsImportModalOpen(true)}
                     >
-                      <LuCloudDownload className='w-4 h-4 mr-2' />
-                      Download CSV
+                      <LuImport className='w-4 h-4 mr-2' />
+                      Import CSV
                     </DropdownMenuItem>
-                    {!isOwner &&
-                      currentUserId &&
-                      (cashflow.is_public || !!shareId) && (
-                        <DropdownMenuItem
-                          className='cursor-pointer'
-                          onClick={handleBookmark}
-                        >
-                          {hasShare ? (
-                            <>
-                              <LuCheck className='w-4 h-4 mr-2 text-emerald-600' />
-                              <span>Saved to Dashboard</span>
-                            </>
-                          ) : (
-                            <>
-                              <LuBookmark className='w-4 h-4 mr-2' />
-                              <span>Add to Dashboard</span>
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                      )}
-                    {isOwner && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setIsDeleting(false)
-                          setDeleteDialogOpen(true)
-                        }}
-                        className='text-destructive focus:text-destructive cursor-pointer'
-                      >
-                        <LuTrash2 className='w-4 h-4 mr-2' />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            <p className='text-muted-foreground text-sm mt-0.5'>
-              {filterState.preset !== 'all-time'
-                ? `${filteredEntries.length} of ${entries.length} entries`
-                : `${entries.length} entries`}
-            </p>
-          </div>
-
-          {/* Desktop Actions & Kebab Menu */}
-          <div className='hidden sm:flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto'>
-            {isOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className='h-9 w-9 shrink-0'
-                    aria-label='More options'
-                  >
-                    <LuEllipsisVertical className='w-4 h-4' />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align='end'>
+                  )}
                   <DropdownMenuItem
                     className='cursor-pointer'
-                    onClick={() => setIsShareModalOpen(true)}
+                    onClick={() => setIsReportModalOpen(true)}
                   >
-                    <LuShare2 className='w-4 h-4 mr-2' />
-                    Share
+                    <LuFileText className='w-4 h-4 mr-2' />
+                    Financial Report
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className='cursor-pointer'
-                    onClick={() => setIsEditModalOpen(true)}
+                    onClick={handleExportCSV}
                   >
-                    <LuPencil className='w-4 h-4 mr-2' />
-                    Rename
+                    <LuCloudDownload className='w-4 h-4 mr-2' />
+                    Download CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className='cursor-pointer'
-                    onClick={handleDuplicateCashflow}
-                  >
-                    <LuCopy className='w-4 h-4 mr-2' />
-                    Duplicate
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setIsDeleting(false)
-                      setDeleteDialogOpen(true)
-                    }}
-                    className='text-destructive focus:text-destructive cursor-pointer'
-                  >
-                    <LuTrash2 className='w-4 h-4 mr-2' />
-                    Delete
-                  </DropdownMenuItem>
+                  {isOwner && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setIsDeleting(false)
+                        setDeleteDialogOpen(true)
+                      }}
+                      className='text-destructive focus:text-destructive cursor-pointer'
+                    >
+                      <LuTrash2 className='w-4 h-4 mr-2' />
+                      Delete
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
+            </div>
+            <div className='flex items-center gap-2 mt-0.5 flex-wrap'>
+              <p className='text-muted-foreground text-sm'>
+                {filterState.preset !== 'all-time'
+                  ? `${filteredEntries.length} of ${entries.length} entries`
+                  : `${entries.length} entries`}
+              </p>
+              {!isOwner && (
+                <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full shrink-0'>
+                  {userRole === 'edit' ? 'Editor Access' : 'View Only'}
+                </span>
+              )}
+            </div>
+          </div>
 
-            {canEdit && (
-              <Button
-                variant='outline'
-                onClick={() => setIsImportModalOpen(true)}
-                className='gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm'
-                title='Import CSV'
-              >
-                <LuImport className='w-4 h-4' />
-                <span className='hidden md:inline'>Import CSV</span>
-              </Button>
-            )}
+          {/* Right: Actions Bar */}
+          <div className='flex items-center gap-2 shrink-0 self-start sm:self-auto w-full sm:w-auto justify-between sm:justify-end'>
+            {/* Bookmark / Saved Button (Non-Owner) */}
+            {!isOwner &&
+              currentUserId &&
+              (cashflow.is_public || userRole !== 'public' || !!shareId) && (
+                <Button
+                  onClick={handleBookmark}
+                  variant={hasShare ? 'secondary' : 'outline'}
+                  className={`gap-1.5 h-10 sm:h-9 px-3 text-sm font-medium flex-1 sm:flex-none ${hasShare ? 'text-green-600' : ''}`}
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <LuLoader className='w-4 h-4 animate-spin' />
+                  ) : hasShare ? (
+                    <LuCheck className='w-4 h-4' />
+                  ) : (
+                    <LuBookmark className='w-4 h-4' />
+                  )}
+                  <span>{hasShare ? 'Saved' : 'Add to Dashboard'}</span>
+                </Button>
+              )}
 
-            <Button
-              variant='outline'
-              onClick={() => setIsReportModalOpen(true)}
-              className='gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm'
-              title='Financial Report & Statement'
-            >
-              <LuFileText className='w-4 h-4' />
-              <span className='hidden md:inline'>Financial Report</span>
-            </Button>
-
-            <Button
-              variant='outline'
-              onClick={handleExportCSV}
-              className='gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm'
-              title='Download CSV'
-            >
-              <LuCloudDownload className='w-4 h-4' />
-              <span className='hidden md:inline'>Download CSV</span>
-            </Button>
-
-            {!isOwner && currentUserId && (cashflow.is_public || !!shareId) && (
-              <Button
-                onClick={handleBookmark}
-                variant={hasShare ? 'secondary' : 'outline'}
-                className={`gap-1.5 h-9 px-2.5 sm:px-3 text-xs sm:text-sm ${hasShare ? 'text-green-600' : ''}`}
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <LuLoader className='w-4 h-4 animate-spin' />
-                ) : hasShare ? (
-                  <LuCheck className='w-4 h-4' />
-                ) : (
-                  <LuBookmark className='w-4 h-4' />
-                )}
-                <span>{hasShare ? 'Saved' : 'Add to Dashboard'}</span>
-              </Button>
-            )}
-
+            {/* Primary Add Entry Button */}
             {canEdit && (
               <Button
                 onClick={openAddEntry}
-                className='gap-1.5 h-9 px-3 text-sm font-semibold'
+                className='gap-2 h-10 sm:h-9 px-4 text-sm font-semibold flex-1 sm:flex-none shadow-xs'
               >
                 <LuPlus className='w-4 h-4' />
                 <span>Add Entry</span>
               </Button>
             )}
           </div>
-
-          {/* Mobile Primary Action Button */}
-          {canEdit && (
-            <div className='sm:hidden w-full pt-1'>
-              <Button
-                onClick={openAddEntry}
-                className='w-full gap-2 h-10 text-sm font-semibold shadow-xs'
-              >
-                <LuPlus className='w-4 h-4' />
-                <span>Add Entry</span>
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1440,15 +1341,13 @@ export default function CashflowDetail({
                             state={filterState}
                             onChange={setFilterState}
                           />
+                        ) : monthLabel ? (
+                          <div className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium px-0.5'>
+                            <LuCalendar className='w-3.5 h-3.5 text-primary/70 shrink-0' />
+                            <span>{monthLabel}</span>
+                          </div>
                         ) : (
-                          monthLabel ? (
-                            <div className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium px-0.5'>
-                              <LuCalendar className='w-3.5 h-3.5 text-primary/70 shrink-0' />
-                              <span>{monthLabel}</span>
-                            </div>
-                          ) : (
-                            <div />
-                          )
+                          <div />
                         )}
 
                         {/* Mobile Drawer Compact Reset Button */}
@@ -1495,7 +1394,8 @@ export default function CashflowDetail({
                     <span className='font-medium text-foreground'>
                       {filteredEntries.length}
                     </span>{' '}
-                    of {localEntries.length} entries matching {activeFilterCount}{' '}
+                    of {localEntries.length} entries matching{' '}
+                    {activeFilterCount}{' '}
                     {activeFilterCount === 1 ? 'filter' : 'filters'}
                   </p>
                   <button
@@ -1759,20 +1659,20 @@ export default function CashflowDetail({
                                 )
                               </time>
                             )}
-                            <EntryTypeBadge type={entry.type} />
                           </div>
                           {/* Row 2: Unobstructed Entry Description */}
                           <p className='font-semibold text-sm leading-snug text-foreground wrap-break-word'>
                             {entry.description}
                           </p>
 
-                          {/* Row 3: Metadata Badges (Category, Split items, Receipt, Tags) */}
+                          {/* Row 3: Metadata Badges (Type, Category, Split items, Receipt, Tags) */}
                           <div className='pt-0.5'>
                             <EntryMetadataBadges
                               entry={entry}
                               currency={currency}
                               bookTags={tags}
                               availableTags={allUniqueTags}
+                              showType
                               onViewReceipt={(e) => setViewingReceiptEntry(e)}
                             />
                           </div>

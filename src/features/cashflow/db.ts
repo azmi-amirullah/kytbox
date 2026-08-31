@@ -52,9 +52,8 @@ export async function getCashflowDashboardData(
       .single(),
     supabase
       .from('cashflow_shares')
-      .select('cashflow_id, is_included_in_totals')
-      .eq('email', email.trim().toLowerCase())
-      .eq('is_pinned', true),
+      .select('cashflow_id, is_included_in_totals, is_pinned')
+      .eq('email', email.trim().toLowerCase()),
   ]);
 
   const profile = profileResult.data;
@@ -72,8 +71,14 @@ export async function getCashflowDashboardData(
     throw new Error('PROFILE_NOT_FOUND');
   }
 
+  const pinnedShareIds = new Set(
+    shares?.filter((s) => s.is_pinned !== false).map((s) => s.cashflow_id) || [],
+  );
+
   const includedShareIds = new Set(
-    shares?.filter((s) => s.is_included_in_totals).map((s) => s.cashflow_id) || [],
+    shares
+      ?.filter((s) => s.is_pinned !== false && s.is_included_in_totals)
+      .map((s) => s.cashflow_id) || [],
   );
 
   const allShareIds = shares?.map((s) => s.cashflow_id) || [];
@@ -96,18 +101,21 @@ export async function getCashflowDashboardData(
     console.error('cashflow_dashboard_summary_lookup_failed', cashflowSummariesError);
     throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
   }
-  const summaryIds: string[] = (cashflowSummariesData || [])
+
+  // Active summaries (owned + pinned shares) to aggregate charts for
+  const activeSummaryIds: string[] = (cashflowSummariesData || [])
+    .filter((c) => c.user_id === userId || (!!c.id && pinnedShareIds.has(c.id)))
     .map((c) => c.id)
     .filter((id): id is string => Boolean(id));
 
   // Fetch pre-aggregated chart buckets for dashboard charts via RPC
   let aggregates: CashflowChartAggregateDTO[] = [];
 
-  if (summaryIds.length > 0) {
+  if (activeSummaryIds.length > 0) {
     const { data: aggregateRows, error: aggregateError } = await supabase.rpc(
       'get_cashflow_chart_aggregates',
       {
-        p_cashflow_ids: summaryIds,
+        p_cashflow_ids: activeSummaryIds,
       }
     );
 
@@ -129,9 +137,12 @@ export async function getCashflowDashboardData(
 
   const cashflows = (cashflowSummariesData || []).map((c) => {
     const dto = mapCashflowWithSummaryToDTO(c);
+    const isOwned = c.user_id === userId;
+    const isPinned = isOwned || (!!c.id && pinnedShareIds.has(c.id));
     return {
       ...dto,
-      isIncluded: c.user_id === userId || (!!c.id && includedShareIds.has(c.id)),
+      isPinned,
+      isIncluded: isOwned || (!!c.id && includedShareIds.has(c.id)),
     };
   });
 

@@ -145,6 +145,7 @@ export interface CashflowWithSummaryDTO extends CashflowDTO {
   expense: number
   balance: number
   isIncluded?: boolean
+  isPinned?: boolean
 }
 
 

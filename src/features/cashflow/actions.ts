@@ -1055,6 +1055,83 @@ export async function toggleCashflowInclusion(
   return { success: true };
 }
 
+export async function toggleCashflowPin(
+  cashflowId: string,
+  isPinned: boolean,
+) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  if (!user.email) {
+    return { error: 'User email required' };
+  }
+
+  const { data: existingShare } = await supabase
+    .from('cashflow_shares')
+    .select('id, created_via_public_access')
+    .eq('cashflow_id', cashflowId)
+    .eq('email', user.email.trim().toLowerCase())
+    .maybeSingle();
+
+  if (!existingShare) {
+    if (isPinned) {
+      const { data: cashflow } = await supabase
+        .from('cashflows')
+        .select('is_public')
+        .eq('id', cashflowId)
+        .single();
+
+      if (!cashflow || !cashflow.is_public) {
+        return { error: 'Access denied: Cashflow is not public' };
+      }
+
+      const { error } = await supabase.from('cashflow_shares').insert({
+        cashflow_id: cashflowId,
+        email: user.email.trim().toLowerCase(),
+        is_included_in_totals: true,
+        role: 'read',
+        is_pinned: true,
+        created_via_public_access: true,
+      });
+
+      if (error) {
+        console.error('Failed to pin public cashflow:', error);
+        return { error: error.message };
+      }
+    } else {
+      return { error: 'Share record not found' };
+    }
+  } else {
+    if (!isPinned && existingShare.created_via_public_access) {
+      const { error } = await supabase
+        .from('cashflow_shares')
+        .delete()
+        .eq('id', existingShare.id);
+
+      if (error) {
+        console.error('Failed to unpin public share:', error);
+        return { error: error.message };
+      }
+    } else {
+      const { error } = await supabase
+        .from('cashflow_shares')
+        .update({
+          is_pinned: isPinned,
+          ...(isPinned ? {} : { is_included_in_totals: false }),
+        })
+        .eq('id', existingShare.id);
+
+      if (error) {
+        console.error('Failed to update pin status:', error);
+        return { error: error.message };
+      }
+    }
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true };
+}
+
 export async function upsertBudget(formData: FormData) {
   const { user, supabase } = await getAuthenticatedUser();
 

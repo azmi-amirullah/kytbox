@@ -21,7 +21,7 @@ export function EntryTypeBadge({
     <span
       className={cn(
         BADGE_BASE_CLASS,
-        'font-bold uppercase tracking-wide',
+        'font-semibold capitalize',
         isIncome
           ? 'bg-emerald-500/5 text-emerald-700 dark:text-emerald-300 border-emerald-400/60 dark:border-emerald-400/50'
           : 'bg-rose-500/5 text-rose-700 dark:text-rose-300 border-rose-400/60 dark:border-rose-400/50',
@@ -144,6 +144,7 @@ export function EntryMetadataBadges({
   bookTags,
   availableTags,
   onViewReceipt,
+  showType = false,
   className,
 }: {
   entry: CashflowEntryDTO
@@ -151,10 +152,12 @@ export function EntryMetadataBadges({
   bookTags?: CashflowTagDTO[]
   availableTags?: string[]
   onViewReceipt?: (entry: CashflowEntryDTO) => void
+  showType?: boolean
   className?: string
 }) {
   return (
     <div className={cn('flex items-center gap-1.5 flex-wrap', className)}>
+      {showType && <EntryTypeBadge type={entry.type} />}
       <EntryCategoryBadge category={entry.category} />
       <EntrySplitItemsBadge items={entry.items} currency={currency} />
       <EntryReceiptBadge
