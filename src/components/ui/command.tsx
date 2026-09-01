@@ -35,12 +35,24 @@ function CommandDialog({
   children,
   className,
   showCloseButton = true,
+  value,
+  onValueChange,
+  filter,
+  shouldFilter,
+  loop,
+  commandProps,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string
   description?: string
   className?: string
   showCloseButton?: boolean
+  value?: string
+  onValueChange?: (value: string) => void
+  filter?: (value: string, search: string, keywords?: string[]) => number
+  shouldFilter?: boolean
+  loop?: boolean
+  commandProps?: React.ComponentProps<typeof CommandPrimitive>
 }) {
   return (
     <Dialog {...props}>
@@ -53,7 +65,18 @@ function CommandDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <Command className='**:[[cmdk-group-heading]]:text-muted-foreground **:data-[slot=command-input-wrapper]:h-12 **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 **:[[cmdk-input]]:h-12 **:[[cmdk-input]]:pr-10 **:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5'>
+        <Command
+          value={value}
+          onValueChange={onValueChange}
+          filter={filter}
+          shouldFilter={shouldFilter}
+          loop={loop}
+          {...commandProps}
+          className={cn(
+            '**:[[cmdk-group-heading]]:text-muted-foreground **:data-[slot=command-input-wrapper]:h-12 **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 **:[[cmdk-input]]:h-12 **:[[cmdk-input]]:pr-10 **:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5',
+            commandProps?.className,
+          )}
+        >
           {children}
         </Command>
       </DialogContent>

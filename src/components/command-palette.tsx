@@ -43,6 +43,47 @@ const CATEGORY_CONFIG: Record<keyof GlobalSearchResult, { label: string; icon: I
   invoice: { label: 'Invoices', icon: LuFileText },
 }
 
+const SEARCH_CATEGORIES = ['bio', 'cashflow', 'list', 'support', 'invoice'] as const
+
+const DEFAULT_SELECTED = 'Bio Dashboard navigation bio profile'
+
+export function getFirstResultValue(results: GlobalSearchResult | null): string | null {
+  if (!results) return null
+  for (const category of SEARCH_CATEGORIES) {
+    const items = results[category]
+    if (items && items.length > 0) {
+      const item = items[0]
+      return `${item.title} ${item.subtitle ?? ''} ${item.id}`
+    }
+  }
+  return null
+}
+
+export function commandFilter(value: string, search: string, keywords?: string[]): number {
+  const q = search.toLowerCase().trim()
+  if (!q) return 1
+
+  const target = `${value} ${keywords?.join(' ') ?? ''}`.toLowerCase()
+
+  // 1. Exact substring match
+  if (target.includes(q)) return 1
+
+  // 2. Word prefix match (e.g. "keam" matches word "keamanan", "supp" matches "support")
+  const words = target.split(/\s+/)
+  if (words.some((word) => word.startsWith(q))) return 0.8
+
+  // 3. Multi-word search matching
+  const searchWords = q.split(/\s+/).filter(Boolean)
+  if (
+    searchWords.length > 1 &&
+    searchWords.every((sw) => words.some((w) => w.includes(sw) || w.startsWith(sw)))
+  ) {
+    return 0.7
+  }
+
+  return 0
+}
+
 const ITEM_ICONS: Record<NonNullable<SearchResultItem['icon']>, IconType> = {
   wallet: LuWallet,
   target: LuTarget,
@@ -59,7 +100,8 @@ export function CommandPalette() {
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState('')
   const [results, setResults] = React.useState<GlobalSearchResult | null>(null)
-  const [isSearching, startTransition] = React.useTransition()
+  const [selectedValue, setSelectedValue] = React.useState(DEFAULT_SELECTED)
+  const [isSearching, setIsSearching] = React.useState(false)
   const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(null)
   const listRef = React.useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -91,8 +133,27 @@ export function CommandPalette() {
     if (!open) {
       setQuery('')
       setResults(null)
+      setIsSearching(false)
+      setSelectedValue(DEFAULT_SELECTED)
+    } else {
+      setSelectedValue(DEFAULT_SELECTED)
     }
   }, [open])
+
+  // Reset to default selection when query is cleared
+  React.useEffect(() => {
+    if (query.trim() === '') {
+      setSelectedValue(DEFAULT_SELECTED)
+    }
+  }, [query])
+
+  // Auto-select first dynamic result whenever new API results arrive
+  React.useEffect(() => {
+    const firstValue = getFirstResultValue(results)
+    if (firstValue) {
+      setSelectedValue(firstValue)
+    }
+  }, [results])
 
   // Scroll to top when query or results change
   React.useEffect(() => {
@@ -101,20 +162,25 @@ export function CommandPalette() {
     }
   }, [query, results])
 
-  // Debounced search
+  // Debounced search with unified loading state
   React.useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
     if (query.trim().length < 2) {
       setResults(null)
+      setIsSearching(false)
       return
     }
 
-    debounceRef.current = setTimeout(() => {
-      startTransition(async () => {
+    setIsSearching(true)
+
+    debounceRef.current = setTimeout(async () => {
+      try {
         const data = await globalSearch(query)
         setResults(data)
-      })
+      } finally {
+        setIsSearching(false)
+      }
     }, 300)
 
     return () => {
@@ -135,25 +201,31 @@ export function CommandPalette() {
       results.invoice.length > 0)
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      value={selectedValue}
+      onValueChange={setSelectedValue}
+      filter={commandFilter}
+    >
       <CommandInput
         placeholder='Search across workspace...'
         value={query}
         onValueChange={setQuery}
       />
       <CommandList ref={listRef}>
-        <CommandEmpty>No results found.</CommandEmpty>
+        {!isSearching && <CommandEmpty>No results found.</CommandEmpty>}
 
         {/* Loading indicator */}
         {isSearching && (
-          <div className='flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground'>
+          <div className='flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground'>
             <LuLoader className='size-3.5 animate-spin' />
             <span>Searching workspace...</span>
           </div>
         )}
 
         {/* Dynamic search results from API */}
-        {(['bio', 'cashflow', 'list', 'support', 'invoice'] satisfies Array<keyof typeof CATEGORY_CONFIG>).map(
+        {SEARCH_CATEGORIES.map(
           (category) => {
             const items = results?.[category] ?? []
             const config = CATEGORY_CONFIG[category]
