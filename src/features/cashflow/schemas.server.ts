@@ -43,6 +43,11 @@ export const cashflowEntrySchema = z.object({
     .preprocess((val) => val === 'true' || val === true, z.boolean())
     .optional()
     .default(false),
+  recurring_rule_id: z.uuid({ message: 'Invalid recurring rule ID' }).optional().nullable(),
+  update_recurring_rule: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
   recurrence_interval: recurrenceIntervalSchema.optional(),
   yearly_calculation: yearlyCalculationSchema.optional(),
   itemsJson: z.string().optional().nullable(),
@@ -64,6 +69,33 @@ export const cashflowEntrySchema = z.object({
         return []
       }
     }),
+});
+
+export const cashflowRecurringRuleSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  goalId: z.uuid({ message: 'Invalid goal ID' }).optional().nullable(),
+  description: z.string().trim().min(1, 'Description is required').max(255, 'Description too long'),
+  amount: z.coerce.number().positive('Amount must be positive'),
+  type: z.enum(['income', 'expense']),
+  category: z.string().trim().max(100, 'Category too long').nullable().optional(),
+  recurrence_interval: recurrenceIntervalSchema.optional().default('monthly'),
+  yearly_calculation: yearlyCalculationSchema.optional().nullable(),
+  day_of_month: z.coerce.number().int().min(1).max(31).optional().default(1),
+  is_active: z.preprocess((val) => val === 'true' || val === true, z.boolean()).optional().default(true),
+  start_date: dateOnlySchema.optional(),
+});
+
+export const updateCashflowRecurringRuleSchema = cashflowRecurringRuleSchema.extend({
+  ruleId: z.uuid({ message: 'Invalid recurring rule ID' }),
+});
+
+export const toggleCashflowRecurringRuleSchema = z.object({
+  ruleId: z.uuid({ message: 'Invalid recurring rule ID' }),
+  is_active: z.boolean(),
+});
+
+export const deleteCashflowRecurringRuleSchema = z.object({
+  ruleId: z.uuid({ message: 'Invalid recurring rule ID' }),
 });
 
 export const updateCashflowEntrySchema = cashflowEntrySchema.extend({

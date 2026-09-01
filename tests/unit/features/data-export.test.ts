@@ -124,6 +124,7 @@ describe('GDPR Data Export Engine', () => {
           created_at: '2026-08-10T00:00:00Z',
           goal_id: null,
           is_recurring: false,
+          recurring_rule_id: null,
           receipt_url: null,
           recurrence_interval: null,
           tags: ['groceries'],

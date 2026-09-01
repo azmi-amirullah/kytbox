@@ -93,6 +93,7 @@ export default function EntryModal({
   const [goalId, setGoalId] = useState<string | null>(entry?.goal_id ?? null)
   const [date, setDate] = useState(entry?.date || today)
   const [isRecurring, setIsRecurring] = useState(entry?.is_recurring || false)
+  const [updateRecurringRule, setUpdateRecurringRule] = useState(false)
   const [recurrenceInterval, setRecurrenceInterval] = useState<
     'monthly' | 'yearly'
   >(entry?.recurrence_interval || 'monthly')
@@ -148,6 +149,7 @@ export default function EntryModal({
       setGoalId(entry?.goal_id ?? null)
       setDate(entry?.date || today)
       setIsRecurring(entry?.is_recurring || false)
+      setUpdateRecurringRule(false)
       setRecurrenceInterval(entry?.recurrence_interval || 'monthly')
       setYearlyCalculation(entry?.yearly_calculation || 'prorated')
 
@@ -299,6 +301,12 @@ export default function EntryModal({
     if (goalId) formData.append('goalId', goalId)
     formData.append('date', date)
     formData.append('is_recurring', isRecurring.toString())
+    if (entry?.recurring_rule_id) {
+      formData.append('recurring_rule_id', entry.recurring_rule_id)
+    }
+    if (updateRecurringRule) {
+      formData.append('update_recurring_rule', 'true')
+    }
     if (isRecurring) formData.append('recurrence_interval', recurrenceInterval)
     if (isRecurring && recurrenceInterval === 'yearly') {
       formData.append('yearly_calculation', yearlyCalculation)
@@ -933,6 +941,29 @@ export default function EntryModal({
                         ? "Smooths out massive annual charges so they don't destroy a single month's budget projection."
                         : 'Only deducts this from your projected balance if the anniversary falls within the next month.'}
                     </p>
+                  </div>
+                )}
+
+                {Boolean(entry?.recurring_rule_id) && (
+                  <div className='flex items-start gap-2.5 pt-3 border-t border-border/50'>
+                    <input
+                      type='checkbox'
+                      id='update-recurring-rule-check'
+                      checked={updateRecurringRule}
+                      onChange={(e) => setUpdateRecurringRule(e.target.checked)}
+                      className='mt-0.5 rounded border-border text-primary focus:ring-primary h-4 w-4'
+                    />
+                    <div className='grid gap-0.5'>
+                      <Label
+                        htmlFor='update-recurring-rule-check'
+                        className='text-xs font-semibold text-foreground cursor-pointer'
+                      >
+                        Apply to future recurring entries
+                      </Label>
+                      <p className='text-[11px] text-muted-foreground leading-tight'>
+                        Updates the recurring template for future cycles. Keep unchecked to edit this entry only.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

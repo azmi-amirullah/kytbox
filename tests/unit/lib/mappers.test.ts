@@ -98,6 +98,7 @@ const baseCashflowEntry: CashflowEntry = {
   category: 'Work',
   date: '2026-03-01',
   is_recurring: false,
+  recurring_rule_id: null,
   recurrence_interval: null,
   yearly_calculation: null,
   created_at: '2026-03-01T00:00:00Z',

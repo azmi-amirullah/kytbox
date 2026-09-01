@@ -61,6 +61,7 @@ import { toast } from 'react-toastify'
 import type {
   CashflowDTO,
   CashflowEntryDTO,
+  CashflowRecurringRuleDTO,
   CashflowBudgetDTO,
   CashflowTagDTO,
   CashflowGoalDTO,
@@ -92,6 +93,7 @@ const CashflowCharts = dynamic(
   },
 )
 import { ProjectionsView } from './ProjectionsView'
+import RecurringManagerModal from './RecurringManagerModal'
 import { subscribeToPublicCashflow, removeShare } from '../actions'
 import BudgetManager from './BudgetManager'
 import ImportCsvModal from './ImportCsvModal'
@@ -125,6 +127,7 @@ import { FinancialReportModal } from './FinancialReportModal'
 interface CashflowDetailProps {
   cashflow: CashflowDTO
   entries: CashflowEntryDTO[]
+  recurringRules?: CashflowRecurringRuleDTO[]
   budgets: CashflowBudgetDTO[]
   tags?: CashflowTagDTO[]
   goals?: CashflowGoalDTO[]
@@ -138,6 +141,7 @@ interface CashflowDetailProps {
 export default function CashflowDetail({
   cashflow,
   entries,
+  recurringRules = [],
   budgets,
   tags = [],
   goals = [],
@@ -153,6 +157,7 @@ export default function CashflowDetail({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false)
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
@@ -172,10 +177,17 @@ export default function CashflowDetail({
   // ── Synchronized local entries state (updated instantly on API response) ───
   const [localEntries, setLocalEntries] = useState<CashflowEntryDTO[]>(entries)
   const [prevEntriesProp, setPrevEntriesProp] = useState(entries)
+  const [localRecurringRules, setLocalRecurringRules] = useState<CashflowRecurringRuleDTO[]>(recurringRules)
+  const [prevRulesProp, setPrevRulesProp] = useState(recurringRules)
 
   if (entries !== prevEntriesProp) {
     setPrevEntriesProp(entries)
     setLocalEntries(entries)
+  }
+
+  if (recurringRules !== prevRulesProp) {
+    setPrevRulesProp(recurringRules)
+    setLocalRecurringRules(recurringRules)
   }
 
   // Initialize state from server props
@@ -464,6 +476,123 @@ export default function CashflowDetail({
     const currentMonthStart = new Date(currentYear, currentMonth, 1)
     const currentMonthName = `${now.toLocaleDateString('en-US', { month: 'long' })} ${now.getFullYear()}`
 
+    // ── First-Class Recurring Rules Branch ────────────────────────────────────
+    if (localRecurringRules && localRecurringRules.length > 0) {
+      const activeRules = localRecurringRules.filter((r) => r.is_active)
+      if (activeRules.length === 0) {
+        return {
+          dueNowCount: 0,
+          upcomingCount: 0,
+          pastMissingCount: 0,
+          pastMonthsList: emptyMonthsList,
+          currentMonthName,
+        }
+      }
+
+      const existingThisMonth = localEntries.filter((e) => {
+        const [year, month] = e.date.split('-').map(Number)
+        return year === currentYear && month - 1 === currentMonth
+      })
+
+      const existingRuleIdsThisMonth = new Set(
+        existingThisMonth.map((e) => e.recurring_rule_id).filter(Boolean),
+      )
+      const existingNamesThisMonth = new Set(
+        existingThisMonth.map((e) => `${e.description.trim().toLowerCase()}|${e.type}`),
+      )
+
+      const pastExistingRuleSet = new Set(
+        localEntries
+          .filter((e) => {
+            const [year, month] = e.date.split('-').map(Number)
+            return year < currentYear || (year === currentYear && month - 1 < currentMonth)
+          })
+          .map((e) => {
+            const [year, month] = e.date.split('-').map(Number)
+            return e.recurring_rule_id
+              ? `${year}|${month - 1}|${e.recurring_rule_id}`
+              : `${year}|${month - 1}|${e.description.trim().toLowerCase()}|${e.type}`
+          }),
+      )
+
+      let dueNowCount = 0
+      let upcomingCount = 0
+      let pastMissingCount = 0
+      const pastMonthsSet = new Set<string>()
+
+      for (const rule of activeRules) {
+        const [startYear, startMonthNumber] = rule.start_date.split('-').map(Number)
+        const ruleDay = rule.day_of_month || 1
+
+        // 1. Check current month status (due now vs upcoming)
+        const startedInOrBeforeCurrentMonth =
+          startYear < currentYear ||
+          (startYear === currentYear && startMonthNumber - 1 <= currentMonth)
+
+        const isAnniversaryMonth =
+          rule.recurrence_interval !== 'yearly' ||
+          startMonthNumber - 1 === currentMonth
+
+        if (startedInOrBeforeCurrentMonth && isAnniversaryMonth) {
+          const isSettled =
+            existingRuleIdsThisMonth.has(rule.id) ||
+            existingNamesThisMonth.has(`${rule.description.trim().toLowerCase()}|${rule.type}`)
+
+          if (!isSettled) {
+            const lastDayOfCurrentMonth = new Date(
+              currentYear,
+              currentMonth + 1,
+              0,
+            ).getDate()
+            const targetDay = Math.min(ruleDay, lastDayOfCurrentMonth)
+
+            if (targetDay > todayDay) {
+              upcomingCount++
+            } else {
+              dueNowCount++
+            }
+          }
+        }
+
+        // 2. Check past months status
+        const tempDate = new Date(startYear, startMonthNumber - 1, 1)
+        while (tempDate < currentMonthStart) {
+          const y = tempDate.getFullYear()
+          const m = tempDate.getMonth()
+
+          // Check if yearly and anniversary
+          if (
+            rule.recurrence_interval === 'yearly' &&
+            startMonthNumber - 1 !== m
+          ) {
+            tempDate.setMonth(tempDate.getMonth() + 1)
+            continue
+          }
+
+          const keyWithId = `${y}|${m}|${rule.id}`
+          const keyWithName = `${y}|${m}|${rule.description.trim().toLowerCase()}|${rule.type}`
+          if (!pastExistingRuleSet.has(keyWithId) && !pastExistingRuleSet.has(keyWithName)) {
+            pastMissingCount++
+            const monthName = tempDate.toLocaleDateString('en-US', {
+              month: 'long',
+              year: 'numeric',
+            })
+            pastMonthsSet.add(monthName)
+          }
+          tempDate.setMonth(tempDate.getMonth() + 1)
+        }
+      }
+
+      return {
+        dueNowCount,
+        upcomingCount,
+        pastMissingCount,
+        pastMonthsList: Array.from(pastMonthsSet),
+        currentMonthName,
+      }
+    }
+
+    // ── Fallback String-Based Grouping (if no rules array) ─────────────────────
     // Group all entries by description + type (case-insensitive) to find the absolute latest entry of each series
     const latestSeriesMap = new Map<string, (typeof localEntries)[number]>()
     for (const entry of localEntries) {
@@ -586,7 +715,7 @@ export default function CashflowDetail({
       pastMonthsList: Array.from(pastMonthsSet),
       currentMonthName,
     }
-  }, [localEntries, userRole])
+  }, [localEntries, localRecurringRules, userRole])
 
   async function handleGenerateRecurring() {
     setIsGeneratingRecurring(true)
@@ -881,13 +1010,22 @@ export default function CashflowDetail({
                     </DropdownMenuItem>
                   )}
                   {canEdit && (
-                    <DropdownMenuItem
-                      className='cursor-pointer'
-                      onClick={() => setIsImportModalOpen(true)}
-                    >
-                      <LuImport className='w-4 h-4 mr-2' />
-                      Import CSV
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem
+                        className='cursor-pointer'
+                        onClick={() => setIsRecurringModalOpen(true)}
+                      >
+                        <LuRepeat className='w-4 h-4 mr-2' />
+                        Recurring Rules
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className='cursor-pointer'
+                        onClick={() => setIsImportModalOpen(true)}
+                      >
+                        <LuImport className='w-4 h-4 mr-2' />
+                        Import CSV
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuItem
                     className='cursor-pointer'
@@ -1045,18 +1183,19 @@ export default function CashflowDetail({
                 <p className='text-xs text-muted-foreground'>{subtextText}</p>
               </div>
             </div>
-            <div className='flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 self-start md:self-center w-full md:w-auto justify-end'>
+            <div className='flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto justify-start sm:justify-end'>
               {totalPastAndDueCount > 0 && (
                 <Button
                   onClick={handleGeneratePast}
                   disabled={isGeneratingPast}
                   variant='outline'
-                  className='gap-2 sm:self-center self-start shrink-0'
+                  size='sm'
+                  className='gap-1.5 shrink-0'
                 >
                   {isGeneratingPast ? (
-                    <LuLoader className='w-4 h-4 animate-spin' />
+                    <LuLoader className='w-3.5 h-3.5 animate-spin' />
                   ) : (
-                    <LuRepeat className='w-4 h-4' />
+                    <LuRepeat className='w-3.5 h-3.5' />
                   )}
                   Generate Past ({totalPastAndDueCount})
                 </Button>
@@ -1066,14 +1205,27 @@ export default function CashflowDetail({
                 <Button
                   onClick={handleGenerateRecurring}
                   disabled={isGeneratingRecurring}
-                  className='gap-2 sm:self-center self-start shrink-0'
+                  size='sm'
+                  className='gap-1.5 shrink-0'
                 >
                   {isGeneratingRecurring ? (
-                    <LuLoader className='w-4 h-4 animate-spin' />
+                    <LuLoader className='w-3.5 h-3.5 animate-spin' />
                   ) : (
-                    <LuRepeat className='w-4 h-4' />
+                    <LuRepeat className='w-3.5 h-3.5' />
                   )}
                   Generate Early ({upcomingCount})
+                </Button>
+              )}
+
+              {canEdit && (
+                <Button
+                  onClick={() => setIsRecurringModalOpen(true)}
+                  variant='outline'
+                  size='sm'
+                  className='gap-1.5 border-emerald-300/70 bg-card hover:bg-emerald-50/80 dark:border-emerald-800/70 dark:bg-card dark:hover:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 shrink-0 font-medium shadow-2xs'
+                >
+                  <LuSlidersHorizontal className='w-3.5 h-3.5' />
+                  Manage Rules
                 </Button>
               )}
             </div>
@@ -1850,7 +2002,12 @@ export default function CashflowDetail({
       </div>
 
       {/* Projections View — always uses unfiltered entries (recurring logic is time-aware) */}
-      <ProjectionsView entries={localEntries} currency={currency} />
+      <ProjectionsView
+        entries={localEntries}
+        recurringRules={localRecurringRules}
+        currency={currency}
+        onManageRules={canEdit ? () => setIsRecurringModalOpen(true) : undefined}
+      />
 
       {/* Charts */}
       <CashflowCharts entries={filteredEntries} currency={currency} />
@@ -2014,6 +2171,17 @@ export default function CashflowDetail({
         activeFilterState={filterState}
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
+      />
+      {/* Recurring Subscriptions & Rules Manager Modal */}
+      <RecurringManagerModal
+        isOpen={isRecurringModalOpen}
+        onClose={() => setIsRecurringModalOpen(false)}
+        cashflowId={cashflow.id}
+        recurringRules={localRecurringRules}
+        goals={goals}
+        categories={uniqueCategories}
+        currency={currency}
+        canEdit={canEdit}
       />
     </div>
   )

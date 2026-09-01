@@ -7,6 +7,7 @@ import {
   mapCashflowWithSummaryToDTO,
   mapCashflowToDTO,
   mapCashflowEntryToDTO,
+  mapCashflowRecurringRuleToDTO,
   mapBudgetToDTO,
   mapGoalToDTO,
   mapTagToDTO,
@@ -14,6 +15,7 @@ import {
 import type {
   CashflowDTO,
   CashflowEntryDTO,
+  CashflowRecurringRuleDTO,
   CashflowBudgetDTO,
   CashflowTagDTO,
   CashflowGoalDTO,
@@ -30,6 +32,7 @@ export interface CashflowSummariesResult {
 export interface CashflowDetailResult {
   cashflow: CashflowDTO;
   entries: CashflowEntryDTO[];
+  recurringRules: CashflowRecurringRuleDTO[];
   budgets: CashflowBudgetDTO[];
   tags: CashflowTagDTO[];
   goals: CashflowGoalDTO[];
@@ -197,6 +200,7 @@ export async function getCashflowDetailData(
     profileResult,
     cashflowResult,
     entriesResult,
+    recurringRulesResult,
     shareResult,
     budgetsResult,
     tagsResult,
@@ -218,6 +222,11 @@ export async function getCashflowDetailData(
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(1000),
+      supabase
+        .from('cashflow_recurring_rules')
+        .select('*')
+        .eq('cashflow_id', cashflowId)
+        .order('created_at', { ascending: true }),
       userEmail
         ? supabase
             .from('cashflow_shares')
@@ -266,12 +275,13 @@ export async function getCashflowDetailData(
     console.error('cashflow_entry_lookup_failed', entriesResult.error);
     throw new Error('CASHFLOW_DETAIL_LOOKUP_FAILED');
   }
-  if (profileResult.error || shareResult.error || budgetsResult.error || tagsResult.error) {
+  if (profileResult.error || shareResult.error || budgetsResult.error || tagsResult.error || recurringRulesResult.error) {
     console.error('cashflow_detail_context_lookup_failed', {
       profile: profileResult.error,
       share: shareResult.error,
       budgets: budgetsResult.error,
       tags: tagsResult.error,
+      recurringRules: recurringRulesResult.error,
     });
     throw new Error('CASHFLOW_DETAIL_LOOKUP_FAILED');
   }
@@ -294,6 +304,14 @@ export async function getCashflowDetailData(
       entry.goal_id ? goalTitlesById.get(entry.goal_id) ?? null : undefined,
     ),
   );
+
+  const recurringRules = (recurringRulesResult.data ?? []).map((rule) =>
+    mapCashflowRecurringRuleToDTO(
+      rule,
+      rule.goal_id ? goalTitlesById.get(rule.goal_id) ?? null : undefined,
+    ),
+  );
+
   // Only map budgets if the user is the owner (budgets are owner-only)
   const budgets = isOwner && budgetsResult?.data
     ? budgetsResult.data.map(mapBudgetToDTO)
@@ -320,6 +338,7 @@ export async function getCashflowDetailData(
   return {
     cashflow: mapCashflowToDTO(cashflow),
     entries,
+    recurringRules,
     budgets,
     tags,
     goals,

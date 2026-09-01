@@ -104,6 +104,7 @@ export type Database = {
           is_recurring: boolean | null
           receipt_url: string | null
           recurrence_interval: string | null
+          recurring_rule_id: string | null
           tags: string[]
           type: string
           yearly_calculation: string | null
@@ -120,6 +121,7 @@ export type Database = {
           is_recurring?: boolean | null
           receipt_url?: string | null
           recurrence_interval?: string | null
+          recurring_rule_id?: string | null
           tags?: string[]
           type: string
           yearly_calculation?: string | null
@@ -136,6 +138,7 @@ export type Database = {
           is_recurring?: boolean | null
           receipt_url?: string | null
           recurrence_interval?: string | null
+          recurring_rule_id?: string | null
           tags?: string[]
           type?: string
           yearly_calculation?: string | null
@@ -164,6 +167,79 @@ export type Database = {
           },
           {
             foreignKeyName: "cashflow_entries_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "cashflow_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cashflow_recurring_rules: {
+        Row: {
+          amount: number
+          cashflow_id: string
+          category: string | null
+          created_at: string | null
+          day_of_month: number
+          description: string
+          goal_id: string | null
+          id: string
+          is_active: boolean
+          recurrence_interval: string
+          start_date: string
+          type: string
+          updated_at: string | null
+          yearly_calculation: string | null
+        }
+        Insert: {
+          amount: number
+          cashflow_id: string
+          category?: string | null
+          created_at?: string | null
+          day_of_month?: number
+          description: string
+          goal_id?: string | null
+          id?: string
+          is_active?: boolean
+          recurrence_interval?: string
+          start_date?: string
+          type: string
+          updated_at?: string | null
+          yearly_calculation?: string | null
+        }
+        Update: {
+          amount?: number
+          cashflow_id?: string
+          category?: string | null
+          created_at?: string | null
+          day_of_month?: number
+          description?: string
+          goal_id?: string | null
+          id?: string
+          is_active?: boolean
+          recurrence_interval?: string
+          start_date?: string
+          type?: string
+          updated_at?: string | null
+          yearly_calculation?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashflow_recurring_rules_cashflow_id_fkey"
+            columns: ["cashflow_id"]
+            isOneToOne: false
+            referencedRelation: "cashflow_summaries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashflow_recurring_rules_cashflow_id_fkey"
+            columns: ["cashflow_id"]
+            isOneToOne: false
+            referencedRelation: "cashflows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashflow_recurring_rules_goal_id_fkey"
             columns: ["goal_id"]
             isOneToOne: false
             referencedRelation: "cashflow_goals"

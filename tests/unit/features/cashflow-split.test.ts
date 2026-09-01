@@ -80,6 +80,7 @@ describe('Cashflow Split Transactions', () => {
         category: 'shopping',
         date: '2026-08-13',
         is_recurring: false,
+        recurring_rule_id: null,
         recurrence_interval: null,
         yearly_calculation: null,
         created_at: '2026-08-13T10:00:00Z',

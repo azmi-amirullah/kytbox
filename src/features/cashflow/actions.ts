@@ -8,6 +8,10 @@ import { z } from 'zod';
 import {
   cashflowEntrySchema,
   updateCashflowEntrySchema,
+  cashflowRecurringRuleSchema,
+  updateCashflowRecurringRuleSchema,
+  toggleCashflowRecurringRuleSchema,
+  deleteCashflowRecurringRuleSchema,
   cashflowSplitItemSchema,
   cashflowBudgetSchema,
   deleteCashflowBudgetSchema,
@@ -27,7 +31,7 @@ import {
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { mapBudgetToDTO, mapGoalToDTO, mapCashflowEntryToDTO } from '@/lib/mappers';
+import { mapBudgetToDTO, mapGoalToDTO, mapCashflowEntryToDTO, mapCashflowRecurringRuleToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
@@ -526,22 +530,10 @@ export async function addEntry(formData: FormData) {
     return { error: 'Savings goal contributions must be expense entries' };
   }
 
-  // Parallelize: rate limit + permission check + targeted recurring conflict check
-  const [{ success: rateLimitOk }, permission, { data: latestSameSeries }] = await Promise.all([
+  // Parallelize: rate limit + permission check
+  const [{ success: rateLimitOk }, permission] = await Promise.all([
     checkRateLimit(actionRateLimit, user.id),
     checkEditPermission(supabase, cashflowId, user),
-    // Targeted: fetch only the latest entry for this exact name+type instead of all templates
-    !is_recurring
-      ? supabase
-          .from('cashflow_entries')
-          .select('is_recurring')
-          .eq('cashflow_id', cashflowId)
-          .eq('type', type)
-          .ilike('description', description.trim())
-          .order('date', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
   ]);
 
   if (!rateLimitOk) throw new Error('Too many requests. Please slow down.');
@@ -549,11 +541,6 @@ export async function addEntry(formData: FormData) {
 
   const resolvedGoal = await resolveGoalId(supabase, category, goalId);
   if (resolvedGoal.error) return { error: resolvedGoal.error };
-
-  // Prevent accidental recurring series cancellation
-  if (latestSameSeries?.is_recurring) {
-    return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
-  }
 
   let splitItems: { itemName: string; category?: string | null; amount: number }[] | null = null;
   if (parsed.data.itemsJson) {
@@ -571,6 +558,37 @@ export async function addEntry(formData: FormData) {
   const finalAmount = splitItems && splitItems.length > 0
     ? Math.round(splitItems.reduce((acc, item) => acc + item.amount, 0) * 100) / 100
     : amount;
+
+  const entryDate = date || new Date().toISOString().split('T')[0];
+
+  // If entry is marked recurring, ensure a parent recurring rule exists
+  let ruleId = parsed.data.recurring_rule_id ?? null;
+  if (is_recurring && !ruleId) {
+    const [, , entryDay] = entryDate.split('-').map(Number);
+    const { data: createdRule, error: ruleError } = await supabase
+      .from('cashflow_recurring_rules')
+      .insert({
+        cashflow_id: cashflowId,
+        goal_id: resolvedGoal.goalId,
+        description: description.trim(),
+        amount: finalAmount,
+        type,
+        category: resolvedGoal.category,
+        recurrence_interval: recurrence_interval || 'monthly',
+        yearly_calculation: recurrence_interval === 'yearly' ? yearly_calculation : null,
+        day_of_month: entryDay || 1,
+        is_active: true,
+        start_date: entryDate,
+      })
+      .select('id')
+      .single();
+
+    if (ruleError) {
+      console.error('Failed to create recurring rule for entry:', ruleError);
+    } else if (createdRule) {
+      ruleId = createdRule.id;
+    }
+  }
 
   let receiptUrl: string | null = null;
   const receiptFile = formData.get('receipt_file');
@@ -606,8 +624,9 @@ export async function addEntry(formData: FormData) {
       amount: finalAmount,
       type,
       category: resolvedGoal.category,
-      date: date || new Date().toISOString().split('T')[0],
+      date: entryDate,
       is_recurring: is_recurring,
+      recurring_rule_id: is_recurring ? ruleId : null,
       recurrence_interval: is_recurring ? recurrence_interval : null,
       yearly_calculation:
         is_recurring && recurrence_interval === 'yearly'
@@ -699,7 +718,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
     checkRateLimit(actionRateLimit, user.id),
     supabase
       .from('cashflow_entries')
-      .select('cashflow_id, goal_id, category, receipt_url, cashflows(user_id)')
+      .select('cashflow_id, goal_id, category, receipt_url, is_recurring, recurring_rule_id, cashflows(user_id)')
       .eq('id', entryId)
       .single(),
   ]);
@@ -707,29 +726,13 @@ export async function updateEntry(entryId: string, formData: FormData) {
   if (!rateLimitOk) throw new Error('Too many requests. Please slow down.');
   if (!entry) return { error: 'Entry not found' };
 
-  // Batch 2: permission check + targeted recurring conflict check are independent — run in parallel
-  const [permission, { data: latestSameSeries }] = await Promise.all([
-    checkEditPermission(
-      supabase,
-      entry.cashflow_id,
-      user,
-      joinedOwnerSchema.parse(entry.cashflows),
-    ),
-    // Targeted: fetch only the latest entry for this exact name+type instead of all templates.
-    // Exclude the current entry (entryId) so editing a recurring entry doesn't block itself.
-    !is_recurring
-      ? supabase
-          .from('cashflow_entries')
-          .select('is_recurring')
-          .eq('cashflow_id', entry.cashflow_id)
-          .eq('type', type)
-          .ilike('description', description.trim())
-          .neq('id', entryId)
-          .order('date', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
+  // Batch 2: permission check
+  const permission = await checkEditPermission(
+    supabase,
+    entry.cashflow_id,
+    user,
+    joinedOwnerSchema.parse(entry.cashflows),
+  );
 
   if (!permission.canEdit) return { error: permission.error || 'Access denied' };
 
@@ -743,11 +746,6 @@ export async function updateEntry(entryId: string, formData: FormData) {
     ? { goalId: entry.goal_id, category: entry.category }
     : await resolveGoalId(supabase, category, goalId);
   if (resolvedGoal.error) return { error: resolvedGoal.error };
-
-  // Prevent accidental recurring series cancellation
-  if (latestSameSeries?.is_recurring) {
-    return { error: `A recurring series with name "${description.trim()}" is active. Please use a slightly different name for this manual entry to avoid conflicts.` };
-  }
 
   let splitItems: { itemName: string; category?: string | null; amount: number }[] | null = null;
   if (parsed.data.itemsJson) {
@@ -765,6 +763,53 @@ export async function updateEntry(entryId: string, formData: FormData) {
   const finalAmount = splitItems && splitItems.length > 0
     ? Math.round(splitItems.reduce((acc, item) => acc + item.amount, 0) * 100) / 100
     : amount;
+
+  // Manage recurring rule sync or creation
+  let ruleId: string | null = parsed.data.recurring_rule_id ?? entry.recurring_rule_id ?? null;
+  if (is_recurring) {
+    if (ruleId) {
+      if (parsed.data.update_recurring_rule) {
+        await supabase
+          .from('cashflow_recurring_rules')
+          .update({
+            description: description.trim(),
+            amount: finalAmount,
+            type,
+            category: resolvedGoal.category,
+            goal_id: resolvedGoal.goalId,
+            recurrence_interval: recurrence_interval || 'monthly',
+            yearly_calculation: recurrence_interval === 'yearly' ? yearly_calculation : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', ruleId);
+      }
+    } else {
+      const [, , entryDay] = date.split('-').map(Number);
+      const { data: createdRule, error: ruleError } = await supabase
+        .from('cashflow_recurring_rules')
+        .insert({
+          cashflow_id: entry.cashflow_id,
+          goal_id: resolvedGoal.goalId,
+          description: description.trim(),
+          amount: finalAmount,
+          type,
+          category: resolvedGoal.category,
+          recurrence_interval: recurrence_interval || 'monthly',
+          yearly_calculation: recurrence_interval === 'yearly' ? yearly_calculation : null,
+          day_of_month: entryDay || 1,
+          is_active: true,
+          start_date: date,
+        })
+        .select('id')
+        .single();
+
+      if (!ruleError && createdRule) {
+        ruleId = createdRule.id;
+      }
+    }
+  } else {
+    ruleId = null;
+  }
 
   let nextReceiptUrl: string | null = entry.receipt_url;
   let newlyUploadedFilePath: string | null = null;
@@ -812,6 +857,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
           }),
       date,
       is_recurring: is_recurring,
+      recurring_rule_id: is_recurring ? ruleId : null,
       recurrence_interval: is_recurring ? recurrence_interval : null,
       yearly_calculation:
         is_recurring && recurrence_interval === 'yearly'
@@ -1551,16 +1597,19 @@ export async function generateRecurringEntries(
     return { error: 'Cashflow not found or access denied' };
   }
 
-  // Get active templates via database RPC
-  const { data: allEntries, error: fetchError } = await supabase
-    .rpc('get_latest_recurring_templates', { p_cashflow_id: cashflowId });
+  // Get active recurring rules
+  const { data: activeRules, error: fetchError } = await supabase
+    .from('cashflow_recurring_rules')
+    .select('*')
+    .eq('cashflow_id', cashflowId)
+    .eq('is_active', true);
 
   if (fetchError) {
-    console.error('Failed to fetch entries:', fetchError);
-    return { error: 'Failed to fetch entries' };
+    console.error('Failed to fetch recurring rules:', fetchError);
+    return { error: 'Failed to fetch recurring rules' };
   }
 
-  if (!allEntries || allEntries.length === 0) {
+  if (!activeRules || activeRules.length === 0) {
     return { generated: 0 };
   }
 
@@ -1569,19 +1618,15 @@ export async function generateRecurringEntries(
   const currentYear = targetYear !== undefined ? targetYear : now.getFullYear();
   const currentMonthStart = new Date(currentYear, currentMonth, 1);
 
-  // Active recurring series are those where the latest entry in the series is marked recurring
-  // (allEntries from RPC is already grouped by description+type and sorted to have the latest entry)
-  const uniqueRecurring = allEntries.filter((e) => {
-    if (!e.is_recurring) return false;
-
-    // Check if the template starts in the future relative to target month/year
-    const [entryYear, entryMonthNumber] = e.date.split('-').map(Number);
-    if (entryYear > currentYear || (entryYear === currentYear && entryMonthNumber - 1 > currentMonth)) {
+  // Active recurring rules starting on or before target month
+  const uniqueRecurring = activeRules.filter((rule) => {
+    const [startYear, startMonthNumber] = rule.start_date.split('-').map(Number);
+    if (startYear > currentYear || (startYear === currentYear && startMonthNumber - 1 > currentMonth)) {
       return false;
     }
 
     // If yearly, only generate in the anniversary month
-    if (e.recurrence_interval === 'yearly' && entryMonthNumber - 1 !== currentMonth) {
+    if (rule.recurrence_interval === 'yearly' && startMonthNumber - 1 !== currentMonth) {
       return false;
     }
 
@@ -1592,7 +1637,7 @@ export async function generateRecurringEntries(
   const recurringGoalIds = Array.from(
     new Set(
       uniqueRecurring
-        .map((entry) => entry.goal_id)
+        .map((rule) => rule.goal_id)
         .filter((goalId): goalId is string => Boolean(goalId)),
     ),
   );
@@ -1621,30 +1666,29 @@ export async function generateRecurringEntries(
       goalIds: inaccessibleGoalIds,
     });
     const activeRecurring = uniqueRecurring.filter(
-      (entry) => !entry.goal_id || recurringGoalTitles.has(entry.goal_id),
+      (rule) => !rule.goal_id || recurringGoalTitles.has(rule.goal_id),
     );
     uniqueRecurring.splice(0, uniqueRecurring.length, ...activeRecurring);
   }
 
-  const getRecurringCategory = (entry: (typeof uniqueRecurring)[number]) =>
-    entry.goal_id
-      ? recurringGoalTitles.has(entry.goal_id)
-        ? `Goal: ${recurringGoalTitles.get(entry.goal_id)}`
+  const getRecurringCategory = (rule: (typeof uniqueRecurring)[number]) =>
+    rule.goal_id
+      ? recurringGoalTitles.has(rule.goal_id)
+        ? `Goal: ${recurringGoalTitles.get(rule.goal_id)}`
         : null
-      : entry.category?.startsWith('Goal:')
+      : rule.category?.startsWith('Goal:')
         ? null
-        : entry.category;
+        : rule.category;
 
   const formatLocalYYYYMMDD = (year: number, month: number, day: number) =>
     `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
   // If generating past entries
   if (parsed.data.generatePast) {
-    // Find the earliest date among recurring series
     let earliestDateStr = formatLocalYYYYMMDD(currentYear, currentMonth, 1);
-    for (const entry of uniqueRecurring) {
-      if (entry.date < earliestDateStr) {
-        earliestDateStr = entry.date;
+    for (const rule of uniqueRecurring) {
+      if (rule.start_date < earliestDateStr) {
+        earliestDateStr = rule.start_date;
       }
     }
 
@@ -1659,7 +1703,7 @@ export async function generateRecurringEntries(
 
     const { data: existingPastEntries, error: pastError } = await supabase
       .from('cashflow_entries')
-      .select('description, type, amount, date')
+      .select('recurring_rule_id, description, type, amount, date')
       .eq('cashflow_id', cashflowId)
       .gte('date', scanStart)
       .lte('date', currentMonthEnd);
@@ -1669,15 +1713,18 @@ export async function generateRecurringEntries(
       return { error: 'Failed to check past entries' };
     }
 
-    const pastExistingSet = new Set(
+    const pastExistingRuleSet = new Set(
       (existingPastEntries || []).map((e) => {
         const [y, m] = e.date.split('-').map(Number);
-        return `${y}|${m - 1}|${e.description.trim().toLowerCase()}|${e.type}`;
+        return e.recurring_rule_id
+          ? `${y}|${m - 1}|${e.recurring_rule_id}`
+          : `${y}|${m - 1}|${e.description.trim().toLowerCase()}|${e.type}`;
       })
     );
 
     const toInsert: Array<{
       cashflow_id: string;
+      recurring_rule_id: string;
       description: string;
       type: 'income' | 'expense';
       amount: number;
@@ -1688,22 +1735,24 @@ export async function generateRecurringEntries(
       recurrence_interval: 'monthly' | 'yearly' | null;
       yearly_calculation: 'prorated' | 'exact' | null;
     }> = [];
-    for (const entry of uniqueRecurring) {
-      const [entryYear, entryMonthNumber, entryDay] = entry.date.split('-').map(Number);
-      
-      const tempDate = new Date(entryYear, entryMonthNumber - 1, 1);
+
+    for (const rule of uniqueRecurring) {
+      const [ruleYear, ruleMonthNumber] = rule.start_date.split('-').map(Number);
+      const ruleDay = rule.day_of_month || 1;
+
+      const tempDate = new Date(ruleYear, ruleMonthNumber - 1, 1);
       while (tempDate <= currentMonthStart) {
         const y = tempDate.getFullYear();
         const m = tempDate.getMonth();
 
         // Check if yearly and not anniversary
-        if (entry.recurrence_interval === 'yearly' && (entryMonthNumber - 1) !== m) {
+        if (rule.recurrence_interval === 'yearly' && (ruleMonthNumber - 1) !== m) {
           tempDate.setMonth(tempDate.getMonth() + 1);
           continue;
         }
 
         const lastDayOfTempMonth = new Date(y, m + 1, 0).getDate();
-        const targetDay = Math.min(entryDay, lastDayOfTempMonth);
+        const targetDay = Math.min(ruleDay, lastDayOfTempMonth);
 
         // If it's the current month, verify it is not in the future relative to today's local date
         if (y === currentYear && m === currentMonth) {
@@ -1714,21 +1763,23 @@ export async function generateRecurringEntries(
           }
         }
 
-        const key = `${y}|${m}|${entry.description.trim().toLowerCase()}|${entry.type}`;
-        if (!pastExistingSet.has(key)) {
+        const keyWithId = `${y}|${m}|${rule.id}`;
+        const keyWithName = `${y}|${m}|${rule.description.trim().toLowerCase()}|${rule.type}`;
+        if (!pastExistingRuleSet.has(keyWithId) && !pastExistingRuleSet.has(keyWithName)) {
           const formattedDate = formatLocalYYYYMMDD(y, m, targetDay);
 
           toInsert.push({
             cashflow_id: cashflowId,
-            description: entry.description.trim(),
-            type: entry.type === 'income' ? 'income' : 'expense',
-            amount: entry.amount,
-            category: getRecurringCategory(entry),
-            goal_id: entry.goal_id ?? null,
+            recurring_rule_id: rule.id,
+            description: rule.description.trim(),
+            type: rule.type === 'income' ? 'income' : 'expense',
+            amount: rule.amount,
+            category: getRecurringCategory(rule),
+            goal_id: rule.goal_id ?? null,
             date: formattedDate,
             is_recurring: true,
-            recurrence_interval: entry.recurrence_interval === 'monthly' ? 'monthly' : entry.recurrence_interval === 'yearly' ? 'yearly' : null,
-            yearly_calculation: entry.yearly_calculation === 'prorated' ? 'prorated' : entry.yearly_calculation === 'exact' ? 'exact' : null,
+            recurrence_interval: rule.recurrence_interval === 'monthly' ? 'monthly' : rule.recurrence_interval === 'yearly' ? 'yearly' : null,
+            yearly_calculation: rule.yearly_calculation === 'prorated' ? 'prorated' : rule.yearly_calculation === 'exact' ? 'exact' : null,
           });
         }
         tempDate.setMonth(tempDate.getMonth() + 1);
@@ -1757,7 +1808,7 @@ export async function generateRecurringEntries(
 
   const { data: existingThisMonth, error: existingError } = await supabase
     .from('cashflow_entries')
-    .select('description, type, amount')
+    .select('recurring_rule_id, description, type, amount')
     .eq('cashflow_id', cashflowId)
     .gte('date', monthStart)
     .lte('date', monthEnd);
@@ -1767,31 +1818,34 @@ export async function generateRecurringEntries(
     return { error: 'Failed to check existing entries' };
   }
 
-  const existingSet = new Set(
+  const existingRuleIds = new Set(
+    (existingThisMonth || []).map((e) => e.recurring_rule_id).filter(Boolean)
+  );
+  const existingNames = new Set(
     (existingThisMonth || []).map((e) => `${e.description.trim().toLowerCase()}|${e.type}`)
   );
 
   // Generate missing entries
   const toInsert = uniqueRecurring
-    .filter((entry) => !existingSet.has(`${entry.description.trim().toLowerCase()}|${entry.type}`))
-    .map((entry) => {
-      const [, , entryDay] = entry.date.split('-').map(Number);
-      // Handle month-end cases (e.g. 31st of Jan -> 28th of Feb)
+    .filter((rule) => !existingRuleIds.has(rule.id) && !existingNames.has(`${rule.description.trim().toLowerCase()}|${rule.type}`))
+    .map((rule) => {
+      const ruleDay = rule.day_of_month || 1;
       const lastDayOfCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const targetDay = Math.min(entryDay, lastDayOfCurrentMonth);
+      const targetDay = Math.min(ruleDay, lastDayOfCurrentMonth);
       const formattedDate = formatLocalYYYYMMDD(currentYear, currentMonth, targetDay);
 
       return {
         cashflow_id: cashflowId,
-        description: entry.description.trim(),
-        type: entry.type,
-        amount: entry.amount,
-        category: getRecurringCategory(entry),
-        goal_id: entry.goal_id ?? null,
+        recurring_rule_id: rule.id,
+        description: rule.description.trim(),
+        type: rule.type,
+        amount: rule.amount,
+        category: getRecurringCategory(rule),
+        goal_id: rule.goal_id ?? null,
         date: formattedDate,
         is_recurring: true,
-        recurrence_interval: entry.recurrence_interval,
-        yearly_calculation: entry.yearly_calculation,
+        recurrence_interval: rule.recurrence_interval,
+        yearly_calculation: rule.yearly_calculation,
         targetDay,
       };
     })
@@ -1814,6 +1868,7 @@ export async function generateRecurringEntries(
     })
     .map((entry) => ({
       cashflow_id: entry.cashflow_id,
+      recurring_rule_id: entry.recurring_rule_id,
       description: entry.description,
       type: entry.type === 'income' ? 'income' : 'expense',
       amount: entry.amount,
@@ -2355,5 +2410,184 @@ export async function deleteCashflowTag(formData: FormData) {
   revalidatePath(`/cashflow/${cashflowId}`);
 
   return { success: true, count: entries.length };
+}
+
+export async function createRecurringRule(cashflowId: string, formData: FormData) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const formDataObj = Object.fromEntries(formData);
+  const parsed = cashflowRecurringRuleSchema.safeParse({
+    cashflowId,
+    ...formDataObj,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { goalId, description, amount, type, category, recurrence_interval, yearly_calculation, day_of_month, is_active, start_date } = parsed.data;
+
+  const permission = await checkEditPermission(supabase, cashflowId, user);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  const resolvedGoal = await resolveGoalId(supabase, category, goalId ?? undefined);
+  if (resolvedGoal.error) return { error: resolvedGoal.error };
+
+  const { data: insertedRule, error } = await supabase
+    .from('cashflow_recurring_rules')
+    .insert({
+      cashflow_id: cashflowId,
+      goal_id: resolvedGoal.goalId,
+      description: description.trim(),
+      amount,
+      type,
+      category: resolvedGoal.category,
+      recurrence_interval: recurrence_interval || 'monthly',
+      yearly_calculation: recurrence_interval === 'yearly' ? yearly_calculation : null,
+      day_of_month: day_of_month || 1,
+      is_active: is_active ?? true,
+      start_date: start_date || new Date().toISOString().split('T')[0],
+    })
+    .select('*')
+    .single();
+
+  if (error || !insertedRule) {
+    console.error('Failed to create recurring rule:', error);
+    return { error: error?.message || 'Failed to create recurring rule' };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true, rule: mapCashflowRecurringRuleToDTO(insertedRule) };
+}
+
+export async function updateRecurringRule(ruleId: string, formData: FormData) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const formDataObj = Object.fromEntries(formData);
+  const parsed = updateCashflowRecurringRuleSchema.safeParse({
+    ruleId,
+    ...formDataObj,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { cashflowId, goalId, description, amount, type, category, recurrence_interval, yearly_calculation, day_of_month, is_active, start_date } = parsed.data;
+
+  const permission = await checkEditPermission(supabase, cashflowId, user);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  const resolvedGoal = await resolveGoalId(supabase, category, goalId ?? undefined);
+  if (resolvedGoal.error) return { error: resolvedGoal.error };
+
+  const { data: updatedRule, error } = await supabase
+    .from('cashflow_recurring_rules')
+    .update({
+      goal_id: resolvedGoal.goalId,
+      description: description.trim(),
+      amount,
+      type,
+      category: resolvedGoal.category,
+      recurrence_interval: recurrence_interval || 'monthly',
+      yearly_calculation: recurrence_interval === 'yearly' ? yearly_calculation : null,
+      day_of_month: day_of_month || 1,
+      is_active: is_active ?? true,
+      start_date: start_date || undefined,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', ruleId)
+    .select('*')
+    .single();
+
+  if (error || !updatedRule) {
+    console.error('Failed to update recurring rule:', error);
+    return { error: error?.message || 'Failed to update recurring rule' };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true, rule: mapCashflowRecurringRuleToDTO(updatedRule) };
+}
+
+export async function toggleRecurringRule(ruleId: string, isActive: boolean) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const parsed = toggleCashflowRecurringRuleSchema.safeParse({ ruleId, is_active: isActive });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { data: rule } = await supabase
+    .from('cashflow_recurring_rules')
+    .select('id, cashflow_id, cashflows(user_id)')
+    .eq('id', ruleId)
+    .single();
+
+  if (!rule) {
+    return { error: 'Recurring rule not found' };
+  }
+
+  const permission = await checkEditPermission(supabase, rule.cashflow_id, user, joinedOwnerSchema.parse(rule.cashflows));
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  const { error } = await supabase
+    .from('cashflow_recurring_rules')
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq('id', ruleId);
+
+  if (error) {
+    console.error('Failed to toggle recurring rule:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${rule.cashflow_id}`);
+  return { success: true, ruleId, isActive };
+}
+
+export async function deleteRecurringRule(ruleId: string) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const parsed = deleteCashflowRecurringRuleSchema.safeParse({ ruleId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { data: rule } = await supabase
+    .from('cashflow_recurring_rules')
+    .select('id, cashflow_id, cashflows(user_id)')
+    .eq('id', ruleId)
+    .single();
+
+  if (!rule) {
+    return { error: 'Recurring rule not found' };
+  }
+
+  const permission = await checkEditPermission(supabase, rule.cashflow_id, user, joinedOwnerSchema.parse(rule.cashflows));
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  const { error } = await supabase
+    .from('cashflow_recurring_rules')
+    .delete()
+    .eq('id', ruleId);
+
+  if (error) {
+    console.error('Failed to delete recurring rule:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${rule.cashflow_id}`);
+  return { success: true, ruleId };
 }
 

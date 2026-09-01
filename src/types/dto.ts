@@ -87,11 +87,29 @@ export interface CashflowEntryDTO {
   date: string
   created_at: string | null
   is_recurring: boolean
+  recurring_rule_id?: string | null
   recurrence_interval: 'monthly' | 'yearly' | null
   yearly_calculation: 'prorated' | 'exact' | null
   tags: string[]
   items?: CashflowSplitEntryDTO[]
   receipt_url?: string | null
+}
+
+export interface CashflowRecurringRuleDTO {
+  id: string
+  cashflow_id: string
+  description: string
+  amount: number
+  type: 'income' | 'expense'
+  category: string | null
+  goal_id: string | null
+  recurrence_interval: 'monthly' | 'yearly'
+  yearly_calculation: 'prorated' | 'exact' | null
+  day_of_month: number
+  is_active: boolean
+  start_date: string
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export interface CashflowShareDTO {

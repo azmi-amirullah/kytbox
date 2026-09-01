@@ -86,7 +86,7 @@ export default async function CashflowDetailPage({
     throw error;
   }
 
-  const { cashflow, entries, budgets, tags, goals, profile, share } = data;
+  const { cashflow, entries, recurringRules, budgets, tags, goals, profile, share } = data;
 
   // 3. Access Control
   const isPublic = cashflow.is_public;
@@ -141,6 +141,7 @@ export default async function CashflowDetailPage({
           key={cashflow.id}
           cashflow={cashflow}
           entries={entries}
+          recurringRules={recurringRules}
           budgets={budgets}
           tags={tags}
           goals={goals}

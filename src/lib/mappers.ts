@@ -1,7 +1,6 @@
 import type {
   Profile,
   Cashflow,
-  CashflowEntry,
   CashflowSplitEntry,
   CashflowShare,
   CashflowWithSummary,
@@ -33,6 +32,7 @@ import type {
   CashflowBudgetDTO,
   CashflowTagDTO,
   CashflowGoalDTO,
+  CashflowRecurringRuleDTO,
   CashflowWithSummaryDTO,
   ListDTO,
   ListColumnDTO,
@@ -162,7 +162,24 @@ export function mapCashflowSplitEntryToDTO(
 }
 
 export function mapCashflowEntryToDTO(
-  row: CashflowEntry & { cashflow_split_entries?: CashflowSplitEntry[] },
+  row: {
+    id: string;
+    cashflow_id: string;
+    description: string;
+    amount: number;
+    type: string;
+    date: string;
+    goal_id?: string | null;
+    category?: string | null;
+    is_recurring?: boolean | null;
+    recurring_rule_id?: string | null;
+    recurrence_interval?: string | null;
+    yearly_calculation?: string | null;
+    created_at?: string | null;
+    tags?: string[] | null;
+    receipt_url?: string | null;
+    cashflow_split_entries?: CashflowSplitEntry[];
+  },
   goalTitle?: string | null,
 ): CashflowEntryDTO {
   const category = row.goal_id
@@ -184,19 +201,65 @@ export function mapCashflowEntryToDTO(
     description: row.description,
     amount: row.amount,
     type: row.type,
-    category,
+    category: category ?? null,
     date: row.date,
     is_recurring: row.is_recurring ?? false,
+    recurring_rule_id: row.recurring_rule_id ?? null,
     recurrence_interval: recurrenceIntervalSchema
       .catch(null)
       .parse(row.recurrence_interval),
     yearly_calculation: yearlyCalculationSchema
       .catch(null)
       .parse(row.yearly_calculation),
-    created_at: row.created_at,
+    created_at: row.created_at ?? null,
     tags: Array.isArray(row.tags) ? row.tags : [],
     items,
     receipt_url: row.receipt_url ?? null,
+  };
+}
+
+export function mapCashflowRecurringRuleToDTO(
+  row: {
+    id: string;
+    cashflow_id: string;
+    description: string;
+    amount: number;
+    type: string;
+    category?: string | null;
+    goal_id?: string | null;
+    recurrence_interval?: string | null;
+    yearly_calculation?: string | null;
+    day_of_month?: number | null;
+    is_active?: boolean | null;
+    start_date: string;
+    created_at?: string | null;
+    updated_at?: string | null;
+  },
+  goalTitle?: string | null,
+): CashflowRecurringRuleDTO {
+  const category = row.goal_id
+    ? goalTitle
+      ? `Goal: ${goalTitle}`
+      : null
+    : row.category?.startsWith('Goal:')
+      ? null
+      : row.category;
+
+  return {
+    id: row.id,
+    cashflow_id: row.cashflow_id,
+    description: row.description,
+    amount: row.amount,
+    type: row.type === 'income' ? 'income' : 'expense',
+    category: category ?? null,
+    goal_id: row.goal_id ?? null,
+    recurrence_interval: row.recurrence_interval === 'yearly' ? 'yearly' : 'monthly',
+    yearly_calculation: row.yearly_calculation === 'exact' ? 'exact' : row.yearly_calculation === 'prorated' ? 'prorated' : null,
+    day_of_month: row.day_of_month || 1,
+    is_active: row.is_active ?? true,
+    start_date: row.start_date,
+    created_at: row.created_at ?? null,
+    updated_at: row.updated_at ?? null,
   };
 }
 

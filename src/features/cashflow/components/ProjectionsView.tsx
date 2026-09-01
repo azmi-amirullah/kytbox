@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { CashflowEntryDTO } from '@/types/dto';
+import type { CashflowEntryDTO, CashflowRecurringRuleDTO } from '@/types/dto';
 import { calculateProjections } from '../math';
 import { formatCurrencyCompact } from '@/lib/currency';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   LuTrendingUp,
   LuTrendingDown,
@@ -22,14 +23,22 @@ import {
   LuArrowRight,
   LuChevronDown,
   LuChevronUp,
+  LuSlidersHorizontal,
 } from 'react-icons/lu';
 
 interface ProjectionsViewProps {
   entries: CashflowEntryDTO[];
+  recurringRules?: CashflowRecurringRuleDTO[];
   currency: string | null;
+  onManageRules?: () => void;
 }
 
-export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
+export function ProjectionsView({
+  entries,
+  recurringRules,
+  currency,
+  onManageRules,
+}: ProjectionsViewProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const {
@@ -39,7 +48,10 @@ export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
     projectedResult,
     recurringItems,
     nextMonthName,
-  } = useMemo(() => calculateProjections(entries), [entries]);
+  } = useMemo(
+    () => calculateProjections(entries, undefined, recurringRules),
+    [entries, recurringRules],
+  );
 
   if (recurringItems.length === 0) return null;
 
@@ -93,7 +105,7 @@ export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 1, ease: 'easeInOut' }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
             className='overflow-hidden'
           >
             <CardDescription
@@ -173,10 +185,21 @@ export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
 
               {/* Window Breakdown Section */}
               <div className='border-border/50'>
-                <div className='flex items-center justify-between mb-4'>
-                  <p className='text-sm font-semibold text-muted-foreground tracking-tight'>
-                    Top 4 Contributors (Recurring)
+                <div className='flex items-center justify-between mb-3 gap-2'>
+                  <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+                    Top Recurring Contributors
                   </p>
+                  {onManageRules && (
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={onManageRules}
+                      className='h-7 px-2.5 text-xs gap-1.5 font-medium border-emerald-300/60 bg-card hover:bg-emerald-50 dark:border-emerald-800/60 dark:bg-card dark:hover:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300'
+                    >
+                      <LuSlidersHorizontal className='w-3.5 h-3.5' />
+                      Manage Rules
+                    </Button>
+                  )}
                 </div>
 
                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'>
@@ -192,7 +215,7 @@ export function ProjectionsView({ entries, currency }: ProjectionsViewProps) {
                         className='flex items-center justify-between bg-white dark:bg-muted/20 border border-border/60 hover:border-primary/30 transition-all rounded-xl p-3 group shadow-xs'
                       >
                         <div className='flex flex-col'>
-                          <span className='text-xs font-bold truncate max-w-[140px] text-foreground/90'>
+                          <span className='text-xs font-bold truncate max-w-35 text-foreground/90'>
                             {item.description}
                           </span>
                           <span className='text-[10px] text-muted-foreground/80 font-medium capitalize'>

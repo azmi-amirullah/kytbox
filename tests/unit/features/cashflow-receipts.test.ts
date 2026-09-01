@@ -94,6 +94,7 @@ describe('Cashflow Receipt Schemas & Logic', () => {
         recurrence_interval: null,
         yearly_calculation: null,
         goal_id: null,
+        recurring_rule_id: null,
         tags: ['ClientA'],
         receipt_url: 'user-1/cf-1/receipt-xyz.webp',
       }
@@ -116,6 +117,7 @@ describe('Cashflow Receipt Schemas & Logic', () => {
         recurrence_interval: 'monthly',
         yearly_calculation: null,
         goal_id: null,
+        recurring_rule_id: null,
         tags: [],
         receipt_url: null,
       }

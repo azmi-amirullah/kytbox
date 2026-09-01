@@ -1,5 +1,6 @@
 import type {
   CashflowEntryDTO,
+  CashflowRecurringRuleDTO,
   CashflowBudgetDTO,
   CashflowChartAggregateDTO,
 } from '@/types/dto';
@@ -44,7 +45,7 @@ export interface DateRange {
 }
 
 /**
- * State for the date filter.
+ * Date filter state representing active preset and custom bounds.
  */
 export interface DateFilterState {
   preset: DateFilterPreset;
@@ -93,10 +94,12 @@ export interface BudgetStatus {
  * 
  * @param entries - List of cashflow entries
  * @param today - Reference date (defaults to current system time)
+ * @param recurringRules - Optional list of active recurring rules
  */
 export function calculateProjections(
   entries: CashflowEntryDTO[],
-  today: Date = new Date()
+  today: Date = new Date(),
+  recurringRules?: CashflowRecurringRuleDTO[]
 ): ProjectionResult {
   let realizedIncome = 0;
   let realizedExpense = 0;
@@ -127,6 +130,127 @@ export function calculateProjections(
     0
   );
 
+  const recurringList: RecurringItemEnriched[] = [];
+
+  // When first-class recurring rules are provided
+  if (recurringRules && recurringRules.length > 0) {
+    const settledThisMonthRuleIds = new Set<string>();
+    const settledThisMonthNames = new Set<string>();
+
+    for (const entry of entries) {
+      const amount = Number(entry.amount);
+      const [entryYear, entryMonth, entryDay] = entry.date.split('-').map(Number);
+      const entryDate = new Date(entryYear, entryMonth - 1, entryDay);
+
+      const isSettled = entryDate <= todayDateOnly;
+      if (isSettled) {
+        if (entry.type === 'income') realizedIncome += amount;
+        if (entry.type === 'expense') realizedExpense += amount;
+
+        if (entryYear === today.getFullYear() && entryMonth - 1 === today.getMonth()) {
+          if (entry.recurring_rule_id) settledThisMonthRuleIds.add(entry.recurring_rule_id);
+          settledThisMonthNames.add(`${entry.description.trim().toLowerCase()}|${entry.type}`);
+        }
+      } else if (entryDate > todayDateOnly && entryDate <= endOfNextMonth) {
+        // One-time future items (not linked to recurring rules)
+        if (!entry.is_recurring && !entry.recurring_rule_id) {
+          if (entry.type === 'expense') upcomingMonthlyExpenses += amount;
+          else upcomingMonthlyIncome += amount;
+        }
+      }
+    }
+
+    const activeRules = recurringRules.filter((r) => r.is_active);
+
+    for (const rule of activeRules) {
+      const amount = Number(rule.amount);
+      const [, startMonth, startDay] = rule.start_date.split('-').map(Number);
+      const ruleDay = rule.day_of_month || startDay || 1;
+
+      let multiplier = 0;
+      let monthlyEquivalent = 0;
+
+      const isProrated =
+        rule.recurrence_interval === 'yearly' &&
+        (rule.yearly_calculation === 'prorated' || !rule.yearly_calculation);
+
+      if (isProrated) {
+        const cycleStart = new Date(today.getFullYear(), startMonth - 1, ruleDay);
+        if (cycleStart > today) {
+          cycleStart.setFullYear(cycleStart.getFullYear() - 1);
+        }
+        const startY = cycleStart.getFullYear();
+        const startM = cycleStart.getMonth();
+        const endY = endOfNextMonth.getFullYear();
+        const endM = endOfNextMonth.getMonth();
+
+        const monthsCount = (endY - startY) * 12 + (endM - startM) + 1;
+        multiplier = Math.max(0, monthsCount / 12);
+        monthlyEquivalent = amount / 12;
+      } else if (rule.recurrence_interval === 'monthly') {
+        const hasPassedOrSettledThisMonth =
+          today.getDate() >= ruleDay ||
+          settledThisMonthRuleIds.has(rule.id) ||
+          settledThisMonthNames.has(`${rule.description.trim().toLowerCase()}|${rule.type}`);
+
+        if (!hasPassedOrSettledThisMonth) multiplier += 1;
+        multiplier += 1; // Next month projection
+        monthlyEquivalent = amount;
+      } else {
+        const nextAnniversary = new Date(today.getFullYear(), startMonth - 1, ruleDay);
+        if (nextAnniversary < todayDateOnly) {
+          nextAnniversary.setFullYear(today.getFullYear() + 1);
+        }
+        const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+        if (nextAnniversary >= todayDateOnly && nextAnniversary <= endOfThisMonth) {
+          multiplier += 1;
+        } else if (nextAnniversary >= nextMonthStart && nextAnniversary <= endOfNextMonth) {
+          multiplier += 1;
+        }
+        monthlyEquivalent = amount / 12;
+      }
+
+      const projectedAmount = amount * multiplier;
+      if (rule.type === 'expense') {
+        upcomingMonthlyExpenses += projectedAmount;
+      } else {
+        upcomingMonthlyIncome += projectedAmount;
+      }
+
+      recurringList.push({
+        id: rule.id,
+        cashflow_id: rule.cashflow_id,
+        goal_id: rule.goal_id,
+        description: rule.description,
+        amount: rule.amount,
+        type: rule.type,
+        category: rule.category,
+        date: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(Math.min(ruleDay, 28)).padStart(2, '0')}`,
+        created_at: rule.created_at ?? null,
+        is_recurring: true,
+        recurring_rule_id: rule.id,
+        recurrence_interval: rule.recurrence_interval,
+        yearly_calculation: rule.yearly_calculation,
+        tags: [],
+        monthlyEquivalent,
+        projectedAmount,
+        multiplierUnits: multiplier * (rule.recurrence_interval === 'yearly' ? 12 : 1),
+      });
+    }
+
+    const currentBalance = realizedIncome - realizedExpense;
+    const realAvailableBalance = currentBalance - upcomingMonthlyExpenses + upcomingMonthlyIncome;
+
+    return {
+      settledCash: currentBalance,
+      upcomingMonthlyExpenses,
+      upcomingMonthlyIncome,
+      projectedResult: realAvailableBalance,
+      recurringItems: recurringList.sort((a, b) => b.monthlyEquivalent - a.monthlyEquivalent),
+      nextMonthName,
+    };
+  }
+
   // Group all entries by description + type (case-insensitive) to find the absolute latest entry of each series
   const latestSeriesMap = new Map<string, typeof entries[number]>();
   for (const entry of entries) {
@@ -144,8 +268,6 @@ export function calculateProjections(
       latestRecurringIds.add(entry.id);
     }
   }
-
-  const recurringList: RecurringItemEnriched[] = [];
 
   for (const entry of entries) {
     const amount = Number(entry.amount);
