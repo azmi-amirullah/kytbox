@@ -204,3 +204,16 @@ export const deleteCashflowTagSchema = z.object({
 export type RenameCashflowTagInput = z.infer<typeof renameCashflowTagSchema>;
 export type DeleteCashflowTagInput = z.infer<typeof deleteCashflowTagSchema>;
 
+export const toggleCashflowPinSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  isPinned: z.boolean(),
+});
+
+export const archiveCashflowSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+});
+
+export const restoreCashflowSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+});
+

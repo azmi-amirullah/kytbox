@@ -424,22 +424,31 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_archived: boolean
+          is_pinned: boolean
           is_public: boolean | null
           title: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_archived?: boolean
+          is_pinned?: boolean
           is_public?: boolean | null
           title: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_archived?: boolean
+          is_pinned?: boolean
           is_public?: boolean | null
           title?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1232,8 +1241,12 @@ export type Database = {
           expense: number | null
           id: string | null
           income: number | null
+          is_archived: boolean | null
+          is_pinned: boolean | null
           is_public: boolean | null
+          last_entry_at: string | null
           title: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Relationships: [

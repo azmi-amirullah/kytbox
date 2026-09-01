@@ -145,6 +145,9 @@ export function mapCashflowToDTO(row: Cashflow): CashflowDTO {
     is_public: !!row.is_public,
     user_id: row.user_id,
     created_at: row.created_at,
+    updated_at: row.updated_at ?? null,
+    is_pinned: row.is_pinned ?? false,
+    is_archived: row.is_archived ?? false,
   };
 }
 
@@ -276,12 +279,18 @@ export function mapCashflowWithSummaryToDTO(
   row: CashflowWithSummary,
   goalTitles?: ReadonlyMap<string, string>,
 ): CashflowWithSummaryDTO {
+  const lastActivityAt = row.last_entry_at || row.updated_at || row.created_at || null;
   return {
     id: row.id!,
     title: row.title!,
     is_public: !!row.is_public,
     user_id: row.user_id!,
     created_at: row.created_at,
+    updated_at: row.updated_at ?? null,
+    is_pinned: row.is_pinned ?? false,
+    is_archived: row.is_archived ?? false,
+    last_entry_at: row.last_entry_at ?? null,
+    lastActivityAt,
     entryCount: Number(row.entry_count ?? 0),
     income: Number(row.income ?? 0),
     expense: Number(row.expense ?? 0),

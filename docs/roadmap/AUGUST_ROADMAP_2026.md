@@ -33,11 +33,11 @@
 - [x] [Day 23 — Cashflow: Financial PDF Statement & Monthly Report Generator](#day-23)
 - [x] [Day 24 — Platform: Workspace Global Search (`Cmd+K`)](#day-24)
 - [x] [Day 25 — Platform: One-Click GDPR Data Export](#day-25)
-- [ ] [Day 26 — Platform: Session Management Dashboard](#day-26)
-- [ ] [Day 27 — Platform: Security & Search E2E Test Suite](#day-27)
+- [x] [Day 26 — Cashflow: Book Organization & Lifecycle (`Pinning, Archiving & Sort Controls`)](#day-26)
+- [ ] [Day 27 — Platform & Cashflow: Advanced Features E2E Test Suite](#day-27)
 - [ ] [Day 28 — Weekly Sprint Audit & System Integrity Verification](#day-28)
-- [ ] [Day 29 — Platform: Multi-language Setup (`next-intl`)](#day-29)
-- [ ] [Day 30 — Platform: Locale Switcher & Translation Dictionaries](#day-30)
+- [ ] [Day 29 — Cashflow: Bulk Actions Engine (`Multi-Select, Batch Delete & Category Reassignment`)](#day-29)
+- [ ] [Day 30 — Platform: Public Changelog & What's New System (`/changelog`)](#day-30)
 - [ ] [Day 31 — August 30-Day Sprint Retrospective & September Planning](#day-31)
 
 ---
@@ -45,9 +45,9 @@
 ## 🎯 Strategic Goals
 
 1. **Bio App Depth & Creator Tools**: Custom Domains, SEO Metadata Editor, Lead Capture Forms, Custom Thumbnails, Pinned Links, and Sensitive Content Warnings.
-2. **Cashflow Productivity**: Receipt/Attachment Uploads, CSV/Bank Import, Monthly Comparison Views, Split Transactions, Custom Tags/Labels, and Financial PDF Statement Generator.
+2. **Cashflow Productivity**: Receipt/Attachment Uploads, CSV/Bank Import, Monthly Comparison Views, Split Transactions, Custom Tags/Labels, Financial PDF Statement Generator, Book Organization (Pinning/Archiving), and Bulk Actions Engine.
 3. **List App Power Features**: Due Dates & Reminders, Card Subtasks/Checklists, Pre-built Board Templates, Priority Levels, Recurring Tasks Engine, and Interactive Calendar View.
-4. **Platform Power & Global Accessibility**: Workspace Global Search (`Cmd+K`), One-Click GDPR Data Export, Session Management, and Multi-language Support (`next-intl` i18n).
+4. **Platform Power & Transparency**: Workspace Global Search (`Cmd+K`), One-Click GDPR Data Export, Public Changelog & What's New System (`/changelog`), and System Integrity Verification.
 
 ---
 
@@ -350,21 +350,27 @@
 ---
 
 <a id="day-26"></a>
-#### Day 26 — Wednesday, Aug 26 | 🛡️ Security
-##### Platform: Session Management Dashboard
-- **Why**: Users need visibility into where their account is logged in (Browser, OS, IP address, Last Active) and the ability to remotely revoke suspicious active sessions.
+#### Day 26 — Wednesday, Aug 26 | ✨ Feature
+##### Cashflow: Book Organization & Lifecycle (`Pinning, Archiving & Sort Controls`)
+- **Why**: Active users manage multiple cashflow books over time (e.g. daily personal budget, past holiday trips, freelance projects). Users need to pin their everyday books to the top, archive completed or inactive books to declutter the dashboard, and toggle sort criteria (Last Active, Created Date, Balance, Alphabetical).
 - **Implementation Blueprint**:
-  - Track session metadata in `user_sessions` table.
-  - Render active session list UI with "Revoke Session" action in `src/features/auth/components/SessionManager.tsx`.
+  - Add `is_pinned: boolean` and `is_archived: boolean` columns to `cashflows` table with index.
+  - Update `getCashflowDashboardData` query in `src/features/cashflow/db.ts` to return pinned books first, active books, and archived books separated.
+  - Build UI controls on the Cashflow Dashboard:
+    - Quick pin toggle on book cards.
+    - Book archive/unarchive action in book settings dropdown.
+    - Dashboard tab/drawer filter: `Active Books` vs `Archived Books`.
+    - Sort selector: `Last Activity (default)`, `Created Date`, `Alphabetical (A-Z)`, `Highest Balance`.
+  - Server Actions: `togglePinCashflow(id)`, `archiveCashflow(id)`, `restoreCashflow(id)`.
 
 ---
 
 <a id="day-27"></a>
 #### Day 27 — Thursday, Aug 27 | 🧪 Testing
-##### Platform: Security & Search E2E Test Suite
-- **Why**: Validate TOTP challenge enforcement, global search palette keyboard navigation (`Cmd+K`), session revocation, and data export download completeness.
+##### Platform & Cashflow: Advanced Features E2E Test Suite
+- **Why**: Validate global search palette keyboard navigation (`Cmd+K`), GDPR data export download completeness, and cashflow book pinning/archiving lifecycle state transitions.
 - **Implementation Blueprint**:
-  - Playwright test suite `tests/e2e/platform-security.spec.ts`.
+  - Playwright test suite `tests/e2e/platform-security.spec.ts` and `tests/e2e/cashflow-book-management.spec.ts`.
 
 ---
 
@@ -377,25 +383,30 @@
 
 ---
 
-### Week 5 — Internationalization & Retrospective (Aug 29 - Aug 31)
+### Week 5 — Power Polish & Retrospective (Aug 29 - Aug 31)
 
 <a id="day-29"></a>
-#### Day 29 — Saturday, Aug 29 | 🌐 i18n
-##### Platform: Multi-language Framework Setup (`next-intl`)
-- **Why**: International expansion unlocks global user acquisition. Setting up `next-intl` localization framework enables seamless translation across English, Indonesian, and Spanish.
+#### Day 29 — Saturday, Aug 29 | ✨ Feature
+##### Cashflow: Bulk Actions Engine (`Multi-Select, Batch Delete & Category Reassignment`)
+- **Why**: After importing bank CSV statements (Day 9) or reviewing monthly expenditures, editing/deleting transactions one-by-one is tedious and slow. A bulk actions engine enables multi-selecting entries to batch delete, reassign categories, or apply tags simultaneously in seconds.
 - **Implementation Blueprint**:
-  - Configure `next-intl` routing middleware.
-  - Create translation dictionary files `messages/en.json`, `messages/id.json`, and `messages/es.json`.
+  - Add selection state (`selectedIds: Set<string>`) with master checkbox ("Select All" / "Select Page") to Cashflow transaction tables.
+  - Build floating sticky batch actions toolbar component (`BulkActionsToolbar.tsx`):
+    - "Delete Selected" (with count confirmation dialog).
+    - "Set Category" (combobox picker applying category to all selected entries).
+    - "Add Tag" (combobox tag picker applying tags to all selected entries).
+  - Server Actions: `bulkDeleteEntries(ids, cashflowId)`, `bulkUpdateCategory(ids, category, cashflowId)`, `bulkAddTags(ids, tags, cashflowId)` with atomic batch Supabase queries.
 
 ---
 
 <a id="day-30"></a>
-#### Day 30 — Sunday, Aug 30 | 🌐 i18n
-##### Platform: Locale Switcher & Translation Dictionaries
-- **Why**: Users need an easy way to toggle language preferences from the header/settings menu, dynamically switching UI strings across all 5 app modules without page reloads.
+#### Day 30 — Sunday, Aug 30 | ✨ Feature
+##### Platform: Public Changelog & What's New System (`/changelog`)
+- **Why**: With 29+ days of rapid feature delivery (Bio SEO, CSV Import, Split Transactions, Recurring Tasks, Calendar View, Cmd+K Search, GDPR Export, Book Pinning/Archiving, Bulk Actions), users need clear visibility into product evolution. A public `/changelog` route combined with an in-app "What's New" release highlight modal boosts feature discovery, engagement, and retention right before the sprint retrospective.
 - **Implementation Blueprint**:
-  - Build `<LocaleSwitcher />` dropdown component.
-  - Replace hardcoded UI strings with translation hooks (`useTranslations('Bio')`, `useTranslations('Cashflow')`).
+  - Build public `/changelog` page rendering structured markdown/JSON release entries with tag filters (`Bio`, `Cashflow`, `List`, `Platform`).
+  - Create `<WhatsNewModal />` component in the platform dashboard tracking `last_seen_version` in localStorage to highlight recent updates without intrusive popups.
+  - Colocate release data in `src/features/platform/data/changelog.ts`.
 
 ---
 
@@ -414,10 +425,10 @@
 | Category | Days | Primary Deliverables |
 | :--- | :---: | :--- |
 | 🔗 **Bio App** | 6 | SEO Editor, Custom Thumbnails, Lead Capture, Pinned Links, Custom Domains, Bio E2E |
-| 💰 **Cashflow App** | 7 | Receipt Uploads, CSV Bank Import, Monthly Comparison, Custom Tags, Split Transactions, PDF Report Export, Cashflow E2E |
+| 💰 **Cashflow App** | 9 | Receipt Uploads, CSV Bank Import, Monthly Comparison, Custom Tags, Split Transactions, PDF Report Export, Book Organization (Pin/Archive), Bulk Actions Engine, Cashflow E2E |
 | 📋 **List App** | 7 | Due Dates & Reminders, Subtasks, Board Templates, Priority Levels, Recurring Tasks, Calendar View, List E2E |
-| 🛡️ **Platform & Search** | 4 | Global Search (Cmd+K), GDPR Data Export, Session Manager, Platform E2E |
-| 🌐 **Platform / i18n** | 3 | Internationalization Setup, Locale Translations, Retrospective & Planning |
+| 🛡️ **Platform & Search** | 4 | Global Search (Cmd+K), GDPR Data Export, Changelog & What's New, Platform E2E |
+| 📋 **Planning & Retrospective** | 2 | Sprint Audit & System Integrity, August Retrospective & September Planning |
 
 ---
 
@@ -471,6 +482,7 @@
 | **Card Attachments** | Attach files and images directly to cards with Supabase Storage | 🔥 | ~4h |
 | **Archiving** | Archive completed boards instead of deleting | 🔥 | ~2h |
 | **Wishlist Price Comparison** | Compare prices across multiple stores for the same item | 🔥 | ~3h |
+| **Public List / Wishlist Sharing (`/{username}/list`)** | Share public read-only lists/boards linked to public bio profile | 🔥🔥🔥 | ~5h |
 | **List Sharing with ACL** | Share lists with read/edit permissions | 🔥🔥🔥 | ~5h |
 | **Kanban WIP Limits** | Set maximum cards per column ("In Progress: max 3") | 🔥 | ~2h |
 | **Task Date Ranges & Timeline View** | Support `start_date` + multi-day spanning Gantt bars across calendar & timeline | 🔥🔥 | ~5h |
@@ -482,13 +494,14 @@
 | Idea | Description | Impact | Effort |
 | --- | --- | --- | --- |
 | **Two-Factor Auth (TOTP 2FA)** | Authenticator app 2FA (QR code setup + recovery codes) for enterprise security | 🔥🔥 | ~6h |
+| **Multi-language Support (`next-intl`)** | Full internationalization framework (EN, ID, ES) with locale switcher | 🔥🔥 | ~8h |
+| **Session Management Dashboard** | View active sessions (device, browser, IP) and remote revocation | 🔥 | ~6h |
 | **Browser Extension** | Quick-add links to Bio from any webpage | 🔥🔥 | ~6h |
 | **Telegram/Discord Bot** | Add cashflow entries or check bio stats from chat | 🔥🔥 | ~5h |
 | **API Access + Webhooks** | Public developer API for integrations and webhooks | 🔥🔥 | ~6h |
 | **Mobile App (Capacitor)** | Wrap PWA as native iOS/Android app via Capacitor | 🔥🔥🔥 | ~8h |
 | **Team Workspaces** | Multiple users, one workspace with role-based access control | 🔥🔥🔥 | ~10h |
 | **Keyboard Shortcuts Guide** | `?` key opens full shortcut reference overlay | 🔥 | ~1h |
-| **Changelog Page** | `/changelog` — public page showing latest updates | 🔥🔥 | ~2h |
 | **Public Roadmap** | `/roadmap` — voteable public roadmap | 🔥🔥 | ~4h |
 | **Referral System** | "Invite friends, get perks." Viral growth loop | 🔥🔥🔥 | ~5h |
 | **Dark/Light per App** | Dashboard in dark mode, bio page in custom theme | 🔥 | ~2h |

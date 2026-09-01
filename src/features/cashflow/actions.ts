@@ -27,6 +27,9 @@ import {
   renameCashflowTagSchema,
   deleteCashflowTagSchema,
   getReceiptSignedUrlSchema,
+  toggleCashflowPinSchema,
+  archiveCashflowSchema,
+  restoreCashflowSchema,
 } from './schemas.server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
@@ -1105,8 +1108,42 @@ export async function toggleCashflowPin(
   cashflowId: string,
   isPinned: boolean,
 ) {
+  const parsed = toggleCashflowPinSchema.safeParse({ cashflowId, isPinned });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
   const { user, supabase } = await getAuthenticatedUser();
 
+  // 1. Check if user is the owner of the cashflow
+  const { data: ownedCashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id, is_archived')
+    .eq('id', cashflowId)
+    .single();
+
+  if (ownedCashflow && ownedCashflow.user_id === user.id) {
+    const { error } = await supabase
+      .from('cashflows')
+      .update({
+        is_pinned: isPinned,
+        // Pinning automatically unarchives
+        ...(isPinned ? { is_archived: false } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', cashflowId);
+
+    if (error) {
+      console.error('Failed to update owned cashflow pin status:', error);
+      return { error: error.message };
+    }
+
+    revalidatePath('/cashflow');
+    revalidatePath(`/cashflow/${cashflowId}`);
+    return { success: true, isOwned: true, isPinned };
+  }
+
+  // 2. Shared cashflow recipient pinning logic
   if (!user.email) {
     return { error: 'User email required' };
   }
@@ -1175,7 +1212,80 @@ export async function toggleCashflowPin(
 
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
-  return { success: true };
+  return { success: true, isOwned: false, isPinned };
+}
+
+export async function archiveCashflow(cashflowId: string) {
+  const parsed = archiveCashflowSchema.safeParse({ cashflowId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow || cashflow.user_id !== user.id) {
+    return { error: 'Only the book owner can archive this cashflow' };
+  }
+
+  const { error } = await supabase
+    .from('cashflows')
+    .update({
+      is_archived: true,
+      is_pinned: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', cashflowId);
+
+  if (error) {
+    console.error('Failed to archive cashflow:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true, cashflowId };
+}
+
+export async function restoreCashflow(cashflowId: string) {
+  const parsed = restoreCashflowSchema.safeParse({ cashflowId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow || cashflow.user_id !== user.id) {
+    return { error: 'Only the book owner can restore this cashflow' };
+  }
+
+  const { error } = await supabase
+    .from('cashflows')
+    .update({
+      is_archived: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', cashflowId);
+
+  if (error) {
+    console.error('Failed to restore cashflow:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true, cashflowId };
 }
 
 export async function upsertBudget(formData: FormData) {

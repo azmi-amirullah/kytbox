@@ -65,6 +65,9 @@ export interface CashflowDTO {
   is_public: boolean
   user_id: string
   created_at: string | null
+  updated_at?: string | null
+  is_pinned?: boolean
+  is_archived?: boolean
 }
 
 export interface CashflowSplitEntryDTO {
@@ -164,6 +167,9 @@ export interface CashflowWithSummaryDTO extends CashflowDTO {
   balance: number
   isIncluded?: boolean
   isPinned?: boolean
+  isArchived?: boolean
+  last_entry_at?: string | null
+  lastActivityAt?: string | null
 }
 
 

@@ -89,7 +89,9 @@ export async function getCashflowDashboardData(
   // Get user's cashflow summaries from the view
   let query = supabase
     .from('cashflow_summaries')
-    .select('id, user_id, title, created_at, is_public, entry_count, income, expense, balance')
+    .select(
+      'id, user_id, title, created_at, updated_at, is_public, is_pinned, is_archived, last_entry_at, entry_count, income, expense, balance',
+    )
     .order('created_at', { ascending: false });
 
   if (allShareIds.length > 0) {
@@ -105,9 +107,13 @@ export async function getCashflowDashboardData(
     throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
   }
 
-  // Active summaries (owned + pinned shares) to aggregate charts for
+  // Active summaries (active owned + pinned shares) to aggregate charts for
   const activeSummaryIds: string[] = (cashflowSummariesData || [])
-    .filter((c) => c.user_id === userId || (!!c.id && pinnedShareIds.has(c.id)))
+    .filter(
+      (c) =>
+        (c.user_id === userId && !c.is_archived) ||
+        (c.user_id !== userId && !!c.id && pinnedShareIds.has(c.id)),
+    )
     .map((c) => c.id)
     .filter((id): id is string => Boolean(id));
 
@@ -141,11 +147,13 @@ export async function getCashflowDashboardData(
   const cashflows = (cashflowSummariesData || []).map((c) => {
     const dto = mapCashflowWithSummaryToDTO(c);
     const isOwned = c.user_id === userId;
-    const isPinned = isOwned || (!!c.id && pinnedShareIds.has(c.id));
+    const isPinned = isOwned ? (c.is_pinned ?? false) : (!!c.id && pinnedShareIds.has(c.id));
+    const isArchived = isOwned ? (c.is_archived ?? false) : false;
     return {
       ...dto,
       isPinned,
-      isIncluded: isOwned || (!!c.id && includedShareIds.has(c.id)),
+      isArchived,
+      isIncluded: isOwned ? !isArchived : (!!c.id && includedShareIds.has(c.id)),
     };
   });
 

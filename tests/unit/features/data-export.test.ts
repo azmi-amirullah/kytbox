@@ -109,7 +109,10 @@ describe('GDPR Data Export Engine', () => {
           user_id: mockUserId,
           title: 'Personal Budget',
           created_at: '2026-08-01T00:00:00Z',
+          updated_at: '2026-08-01T00:00:00Z',
           is_public: false,
+          is_pinned: false,
+          is_archived: false,
         },
       ],
       entries: [
