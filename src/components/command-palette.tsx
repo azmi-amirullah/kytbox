@@ -20,6 +20,8 @@ import {
   LuTarget,
   LuBookmark,
   LuLightbulb,
+  LuSparkles,
+  LuHistory,
 } from 'react-icons/lu'
 
 import {
@@ -314,6 +316,24 @@ export function CommandPalette() {
           >
             <LuLifeBuoy className='mr-2 h-4 w-4' />
             <span>Support</span>
+          </CommandItem>
+          <CommandItem
+            value="What's New release highlights updates latest features"
+            onSelect={() =>
+              runCommand(() => {
+                window.dispatchEvent(new CustomEvent('open-whats-new'))
+              })
+            }
+          >
+            <LuSparkles className='mr-2 h-4 w-4 text-primary' />
+            <span>What&apos;s New</span>
+          </CommandItem>
+          <CommandItem
+            value='Changelog product updates release history version notes'
+            onSelect={() => runCommand(() => router.push('/changelog'))}
+          >
+            <LuHistory className='mr-2 h-4 w-4' />
+            <span>Changelog</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

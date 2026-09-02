@@ -140,16 +140,30 @@ export async function globalSearch(query: string): Promise<GlobalSearchResult> {
   const cashflow = [...cashflowGoals, ...cashflowEntries].slice(0, 8)
 
   const list: SearchResultItem[] = (listResult.data ?? []).map((item) => {
-    const type = listTypeById.get(item.list_id) ?? 'todo'
+    const rawType = listTypeById.get(item.list_id) ?? 'todo'
     const listTitle = listTitleById.get(item.list_id)
-    const listStr = listTitle ? `${listTitle} · ` : ''
+    const isNewIdeaSentinel = listTitle === '__new_idea__'
+    const routeType = rawType === 'idea' ? 'ideas' : rawType
+    const typeLabel =
+      rawType === 'idea'
+        ? 'Idea'
+        : rawType.charAt(0).toUpperCase() + rawType.slice(1)
+    const listStr = isNewIdeaSentinel
+      ? 'Quick Capture · '
+      : listTitle
+        ? `${listTitle} · `
+        : ''
+    const href = isNewIdeaSentinel
+      ? '/list/ideas'
+      : `/list/${routeType}/${item.list_id}`
+
     return {
       id: item.id,
       title: item.title,
-      subtitle: `${listStr}${type.charAt(0).toUpperCase() + type.slice(1)}`,
-      href: `/list/${type}/${item.list_id}`,
+      subtitle: `${listStr}${typeLabel}`,
+      href,
       category: 'list' as const,
-      icon: getListIcon(type),
+      icon: getListIcon(rawType),
     }
   })
 

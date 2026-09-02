@@ -27,6 +27,9 @@ export function Footer({ variant = 'dashboard' }: FooterProps) {
               <Link href='#workflow' className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                 Workflow
               </Link>
+              <Link href='/changelog' className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                Changelog
+              </Link>
               <Link href='/terms' className='flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                 Terms
               </Link>
@@ -66,6 +69,9 @@ export function Footer({ variant = 'dashboard' }: FooterProps) {
         .
       </p>
       <div className='mt-2 flex justify-center gap-2 text-xs text-muted-foreground/60'>
+        <Link href='/changelog' className='flex min-h-9 items-center rounded px-2 transition-colors hover:text-foreground'>
+          Changelog
+        </Link>
         <Link href='/terms' className='flex min-h-9 items-center rounded px-2 transition-colors hover:text-foreground'>
           Terms
         </Link>

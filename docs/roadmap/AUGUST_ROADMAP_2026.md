@@ -37,7 +37,7 @@
 - [x] [Day 27 — Platform & Cashflow: Advanced Features E2E Test Suite](#day-27)
 - [x] [Day 28 — Weekly Sprint Audit & System Integrity Verification](#day-28)
 - [x] [Day 29 — Cashflow: Bulk Actions Engine (`Multi-Select, Batch Delete & Category Reassignment`)](#day-29)
-- [ ] [Day 30 — Platform: Public Changelog & What's New System (`/changelog`)](#day-30)
+- [x] [Day 30 — Platform: Public Changelog & What's New System (`/changelog`)](#day-30)
 - [ ] [Day 31 — August 30-Day Sprint Retrospective & September Planning](#day-31)
 
 ---

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getListById, getItemsByListId, IdeaDetail } from '@/features/list';
 
 type Params = { params: Promise<{ id: string }> };
@@ -24,6 +24,10 @@ export default async function IdeaDetailPage({
   ]);
 
   if (!list || list.type !== 'idea') notFound();
+
+  if (list.title === '__new_idea__') {
+    redirect('/list/ideas');
+  }
 
   return (
     <div className='max-w-3xl mx-auto px-4 py-8 md:py-8 w-full'>
