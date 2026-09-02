@@ -19,51 +19,62 @@ export async function getAccessibleCashflows(
   userEmail: string | undefined,
   includeCashflowId?: string,
 ): Promise<AccessibleCashflow[]> {
-  const ownedResult = await supabase
-    .from('cashflows')
-    .select('id, title')
-    .eq('user_id', userId)
+  const [ownedResult, sharesResult] = await Promise.all([
+    supabase
+      .from('cashflows')
+      .select('id, title, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+    userEmail
+      ? supabase
+          .from('cashflow_shares')
+          .select('cashflow_id')
+          .eq('email', userEmail.trim().toLowerCase())
+      : Promise.resolve({ data: null, error: null }),
+  ])
 
   if (ownedResult.error) {
     console.error('cashflow_access_owned_lookup_failed', ownedResult.error)
     throw new Error('CASHFLOW_ACCESS_LOOKUP_FAILED')
   }
 
+  if (sharesResult?.error) {
+    console.error('cashflow_access_share_lookup_failed', sharesResult.error)
+    throw new Error('CASHFLOW_ACCESS_LOOKUP_FAILED')
+  }
+
+  const ownedCashflows = ownedResult.data ?? []
+  const ownedMap = new Map(ownedCashflows.map((c) => [c.id, c]))
+
   const sharedCashflowIds = new Set<string>()
-  if (userEmail) {
-    const sharesResult = await supabase
-      .from('cashflow_shares')
-      .select('cashflow_id')
-      .eq('email', userEmail.trim().toLowerCase())
-
-    if (sharesResult.error) {
-      console.error('cashflow_access_share_lookup_failed', sharesResult.error)
-      throw new Error('CASHFLOW_ACCESS_LOOKUP_FAILED')
-    }
-
-    for (const share of sharesResult.data ?? []) {
+  for (const share of sharesResult?.data ?? []) {
+    if (!ownedMap.has(share.cashflow_id)) {
       sharedCashflowIds.add(share.cashflow_id)
     }
   }
 
-  const requestedIds = new Set<string>([
-    ...(ownedResult.data ?? []).map((cashflow) => cashflow.id),
-    ...sharedCashflowIds,
-  ])
-  if (includeCashflowId) requestedIds.add(includeCashflowId)
+  if (includeCashflowId && !ownedMap.has(includeCashflowId)) {
+    sharedCashflowIds.add(includeCashflowId)
+  }
 
-  if (requestedIds.size === 0) return []
+  // Fast path: if no external shared books, return owned books directly (saves a database query)
+  if (sharedCashflowIds.size === 0) {
+    return ownedCashflows.map(({ id, title }) => ({ id, title }))
+  }
 
-  const accessibleResult = await supabase
+  const sharedResult = await supabase
     .from('cashflows')
-    .select('id, title')
-    .in('id', Array.from(requestedIds))
+    .select('id, title, created_at')
+    .in('id', Array.from(sharedCashflowIds))
     .order('created_at', { ascending: false })
 
-  if (accessibleResult.error) {
-    console.error('cashflow_access_filtered_lookup_failed', accessibleResult.error)
+  if (sharedResult.error) {
+    console.error('cashflow_access_filtered_lookup_failed', sharedResult.error)
     throw new Error('CASHFLOW_ACCESS_LOOKUP_FAILED')
   }
 
-  return accessibleResult.data ?? []
+  const allCashflows = [...ownedCashflows, ...(sharedResult.data ?? [])]
+  allCashflows.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())
+
+  return allCashflows.map(({ id, title }) => ({ id, title }))
 }

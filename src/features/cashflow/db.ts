@@ -172,7 +172,7 @@ export async function getCashflowDetailData(
   cashflowId: string,
   userId: string | undefined,
   userEmail: string | undefined,
-  isOwner: boolean
+  isOwner?: boolean
 ): Promise<CashflowDetailResult & {
   profile: {
     username: string;
@@ -184,26 +184,80 @@ export async function getCashflowDetailData(
   share: { id: string; role: string; is_pinned: boolean | null } | null;
   budgetsResultData: Database['public']['Tables']['cashflow_budgets']['Row'][] | null;
 }> {
-  // Goal pickers include every owned or explicitly shared book visible to the
-  // current user, not just the book currently being viewed.
-  let queryIds: string[] = [cashflowId];
-  const cashflowTitles = new Map<string, string>();
-  if (userId) {
-    const accessibleCashflows = await getAccessibleCashflows(
-      supabase,
-      userId,
-      userEmail,
-      cashflowId,
-    );
-    for (const accessibleCashflow of accessibleCashflows) {
-      cashflowTitles.set(accessibleCashflow.id, accessibleCashflow.title);
-    }
-    queryIds = Array.from(
-      new Set([cashflowId, ...accessibleCashflows.map((c) => c.id)]),
-    );
-  }
+  // 1. Immediately launch non-dependent queries and access resolution in parallel
+  const accessiblePromise = userId
+    ? getAccessibleCashflows(supabase, userId, userEmail, cashflowId)
+    : Promise.resolve<{ id: string; title: string }[]>([]);
 
-  // Parallelize: profile, cashflow, entries, share, budgets, tags, goals, contributions
+  const profilePromise = userId
+    ? supabase
+        .from('profiles')
+        .select('username, avatar_url, display_name, role, default_currency')
+        .eq('id', userId)
+        .single()
+    : Promise.resolve({ data: null, error: null });
+
+  const cashflowPromise = supabase.from('cashflows').select('*').eq('id', cashflowId).single();
+
+  const entriesPromise = supabase
+    .from('cashflow_entries')
+    .select('*, cashflow_split_entries(*)')
+    .eq('cashflow_id', cashflowId)
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1000);
+
+  const recurringRulesPromise = supabase
+    .from('cashflow_recurring_rules')
+    .select('*')
+    .eq('cashflow_id', cashflowId)
+    .order('created_at', { ascending: true });
+
+  const sharePromise = userEmail
+    ? supabase
+        .from('cashflow_shares')
+        .select('id, role, is_pinned')
+        .eq('cashflow_id', cashflowId)
+        .eq('email', userEmail.trim().toLowerCase())
+        .maybeSingle()
+    : Promise.resolve({ data: null, error: null });
+
+  const budgetsPromise = userId
+    ? supabase
+        .from('cashflow_budgets')
+        .select('*')
+        .eq('cashflow_id', cashflowId)
+        .order('category', { ascending: true })
+    : Promise.resolve({ data: null, error: null });
+
+  const tagsPromise = supabase
+    .from('cashflow_tags')
+    .select('*')
+    .eq('cashflow_id', cashflowId)
+    .order('color_index', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  // 2. When access resolves, dispatch goals queries
+  const accessibleCashflows = await accessiblePromise;
+  const cashflowTitles = new Map<string, string>();
+  for (const accessibleCashflow of accessibleCashflows) {
+    cashflowTitles.set(accessibleCashflow.id, accessibleCashflow.title);
+  }
+  const queryIds = Array.from(
+    new Set([cashflowId, ...accessibleCashflows.map((c) => c.id)]),
+  );
+
+  const goalsPromise = supabase
+    .from('cashflow_goals')
+    .select('*')
+    .in('cashflow_id', queryIds)
+    .order('created_at', { ascending: true });
+
+  const goalProgressPromise = supabase
+    .from('cashflow_goal_progress')
+    .select('cashflow_id, goal_id, saved_amount, contribution_count')
+    .in('cashflow_id', queryIds);
+
   const [
     profileResult,
     cashflowResult,
@@ -215,56 +269,15 @@ export async function getCashflowDetailData(
     goalsResult,
     goalProgressResult,
   ] = await Promise.all([
-      userId
-        ? supabase
-            .from('profiles')
-            .select('username, avatar_url, display_name, role, default_currency')
-            .eq('id', userId)
-            .single()
-        : Promise.resolve({ data: null, error: null }),
-      supabase.from('cashflows').select('*').eq('id', cashflowId).single(),
-      supabase
-        .from('cashflow_entries')
-        .select('*, cashflow_split_entries(*)')
-        .eq('cashflow_id', cashflowId)
-        .order('date', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(1000),
-      supabase
-        .from('cashflow_recurring_rules')
-        .select('*')
-        .eq('cashflow_id', cashflowId)
-        .order('created_at', { ascending: true }),
-      userEmail
-        ? supabase
-            .from('cashflow_shares')
-            .select('id, role, is_pinned')
-            .eq('cashflow_id', cashflowId)
-            .eq('email', userEmail.trim().toLowerCase())
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      userId
-        ? supabase
-            .from('cashflow_budgets')
-            .select('*')
-            .eq('cashflow_id', cashflowId)
-            .order('category', { ascending: true })
-        : Promise.resolve({ data: null, error: null }),
-      supabase
-        .from('cashflow_tags')
-        .select('*')
-        .eq('cashflow_id', cashflowId)
-        .order('color_index', { ascending: true })
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('cashflow_goals')
-        .select('*')
-        .in('cashflow_id', queryIds)
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('cashflow_goal_progress')
-        .select('cashflow_id, goal_id, saved_amount, contribution_count')
-        .in('cashflow_id', queryIds),
+    profilePromise,
+    cashflowPromise,
+    entriesPromise,
+    recurringRulesPromise,
+    sharePromise,
+    budgetsPromise,
+    tagsPromise,
+    goalsPromise,
+    goalProgressPromise,
   ]);
 
   if (cashflowResult.error) {
@@ -320,8 +333,9 @@ export async function getCashflowDetailData(
     ),
   );
 
+  const isActualOwner = isOwner !== undefined ? isOwner : Boolean(userId && cashflow.user_id === userId);
   // Only map budgets if the user is the owner (budgets are owner-only)
-  const budgets = isOwner && budgetsResult?.data
+  const budgets = isActualOwner && budgetsResult?.data
     ? budgetsResult.data.map(mapBudgetToDTO)
     : [];
 

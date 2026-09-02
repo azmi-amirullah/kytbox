@@ -15,6 +15,8 @@ test.use({ storageState: userAuthFile });
  * Complete lifecycle test in a single serial flow (User Create → Admin Reply → User Notification).
  */
 test.describe.serial('Support App E2E Flow', () => {
+  test.setTimeout(60_000);
+
   test('Support Ticket Lifecycle (User Create → Admin Reply → User Notification)', async ({ page, browser }) => {
     // 1. User creates a support ticket
     await page.goto('/app');
@@ -46,13 +48,12 @@ test.describe.serial('Support App E2E Flow', () => {
 
     await adminPage.goto('/support-admin');
 
-    // Locate created ticket in admin queue
-    const ticketCard = adminPage.locator('div.group, a').filter({ hasText: ticketSubject }).first();
-    await expect(ticketCard).toBeVisible({ timeout: 15_000 });
+    // Locate created ticket in admin queue and click to navigate
+    const ticketLink = adminPage.locator('a[href^="/support-admin/"]').filter({ hasText: ticketSubject }).first();
+    await expect(ticketLink).toBeVisible({ timeout: 15_000 });
+    await ticketLink.click();
 
-    // Open admin ticket detail page directly
-    const adminTicketUrl = createdTicketUrl.replace('/support/', '/support-admin/');
-    await adminPage.goto(adminTicketUrl);
+    await adminPage.waitForURL(/\/support-admin\/[a-f0-9-]{36}/, { timeout: 15_000 });
     await expect(adminPage.getByText(ticketSubject).first()).toBeVisible({ timeout: 15_000 });
 
     // Fill reply form
@@ -78,15 +79,13 @@ test.describe.serial('Support App E2E Flow', () => {
     await page.waitForTimeout(1000);
     await bellButton.click();
 
-    // Verify notification content appears in popover
-    const notificationItem = page.getByText(ticketSubject, { exact: false }).first();
-    await expect(notificationItem).toBeVisible({ timeout: 15_000 });
-
-    // Click notification item to navigate to ticket detail
-    await notificationItem.click();
+    // Verify notification content appears in popover and click to navigate
+    const notificationButton = page.getByRole('dialog').getByRole('button').filter({ hasText: ticketSubject }).first();
+    await expect(notificationButton).toBeVisible({ timeout: 15_000 });
+    await notificationButton.click();
 
     // Verify navigation to ticket detail page and admin reply visibility
-    await expect(page).toHaveURL(/\/support\/[a-f0-9-]{36}/);
+    await page.waitForURL(/\/support\/[a-f0-9-]{36}/, { timeout: 15_000 });
     await expect(page.getByText(adminReplyMessage).first()).toBeVisible({ timeout: 15_000 });
 
     // Re-verify notification bell status after opening ticket

@@ -56,18 +56,6 @@ export default async function CashflowDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isOwnerCheck = async () => {
-    if (!user) return false;
-    const { data } = await supabase
-      .from('cashflows')
-      .select('user_id')
-      .eq('id', id)
-      .single();
-    return data?.user_id === user.id;
-  };
-
-  const isOwner = await isOwnerCheck();
-
   // 2. Fetch data via features DB layer
   let data;
   try {
@@ -76,7 +64,6 @@ export default async function CashflowDetailPage({
       id,
       user?.id,
       user?.email,
-      isOwner
     );
   } catch (error) {
     if (error instanceof Error && error.message === 'CASHFLOW_NOT_FOUND') {
@@ -87,6 +74,7 @@ export default async function CashflowDetailPage({
   }
 
   const { cashflow, entries, recurringRules, budgets, tags, goals, profile, share } = data;
+  const isOwner = Boolean(user && cashflow.user_id === user.id);
 
   // 3. Access Control
   const isPublic = cashflow.is_public;

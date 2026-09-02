@@ -34,7 +34,7 @@
 - [x] [Day 24 — Platform: Workspace Global Search (`Cmd+K`)](#day-24)
 - [x] [Day 25 — Platform: One-Click GDPR Data Export](#day-25)
 - [x] [Day 26 — Cashflow: Book Organization & Lifecycle (`Pinning, Archiving & Sort Controls`)](#day-26)
-- [ ] [Day 27 — Platform & Cashflow: Advanced Features E2E Test Suite](#day-27)
+- [x] [Day 27 — Platform & Cashflow: Advanced Features E2E Test Suite](#day-27)
 - [ ] [Day 28 — Weekly Sprint Audit & System Integrity Verification](#day-28)
 - [ ] [Day 29 — Cashflow: Bulk Actions Engine (`Multi-Select, Batch Delete & Category Reassignment`)](#day-29)
 - [ ] [Day 30 — Platform: Public Changelog & What's New System (`/changelog`)](#day-30)
@@ -135,7 +135,7 @@
 ##### Bio: Creator Features E2E Test Suite
 - **Why**: Ensure zero regressions across custom domain rewrites, SEO head metadata, lead capture submissions, pinned link orders, and sensitive content blur overlays.
 - **Implementation Blueprint**:
-  - Playwright test suite in `tests/e2e/bio-creator-features.spec.ts`.
+  - Playwright test suite in `tests/e2e/bio.test.ts`.
   - Automated testing for form validation, domain routing mocks, and modal state toggles.
 
 ---
@@ -217,7 +217,7 @@
 ##### Cashflow: Advanced Features E2E Test Suite
 - **Why**: Guarantee financial math precision, receipt file upload handling, CSV import parsing accuracy, and split entry total validations.
 - **Implementation Blueprint**:
-  - Playwright test suite `tests/e2e/cashflow-advanced.spec.ts`.
+  - Playwright test suite in `tests/e2e/cashflow.test.ts`.
   - Assertions for split entry calculations and CSV parsing logic.
 
 ---
@@ -291,7 +291,7 @@
 ##### List: Advanced Features E2E Test Suite
 - **Why**: Verify drag-and-drop column movements, subtask progress calculations, priority filtering, and recurring task generation without UI regressions.
 - **Implementation Blueprint**:
-  - Playwright test suite `tests/e2e/list-advanced.spec.ts`.
+  - Playwright test suite in `tests/e2e/list.test.ts`.
 
 ---
 
@@ -370,7 +370,7 @@
 ##### Platform & Cashflow: Advanced Features E2E Test Suite
 - **Why**: Validate global search palette keyboard navigation (`Cmd+K`), GDPR data export download completeness, and cashflow book pinning/archiving lifecycle state transitions.
 - **Implementation Blueprint**:
-  - Playwright test suite `tests/e2e/platform-security.spec.ts` and `tests/e2e/cashflow-book-management.spec.ts`.
+  - Playwright test suites in `tests/e2e/platform.test.ts` and `tests/e2e/cashflow.test.ts`.
 
 ---
 
