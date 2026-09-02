@@ -67,11 +67,15 @@ import type {
   CashflowGoalDTO,
 } from '@/types/dto'
 import { formatCurrencyCompact } from '@/lib/currency'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   deleteCashflow,
   deleteEntry,
   generateRecurringEntries,
   duplicateCashflow,
+  bulkDeleteEntries,
+  bulkUpdateCategory,
+  bulkAddTags,
 } from '../actions'
 import dynamic from 'next/dynamic'
 import CashflowModal from './CashflowModal'
@@ -98,6 +102,7 @@ import { subscribeToPublicCashflow, removeShare } from '../actions'
 import BudgetManager from './BudgetManager'
 import ImportCsvModal from './ImportCsvModal'
 import ReceiptLightbox from './ReceiptLightbox'
+import { BulkActionsToolbar } from './BulkActionsToolbar'
 import { DateFilter, DateFilterCustomRange } from './DateFilter'
 import { Input } from '@/components/ui/input'
 import {
@@ -395,6 +400,171 @@ export default function CashflowDetail({
     const start = (currentPage - 1) * pageSize
     return filteredEntries.slice(start, start + pageSize)
   }, [filteredEntries, currentPage, pageSize])
+
+  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set())
+  const [activeBulkAction, setActiveBulkAction] = useState<
+    'category' | 'tag' | 'delete' | null
+  >(null)
+
+  const selectedEntries = useMemo(
+    () => localEntries.filter((e) => selectedEntryIds.has(e.id)),
+    [localEntries, selectedEntryIds],
+  )
+
+  const selectionType: 'income' | 'expense' | 'mixed' | undefined = useMemo(() => {
+    if (selectedEntries.length === 0) return undefined
+    const hasIncome = selectedEntries.some((e) => e.type === 'income')
+    const hasExpense = selectedEntries.some((e) => e.type === 'expense')
+    if (hasIncome && hasExpense) return 'mixed'
+    if (hasIncome) return 'income'
+    if (hasExpense) return 'expense'
+    return undefined
+  }, [selectedEntries])
+
+  const paginatedIds = useMemo(
+    () => paginatedEntries.map((e) => e.id),
+    [paginatedEntries],
+  )
+  const allCurrentPageSelected =
+    paginatedIds.length > 0 &&
+    paginatedIds.every((id) => selectedEntryIds.has(id))
+  const someCurrentPageSelected =
+    paginatedIds.some((id) => selectedEntryIds.has(id)) && !allCurrentPageSelected
+  const masterChecked: boolean | 'indeterminate' = allCurrentPageSelected
+    ? true
+    : someCurrentPageSelected
+      ? 'indeterminate'
+      : false
+
+  function handleToggleSelectAll() {
+    if (allCurrentPageSelected) {
+      setSelectedEntryIds((prev) => {
+        const next = new Set(prev)
+        for (const id of paginatedIds) {
+          next.delete(id)
+        }
+        return next
+      })
+    } else {
+      setSelectedEntryIds((prev) => {
+        const next = new Set(prev)
+        for (const id of paginatedIds) {
+          next.add(id)
+        }
+        return next
+      })
+    }
+  }
+
+  function handleToggleSelectEntry(id: string) {
+    setSelectedEntryIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  async function handleBulkDelete() {
+    if (selectedEntryIds.size === 0) return
+    const ids = Array.from(selectedEntryIds)
+    setActiveBulkAction('delete')
+    try {
+      const res = await bulkDeleteEntries({
+        cashflowId: cashflow.id,
+        entryIds: ids,
+      })
+      if (res.error) {
+        toast.error(res.error)
+      } else {
+        const deletedSet = new Set(res.deletedIds || ids)
+        setLocalEntries((prev) => prev.filter((e) => !deletedSet.has(e.id)))
+        setSelectedEntryIds(new Set())
+        toast.success(`Deleted ${res.count || ids.length} transactions`)
+      }
+    } finally {
+      setActiveBulkAction(null)
+    }
+  }
+
+  async function handleBulkUpdateCategory(category: string | null) {
+    if (selectedEntryIds.size === 0) return
+    const ids = Array.from(selectedEntryIds)
+    setActiveBulkAction('category')
+    try {
+      const res = await bulkUpdateCategory({
+        cashflowId: cashflow.id,
+        entryIds: ids,
+        category,
+      })
+      if (res.error) {
+        toast.error(res.error)
+      } else {
+        const updatedSet = new Set(res.updatedIds || ids)
+        setLocalEntries((prev) =>
+          prev.map((e) => (updatedSet.has(e.id) ? { ...e, category } : e)),
+        )
+        setSelectedEntryIds(new Set())
+        toast.success(
+          `Updated category for ${res.count || ids.length} transactions`,
+        )
+      }
+    } finally {
+      setActiveBulkAction(null)
+    }
+  }
+
+  async function handleBulkAddTags(tagsToAdd: string[]) {
+    if (selectedEntryIds.size === 0 || tagsToAdd.length === 0) return
+    const ids = Array.from(selectedEntryIds)
+    setActiveBulkAction('tag')
+    try {
+      const res = await bulkAddTags({
+        cashflowId: cashflow.id,
+        entryIds: ids,
+        tags: tagsToAdd,
+      })
+      if (res.error) {
+        toast.error(res.error)
+      } else {
+        const updatedSet = new Set(res.updatedIds || ids)
+        const cleanTags = (res.tags || tagsToAdd).map((t) =>
+          t.trim().replace(/^#/, ''),
+        )
+        setLocalEntries((prev) =>
+          prev.map((e) => {
+            if (!updatedSet.has(e.id)) return e
+            const existing = Array.isArray(e.tags) ? e.tags : []
+            const map = new Map<string, string>()
+            for (const t of existing) {
+              if (typeof t === 'string' && t.trim()) {
+                map.set(t.trim().toLowerCase(), t.trim())
+              }
+            }
+            for (const t of cleanTags) {
+              if (!map.has(t.toLowerCase())) {
+                map.set(t.toLowerCase(), t)
+              }
+            }
+            return {
+              ...e,
+              tags: Array.from(map.values()).slice(0, 10),
+            }
+          }),
+        )
+        setSelectedEntryIds(new Set())
+        toast.success(
+          `Added tags to ${res.count || ids.length} transactions`,
+        )
+      }
+    } finally {
+      setActiveBulkAction(null)
+    }
+  }
+
 
   // Stable 7-slot pagination: ALWAYS render exactly 7 <Button> elements (for
   // totalPages > 7). Using the slot INDEX as the React key means React never
@@ -1685,6 +1855,17 @@ export default function CashflowDetail({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {canEdit && (
+                        <TableHead className='w-12 p-0 text-center border-r border-border/40'>
+                          <div className='flex items-center justify-center'>
+                            <Checkbox
+                              checked={masterChecked}
+                              onCheckedChange={handleToggleSelectAll}
+                              aria-label='Select all transactions on current page'
+                            />
+                          </div>
+                        </TableHead>
+                      )}
                       <TableHead className='w-20 border-r border-border/40'>
                         Date
                       </TableHead>
@@ -1706,7 +1887,26 @@ export default function CashflowDetail({
                     className='[&_tr:last-child]:border-0'
                   >
                     {paginatedEntries.map((entry) => (
-                      <TableRow key={entry.id}>
+                      <TableRow
+                        key={entry.id}
+                        className={cn(
+                          selectedEntryIds.has(entry.id) &&
+                            'bg-primary/5 dark:bg-primary/10',
+                        )}
+                      >
+                        {canEdit && (
+                          <TableCell className='w-12 p-0 text-center border-r border-border/30'>
+                            <div className='flex items-center justify-center'>
+                              <Checkbox
+                                checked={selectedEntryIds.has(entry.id)}
+                                onCheckedChange={() =>
+                                  handleToggleSelectEntry(entry.id)
+                                }
+                                aria-label={`Select transaction ${entry.description}`}
+                              />
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell className='text-muted-foreground text-sm border-r border-border/30 text-nowrap'>
                           {formatAppDate(entry.date)}
                         </TableCell>
@@ -1788,8 +1988,23 @@ export default function CashflowDetail({
                   {paginatedEntries.map((entry) => (
                     <div
                       key={entry.id}
-                      className='flex items-stretch justify-between transition-colors hover:bg-muted/10'
+                      className={cn(
+                        'flex items-stretch justify-between transition-colors hover:bg-muted/10',
+                        selectedEntryIds.has(entry.id) &&
+                          'bg-primary/5 dark:bg-primary/10',
+                      )}
                     >
+                      {canEdit && (
+                        <div className='flex items-center justify-center pl-3 py-3 shrink-0'>
+                          <Checkbox
+                            checked={selectedEntryIds.has(entry.id)}
+                            onCheckedChange={() =>
+                              handleToggleSelectEntry(entry.id)
+                            }
+                            aria-label={`Select transaction ${entry.description}`}
+                          />
+                        </div>
+                      )}
                       <div className='flex-1 p-3.5 sm:p-4 min-w-0 flex items-center justify-between gap-3'>
                         <div className='space-y-1.5 min-w-0 flex-1'>
                           <div className='flex items-center gap-2 flex-wrap'>
@@ -2183,6 +2398,21 @@ export default function CashflowDetail({
         currency={currency}
         canEdit={canEdit}
       />
+      {/* Floating Bulk Actions Toolbar */}
+      {canEdit && (
+        <BulkActionsToolbar
+          selectedCount={selectedEntryIds.size}
+          selectionType={selectionType}
+          onClearSelection={() => setSelectedEntryIds(new Set())}
+          onDeleteSelected={handleBulkDelete}
+          onUpdateCategory={handleBulkUpdateCategory}
+          onAddTags={handleBulkAddTags}
+          availableTags={allUniqueTags}
+          bookTags={tags}
+          activeAction={activeBulkAction}
+          isPending={activeBulkAction !== null}
+        />
+      )}
     </div>
   )
 }

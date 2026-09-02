@@ -5,6 +5,7 @@ export { default as GoalDetail } from './components/GoalDetail';
 export { MonthlyComparison } from './components/MonthlyComparison';
 export { FinancialReportModal } from './components/FinancialReportModal';
 export { FinancialReportView } from './components/FinancialReportView';
+export { BulkActionsToolbar } from './components/BulkActionsToolbar';
 export * from './db';
 export { getGoalDetailData } from './goal-db';
 export * from './actions';

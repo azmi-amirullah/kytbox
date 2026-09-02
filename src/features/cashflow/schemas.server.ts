@@ -217,3 +217,50 @@ export const restoreCashflowSchema = z.object({
   cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
 });
 
+export const bulkDeleteCashflowEntriesSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  entryIds: z
+    .array(z.uuid({ message: 'Invalid entry ID' }))
+    .min(1, 'At least one entry must be selected')
+    .max(100, 'Maximum 100 entries per batch'),
+});
+
+export const bulkUpdateCashflowCategorySchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  entryIds: z
+    .array(z.uuid({ message: 'Invalid entry ID' }))
+    .min(1, 'At least one entry must be selected')
+    .max(100, 'Maximum 100 entries per batch'),
+  category: z
+    .string()
+    .trim()
+    .max(50, 'Category too long')
+    .nullable()
+    .optional()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+});
+
+export const bulkAddCashflowTagsSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  entryIds: z
+    .array(z.uuid({ message: 'Invalid entry ID' }))
+    .min(1, 'At least one entry must be selected')
+    .max(100, 'Maximum 100 entries per batch'),
+  tags: z
+    .array(
+      z
+        .string()
+        .trim()
+        .min(1, 'Tag cannot be empty')
+        .max(30, 'Tag too long')
+        .transform((t) => t.replace(/^#/, '').trim()),
+    )
+    .min(1, 'At least one tag required')
+    .max(10, 'Maximum 10 tags per batch'),
+});
+
+export type BulkDeleteCashflowEntriesInput = z.infer<typeof bulkDeleteCashflowEntriesSchema>;
+export type BulkUpdateCashflowCategoryInput = z.infer<typeof bulkUpdateCashflowCategorySchema>;
+export type BulkAddCashflowTagsInput = z.infer<typeof bulkAddCashflowTagsSchema>;
+
+

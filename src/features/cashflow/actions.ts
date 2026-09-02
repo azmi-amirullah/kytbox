@@ -30,6 +30,9 @@ import {
   toggleCashflowPinSchema,
   archiveCashflowSchema,
   restoreCashflowSchema,
+  bulkDeleteCashflowEntriesSchema,
+  bulkUpdateCashflowCategorySchema,
+  bulkAddCashflowTagsSchema,
 } from './schemas.server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
@@ -38,6 +41,7 @@ import { mapBudgetToDTO, mapGoalToDTO, mapCashflowEntryToDTO, mapCashflowRecurri
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './constants';
 import * as Sentry from '@sentry/nextjs';
 
 const RECEIPT_BUCKET = 'cashflow-receipts';
@@ -2700,4 +2704,199 @@ export async function deleteRecurringRule(ruleId: string) {
   revalidatePath(`/cashflow/${rule.cashflow_id}`);
   return { success: true, ruleId };
 }
+
+export async function bulkDeleteEntries(input: { cashflowId: string; entryIds: string[] }) {
+  const parsed = bulkDeleteCashflowEntriesSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+  const { cashflowId, entryIds } = parsed.data;
+
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow) {
+    return { error: 'Cashflow not found' };
+  }
+
+  const permission = await checkEditPermission(supabase, cashflowId, user, cashflow.user_id);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  const { data: entriesToDelete, error: fetchErr } = await supabase
+    .from('cashflow_entries')
+    .select('id, receipt_url')
+    .eq('cashflow_id', cashflowId)
+    .in('id', entryIds);
+
+  if (fetchErr) {
+    console.error('Failed to fetch entries for bulk deletion:', fetchErr);
+    return { error: fetchErr.message };
+  }
+
+  const validEntries = entriesToDelete || [];
+  if (validEntries.length === 0) {
+    return { error: 'No matching entries found to delete' };
+  }
+
+  const receiptUrls = validEntries
+    .map((e) => e.receipt_url)
+    .filter((url): url is string => Boolean(url));
+
+  if (receiptUrls.length > 0) {
+    const adminSupabase = createAdminClient();
+    await adminSupabase.storage.from(RECEIPT_BUCKET).remove(receiptUrls);
+  }
+
+  const idsToDelete = validEntries.map((e) => e.id);
+  const { error: deleteErr } = await supabase
+    .from('cashflow_entries')
+    .delete()
+    .eq('cashflow_id', cashflowId)
+    .in('id', idsToDelete);
+
+  if (deleteErr) {
+    console.error('Failed to bulk delete entries:', deleteErr);
+    return { error: deleteErr.message };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true, count: idsToDelete.length, deletedIds: idsToDelete };
+}
+
+export async function bulkUpdateCategory(input: { cashflowId: string; entryIds: string[]; category?: string | null }) {
+  const parsed = bulkUpdateCashflowCategorySchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+  const { cashflowId, entryIds, category } = parsed.data;
+
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow) {
+    return { error: 'Cashflow not found' };
+  }
+
+  const permission = await checkEditPermission(supabase, cashflowId, user, cashflow.user_id);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  const targetCategory = category || null;
+  let updateQuery = supabase
+    .from('cashflow_entries')
+    .update({ category: targetCategory })
+    .eq('cashflow_id', cashflowId)
+    .in('id', entryIds);
+
+  if (targetCategory) {
+    const isExpenseCat = EXPENSE_CATEGORIES.some((c) => c.value === targetCategory);
+    const isIncomeCat = INCOME_CATEGORIES.some((c) => c.value === targetCategory);
+    if (isExpenseCat) {
+      updateQuery = updateQuery.eq('type', 'expense');
+    } else if (isIncomeCat) {
+      updateQuery = updateQuery.eq('type', 'income');
+    }
+  }
+
+  const { data: updatedRows, error: updateErr } = await updateQuery.select('id');
+
+  if (updateErr) {
+    console.error('Failed to bulk update category:', updateErr);
+    return { error: updateErr.message };
+  }
+
+  const updatedIds = (updatedRows || []).map((r: { id: string }) => r.id);
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true, count: updatedIds.length, updatedIds, category: targetCategory };
+}
+
+export async function bulkAddTags(input: { cashflowId: string; entryIds: string[]; tags: string[] }) {
+  const parsed = bulkAddCashflowTagsSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+  const { cashflowId, entryIds, tags } = parsed.data;
+
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow) {
+    return { error: 'Cashflow not found' };
+  }
+
+  const permission = await checkEditPermission(supabase, cashflowId, user, cashflow.user_id);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Access denied' };
+  }
+
+  await ensureCashflowTags(supabase, cashflowId, user.id, tags);
+
+  const { data: entries, error: fetchErr } = await supabase
+    .from('cashflow_entries')
+    .select('id, tags')
+    .eq('cashflow_id', cashflowId)
+    .in('id', entryIds);
+
+  if (fetchErr) {
+    console.error('Failed to fetch entries for bulk tag addition:', fetchErr);
+    return { error: fetchErr.message };
+  }
+
+  const cleanNewTags = tags.map((t) => t.trim().replace(/^#/, '')).filter(Boolean);
+
+  const updatePromises = (entries || []).map((entry) => {
+    const existingTags = Array.isArray(entry.tags) ? entry.tags : [];
+    const mergedMap = new Map<string, string>();
+    for (const t of existingTags) {
+      if (typeof t === 'string' && t.trim()) {
+        mergedMap.set(t.trim().toLowerCase(), t.trim());
+      }
+    }
+    for (const t of cleanNewTags) {
+      if (!mergedMap.has(t.toLowerCase())) {
+        mergedMap.set(t.toLowerCase(), t);
+      }
+    }
+    const mergedTags = Array.from(mergedMap.values()).slice(0, 10);
+
+    return supabase
+      .from('cashflow_entries')
+      .update({ tags: mergedTags })
+      .eq('id', entry.id)
+      .eq('cashflow_id', cashflowId);
+  });
+
+  const results = await Promise.all(updatePromises);
+  const failed = results.find((r) => r.error);
+  if (failed && failed.error) {
+    console.error('Failed to update tags for some entries:', failed.error);
+    return { error: failed.error.message };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true, count: entryIds.length, updatedIds: entryIds, tags: cleanNewTags };
+}
+
 

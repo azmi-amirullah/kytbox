@@ -44,3 +44,21 @@ export interface ParsedCsvRow {
   warnings: string[];
   selected: boolean;
 }
+
+export const bulkDeleteClientSchema = z.object({
+  cashflowId: z.string(),
+  entryIds: z.array(z.string()),
+});
+
+export const bulkUpdateCategoryClientSchema = z.object({
+  cashflowId: z.string(),
+  entryIds: z.array(z.string()),
+  category: z.optional(z.nullable(z.string())),
+});
+
+export const bulkAddTagsClientSchema = z.object({
+  cashflowId: z.string(),
+  entryIds: z.array(z.string()),
+  tags: z.array(z.string()),
+});
+
