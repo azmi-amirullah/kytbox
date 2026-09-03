@@ -113,6 +113,7 @@
   - **Fat-Finger Odometer Typo Guard & Snapshot Cascade**: If `new_odometer - current_odometer > 3,000 km` in a single log, display an explicit confirmation dialog (*"You entered 431,000 km. Did you mean 43,100 km?"*). When a user executes a manual edit override on the vehicle profile to fix an odometer typo, the Server Action atomically updates the current month's row in `vehicle_monthly_odometers` (`year_month = to_char(now(), 'YYYY-MM')`), preventing negative velocity math (`-40,000 km/mo`) in subsequent months.
   - **Resale History & Archival**: `is_archived: boolean` allows users who sell a vehicle to hide it from active dashboards without destroying 2 years of valuable maintenance records.
   - **PII Privacy Isolation**: `license_plate` and `vin` are strictly encapsulated within authenticated server queries and never leaked to public DTOs.
+  - **Odometer Unit Immutability / Switch Lock**: Once the first service rule, monthly snapshot, or fuel log is recorded, `odometer_unit` (`km` vs `miles`) is locked against accidental toggling in vehicle settings. Changing units thereafter requires an explicit confirmation dialog with optional one-time mathematical conversion (`1 mi = 1.60934 km`), preventing historical odometer, fuel economy, and interval countdowns from getting corrupted.
   - **Mobile 1-Tap Quick Fuel FAB**: Persistent floating action button `[ ⛽ Quick Fuel ]` on mobile `/garage` pops up the fuel modal in under 1.5 seconds at the gas pump.
 
 ---
@@ -166,7 +167,8 @@
       service_date date not null,
       odometer integer not null,
       service_type text not null,       -- 'routine' | 'repair' | 'inspection' | 'upgrade'
-      items_serviced text[] not null,   -- Pulled dynamically from active rules
+      items_serviced text[] not null,   -- Display names snapshot (e.g. ['Engine Oil', 'Oil Filter'])
+      serviced_rule_ids uuid[],         -- Foreign keys to vehicle_maintenance_rules (relational integrity even if renamed!)
       cost numeric(12, 2) not null default 0,
       workshop_name text,
       invoice_number text,              -- Workshop invoice # (e.g. INV-2026-8842)
@@ -183,7 +185,7 @@
   - Build `LogServiceModal.tsx`:
     - Checklist checkboxes are dynamically populated from `vehicle_maintenance_rules`.
     - Pre-fills predicted current odometer.
-    - Upon submission: atomically updates `vehicles.current_odometer` (forward-only), upserts `vehicle_monthly_odometers`, and updates `last_service_odometer` & `last_service_date` on all checked rules.
+    - Upon submission: atomically updates `vehicles.current_odometer` (forward-only), upserts `vehicle_monthly_odometers`, and updates `last_service_odometer` & `last_service_date` on all checked rules matching `serviced_rule_ids`.
   - Real-time due predictor `predictNextMaintenance()` with visual badges:
     - 🟢 `Good` (due in > 1,000 km and > 30 days)
     - 🟡 `Due Soon` (due within 500 km or 14 days)
@@ -220,6 +222,7 @@
   - **Document Ownership & Tier-1 PII Quarantine**: `vehicle_id` is nullable with `on delete set null`. Deleting or selling a vehicle never deletes the user's personal driver's license (`SIM A`, `SIM C`). `vehicle_documents` contains sensitive Indonesian PII (NIK, Chassis/Engine numbers, home address); it is strictly quarantined by RLS (`auth.uid() = user_id`) and permanently barred from all public DTO mappers even if a vehicle's maintenance history is shared or transferred for resale proof.
   - **Dual STNK & SIM Deadlines**: STNK accounts for both 1-Year Annual Tax (`tax_annual`) and 5-Year Plate Renewal (`registration_5year`). For driver's licenses (`SIM`), alerts trigger at 60 and 30 days because missing SIM expiration by even 1 day requires re-taking driving tests from scratch.
   - **Platform Notification Bell Integration**: When any document or SIM enters `<= 14 days` before expiry (or overdue), emit an in-app notification to the platform header bell via `createNotification({ type: 'garage_alert', ... })` so users never miss a renewal even if they only visit Cashflow or List.
+  - **1-Click Cashflow Renewal Sync**: Paying annual road tax (STNK / PKB) or comprehensive insurance is often a household's largest single vehicle expense (Rp 2M–10M / $200–$800). When renewing a document, `DocumentRenewalModal.tsx` provides an inline `[x] Record to Cashflow Book` toggle. It pre-populates `vehicles.preferred_cashflow_id` and category `Tax / Legal` or `Vehicle Transport`, automatically creating the transaction in Cashflow without manual double entry.
 
 ---
 
@@ -241,6 +244,8 @@
       total_cost numeric(10, 2) not null,
       is_full_tank boolean default true,
       is_missed_previous boolean default false, -- Reset baseline flag
+      battery_start_pct smallint check (battery_start_pct between 0 and 100), -- For EV charging logs
+      battery_end_pct smallint check (battery_end_pct between 0 and 100),   -- For EV charging logs
       calculated_kml numeric(6, 2),
       created_at timestamptz default now()
     );
@@ -271,7 +276,7 @@
 - **Why**: The true power of Kytbox is ecosystem synergy. You shouldn't have to manually retype a $75 oil change or $30 gas fill-up in Cashflow.
 - **Implementation Blueprint**:
   - **Cashflow 1-Click Sync with Currency Reconciliation & Smart Category Selector**:
-    - In `LogServiceModal.tsx` and `AddFuelLogModal.tsx`, include a toggle: `[x] Record to Cashflow Book`.
+    - In `LogServiceModal.tsx`, `AddFuelLogModal.tsx`, and `DocumentRenewalModal.tsx` (Day 4 Tax & Insurance), include a toggle: `[x] Record to Cashflow Book`.
     - Dropdown pre-selects `vehicles.preferred_cashflow_id` (remembers your last selected book per vehicle).
     - **Cross-App Currency Reconciliation**: If `vehicle.currency !== selectedCashflow.currency`, the sync dialog detects the mismatch, queries the Day 10 exchange rate engine, and shows an inline conversion preview (e.g. `Syncing Rp 1.500.000 IDR → ~$95.20 USD (Rate: 15.750)`), preventing absurd $1,500,000 accounting explosions.
     - **Smart Category Matcher**: Scans the selected cashflow book's existing categories for keywords (`Transport`, `Vehicle`, `Kendaraan`, `Bensin`, `Bahan Bakar`), pre-selecting the match with an inline category picker to prevent creating unwanted duplicate/orphan categories.
@@ -353,6 +358,7 @@
   - **Upstash Redis Rate Limiting & Honeypot**: Public submission endpoints are protected against free-tier DB spam via Upstash Redis IP rate limiting (max 10 requests / min per IP) and a honeypot trap field.
   - **Device Token Ownership**: Anyone with the link can add an expense, but an expense can **only be edited or deleted by the device token that created it or by the group creator**, preventing disgruntled group members from deleting or tampering with other people's expenses.
   - **90-Day Inactive Group TTL & Cleanup Lifecycle**: Unauthenticated split groups (`creator_id IS NULL`) with no recorded activity for > 90 days are automatically marked archived or purged via an automated maintenance script (`npm run db:cleanup-splits`), permanently protecting Supabase free-tier database row quotas from zombie group bloat.
+  - **Participant Name Canonicalization**: In guest mode, participants enter names manually without signing in. To prevent accidental duplicate debtor entries (`"Alex"`, `"alex "`, and `"ALEX"` treated as 3 separate people), names in `paid_by` and `split_between` are trimmed and canonicalized case-insensitively (`name.trim().toLowerCase()` with first-seen display capitalization preserved), keeping net balance graphs and IOUs coherent.
 
 ---
 
