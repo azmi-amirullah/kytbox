@@ -38,7 +38,7 @@
 - [x] [Day 28 — Weekly Sprint Audit & System Integrity Verification](#day-28)
 - [x] [Day 29 — Cashflow: Bulk Actions Engine (`Multi-Select, Batch Delete & Category Reassignment`)](#day-29)
 - [x] [Day 30 — Platform: Public Changelog & What's New System (`/changelog`)](#day-30)
-- [ ] [Day 31 — August 30-Day Sprint Retrospective & September Planning](#day-31)
+- [x] [Day 31 — August 30-Day Sprint Retrospective & September Planning](#day-31)
 
 ---
 
@@ -415,8 +415,8 @@
 ##### August 30-Day Sprint Retrospective & September Planning
 - **Why**: Reflect on 31 days of feature delivery, measure velocity improvements, celebrate wins, and draft the September roadmap!
 - **Implementation Blueprint**:
-  - Compile August retrospective report.
-  - Draft September Roadmap and celebrate 🎉.
+  - Compile August retrospective report (see [AUGUST_ROADMAP_RETROSPECTIVE.md](./AUGUST_ROADMAP_RETROSPECTIVE.md)).
+  - Draft September Roadmap (see [SEPTEMBER_ROADMAP_2026.md](./SEPTEMBER_ROADMAP_2026.md)) and celebrate 🎉.
 
 ---
 
@@ -538,4 +538,4 @@
 
 ---
 
-_Last Updated: August 7, 2026_
+_Last Updated: August 31, 2026_
