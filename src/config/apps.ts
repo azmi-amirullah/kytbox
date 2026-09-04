@@ -49,12 +49,12 @@ export const KYTBOX_APPS: KytboxApp[] = [
     color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   },
   {
-    id: 'track',
-    name: 'Track',
-    description: 'Vehicle and service tracking',
-    href: '/track',
+    id: 'garage',
+    name: 'Garage',
+    description: 'Vehicle profiles, odometer history & asset maintenance',
+    href: '/garage',
     icon: LuCar,
-    status: 'coming_soon',
-    color: 'bg-muted text-muted-foreground',
+    status: 'active',
+    color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   },
 ];

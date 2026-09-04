@@ -33,6 +33,7 @@ const KNOWN_SEGMENT_LABELS: Record<string, string> = {
   goals: 'Goals',
   settings: 'Settings',
   bio: 'Bio',
+  garage: 'Garage',
 }
 
 const DEFAULT_ROOT_ITEM: BreadcrumbItem = {

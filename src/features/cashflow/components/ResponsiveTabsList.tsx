@@ -61,7 +61,7 @@ export function ResponsiveTabsList({
                 <SelectItem
                   key={tab.value}
                   value={tab.value}
-                  className='text-xs py-2 rounded-lg cursor-pointer'
+                  className='text-xs py-2 rounded-lg'
                 >
                   <div className='flex items-center gap-2'>
                     <Icon
@@ -97,7 +97,7 @@ export function ResponsiveTabsList({
                 key={tab.value}
                 value={tab.value}
                 className={cn(
-                  'gap-1.5 text-xs py-1.5 px-3 rounded-lg font-medium whitespace-nowrap transition-all cursor-pointer',
+                  'gap-1.5 text-xs py-1.5 px-3 rounded-lg font-medium whitespace-nowrap transition-all',
                   'text-muted-foreground hover:text-foreground',
                   'data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-xs data-[state=active]:border data-[state=active]:border-border/80',
                   '[&[data-state=active]_svg]:text-primary',

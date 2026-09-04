@@ -117,6 +117,7 @@ export async function proxy(request: NextRequest) {
     const platformRoutes = [
       '/app',
       '/bio',
+      '/garage',
       '/list',
       '/onboarding',
       '/settings',
@@ -146,6 +147,7 @@ export async function proxy(request: NextRequest) {
   const protectedPaths = [
     '/app',
     '/bio',
+    '/garage',
     '/list',
     '/onboarding',
     '/settings',

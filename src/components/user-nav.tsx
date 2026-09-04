@@ -67,20 +67,19 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuGroup>
           {user.role === 'admin' && (
             <a href='/support-admin'>
-              <DropdownMenuItem className='cursor-pointer text-blue-600 font-semibold focus:text-blue-600 focus:bg-blue-50 dark:focus:bg-blue-950/30'>
+              <DropdownMenuItem className='text-blue-600 font-semibold focus:text-blue-600 focus:bg-blue-50 dark:focus:bg-blue-950/30'>
                 <LuShield className='mr-2 h-4 w-4' />
                 Admin Dashboard
               </DropdownMenuItem>
             </a>
           )}
           <a href='/settings'>
-            <DropdownMenuItem className='cursor-pointer'>
+            <DropdownMenuItem>
               <LuSettings className='mr-2 h-4 w-4' />
               Settings
             </DropdownMenuItem>
           </a>
           <DropdownMenuItem
-            className='cursor-pointer'
             onSelect={(e) => {
               e.preventDefault()
               setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
@@ -97,7 +96,7 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuSeparator />
         <form action={logout} className='w-full'>
           <button type='submit' className='w-full'>
-            <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer'>
+            <DropdownMenuItem className='text-destructive focus:text-destructive focus:bg-destructive/10'>
               <LuLogOut className='mr-2 h-4 w-4' />
               Log out
             </DropdownMenuItem>

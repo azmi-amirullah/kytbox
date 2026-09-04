@@ -919,10 +919,10 @@ export default function CashflowList({
                         type='button'
                         onClick={() => setSharedTab('active')}
                         className={cn(
-                          'px-2.5 py-1 rounded-md transition-all cursor-pointer',
+                          'px-2.5 py-1 rounded-md transition-all',
                           sharedTab === 'active'
-                            ? 'bg-background text-foreground shadow-xs font-semibold'
-                            : 'text-muted-foreground hover:text-foreground',
+                            ? 'bg-background text-foreground shadow-xs font-semibold cursor-default'
+                            : 'text-muted-foreground hover:text-foreground cursor-pointer',
                         )}
                       >
                         Active ({activeSharedCashflows.length})
@@ -931,10 +931,10 @@ export default function CashflowList({
                         type='button'
                         onClick={() => setSharedTab('hidden')}
                         className={cn(
-                          'px-2.5 py-1 rounded-md transition-all cursor-pointer',
+                          'px-2.5 py-1 rounded-md transition-all',
                           sharedTab === 'hidden'
-                            ? 'bg-background text-foreground shadow-xs font-semibold'
-                            : 'text-muted-foreground hover:text-foreground',
+                            ? 'bg-background text-foreground shadow-xs font-semibold cursor-default'
+                            : 'text-muted-foreground hover:text-foreground cursor-pointer',
                         )}
                       >
                         Hidden ({hiddenSharedCashflows.length})

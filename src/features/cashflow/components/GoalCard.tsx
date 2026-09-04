@@ -185,10 +185,10 @@ export default function GoalCard({
                   type='button'
                   onClick={() => setTab('active')}
                   className={cn(
-                    'px-2.5 py-1 rounded-md transition-all cursor-pointer',
+                    'px-2.5 py-1 rounded-md transition-all',
                     tab === 'active'
-                      ? 'bg-background text-foreground shadow-xs font-semibold'
-                      : 'text-muted-foreground hover:text-foreground',
+                      ? 'bg-background text-foreground shadow-xs font-semibold cursor-default'
+                      : 'text-muted-foreground hover:text-foreground cursor-pointer',
                   )}
                 >
                   Active ({activeGoals.length})
@@ -197,10 +197,10 @@ export default function GoalCard({
                   type='button'
                   onClick={() => setTab('archived')}
                   className={cn(
-                    'px-2.5 py-1 rounded-md transition-all cursor-pointer',
+                    'px-2.5 py-1 rounded-md transition-all',
                     tab === 'archived'
-                      ? 'bg-background text-foreground shadow-xs font-semibold'
-                      : 'text-muted-foreground hover:text-foreground',
+                      ? 'bg-background text-foreground shadow-xs font-semibold cursor-default'
+                      : 'text-muted-foreground hover:text-foreground cursor-pointer',
                   )}
                 >
                   Archived ({archivedGoals.length})

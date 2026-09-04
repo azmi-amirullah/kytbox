@@ -8,7 +8,7 @@
 
 ## 📌 Table of Contents & Progress Checklist
 
-- [ ] [Day 1 — Garage: Vehicle Garage & Profile Management (`/garage`)](#day-1)
+- [x] [Day 1 — Garage: Vehicle Garage & Profile Management (`/garage`)](#day-1)
 - [ ] [Day 2 — Garage: Maintenance Checklist & Interval Rules Engine](#day-2)
 - [ ] [Day 3 — Garage: Service & Maintenance Logging Engine & Due Predictor](#day-3)
 - [ ] [Day 4 — Garage: Vehicle Tax, STNK, Insurance & Driver's License (`SIM`) Expiry](#day-4)
@@ -196,17 +196,17 @@
 
 <a id="day-4"></a>
 #### Day 4 — Friday, Sep 4 | ✨ Feature
-##### Garage: Vehicle Tax, STNK, Insurance & Driver's License (`SIM`) Expiry
-- **Why**: Expired vehicle registration (STNK / PKB), annual road taxes, insurance, or driver's licenses (`SIM A`, `SIM C`) result in heavy government fines, impound risk, or retaking driving tests.
+##### Garage: Vehicle Registration, Road Tax, Insurance & Driver's License Expiry
+- **Why**: Expired vehicle registration, annual road taxes, insurance, or driver's licenses result in government fines, impound risk, or re-taking driving examinations.
 - **Implementation Blueprint**:
-  - Create `vehicle_documents` table:
+  - Create `vehicle_documents` table (scoped to `vehicle_id`):
     ```sql
     create table vehicle_documents (
       id uuid primary key default gen_random_uuid(),
-      vehicle_id uuid references vehicles(id) on delete set null, -- Nullable! (SIM belongs to user)
-      user_id uuid references auth.users(id) on delete cascade not null, -- Mandatory!
-      title text not null,             -- e.g. "Annual Tax (STNK)", "SIM C (Motorcycle)", "Comprehensive Insurance"
-      document_type text not null,     -- 'tax_annual' | 'registration_5year' | 'insurance' | 'inspection' | 'sim'
+      vehicle_id uuid references vehicles(id) on delete cascade not null,
+      user_id uuid references auth.users(id) on delete cascade not null,
+      title text not null,             -- e.g. "Annual Road Tax", "Registration Renewal", "Comprehensive Insurance"
+      document_type text not null,     -- 'road_tax_annual' | 'registration_renewal' | 'insurance' | 'inspection'
       expiry_date date not null,
       notes text,
       created_at timestamptz default now()
@@ -216,13 +216,28 @@
     alter table vehicle_documents enable row level security;
     create policy "Users manage their own vehicle documents" on vehicle_documents for all using (auth.uid() = user_id);
     ```
-  - Render countdown alert cards: *"Annual Tax (STNK) expires in 18 days (Sep 21, 2026)"* and *"SIM C expires in 14 days"*.
+  - Create `driver_licenses` table (scoped to `user_id` on root `/garage` dashboard):
+    ```sql
+    create table driver_licenses (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid references auth.users(id) on delete cascade not null,
+      license_name text not null,      -- e.g. "Class C (Driver)", "Class M (Motorcycle)"
+      category text not null,          -- 'car' | 'motorcycle' | 'commercial' | 'other'
+      license_number text,
+      expiry_date date not null,
+      notes text,
+      created_at timestamptz default now()
+    );
+    create index idx_driver_licenses_user on driver_licenses(user_id);
+    alter table driver_licenses enable row level security;
+    create policy "Users manage their own driver licenses" on driver_licenses for all using (auth.uid() = user_id);
+    ```
+  - Render countdown alert cards: *"Annual Road Tax expires in 18 days (Sep 21, 2026)"* on `/garage/[vehicleId]` and *"Driver's License (Class C) expires in 14 days"* on the root `/garage` KPI strip.
   - Visual urgency badges (`Expired`, `Expiring in < 30 days`, `Valid`).
 - **🛡️ Driver Document Safety & Global Notification Center Integration**:
-  - **Document Ownership & Tier-1 PII Quarantine**: `vehicle_id` is nullable with `on delete set null`. Deleting or selling a vehicle never deletes the user's personal driver's license (`SIM A`, `SIM C`). `vehicle_documents` contains sensitive Indonesian PII (NIK, Chassis/Engine numbers, home address); it is strictly quarantined by RLS (`auth.uid() = user_id`) and permanently barred from all public DTO mappers even if a vehicle's maintenance history is shared or transferred for resale proof.
-  - **Dual STNK & SIM Deadlines**: STNK accounts for both 1-Year Annual Tax (`tax_annual`) and 5-Year Plate Renewal (`registration_5year`). For driver's licenses (`SIM`), alerts trigger at 60 and 30 days because missing SIM expiration by even 1 day requires re-taking driving tests from scratch.
-  - **Platform Notification Bell Integration**: When any document or SIM enters `<= 14 days` before expiry (or overdue), emit an in-app notification to the platform header bell via `createNotification({ type: 'garage_alert', ... })` so users never miss a renewal even if they only visit Cashflow or List.
-  - **1-Click Cashflow Renewal Sync**: Paying annual road tax (STNK / PKB) or comprehensive insurance is often a household's largest single vehicle expense (Rp 2M–10M / $200–$800). When renewing a document, `DocumentRenewalModal.tsx` provides an inline `[x] Record to Cashflow Book` toggle. It pre-populates `vehicles.preferred_cashflow_id` and category `Tax / Legal` or `Vehicle Transport`, automatically creating the transaction in Cashflow without manual double entry.
+  - **Clean Domain Ownership**: Driver licenses belong to the human user, not the machine; they live on the root `/garage` dashboard and are preserved when vehicles are sold or deleted. Vehicle documents (road tax, registration, insurance) are strictly tied to `vehicle_id`.
+  - **Platform Notification Bell Integration**: When any document or license enters `<= 14 days` before expiry (or overdue), emit an in-app notification to the platform header bell via `createNotification({ type: 'garage_alert', ... })` so users never miss a renewal even if they only visit Cashflow or List.
+  - **1-Click Cashflow Renewal Sync**: Paying annual road tax or comprehensive insurance is often a household's largest single vehicle expense. When renewing a document, `DocumentRenewalModal.tsx` provides an inline `[x] Record to Cashflow Book` toggle, pre-populating `vehicles.preferred_cashflow_id` and category `Vehicle & Transport`, automatically creating the transaction in Cashflow without manual double entry.
 
 ---
 

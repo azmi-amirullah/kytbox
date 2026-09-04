@@ -38,3 +38,7 @@ export type ListWithSummary =
 export type Invoice = Database['public']['Tables']['invoices']['Row'];
 export type InvoiceItem = Database['public']['Tables']['invoice_items']['Row'];
 
+export type Vehicle = Database['public']['Tables']['vehicles']['Row'];
+export type VehicleMonthlyOdometer =
+  Database['public']['Tables']['vehicle_monthly_odometers']['Row'];
+

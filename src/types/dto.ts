@@ -234,3 +234,48 @@ export interface WishlistItemMeta {
   currency: string | null
   purchase_url: string | null
 }
+
+export type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'other'
+export type FuelType = 'petrol' | 'diesel' | 'electric' | 'hybrid'
+export type OdometerUnit = 'km' | 'miles'
+
+export interface VehicleDTO {
+  id: string
+  user_id: string
+  name: string
+  type: VehicleType
+  license_plate: string | null
+  year: number | null
+  is_default: boolean
+  current_odometer: number
+  odometer_unit: OdometerUnit
+  estimated_monthly_km: number | null
+  fuel_type: FuelType
+  currency: string
+  is_archived: boolean
+  vin: string | null
+  preferred_cashflow_id: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface PublicVehicleDTO {
+  id: string
+  name: string
+  type: VehicleType
+  year: number | null
+  current_odometer: number
+  odometer_unit: OdometerUnit
+  fuel_type: FuelType
+  currency: string
+  created_at: string | null
+}
+
+export interface VehicleMonthlyOdometerDTO {
+  id: string
+  vehicle_id: string
+  year_month: string
+  odometer: number
+  updated_at: string | null
+}
+

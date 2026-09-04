@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { LuLoader } from 'react-icons/lu';
 
 import { cn } from '@/lib/utils';
 
@@ -36,26 +37,51 @@ const buttonVariants = cva(
   },
 );
 
+export interface ButtonProps
+  extends React.ComponentProps<'button'>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  loading?: boolean;
+}
+
 function Button({
   className,
   variant = 'default',
   size = 'default',
   asChild = false,
+  loading = false,
+  disabled,
+  children,
   ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
-  const Comp = asChild ? Slot : 'button';
+}: ButtonProps) {
+  if (asChild) {
+    return (
+      <Slot
+        data-slot='button'
+        data-variant={variant}
+        data-size={size}
+        className={cn(buttonVariants({ variant, size, className }))}
+        {...props}
+      >
+        {children}
+      </Slot>
+    );
+  }
 
   return (
-    <Comp
+    <button
       data-slot='button'
       data-variant={variant}
       data-size={size}
+      disabled={disabled || loading}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {loading && (
+        <LuLoader className='size-4 animate-spin shrink-0' aria-hidden='true' />
+      )}
+      {children}
+    </button>
   );
 }
 

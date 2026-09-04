@@ -42,10 +42,10 @@ export function StatusTabs<T extends string = string>({
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border',
+              'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border',
               isActive
-                ? 'bg-card text-foreground shadow-xs border-border/50'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40',
+                ? 'bg-card text-foreground shadow-xs border-border/50 cursor-default'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer',
             )}
           >
             {Icon && <Icon className='w-3.5 h-3.5 shrink-0' />}
