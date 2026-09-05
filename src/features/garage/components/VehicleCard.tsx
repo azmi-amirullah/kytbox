@@ -145,6 +145,11 @@ export function VehicleCard({
               <LuFuel className='size-3' aria-hidden='true' />
               {vehicle.fuel_type}
             </span>
+            {(vehicle.type === 'car' || vehicle.type === 'motorcycle') && (
+              <span className='text-xs text-muted-foreground capitalize'>
+                • {vehicle.transmission === 'manual' ? 'Manual' : 'Auto'}
+              </span>
+            )}
           </div>
         </div>
 

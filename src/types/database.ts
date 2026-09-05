@@ -41,4 +41,6 @@ export type InvoiceItem = Database['public']['Tables']['invoice_items']['Row'];
 export type Vehicle = Database['public']['Tables']['vehicles']['Row'];
 export type VehicleMonthlyOdometer =
   Database['public']['Tables']['vehicle_monthly_odometers']['Row'];
+export type VehicleMaintenanceRule =
+  Database['public']['Tables']['vehicle_maintenance_rules']['Row'];
 

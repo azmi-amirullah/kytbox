@@ -9,7 +9,7 @@
 ## 📌 Table of Contents & Progress Checklist
 
 - [x] [Day 1 — Garage: Vehicle Garage & Profile Management (`/garage`)](#day-1)
-- [ ] [Day 2 — Garage: Maintenance Checklist & Interval Rules Engine](#day-2)
+- [x] [Day 2 — Garage: Maintenance Checklist & Interval Rules Engine](#day-2)
 - [ ] [Day 3 — Garage: Service & Maintenance Logging Engine & Due Predictor](#day-3)
 - [ ] [Day 4 — Garage: Vehicle Tax, STNK, Insurance & Driver's License (`SIM`) Expiry](#day-4)
 - [ ] [Day 5 — Garage: Fuel Log, Mileage Efficiency & Auto-Odometer Sync](#day-5)
@@ -143,10 +143,12 @@
     alter table vehicle_maintenance_rules enable row level security;
     create policy "Users manage their own maintenance rules" on vehicle_maintenance_rules for all using (auth.uid() = user_id);
     ```
-  - Pre-populate smart default template presets based on vehicle type and unit (`km` vs `miles`):
-    - **Motorcycle / Scooter**: Engine Oil (`3,000 km` / `1,800 mi`), CVT Belt (`20,000 km` / `12,000 mi`), Gear Oil (`6,000 km` / `3,600 mi`), Spark Plug (`8,000 km` / `5,000 mi`), Brake Fluid, Coolant.
-    - **Car (Petrol/Diesel)**: Engine Oil (`5,000 km` / `3,000 mi` synthetic), Engine Oil Filter (`10,000 km` / `6,000 mi`), Air Filter, Cabin Filter, Brake Pads (`25,000 km` / `15,000 mi`), Transmission Fluid (`40,000 km` / `24,000 mi`), Coolant.
-    - **Electric Vehicle (EV)**: Reduction Gearbox Oil (`40,000 km` / `24,000 mi`), Cabin Filter (`20,000 km` / `12,000 mi`), Brake Fluid (`30,000 km`), High-Voltage Coolant.
+  - Pre-populate smart default template presets based on vehicle type, fuel type, and unit (`km` vs `miles`):
+    - **Car (Petrol)**: Engine Oil & Filter (`5,000 km` / `3,000 mi` · 6 mo), Engine Air Filter (`20,000 km` / `12,000 mi` · 12 mo), Cabin A/C Filter (`15,000 km` / `10,000 mi` · 12 mo), Brake Fluid (`40,000 km` / `25,000 mi` · 24 mo), Tire Rotation & Balance (`10,000 km` / `6,000 mi` · 6 mo), Spark Plugs (`40,000 km` / `25,000 mi` · 24 mo), Transmission Fluid (`40,000 km` / `25,000 mi` · 24 mo), Radiator Coolant (`40,000 km` / `25,000 mi` · 24 mo).
+    - **Car (Diesel)**: Same as Petrol but **excludes** Spark Plugs and **includes** Diesel Fuel Filter / Sedimenter (`20,000 km` / `12,000 mi` · 12 mo).
+    - **Car (Electric / EV)**: Cabin A/C Filter (`15,000 km` / `10,000 mi` · 12 mo), Tire Rotation & Balance (`10,000 km` / `6,000 mi` · 6 mo), Brake Fluid Flush (`40,000 km` / `25,000 mi` · 24 mo), Reduction Gearbox Oil (`40,000 km` / `25,000 mi` · 24 mo), High-Voltage Battery Coolant (`60,000 km` / `40,000 mi` · 36 mo).
+    - **Motorcycle / Scooter**: Engine Oil (`3,000 km` / `1,800 mi` · 3 mo), Transmission / Gear Oil (`6,000 km` / `3,600 mi` · 6 mo), Periodic Service (`6,000 km` / `3,600 mi` · 6 mo), Spark Plug (`12,000 km` / `7,500 mi` · 12 mo), Engine Air Filter (`18,000 km` / `11,000 mi` · 18 mo), Front & Rear Tires (`18,000 km` / `11,000 mi` · 24 mo), Front Brake Pads (`10,000 km` / `6,000 mi` · 12 mo), Rear Brake Pads / Shoes (`24,000 km` / `15,000 mi` · 24 mo), Brake Fluid (`24,000 km` / `15,000 mi` · 24 mo), Radiator Fluid / Coolant (`36,000 km` / `22,000 mi` · 36 mo), plus selectable **Drive Chain Lube & Clean** (`1,000 km` / `600 mi` · 1 mo for manual bikes) or **CVT Belt & Rollers** (`24,000 km` / `15,000 mi` · 24 mo for scooters).
+    - **Bicycle**: Chain Clean & Lube (`200 km` / `120 mi` · 1 mo), Tire Sealant Top-Up (`1,500 km` / `900 mi` · 3 mo), Brake Pads & Cable / Bleed (`2,000 km` / `1,200 mi` · 6 mo), Chain Stretch Check (`2,500 km` / `1,500 mi` · 6 mo), Bottom Bracket & Bearings Overhaul (`5,000 km` / `3,000 mi` · 12 mo).
   - Build `MaintenanceChecklistManager.tsx` allowing users to customize intervals, toggle active items, and add custom parts (e.g., *"Ferrox Air Filter"*).
 - **🛡️ Used Vehicle Baseline Guardrail**:
   - To prevent a newly added second-hand car (e.g. at `38,000 km`) from triggering 8 false 🔴 `OVERDUE` alarms on Day 1, each rule provides a baseline toggle: `Last serviced at: [ X km ]` OR `[x] Unknown — Start countdown from current odometer (38,000 km)`.

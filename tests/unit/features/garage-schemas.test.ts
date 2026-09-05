@@ -32,6 +32,19 @@ describe('Garage Server Schemas', () => {
     expect(parsed.currency).toBe('IDR')
     expect(parsed.isDefault).toBe(true)
     expect(parsed.estimatedMonthlyKm).toBe(1200)
+    expect(parsed.transmission).toBe('automatic')
+  })
+
+  it('parses createVehicle with manual transmission explicitly', () => {
+    const raw = {
+      name: 'Kawasaki Ninja ZX-25R',
+      type: 'motorcycle',
+      transmission: 'manual',
+    }
+
+    const parsed = createVehicleSchema.parse(raw)
+    expect(parsed.name).toBe('Kawasaki Ninja ZX-25R')
+    expect(parsed.transmission).toBe('manual')
   })
 
   it('rejects empty vehicle name', () => {
@@ -77,6 +90,7 @@ describe('Garage Server Schemas', () => {
     expect(parsed.id).toBe('123e4567-e89b-12d3-a456-426614174000')
     expect(parsed.name).toBe('Yamaha NMAX 155')
     expect(parsed.confirmOdometerJump).toBe(true)
+    expect(parsed.transmission).toBe('automatic')
   })
 
   it('validates toggleArchiveVehicleSchema and deleteVehicleSchema', () => {

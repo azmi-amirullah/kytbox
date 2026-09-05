@@ -30,10 +30,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import type { VehicleDTO, VehicleMonthlyOdometerDTO } from '@/types/dto'
+import type { VehicleDTO, VehicleMonthlyOdometerDTO, VehicleMaintenanceRuleDTO } from '@/types/dto'
 import { VehicleTypeBadge } from './VehicleTypeBadge'
 import { EditVehicleModal } from './EditVehicleModal'
 import { UpdateOdometerModal } from './UpdateOdometerModal'
+import { MaintenanceChecklistManager } from './MaintenanceChecklistManager'
 import { formatOdometer, calculateMonthlyVelocity, predictCurrentOdometer } from '../lib/odometer'
 import { setDefaultVehicle, toggleArchiveVehicle, deleteVehicle } from '../actions'
 
@@ -42,12 +43,14 @@ type GarageTab = 'specs' | 'rules' | 'service' | 'tax' | 'fuel'
 interface VehicleDetailProps {
   vehicle: VehicleDTO
   monthlyOdometers: VehicleMonthlyOdometerDTO[]
+  maintenanceRules?: VehicleMaintenanceRuleDTO[]
   cashflowBooks?: { id: string; title: string; currency: string }[]
 }
 
 export function VehicleDetail({
   vehicle: initialVehicle,
   monthlyOdometers: initialOdometers,
+  maintenanceRules = [],
   cashflowBooks = [],
 }: VehicleDetailProps) {
   const router = useRouter()
@@ -161,6 +164,14 @@ export function VehicleDetail({
                 <LuFuel className='size-3' aria-hidden='true' />
                 {vehicle.fuel_type}
               </span>
+              {(vehicle.type === 'car' || vehicle.type === 'motorcycle') && (
+                <>
+                  <span className='text-border select-none'>•</span>
+                  <span className='capitalize'>
+                    {vehicle.transmission === 'manual' ? 'Manual' : 'Automatic'}
+                  </span>
+                </>
+              )}
               <span className='text-border select-none'>•</span>
               <span>Currency: {vehicle.currency}</span>
             </div>
@@ -250,7 +261,11 @@ export function VehicleDetail({
           <TabsTrigger value='rules'>
             <LuWrench className='size-3.5' aria-hidden='true' />
             Maintenance Rules
-            <span className='rounded bg-secondary px-1 text-[0.65rem] text-muted-foreground'>Day 2</span>
+            {maintenanceRules.length > 0 && (
+              <span className='rounded-full bg-primary/10 px-1.5 py-0.2 text-[0.65rem] font-medium text-primary'>
+                {maintenanceRules.length}
+              </span>
+            )}
           </TabsTrigger>
 
           <TabsTrigger value='service'>
@@ -352,8 +367,10 @@ export function VehicleDetail({
               <div className='mt-2 text-xl font-bold tracking-tight text-foreground capitalize'>
                 {vehicle.fuel_type}
               </div>
-              <p className='mt-1 text-[0.72rem] text-muted-foreground'>
-                Cost currency: {vehicle.currency}
+              <p className='mt-1 text-[0.72rem] text-muted-foreground capitalize'>
+                {(vehicle.type === 'car' || vehicle.type === 'motorcycle')
+                  ? `${vehicle.transmission} • Cost currency: ${vehicle.currency}`
+                  : `Cost currency: ${vehicle.currency}`}
               </p>
             </div>
 
@@ -436,17 +453,12 @@ export function VehicleDetail({
           </div>
         </TabsContent>
 
-        {/* Tab: Maintenance Rules Placeholder (Day 2) */}
+        {/* Tab: Maintenance Rules (Day 2) */}
         <TabsContent value='rules'>
-          <div className='rounded-xl border border-dashed border-border/80 p-8 text-center'>
-            <LuWrench className='mx-auto size-8 text-muted-foreground/60' aria-hidden='true' />
-            <h3 className='mt-3 text-sm font-semibold text-foreground'>
-              Maintenance Checklist & Interval Engine
-            </h3>
-            <p className='mt-1 max-w-md mx-auto text-xs text-muted-foreground'>
-              Coming in <strong>Day 2</strong>: Smart presets for {vehicle.name} ({vehicle.type === 'motorcycle' ? 'CVT Belt, Engine Oil, Gear Oil' : 'Synthetic Oil, Oil Filter, Cabin Filter, Brake Pads'}).
-            </p>
-          </div>
+          <MaintenanceChecklistManager
+            vehicle={vehicle}
+            initialRules={maintenanceRules}
+          />
         </TabsContent>
 
         {/* Tab: Service History Placeholder (Day 3) */}

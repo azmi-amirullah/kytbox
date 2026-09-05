@@ -238,6 +238,7 @@ export interface WishlistItemMeta {
 export type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'other'
 export type FuelType = 'petrol' | 'diesel' | 'electric' | 'hybrid'
 export type OdometerUnit = 'km' | 'miles'
+export type TransmissionType = 'automatic' | 'manual'
 
 export interface VehicleDTO {
   id: string
@@ -251,6 +252,7 @@ export interface VehicleDTO {
   odometer_unit: OdometerUnit
   estimated_monthly_km: number | null
   fuel_type: FuelType
+  transmission: TransmissionType
   currency: string
   is_archived: boolean
   vin: string | null
@@ -267,6 +269,7 @@ export interface PublicVehicleDTO {
   current_odometer: number
   odometer_unit: OdometerUnit
   fuel_type: FuelType
+  transmission: TransmissionType
   currency: string
   created_at: string | null
 }
@@ -277,5 +280,27 @@ export interface VehicleMonthlyOdometerDTO {
   year_month: string
   odometer: number
   updated_at: string | null
+}
+
+export type MaintenanceCategory =
+  | 'fluids'
+  | 'filters'
+  | 'brakes'
+  | 'tires'
+  | 'powertrain'
+  | 'electrical'
+  | 'other'
+
+export interface VehicleMaintenanceRuleDTO {
+  id: string
+  vehicle_id: string
+  name: string
+  category: MaintenanceCategory
+  interval_distance: number | null
+  interval_months: number | null
+  last_service_odometer: number | null
+  last_service_date: string | null
+  is_active: boolean
+  created_at: string | null
 }
 

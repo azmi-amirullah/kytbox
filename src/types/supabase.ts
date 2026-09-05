@@ -1221,6 +1221,56 @@ export type Database = {
           },
         ]
       }
+      vehicle_maintenance_rules: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          interval_distance: number | null
+          interval_months: number | null
+          is_active: boolean
+          last_service_date: string | null
+          last_service_odometer: number | null
+          name: string
+          user_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          interval_distance?: number | null
+          interval_months?: number | null
+          is_active?: boolean
+          last_service_date?: string | null
+          last_service_odometer?: number | null
+          name: string
+          user_id: string
+          vehicle_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          interval_distance?: number | null
+          interval_months?: number | null
+          is_active?: boolean
+          last_service_date?: string | null
+          last_service_odometer?: number | null
+          name?: string
+          user_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_maintenance_rules_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_monthly_odometers: {
         Row: {
           id: string
@@ -1270,6 +1320,7 @@ export type Database = {
           name: string
           odometer_unit: string
           preferred_cashflow_id: string | null
+          transmission: string
           type: string
           updated_at: string | null
           user_id: string
@@ -1289,6 +1340,7 @@ export type Database = {
           name: string
           odometer_unit?: string
           preferred_cashflow_id?: string | null
+          transmission?: string
           type?: string
           updated_at?: string | null
           user_id: string
@@ -1308,6 +1360,7 @@ export type Database = {
           name?: string
           odometer_unit?: string
           preferred_cashflow_id?: string | null
+          transmission?: string
           type?: string
           updated_at?: string | null
           user_id?: string

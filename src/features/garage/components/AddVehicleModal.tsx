@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { CURRENCIES } from '@/lib/currency'
-import type { VehicleDTO, VehicleType, FuelType, OdometerUnit } from '@/types/dto'
+import type { VehicleDTO, VehicleType, FuelType, TransmissionType, OdometerUnit } from '@/types/dto'
 import { isVehicleType, isFuelType, isOdometerUnit } from '../types'
 import { createVehicle } from '../actions'
 
@@ -49,6 +49,7 @@ export function AddVehicleModal({
   const [odometerUnit, setOdometerUnit] = useState<OdometerUnit>('km')
   const [estimatedMonthlyKm, setEstimatedMonthlyKm] = useState<string>('1000')
   const [fuelType, setFuelType] = useState<FuelType>('petrol')
+  const [transmission, setTransmission] = useState<TransmissionType>('automatic')
   const [currency, setCurrency] = useState('IDR')
   const [vin, setVin] = useState('')
   const [preferredCashflowId, setPreferredCashflowId] = useState<string>('')
@@ -63,6 +64,7 @@ export function AddVehicleModal({
     setOdometerUnit('km')
     setEstimatedMonthlyKm('1000')
     setFuelType('petrol')
+    setTransmission('automatic')
     setCurrency('IDR')
     setVin('')
     setPreferredCashflowId('')
@@ -107,6 +109,7 @@ export function AddVehicleModal({
         odometerUnit,
         estimatedMonthlyKm: parsedMonthlyKm && !isNaN(parsedMonthlyKm) ? parsedMonthlyKm : 1000,
         fuelType,
+        transmission,
         currency: currency.trim() ? currency.trim().toUpperCase() : 'IDR',
         vin: vin.trim() ? vin.trim() : null,
         preferredCashflowId: preferredCashflowId || null,
@@ -195,6 +198,38 @@ export function AddVehicleModal({
                 />
               </div>
             </div>
+
+            {(type === 'car' || type === 'motorcycle') && (
+              <div className='space-y-1.5'>
+                <Label className='gap-0.5 text-xs font-medium'>
+                  Transmission<span className='text-destructive'>*</span>
+                </Label>
+                <div className='grid grid-cols-2 gap-2'>
+                  <button
+                    type='button'
+                    onClick={() => setTransmission('automatic')}
+                    className={`flex items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                      transmission === 'automatic'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs'
+                        : 'border-border bg-background text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    }`}
+                  >
+                    {type === 'motorcycle' ? 'Automatic (Scooter / CVT)' : 'Automatic (AT / CVT)'}
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => setTransmission('manual')}
+                    className={`flex items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                      transmission === 'manual'
+                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs'
+                        : 'border-border bg-background text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    }`}
+                  >
+                    {type === 'motorcycle' ? 'Manual (Clutch / Chain)' : 'Manual (MT / Clutch)'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className='space-y-1.5'>
               <Label htmlFor='vehicle-name' className='gap-0.5 text-xs font-medium'>

@@ -52,6 +52,7 @@ export default async function VehicleDetailPage({
     <VehicleDetail
       vehicle={vehicleRes.vehicle}
       monthlyOdometers={vehicleRes.monthlyOdometers || []}
+      maintenanceRules={vehicleRes.maintenanceRules || []}
       cashflowBooks={booksRes.data || []}
     />
   )

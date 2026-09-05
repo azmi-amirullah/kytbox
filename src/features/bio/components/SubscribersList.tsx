@@ -197,7 +197,7 @@ export default function SubscribersList({
 
           <div>
             <div className='flex items-baseline gap-2.5'>
-              <span className='text-3xl font-extrabold tracking-tight text-foreground'>
+              <span className='text-3xl font-bold tracking-tight text-foreground'>
                 {subscribers.length > totalSubscribers
                   ? subscribers.length
                   : totalSubscribers}

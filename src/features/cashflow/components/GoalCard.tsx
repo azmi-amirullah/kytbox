@@ -260,7 +260,9 @@ export default function GoalCard({
               const canManageGoal =
                 isOwner &&
                 (cashflows.length === 0 ||
-                  cashflows.some((cashflow) => cashflow.id === goal.cashflow_id))
+                  cashflows.some(
+                    (cashflow) => cashflow.id === goal.cashflow_id,
+                  ))
               const rawSaved = goal.saved_amount
               const progress = Math.min(
                 100,
@@ -421,7 +423,7 @@ export default function GoalCard({
 
                   {/* Amount details */}
                   <div className='flex items-baseline justify-between mb-2'>
-                    <span className='text-2xl font-extrabold text-foreground tracking-tight'>
+                    <span className='text-2xl font-bold text-foreground tracking-tight'>
                       {formatCurrency(rawSaved, currency || 'USD')}
                     </span>
                     <span className='text-sm font-bold text-muted-foreground'>
@@ -455,9 +457,7 @@ export default function GoalCard({
                     <div className='mt-3 flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/40'>
                       <div className='flex items-center gap-1.5'>
                         <FiCalendar className='h-3 w-3 opacity-70' />
-                        <span>
-                          Deadline: {formatAppDate(goal.deadline)}
-                        </span>
+                        <span>Deadline: {formatAppDate(goal.deadline)}</span>
                       </div>
                       <span>
                         {isPastDeadline
