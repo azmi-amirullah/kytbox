@@ -36,6 +36,18 @@ export async function proxy(request: NextRequest) {
     });
   }
 
+  // Reject bot probes and normalize /index or /index.html
+  if (pathname === '/index' || pathname === '/index.html') {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return applyCorsHeaders(
+        new NextResponse('Method Not Allowed', { status: 405 })
+      );
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    return applyCorsHeaders(NextResponse.redirect(url, 308));
+  }
+
   const hostname = request.headers.get('host') || '';
   const proto = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
   const scheme = `${proto}://`;

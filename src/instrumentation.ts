@@ -33,5 +33,37 @@ export async function register() {
   }
 }
 
-export const onRequestError = Sentry.captureRequestError;
+type RequestInfo = Parameters<typeof Sentry.captureRequestError>[1];
+type ErrorContext = Parameters<typeof Sentry.captureRequestError>[2];
 
+export function onRequestError(
+  error: unknown,
+  request: RequestInfo,
+  context: ErrorContext,
+) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
+  if (errorMessage.includes('Failed to find Server Action')) {
+    const headers = request?.headers || {};
+    const hasNextActionHeader = Boolean(
+      headers['next-action'] || headers['Next-Action'],
+    );
+    const path = request?.path || '';
+    const isBotPath = path === '/index' || path.endsWith('/index');
+
+    // Drop automated bot probes and scanner requests with no Next-Action header or targeting invalid paths
+    if (!hasNextActionHeader || isBotPath) {
+      return;
+    }
+
+    // Legitimate deployment skew: Capture with 'warning' level and tag for release health tracking
+    Sentry.withScope((scope) => {
+      scope.setLevel('warning');
+      scope.setTag('error.category', 'deployment_skew');
+      Sentry.captureRequestError(error, request, context);
+    });
+    return;
+  }
+
+  Sentry.captureRequestError(error, request, context);
+}
