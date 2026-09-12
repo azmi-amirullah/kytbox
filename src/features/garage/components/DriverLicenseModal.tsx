@@ -223,11 +223,10 @@ export function DriverLicenseModal({
         }
 
         toast.success(`Updated ${res.data.license_name}`)
-        setLicenses((prev) => {
-          const next = prev.map((l) => (l.id === res.data!.id ? res.data! : l))
-          onLicensesChange?.(next)
-          return next
-        })
+        const updated = res.data
+        const next = licenses.map((l) => (l.id === updated.id ? updated : l))
+        setLicenses(next)
+        onLicensesChangeRef.current?.(next)
         setIsFormOpen(false)
       } else {
         const res = await createDriverLicense({
@@ -244,11 +243,9 @@ export function DriverLicenseModal({
         }
 
         toast.success(`Added ${res.data.license_name}`)
-        setLicenses((prev) => {
-          const next = [...prev, res.data!]
-          onLicensesChange?.(next)
-          return next
-        })
+        const next = [...licenses, res.data]
+        setLicenses(next)
+        onLicensesChangeRef.current?.(next)
         setIsFormOpen(false)
       }
     })
@@ -264,11 +261,9 @@ export function DriverLicenseModal({
         return
       }
       toast.success(`Deleted ${deletingLicense.license_name}`)
-      setLicenses((prev) => {
-        const next = prev.filter((l) => l.id !== deletingLicense.id)
-        onLicensesChange?.(next)
-        return next
-      })
+      const next = licenses.filter((l) => l.id !== deletingLicense.id)
+      setLicenses(next)
+      onLicensesChangeRef.current?.(next)
       setDeletingLicense(null)
     })
   }
