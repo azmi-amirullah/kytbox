@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,8 +32,17 @@ import {
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import { addEntry, updateEntry, getReceiptSignedUrl } from '../actions'
-import type { CashflowEntryDTO, CashflowGoalDTO, CashflowTagDTO } from '@/types/dto'
-import { getCurrencySymbol } from '@/lib/currency'
+import type {
+  CashflowEntryDTO,
+  CashflowGoalDTO,
+  CashflowTagDTO,
+} from '@/types/dto'
+import { CURRENCIES, formatCurrency, getCurrencySymbol } from '@/lib/currency'
+import {
+  convertCurrencyAmount,
+  updateExchangeRates,
+  getCurrentRatesMatrix,
+} from '../lib/exchange-rates'
 import * as z from 'zod/mini'
 import { entryTypeSchema, entryCategorySchema } from '../schemas.client'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../constants'
@@ -41,6 +50,7 @@ import PurchaseBreakdownEditor, {
   type SplitItemInput,
 } from './PurchaseBreakdownEditor'
 import { TagPicker } from './TagPicker'
+import { cn } from '@/lib/utils'
 import {
   compressImageToWebP,
   isSupportedImageFile,
@@ -85,7 +95,14 @@ export default function EntryModal({
   const [prevEntry, setPrevEntry] = useState(entry)
 
   const [description, setDescription] = useState(entry?.description || '')
-  const [amount, setAmount] = useState(entry?.amount?.toString() || '')
+  const [amount, setAmount] = useState(
+    entry?.original_amount !== null && entry?.original_amount !== undefined
+      ? entry.original_amount.toString()
+      : entry?.amount?.toString() || '',
+  )
+  const [entryCurrency, setEntryCurrency] = useState<string>(
+    entry?.original_currency || currency || 'USD',
+  )
   const [type, setType] = useState<'income' | 'expense'>(
     entryTypeSchema.parse(entry?.type),
   )
@@ -102,13 +119,20 @@ export default function EntryModal({
   >(entry?.yearly_calculation || 'prorated')
   const [tags, setTags] = useState<string[]>(entry?.tags ?? [])
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
-  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null)
-  const [receiptAction, setReceiptAction] = useState<'keep' | 'remove' | 'upload'>('keep')
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(
+    null,
+  )
+  const [receiptAction, setReceiptAction] = useState<
+    'keep' | 'remove' | 'upload'
+  >('keep')
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(
     entry?.receipt_url ?? null,
   )
-  const [existingSignedUrl, setExistingSignedUrl] = useState<string | null>(null)
-  const [isLoadingExistingThumbnail, setIsLoadingExistingThumbnail] = useState(false)
+  const [existingSignedUrl, setExistingSignedUrl] = useState<string | null>(
+    null,
+  )
+  const [isLoadingExistingThumbnail, setIsLoadingExistingThumbnail] =
+    useState(false)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const receiptInputRef = useRef<HTMLInputElement>(null)
 
@@ -129,8 +153,8 @@ export default function EntryModal({
 
   const isArchivedGoal = Boolean(
     entry?.goal_id &&
-      entry.goal_id === goalId &&
-      (!entryGoal || Boolean(entryGoal.is_archived)),
+    entry.goal_id === goalId &&
+    (!entryGoal || Boolean(entryGoal.is_archived)),
   )
 
   const isEntryChanged =
@@ -143,7 +167,12 @@ export default function EntryModal({
     setPrevEntry(entry)
     if (open) {
       setDescription(entry?.description || '')
-      setAmount(entry?.amount?.toString() || '')
+      setAmount(
+        entry?.original_amount !== null && entry?.original_amount !== undefined
+          ? entry.original_amount.toString()
+          : entry?.amount?.toString() || '',
+      )
+      setEntryCurrency(entry?.original_currency || currency || 'USD')
       setType(entryTypeSchema.parse(entry?.type))
       setCategory(entryCategory)
       setGoalId(entry?.goal_id ?? null)
@@ -176,6 +205,45 @@ export default function EntryModal({
       setIsLoading(false)
     }
   }
+
+  // Live daily currency exchange rates
+  const [liveRatesInfo, setLiveRatesInfo] = useState<{
+    isLive: boolean
+    date?: string
+  } | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+    fetch('/api/exchange-rates')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.rates) {
+          updateExchangeRates(data.rates)
+          setLiveRatesInfo({ isLive: data.isLive, date: data.date })
+        }
+      })
+      .catch(() => {
+        // Silently use in-memory fallback matrix
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // Live currency conversion calculation
+  const isForeignCurrency = entryCurrency !== (currency || 'USD')
+  const numAmount = parseFloat(amount) || 0
+  const conversion = useMemo(() => {
+    if (!isForeignCurrency || numAmount <= 0) return null
+    const matrix = liveRatesInfo?.isLive ? getCurrentRatesMatrix() : undefined
+    return convertCurrencyAmount(
+      numAmount,
+      entryCurrency,
+      currency,
+      undefined,
+      matrix,
+    )
+  }, [isForeignCurrency, numAmount, entryCurrency, currency, liveRatesInfo])
 
   // Fetch signed URL for thumbnail preview when editing an entry with an existing receipt
   useEffect(() => {
@@ -241,7 +309,8 @@ export default function EntryModal({
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
       link.href = blobUrl
-      const ext = blob.type === 'image/jpeg' || blob.type === 'image/jpg' ? 'jpg' : 'webp'
+      const ext =
+        blob.type === 'image/jpeg' || blob.type === 'image/jpg' ? 'jpg' : 'webp'
       link.download = `receipt-${date || 'entry'}-${sanitizedDesc || 'attachment'}.${ext}`
       document.body.appendChild(link)
       link.click()
@@ -292,10 +361,16 @@ export default function EntryModal({
     setIsLoading(true)
     setError(null)
 
+    const baseAmount = conversion
+      ? String(conversion.convertedAmount)
+      : amount || '0'
     const formData = new FormData()
     formData.append('cashflowId', cashflowId)
     formData.append('description', description)
-    formData.append('amount', amount || '0')
+    formData.append('amount', baseAmount)
+    formData.append('original_currency', entryCurrency)
+    formData.append('original_amount', amount || '0')
+    formData.append('exchange_rate', String(conversion?.effectiveRate || 1))
     formData.append('type', type)
     if (category) formData.append('category', category)
     if (goalId) formData.append('goalId', goalId)
@@ -326,7 +401,8 @@ export default function EntryModal({
         if (receiptFile.size <= 1024 * 1024) {
           formData.append('receipt_file', receiptFile)
         } else {
-          const msg = 'Could not compress image. Please choose a photo under 1MB.'
+          const msg =
+            'Could not compress image. Please choose a photo under 1MB.'
           setError(msg)
           toast.error(msg)
           setIsLoading(false)
@@ -401,7 +477,10 @@ export default function EntryModal({
 
       if (result?.error) {
         setError(result.error)
-        toast.error(result.error || (isEdit ? 'Failed to update entry' : 'Failed to add entry'))
+        toast.error(
+          result.error ||
+            (isEdit ? 'Failed to update entry' : 'Failed to add entry'),
+        )
         setIsLoading(false)
       } else {
         toast.success(isEdit ? 'Entry updated!' : 'Entry added!')
@@ -409,7 +488,8 @@ export default function EntryModal({
         onSuccess?.(result?.entry ?? null)
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'An unexpected error occurred'
+      const msg =
+        err instanceof Error ? err.message : 'An unexpected error occurred'
       setError(msg)
       toast.error(msg)
       setIsLoading(false)
@@ -438,7 +518,10 @@ export default function EntryModal({
           />
         </div>
 
-        <form onSubmit={handleSubmit} className='p-6 pt-4 space-y-4 overflow-y-auto flex-1 pr-4 sm:pr-6'>
+        <form
+          onSubmit={handleSubmit}
+          className='p-6 pt-4 space-y-4 overflow-y-auto flex-1 pr-4 sm:pr-6'
+        >
           <div className='grid gap-4'>
             {/* Description */}
             <div className='grid gap-2'>
@@ -494,7 +577,7 @@ export default function EntryModal({
               )}
             </div>
 
-            {/* Amount */}
+            {/* Amount & Currency */}
             <div className='grid gap-2'>
               <div className='flex items-center justify-between'>
                 <Label
@@ -509,24 +592,78 @@ export default function EntryModal({
                   </span>
                 )}
               </div>
-              <div className='relative'>
-                <div className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm'>
-                  {getCurrencySymbol(currency || 'USD')}
+              <div className='flex gap-2'>
+                <div className='w-28 shrink-0'>
+                  <Select
+                    value={entryCurrency}
+                    onValueChange={setEntryCurrency}
+                    disabled={isSplit}
+                  >
+                    <SelectTrigger className='h-9 text-xs font-medium'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((c) => (
+                        <SelectItem
+                          key={c.code}
+                          value={c.code}
+                          className='text-xs'
+                        >
+                          {c.code} ({c.symbol})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Input
-                  id='amount'
-                  name='amount'
-                  type='number'
-                  step='0.01'
-                  min='0.01'
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder='0.00'
-                  disabled={isSplit}
-                  required={!isSplit}
-                  className='pl-9 disabled:opacity-80 disabled:bg-muted/50 font-semibold'
-                />
+                <div className='relative flex-1'>
+                  <span className='pointer-events-none absolute inset-y-0 left-3 flex items-center font-medium text-muted-foreground text-sm select-none'>
+                    {getCurrencySymbol(entryCurrency)}
+                  </span>
+                  <Input
+                    id='amount'
+                    name='amount'
+                    type='number'
+                    step='any'
+                    min='0.01'
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder='0.00'
+                    disabled={isSplit}
+                    required={!isSplit}
+                    className={cn(
+                      'disabled:opacity-80 disabled:bg-muted/50 font-medium',
+                      getCurrencySymbol(entryCurrency).length > 1
+                        ? 'pl-10'
+                        : 'pl-8',
+                    )}
+                  />
+                </div>
               </div>
+
+              {conversion && (
+                <div className='flex items-center justify-between p-2 rounded-lg bg-muted/40 text-xs border border-border/50'>
+                  <span className='text-muted-foreground'>
+                    Converted to:{' '}
+                    <strong className='text-foreground font-semibold'>
+                      {formatCurrency(conversion.convertedAmount, currency)}
+                    </strong>
+                  </span>
+                  <span className='text-[11px] text-muted-foreground flex items-center gap-1.5'>
+                    <span>
+                      Rate: 1 {entryCurrency} ={' '}
+                      {conversion.effectiveRate < 1
+                        ? conversion.effectiveRate.toFixed(4)
+                        : conversion.effectiveRate.toFixed(2)}{' '}
+                      {currency || 'USD'}
+                    </span>
+                    {liveRatesInfo?.isLive && (
+                      <span className='text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded'>
+                        Live Rate
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Type */}
@@ -579,11 +716,7 @@ export default function EntryModal({
               >
                 Date<span className='text-destructive'>*</span>
               </Label>
-              <DatePicker
-                id='date'
-                value={date}
-                onChange={setDate}
-              />
+              <DatePicker id='date' value={date} onChange={setDate} />
             </div>
 
             {/* Category */}
@@ -614,13 +747,14 @@ export default function EntryModal({
                       Uncategorized
                     </span>
                   </SelectItem>
-                  {(type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(
-                    (c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ),
-                  )}
+                  {(type === 'income'
+                    ? INCOME_CATEGORIES
+                    : EXPENSE_CATEGORIES
+                  ).map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
                   {type === 'expense' && isArchivedGoal && (
                     <SelectItem value='archived-goal' disabled>
                       <span className='text-muted-foreground'>
@@ -635,10 +769,7 @@ export default function EntryModal({
                         Savings Goals
                       </div>
                       {activeGoals.map((g) => (
-                        <SelectItem
-                          key={g.id}
-                          value={`goal-${g.id}`}
-                        >
+                        <SelectItem key={g.id} value={`goal-${g.id}`}>
                           <span className='flex flex-col items-start'>
                             <span>Goal: {g.title}</span>
                             {g.cashflow_title && (
@@ -683,7 +814,9 @@ export default function EntryModal({
                   <div
                     role='button'
                     tabIndex={0}
-                    onClick={() => (existingSignedUrl ? setIsLightboxOpen(true) : null)}
+                    onClick={() =>
+                      existingSignedUrl ? setIsLightboxOpen(true) : null
+                    }
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
@@ -691,7 +824,11 @@ export default function EntryModal({
                       }
                     }}
                     className='flex items-center gap-2.5 min-w-0 cursor-pointer group/thumb flex-1 pr-2'
-                    title={existingSignedUrl ? 'Click to preview receipt in full screen' : undefined}
+                    title={
+                      existingSignedUrl
+                        ? 'Click to preview receipt in full screen'
+                        : undefined
+                    }
                   >
                     {existingSignedUrl ? (
                       <div className='relative w-10 h-10 rounded border border-border bg-card overflow-hidden shrink-0 group-hover/thumb:ring-2 group-hover/thumb:ring-primary/50 transition-all'>
@@ -716,7 +853,9 @@ export default function EntryModal({
                         Attached Receipt
                       </p>
                       <p className='text-[10px] text-muted-foreground'>
-                        {existingSignedUrl ? 'Click image to preview' : 'Saved securely'}
+                        {existingSignedUrl
+                          ? 'Click image to preview'
+                          : 'Saved securely'}
                       </p>
                     </div>
                   </div>
@@ -754,7 +893,8 @@ export default function EntryModal({
                       onClick={() => {
                         setReceiptAction('remove')
                         setReceiptFile(null)
-                        if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+                        if (receiptPreviewUrl)
+                          URL.revokeObjectURL(receiptPreviewUrl)
                         setReceiptPreviewUrl(null)
                       }}
                       title='Remove receipt'
@@ -810,7 +950,8 @@ export default function EntryModal({
                     onClick={() => {
                       setReceiptAction(existingReceiptUrl ? 'keep' : 'keep')
                       setReceiptFile(null)
-                      if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+                      if (receiptPreviewUrl)
+                        URL.revokeObjectURL(receiptPreviewUrl)
                       setReceiptPreviewUrl(null)
                     }}
                     title='Cancel upload'
@@ -821,38 +962,41 @@ export default function EntryModal({
               )}
 
               {/* Case 3: No receipt or replaced/removed */}
-              {(!existingReceiptUrl || receiptAction === 'remove') && !receiptPreviewUrl && (
-                <div
-                  role='button'
-                  tabIndex={0}
-                  onClick={() => receiptInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+              {(!existingReceiptUrl || receiptAction === 'remove') &&
+                !receiptPreviewUrl && (
+                  <div
+                    role='button'
+                    tabIndex={0}
+                    onClick={() => receiptInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        receiptInputRef.current?.click()
+                      }
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
                       e.preventDefault()
-                      receiptInputRef.current?.click()
-                    }
-                  }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    const droppedFile = e.dataTransfer.files?.[0]
-                    if (droppedFile && isSupportedImageFile(droppedFile)) {
-                      handleFileSelect(droppedFile)
-                    } else if (droppedFile) {
-                      toast.error('Only standard image files (JPG, PNG, WebP) are supported')
-                    }
-                  }}
-                  className='flex flex-col items-center justify-center p-4 border border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/30 rounded-lg cursor-pointer transition-colors text-center group'
-                >
-                  <LuUpload className='w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-1.5' />
-                  <p className='text-xs font-medium text-foreground/90'>
-                    Upload receipt or photo
-                  </p>
-                  <p className='text-[10px] text-muted-foreground mt-0.5'>
-                    Drag & drop or click to browse (PNG, JPG, WebP)
-                  </p>
-                </div>
-              )}
+                      const droppedFile = e.dataTransfer.files?.[0]
+                      if (droppedFile && isSupportedImageFile(droppedFile)) {
+                        handleFileSelect(droppedFile)
+                      } else if (droppedFile) {
+                        toast.error(
+                          'Only standard image files (JPG, PNG, WebP) are supported',
+                        )
+                      }
+                    }}
+                    className='flex flex-col items-center justify-center p-4 border border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/30 rounded-lg cursor-pointer transition-colors text-center group'
+                  >
+                    <LuUpload className='w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-1.5' />
+                    <p className='text-xs font-medium text-foreground/90'>
+                      Upload receipt or photo
+                    </p>
+                    <p className='text-[10px] text-muted-foreground mt-0.5'>
+                      Drag & drop or click to browse (PNG, JPG, WebP)
+                    </p>
+                  </div>
+                )}
 
               <input
                 ref={receiptInputRef}
@@ -961,7 +1105,8 @@ export default function EntryModal({
                         Apply to future recurring entries
                       </Label>
                       <p className='text-[11px] text-muted-foreground leading-tight'>
-                        Updates the recurring template for future cycles. Keep unchecked to edit this entry only.
+                        Updates the recurring template for future cycles. Keep
+                        unchecked to edit this entry only.
                       </p>
                     </div>
                   </div>
@@ -1008,9 +1153,7 @@ export default function EntryModal({
         open={isLightboxOpen}
         onOpenChange={setIsLightboxOpen}
         previewUrl={
-          receiptAction === 'upload'
-            ? receiptPreviewUrl
-            : existingSignedUrl
+          receiptAction === 'upload' ? receiptPreviewUrl : existingSignedUrl
         }
         cashflowId={cashflowId}
         entryId={entry?.id ?? null}

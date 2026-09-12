@@ -17,6 +17,10 @@ export type CashflowGoal =
   Database['public']['Tables']['cashflow_goals']['Row'];
 export type CashflowRecurringRule =
   Database['public']['Tables']['cashflow_recurring_rules']['Row'];
+export type CashflowSplitGroup =
+  Database['public']['Tables']['cashflow_split_groups']['Row'];
+export type CashflowSplitGroupExpense =
+  Database['public']['Tables']['cashflow_split_group_expenses']['Row'];
 export type SupportTicket =
   Database['public']['Tables']['support_tickets']['Row'];
 export type SupportMessage =

@@ -17,6 +17,9 @@ export const RESERVED_USERNAMES = [
   'lookup',
   'cashflow',
   'invoice',
+  'garage',
+  'split',
+  'onboarding',
 
   // --- Auth & Legal ---
   'login',

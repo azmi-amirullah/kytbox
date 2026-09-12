@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ import type { CashflowBudgetDTO } from '@/types/dto'
 import { getCurrencySymbol } from '@/lib/currency'
 import { budgetExpenseCategorySchema } from '../schemas.client'
 import { EXPENSE_CATEGORIES } from '../constants'
+import { cn } from '@/lib/utils'
 
 interface BudgetModalProps {
   cashflowId: string
@@ -50,6 +52,7 @@ export default function BudgetModal({
     budgetExpenseCategorySchema.parse(budget?.category),
   )
   const [amount, setAmount] = useState(budget?.amount?.toString() ?? '')
+  const [enableRollover, setEnableRollover] = useState(budget?.enable_rollover ?? false)
 
   function handleOpenChange(nextOpen: boolean) {
     onOpenChange(nextOpen)
@@ -64,6 +67,7 @@ export default function BudgetModal({
     formData.append('cashflowId', cashflowId)
     formData.append('category', category)
     formData.append('amount', amount)
+    formData.append('enable_rollover', String(enableRollover))
 
     const result = await upsertBudget(formData)
 
@@ -133,9 +137,9 @@ export default function BudgetModal({
                   Monthly Limit<span className='text-destructive'>*</span>
                 </Label>
                 <div className='relative'>
-                  <div className='absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm'>
+                  <span className='pointer-events-none absolute inset-y-0 left-3 flex items-center font-medium text-muted-foreground text-sm select-none'>
                     {getCurrencySymbol(currency || 'USD')}
-                  </div>
+                  </span>
                   <Input
                     id='budget-amount'
                     name='amount'
@@ -146,9 +150,26 @@ export default function BudgetModal({
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder='0.00'
                     required
-                    className='pl-9'
+                    className={cn('font-medium', getCurrencySymbol(currency || 'USD').length > 1 ? 'pl-10' : 'pl-8')}
                   />
                 </div>
+              </div>
+
+              {/* Monthly Rollover Toggle */}
+              <div className='flex items-center justify-between rounded-lg border p-3 bg-muted/30'>
+                <div className='space-y-0.5 pr-2'>
+                  <Label htmlFor='budget-rollover' className='text-xs font-semibold cursor-pointer'>
+                    Monthly Rollover (Envelope Budgeting)
+                  </Label>
+                  <p className='text-[11px] text-muted-foreground'>
+                    Unspent surplus or deficit carries over into the next month.
+                  </p>
+                </div>
+                <Switch
+                  id='budget-rollover'
+                  checked={enableRollover}
+                  onCheckedChange={setEnableRollover}
+                />
               </div>
 
               {error && (

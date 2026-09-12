@@ -86,6 +86,9 @@ describe('Cashflow Split Transactions', () => {
         created_at: '2026-08-13T10:00:00Z',
         tags: [],
         receipt_url: null,
+        exchange_rate: 1,
+        original_amount: null,
+        original_currency: null,
         cashflow_split_entries: [
           {
             id: 's-1',

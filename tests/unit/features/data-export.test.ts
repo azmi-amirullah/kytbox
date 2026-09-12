@@ -132,6 +132,9 @@ describe('GDPR Data Export Engine', () => {
           recurrence_interval: null,
           tags: ['groceries'],
           yearly_calculation: null,
+          exchange_rate: 1,
+          original_amount: null,
+          original_currency: null,
         },
       ],
       split_entries: [
@@ -151,6 +154,7 @@ describe('GDPR Data Export Engine', () => {
           category: 'Food',
           amount: 500,
           period: 'monthly',
+          enable_rollover: false,
           created_at: '2026-08-01T00:00:00Z',
           updated_at: null,
         },

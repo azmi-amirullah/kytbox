@@ -78,6 +78,14 @@ describe('validateUsername', () => {
     expect(validateUsername('ADMIN').valid).toBe(false);
     expect(validateUsername('Admin').valid).toBe(false);
   });
+
+  it('specifically rejects collision-sensitive platform routes like split and garage', () => {
+    expect(validateUsername('split').valid).toBe(false);
+    expect(validateUsername('Split').valid).toBe(false);
+    expect(validateUsername('SPLIT').valid).toBe(false);
+    expect(validateUsername('garage').valid).toBe(false);
+    expect(validateUsername('Garage').valid).toBe(false);
+  });
 });
 
 describe('generateUsernameFromEmail', () => {

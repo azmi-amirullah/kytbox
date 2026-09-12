@@ -17,6 +17,7 @@ export const budgetDtoSchema = z.object({
   category: z.catch(z.string(), ''),
   amount: z.catch(z.number(), 0),
   period: z.catch(z.enum(['monthly']), 'monthly'),
+  enable_rollover: z.optional(z.boolean()),
 });
 
 export const budgetDtoListSchema = z.catch(z.array(budgetDtoSchema), []);

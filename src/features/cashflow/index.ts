@@ -13,3 +13,8 @@ export * from './math';
 export * from './constants';
 export * as schemasClient from './schemas.client';
 export * as schemasServer from './schemas.server';
+export { CreateSplitGroupLanding } from './components/split/CreateSplitGroupLanding';
+export { CreateSplitGroupModal } from './components/split/CreateSplitGroupModal';
+export { SplitGroupView } from './components/split/SplitGroupView';
+export * from './split-actions';
+

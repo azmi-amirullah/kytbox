@@ -6,6 +6,7 @@ import { LuPencil, LuTrash2, LuLoader } from 'react-icons/lu';
 import { calculateBudgetStatus, formatCategoryName } from '../math';
 import type { CashflowBudgetDTO, CashflowEntryDTO } from '@/types/dto';
 import { formatCurrencyCompact } from '@/lib/currency';
+import { cn } from '@/lib/utils';
 
 interface BudgetProgressProps {
   budget: CashflowBudgetDTO;
@@ -26,10 +27,11 @@ export default function BudgetProgress({
   onDelete,
   isDeleting,
 }: BudgetProgressProps) {
-  const { spent, pct, isOverBudget, isAtLimit, isWarning } = useMemo(
+  const status = useMemo(
     () => calculateBudgetStatus(budget, entries),
     [entries, budget],
   );
+  const { spent, pct, isOverBudget, isAtLimit, isWarning, hasRollover, rolloverSurplus, effectiveLimit, availableSpend } = status;
 
   const barColor = isOverBudget
     ? 'bg-red-700'
@@ -53,10 +55,23 @@ export default function BudgetProgress({
     <div className='bg-card border rounded-xl p-4 space-y-3'>
       {/* Header row */}
       <div className='flex items-center justify-between gap-2'>
-        <div className='flex items-center gap-2 min-w-0'>
+        <div className='flex items-center gap-1.5 min-w-0 flex-wrap'>
           <span className='font-medium text-sm truncate'>
             {categoryLabel}
           </span>
+          {hasRollover && rolloverSurplus !== undefined && rolloverSurplus !== 0 && (
+            <span
+              className={cn(
+                'shrink-0 text-[10px] font-bold tracking-tight px-1.5 py-0.5 rounded-full border',
+                rolloverSurplus > 0
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+              )}
+            >
+              {rolloverSurplus > 0 ? '+' : ''}
+              {formatCurrencyCompact(rolloverSurplus, currency)} Rollover
+            </span>
+          )}
           {isOverBudget && (
             <span className='shrink-0 text-[10px] font-bold uppercase tracking-widest bg-red-200 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded-full'>
               Over Budget
@@ -119,7 +134,12 @@ export default function BudgetProgress({
           {formatCurrencyCompact(spent, currency)} spent
         </span>
         <span className='text-muted-foreground'>
-          of {formatCurrencyCompact(budget.amount, currency)} limit
+          of {formatCurrencyCompact(effectiveLimit ?? budget.amount, currency)} limit
+          {availableSpend !== undefined && (
+            <span className='ml-1 text-[11px] opacity-80'>
+              ({formatCurrencyCompact(Math.max(0, availableSpend), currency)} left)
+            </span>
+          )}
         </span>
       </div>
     </div>

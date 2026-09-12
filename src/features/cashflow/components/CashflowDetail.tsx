@@ -37,6 +37,7 @@ import {
   LuEllipsisVertical,
   LuLoader,
   LuShare2,
+  LuUsers,
   LuBookmark,
   LuCheck,
   LuRepeat,
@@ -83,6 +84,7 @@ import EntryModal from './EntryModal'
 import ShareModal from './ShareModal'
 import GoalCard from './GoalCard'
 import { CashflowSummaryStats } from './CashflowSummaryStats'
+import { SafeToSpendCard } from './SafeToSpendCard'
 import { Loader } from '@/components/ui/loader'
 const CashflowCharts = dynamic(
   () => import('./CashflowCharts').then((mod) => mod.CashflowCharts),
@@ -98,7 +100,7 @@ const CashflowCharts = dynamic(
 )
 import { ProjectionsView } from './ProjectionsView'
 import RecurringManagerModal from './RecurringManagerModal'
-import { subscribeToPublicCashflow, removeShare } from '../actions'
+import { subscribeToPublicCashflow, removeShare, reconcileCashflowBalance } from '../actions'
 import BudgetManager from './BudgetManager'
 import ImportCsvModal from './ImportCsvModal'
 import ReceiptLightbox from './ReceiptLightbox'
@@ -128,6 +130,7 @@ import { EntryTypeBadge, EntryMetadataBadges } from './EntryBadges'
 import { resolveTagColor, TAG_COLORS } from '../lib/tag-colors'
 import { ManageTagModal } from './ManageTagModal'
 import { FinancialReportModal } from './FinancialReportModal'
+import { CreateSplitGroupModal } from './split/CreateSplitGroupModal'
 
 interface CashflowDetailProps {
   cashflow: CashflowDTO
@@ -165,6 +168,7 @@ export default function CashflowDetail({
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [isCreateSplitModalOpen, setIsCreateSplitModalOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
     null,
   )
@@ -215,6 +219,20 @@ export default function CashflowDetail({
       setSearchQuery(q)
     }
   }, [searchParams])
+
+  // Prefetch live central bank exchange rates so modal conversion is instantaneous
+  useEffect(() => {
+    fetch('/api/exchange-rates')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.rates) {
+          import('../lib/exchange-rates').then(({ updateExchangeRates }) => {
+            updateExchangeRates(data.rates)
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   // ── Type / Category filters ────────────────────────────────────────────────
   const [selectedType, setSelectedType] = useState<
@@ -1203,6 +1221,13 @@ export default function CashflowDetail({
                   >
                     <LuFileText className='w-4 h-4 mr-2' />
                     Financial Report
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className='cursor-pointer'
+                    onClick={() => setIsCreateSplitModalOpen(true)}
+                  >
+                    <LuUsers className='w-4 h-4 mr-2' />
+                    Shared Split Link (/split)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className='cursor-pointer'
@@ -2224,6 +2249,26 @@ export default function CashflowDetail({
         onManageRules={canEdit ? () => setIsRecurringModalOpen(true) : undefined}
       />
 
+      {/* Safe-to-Spend Forward Looking Engine */}
+      <SafeToSpendCard
+        balance={balance}
+        recurringRules={localRecurringRules}
+        currency={currency}
+        onReconcileBalance={
+          canEdit
+            ? async (actualBalance) => {
+                const res = await reconcileCashflowBalance(cashflow.id, actualBalance)
+                if (res?.error) {
+                  toast.error(res.error)
+                } else {
+                  toast.success('Balance reconciled successfully!')
+                  router.refresh()
+                }
+              }
+            : undefined
+        }
+      />
+
       {/* Charts */}
       <CashflowCharts entries={filteredEntries} currency={currency} />
 
@@ -2386,6 +2431,12 @@ export default function CashflowDetail({
         activeFilterState={filterState}
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
+      />
+      {/* Create Shared Split Group Modal */}
+      <CreateSplitGroupModal
+        open={isCreateSplitModalOpen}
+        onOpenChange={setIsCreateSplitModalOpen}
+        defaultCurrency={currency}
       />
       {/* Recurring Subscriptions & Rules Manager Modal */}
       <RecurringManagerModal

@@ -97,6 +97,9 @@ describe('Cashflow Receipt Schemas & Logic', () => {
         recurring_rule_id: null,
         tags: ['ClientA'],
         receipt_url: 'user-1/cf-1/receipt-xyz.webp',
+        exchange_rate: 1,
+        original_amount: null,
+        original_currency: null,
       }
 
       const dto = mapCashflowEntryToDTO(mockRow)
@@ -120,6 +123,9 @@ describe('Cashflow Receipt Schemas & Logic', () => {
         recurring_rule_id: null,
         tags: [],
         receipt_url: null,
+        exchange_rate: 1,
+        original_amount: null,
+        original_currency: null,
       }
 
       const dto = mapCashflowEntryToDTO(mockRow)

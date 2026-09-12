@@ -96,6 +96,9 @@ export interface CashflowEntryDTO {
   tags: string[]
   items?: CashflowSplitEntryDTO[]
   receipt_url?: string | null
+  original_currency?: string | null
+  original_amount?: number | null
+  exchange_rate?: number | null
 }
 
 export interface CashflowRecurringRuleDTO {
@@ -128,6 +131,30 @@ export interface CashflowBudgetDTO {
   category: string
   amount: number
   period: 'monthly'
+  enable_rollover?: boolean
+}
+
+export interface CashflowSplitGroupDTO {
+  id: string
+  token: string
+  title: string
+  currency: string
+  creator_id: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface CashflowSplitGroupExpenseDTO {
+  id: string
+  group_id: string
+  device_token: string
+  description: string
+  amount: number
+  paid_by: string
+  split_between: string[]
+  is_settlement: boolean
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface CashflowTagDTO {

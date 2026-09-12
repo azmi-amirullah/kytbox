@@ -52,6 +52,7 @@ export type Database = {
           cashflow_id: string
           category: string
           created_at: string | null
+          enable_rollover: boolean
           id: string
           period: string
           updated_at: string | null
@@ -61,6 +62,7 @@ export type Database = {
           cashflow_id: string
           category: string
           created_at?: string | null
+          enable_rollover?: boolean
           id?: string
           period?: string
           updated_at?: string | null
@@ -70,6 +72,7 @@ export type Database = {
           cashflow_id?: string
           category?: string
           created_at?: string | null
+          enable_rollover?: boolean
           id?: string
           period?: string
           updated_at?: string | null
@@ -99,9 +102,12 @@ export type Database = {
           created_at: string | null
           date: string
           description: string
+          exchange_rate: number
           goal_id: string | null
           id: string
           is_recurring: boolean | null
+          original_amount: number | null
+          original_currency: string | null
           receipt_url: string | null
           recurrence_interval: string | null
           recurring_rule_id: string | null
@@ -116,9 +122,12 @@ export type Database = {
           created_at?: string | null
           date?: string
           description: string
+          exchange_rate?: number
           goal_id?: string | null
           id?: string
           is_recurring?: boolean | null
+          original_amount?: number | null
+          original_currency?: string | null
           receipt_url?: string | null
           recurrence_interval?: string | null
           recurring_rule_id?: string | null
@@ -133,9 +142,12 @@ export type Database = {
           created_at?: string | null
           date?: string
           description?: string
+          exchange_rate?: number
           goal_id?: string | null
           id?: string
           is_recurring?: boolean | null
+          original_amount?: number | null
+          original_currency?: string | null
           receipt_url?: string | null
           recurrence_interval?: string | null
           recurring_rule_id?: string | null
@@ -385,6 +397,94 @@ export type Database = {
             columns: ["parent_entry_id"]
             isOneToOne: false
             referencedRelation: "cashflow_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cashflow_split_groups: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          currency: string
+          id: string
+          pin_hash: string | null
+          title: string
+          token: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          currency?: string
+          id?: string
+          pin_hash?: string | null
+          title: string
+          token: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          currency?: string
+          id?: string
+          pin_hash?: string | null
+          title?: string
+          token?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashflow_split_groups_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cashflow_split_group_expenses: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string
+          device_token: string
+          group_id: string
+          id: string
+          is_settlement: boolean
+          paid_by: string
+          split_between: string[]
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description: string
+          device_token: string
+          group_id: string
+          id?: string
+          is_settlement?: boolean
+          paid_by: string
+          split_between: string[]
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string
+          device_token?: string
+          group_id?: string
+          id?: string
+          is_settlement?: boolean
+          paid_by?: string
+          split_between?: string[]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashflow_split_group_expenses_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "cashflow_split_groups"
             referencedColumns: ["id"]
           },
         ]

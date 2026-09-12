@@ -12,6 +12,20 @@ export async function register() {
       NODE_ENV: env.NODE_ENV,
       url: env.NEXT_PUBLIC_SITE_URL,
     });
+
+    // Instant warmup: fetch ECB daily rates on server startup/deployment if not already cached
+    void import('@/features/cashflow/lib/exchange-rates')
+      .then(({ fetchLiveDailyExchangeRates }) => {
+        return fetchLiveDailyExchangeRates({ forceInstant: true });
+      })
+      .then((res) => {
+        if (res?.isLive) {
+          console.log('[App Boot] Central Bank live exchange rates warmed up:', res.date);
+        }
+      })
+      .catch(() => {
+        // Non-blocking, fallback matrix remains ready
+      });
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {

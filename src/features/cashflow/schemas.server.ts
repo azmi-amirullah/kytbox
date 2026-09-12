@@ -69,6 +69,9 @@ export const cashflowEntrySchema = z.object({
         return []
       }
     }),
+  original_currency: z.string().trim().max(10).optional().nullable(),
+  original_amount: z.coerce.number().positive('Original amount must be positive').optional().nullable(),
+  exchange_rate: z.coerce.number().positive('Exchange rate must be positive').optional().default(1),
 });
 
 export const cashflowRecurringRuleSchema = z.object({
@@ -111,6 +114,10 @@ export const cashflowBudgetSchema = z.object({
   cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
   category: z.string().min(1, 'Category is required'),
   amount: z.coerce.number().positive('Amount must be positive'),
+  enable_rollover: z
+    .preprocess((val) => val === 'true' || val === true || val === '1', z.boolean())
+    .optional()
+    .default(false),
 });
 
 export const deleteCashflowBudgetSchema = z.object({
@@ -262,5 +269,29 @@ export const bulkAddCashflowTagsSchema = z.object({
 export type BulkDeleteCashflowEntriesInput = z.infer<typeof bulkDeleteCashflowEntriesSchema>;
 export type BulkUpdateCashflowCategoryInput = z.infer<typeof bulkUpdateCashflowCategorySchema>;
 export type BulkAddCashflowTagsInput = z.infer<typeof bulkAddCashflowTagsSchema>;
+
+export const createSplitGroupSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required').max(100, 'Title too long'),
+  currency: z.string().trim().min(2).max(10).optional().default('USD'),
+  pin: z.string().trim().min(4).max(20).optional().nullable(),
+  honeypot: z.string().max(0, 'Bot detected').optional().default(''),
+});
+
+export const splitExpenseSchema = z.object({
+  groupId: z.uuid({ message: 'Invalid group ID' }),
+  deviceToken: z.string().trim().min(1, 'Device token is required'),
+  description: z.string().trim().min(1, 'Description is required').max(200, 'Description too long'),
+  amount: z.coerce.number().positive('Amount must be positive'),
+  paid_by: z.string().trim().min(1, 'Payer is required').max(50, 'Payer name too long'),
+  split_between: z.array(z.string().trim().min(1).max(50)).min(1, 'At least one participant required'),
+  is_settlement: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
+  honeypot: z.string().max(0, 'Bot detected').optional().default(''),
+});
+
+export type CreateSplitGroupInput = z.infer<typeof createSplitGroupSchema>;
+export type SplitExpenseInput = z.infer<typeof splitExpenseSchema>;
 
 

@@ -529,6 +529,9 @@ export async function addEntry(formData: FormData) {
     recurrence_interval,
     yearly_calculation,
     tagsJson: tags,
+    original_currency,
+    original_amount,
+    exchange_rate,
   } = parsed.data;
 
   const goalEntryError = getGoalEntryValidationError(type, category);
@@ -641,6 +644,9 @@ export async function addEntry(formData: FormData) {
           : null,
       tags: tags ?? [],
       receipt_url: receiptUrl,
+      original_currency: original_currency || null,
+      original_amount: original_amount !== undefined && original_amount !== null ? Number(original_amount) : null,
+      exchange_rate: exchange_rate !== undefined && exchange_rate !== null ? Number(exchange_rate) : 1,
     })
     .select('*, cashflow_split_entries(*)')
     .single();
@@ -712,6 +718,9 @@ export async function updateEntry(entryId: string, formData: FormData) {
     yearly_calculation,
     receiptAction,
     tagsJson: tags,
+    original_currency,
+    original_amount,
+    exchange_rate,
   } = parsed.data;
 
   const goalEntryError = getGoalEntryValidationError(type, category);
@@ -872,6 +881,9 @@ export async function updateEntry(entryId: string, formData: FormData) {
           : null,
       tags: tags ?? [],
       receipt_url: nextReceiptUrl,
+      original_currency: original_currency || null,
+      original_amount: original_amount !== undefined && original_amount !== null ? Number(original_amount) : null,
+      exchange_rate: exchange_rate !== undefined && exchange_rate !== null ? Number(exchange_rate) : 1,
     })
     .eq('id', entryId);
 
@@ -1300,7 +1312,7 @@ export async function upsertBudget(formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { cashflowId, category, amount } = parsed.data;
+  const { cashflowId, category, amount, enable_rollover } = parsed.data;
 
   // Verify ownership — budgets are owner-only
   const { data: cashflow } = await supabase
@@ -1318,6 +1330,7 @@ export async function upsertBudget(formData: FormData) {
       cashflow_id: cashflowId,
       category,
       amount,
+      enable_rollover: !!enable_rollover,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'cashflow_id,category' },
@@ -2827,14 +2840,21 @@ export async function bulkUpdateCategory(input: { cashflowId: string; entryIds: 
 }
 
 export async function bulkAddTags(input: { cashflowId: string; entryIds: string[]; tags: string[] }) {
+  const { user, supabase } = await getAuthenticatedUser();
   const parsed = bulkAddCashflowTagsSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message || 'Invalid input' };
+    return { error: parsed.error.issues[0].message };
   }
-  const { cashflowId, entryIds, tags } = parsed.data;
 
-  const { user, supabase } = await getAuthenticatedUser();
+  const { cashflowId, entryIds, tags: newTags } = parsed.data;
 
+  // Rate limit
+  const { success: rateLimitOk } = await checkRateLimit(actionRateLimit, user.id);
+  if (!rateLimitOk) {
+    return { error: 'Too many requests. Please wait a moment.' };
+  }
+
+  // Verify user has edit access to the cashflow
   const { data: cashflow } = await supabase
     .from('cashflows')
     .select('id, user_id')
@@ -2850,35 +2870,25 @@ export async function bulkAddTags(input: { cashflowId: string; entryIds: string[
     return { error: permission.error || 'Access denied' };
   }
 
-  await ensureCashflowTags(supabase, cashflowId, user.id, tags);
+  // Ensure tags exist in cashflow_tags table
+  await ensureCashflowTags(supabase, cashflowId, user.id, newTags);
 
-  const { data: entries, error: fetchErr } = await supabase
+  // Fetch current tags for each entry so we can merge without duplicates
+  const { data: currentEntries, error: fetchError } = await supabase
     .from('cashflow_entries')
     .select('id, tags')
     .eq('cashflow_id', cashflowId)
     .in('id', entryIds);
 
-  if (fetchErr) {
-    console.error('Failed to fetch entries for bulk tag addition:', fetchErr);
-    return { error: fetchErr.message };
+  if (fetchError || !currentEntries) {
+    console.error('Failed to fetch entries for bulk tag addition:', fetchError);
+    return { error: 'Failed to update entry tags' };
   }
 
-  const cleanNewTags = tags.map((t) => t.trim().replace(/^#/, '')).filter(Boolean);
-
-  const updatePromises = (entries || []).map((entry) => {
+  // Update each entry with merged tags
+  const updates = currentEntries.map(async (entry) => {
     const existingTags = Array.isArray(entry.tags) ? entry.tags : [];
-    const mergedMap = new Map<string, string>();
-    for (const t of existingTags) {
-      if (typeof t === 'string' && t.trim()) {
-        mergedMap.set(t.trim().toLowerCase(), t.trim());
-      }
-    }
-    for (const t of cleanNewTags) {
-      if (!mergedMap.has(t.toLowerCase())) {
-        mergedMap.set(t.toLowerCase(), t);
-      }
-    }
-    const mergedTags = Array.from(mergedMap.values()).slice(0, 10);
+    const mergedTags = Array.from(new Set([...existingTags, ...newTags])).slice(0, 10);
 
     return supabase
       .from('cashflow_entries')
@@ -2887,16 +2897,75 @@ export async function bulkAddTags(input: { cashflowId: string; entryIds: string[
       .eq('cashflow_id', cashflowId);
   });
 
-  const results = await Promise.all(updatePromises);
-  const failed = results.find((r) => r.error);
-  if (failed && failed.error) {
-    console.error('Failed to update tags for some entries:', failed.error);
-    return { error: failed.error.message };
+  const results = await Promise.all(updates);
+  const failedUpdate = results.find((r) => r.error);
+  if (failedUpdate?.error) {
+    console.error('Failed to bulk add tags:', failedUpdate.error);
+    return { error: 'Failed to update some entry tags' };
   }
 
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
-  return { success: true, count: entryIds.length, updatedIds: entryIds, tags: cleanNewTags };
+  return {
+    success: true,
+    count: currentEntries.length,
+    updatedIds: currentEntries.map((e) => e.id),
+    tags: newTags,
+  };
 }
 
+export async function reconcileCashflowBalance(cashflowId: string, actualBalance: number) {
+  const { user, supabase } = await getAuthenticatedUser();
 
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow || cashflow.user_id !== user.id) {
+    return { error: 'Access denied' };
+  }
+
+  const { data: entries } = await supabase
+    .from('cashflow_entries')
+    .select('amount, type')
+    .eq('cashflow_id', cashflowId);
+
+  let currentBalance = 0;
+  if (entries) {
+    for (const e of entries) {
+      if (e.type === 'income') currentBalance += Number(e.amount);
+      else if (e.type === 'expense') currentBalance -= Number(e.amount);
+    }
+  }
+
+  const diff = actualBalance - currentBalance;
+  if (Math.abs(diff) < 0.001) {
+    return { success: true, message: 'Balance already matches' };
+  }
+
+  const isPositive = diff > 0;
+  const adjType = isPositive ? 'income' : 'expense';
+  const adjAmount = Math.abs(diff);
+
+  const today = new Date().toISOString().split('T')[0];
+  const { error } = await supabase.from('cashflow_entries').insert({
+    cashflow_id: cashflowId,
+    description: 'Balance Reconciliation Adjustment',
+    amount: adjAmount,
+    type: adjType,
+    category: 'Adjustment',
+    date: today,
+    is_recurring: false,
+    tags: ['Reconciliation'],
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  return { success: true, adjustedAmount: adjAmount, type: adjType };
+}

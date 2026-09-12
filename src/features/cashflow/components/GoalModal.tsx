@@ -23,6 +23,7 @@ import { toast } from 'react-toastify';
 import { addGoal, updateGoal } from '../actions';
 import type { CashflowGoalDTO } from '@/types/dto';
 import { getCurrencySymbol } from '@/lib/currency';
+import { cn } from '@/lib/utils';
 
 interface GoalModalProps {
   cashflowId: string;
@@ -144,9 +145,9 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
               Target Amount<span className="text-destructive">*</span>
             </Label>
             <div className="relative">
-              <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center font-medium text-muted-foreground text-sm select-none">
                 {getCurrencySymbol(currency || 'USD')}
-              </div>
+              </span>
               <Input
                 id="goal-target-amount"
                 name="targetAmount"
@@ -157,7 +158,7 @@ function GoalForm({ cashflowId, goal = null, currency, onClose, cashflows = [] }
                 onChange={(e) => setTargetAmount(e.target.value)}
                 placeholder="5000.00"
                 required
-                className="pl-9"
+                className={cn('font-medium', getCurrencySymbol(currency || 'USD').length > 1 ? 'pl-10' : 'pl-8')}
               />
             </div>
           </div>

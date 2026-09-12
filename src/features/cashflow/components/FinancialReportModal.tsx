@@ -32,8 +32,10 @@ import {
   LuDownload,
   LuLoader,
   LuCalendar,
+  LuFileSpreadsheet,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
+import { escapeCsvField } from '../lib/csv';
 
 interface FinancialReportModalProps {
   cashflow: CashflowDTO;
@@ -159,6 +161,34 @@ export function FinancialReportModal({
     }
   };
 
+  // CSV statement export with formula injection sanitization (CWE-1236)
+  const handleDownloadCSV = () => {
+    const headers = ['Date', 'Description', 'Type', 'Category', 'Amount', 'Currency', 'Tags'];
+    const rows = reportData.entries.map((entry) => [
+      escapeCsvField(entry.date),
+      escapeCsvField(entry.description),
+      escapeCsvField(entry.type),
+      escapeCsvField(entry.category || 'General'),
+      escapeCsvField(entry.amount),
+      escapeCsvField(currency || 'USD'),
+      escapeCsvField((entry.tags || []).join('; ')),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeTitle = cashflow.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const safePeriod = resolvedRangeAndLabel.label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `statement-${safeTitle}-${safePeriod}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('CSV statement exported successfully');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className='max-h-[94vh] w-[calc(100%-1rem)] sm:w-[95vw] sm:max-w-4xl md:max-w-5xl lg:max-w-6xl overflow-y-auto overflow-x-hidden p-4 sm:p-6 print:p-0 print:border-none print:shadow-none'>
@@ -225,6 +255,18 @@ export function FinancialReportModal({
 
           {/* Action Buttons */}
           <div className='flex items-center gap-2 ml-auto'>
+            {/* CSV Export Button */}
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleDownloadCSV}
+              className='gap-1.5 h-9 text-xs sm:text-sm'
+              title='Export Statement as CSV'
+            >
+              <LuFileSpreadsheet className='w-4 h-4' />
+              <span className='hidden sm:inline'>CSV</span>
+            </Button>
+
             {/* Print Button */}
             <Button
               variant='outline'

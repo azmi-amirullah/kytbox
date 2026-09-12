@@ -86,6 +86,10 @@ export interface BudgetStatus {
   isOverBudget: boolean;
   isAtLimit: boolean;
   isWarning: boolean;
+  rolloverSurplus?: number;
+  effectiveLimit?: number;
+  availableSpend?: number;
+  hasRollover?: boolean;
 }
 
 /**
@@ -401,6 +405,48 @@ export function calculateBudgetStatus(
     })
     .reduce((sum, e) => sum + Number(e.amount), 0);
 
+  if (budget.enable_rollover) {
+    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+    const prevSpent = entries
+      .filter((e) => {
+        if (e.type !== 'expense') return false;
+        if (e.category !== budget.category) return false;
+        const [year, month] = e.date.split('-').map(Number);
+        return year === prevYear && month - 1 === prevMonth;
+      })
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+
+    // Cold-start guard: If the user had no entries at all in the previous month,
+    // they were not actively budgeting then; avoid phantom rollover doubling.
+    const prevMonthHasHistory = entries.some((e) => {
+      const [year, month] = e.date.split('-').map(Number);
+      return year === prevYear && month - 1 === prevMonth;
+    });
+
+    const rolloverSurplus = prevMonthHasHistory ? budget.amount - prevSpent : 0;
+    const effectiveLimit = Math.max(0, budget.amount + rolloverSurplus);
+    const availableSpend = effectiveLimit - spent;
+    const pct = effectiveLimit > 0 ? (spent / effectiveLimit) * 100 : (spent > 0 ? 100 : 0);
+
+    const isOverBudget = spent > effectiveLimit;
+    const isAtLimit = !isOverBudget && pct >= 100;
+    const isWarning = pct >= 80 && pct < 100;
+
+    return {
+      spent,
+      pct,
+      isOverBudget,
+      isAtLimit,
+      isWarning,
+      rolloverSurplus,
+      effectiveLimit,
+      availableSpend,
+      hasRollover: true,
+    };
+  }
+
   const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
   
   // Compare raw amounts to avoid floating-point imprecision from percentage math.
@@ -413,7 +459,11 @@ export function calculateBudgetStatus(
     pct,
     isOverBudget,
     isAtLimit,
-    isWarning
+    isWarning,
+    rolloverSurplus: 0,
+    effectiveLimit: budget.amount,
+    availableSpend: budget.amount - spent,
+    hasRollover: false,
   };
 }
 

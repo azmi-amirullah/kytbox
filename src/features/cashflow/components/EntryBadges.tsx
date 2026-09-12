@@ -135,6 +135,41 @@ export function EntrySplitItemsBadge({
   )
 }
 
+export function EntryForeignCurrencyBadge({
+  originalCurrency,
+  originalAmount,
+  baseCurrency,
+  className,
+}: {
+  originalCurrency?: string | null
+  originalAmount?: number | null
+  baseCurrency?: string | null
+  className?: string
+}) {
+  if (
+    !originalCurrency ||
+    originalAmount === undefined ||
+    originalAmount === null ||
+    !baseCurrency ||
+    originalCurrency.toUpperCase() === baseCurrency.toUpperCase()
+  ) {
+    return null
+  }
+
+  return (
+    <span
+      className={cn(
+        BADGE_BASE_CLASS,
+        'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 font-semibold',
+        className,
+      )}
+      title={`Originally entered as ${originalCurrency} ${originalAmount}`}
+    >
+      {formatCurrencyCompact(originalAmount, originalCurrency)}
+    </span>
+  )
+}
+
 /**
  * Unified badge row for entries — shared by desktop table cells and mobile cards.
  */
@@ -159,6 +194,11 @@ export function EntryMetadataBadges({
     <div className={cn('flex items-center gap-1.5 flex-wrap', className)}>
       {showType && <EntryTypeBadge type={entry.type} />}
       <EntryCategoryBadge category={entry.category} />
+      <EntryForeignCurrencyBadge
+        originalCurrency={entry.original_currency}
+        originalAmount={entry.original_amount}
+        baseCurrency={currency}
+      />
       <EntrySplitItemsBadge items={entry.items} currency={currency} />
       <EntryReceiptBadge
         hasReceipt={Boolean(entry.receipt_url)}

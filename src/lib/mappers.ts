@@ -38,6 +38,8 @@ import type {
   ListColumnDTO,
   ListItemDTO,
   ListSubtaskDTO,
+  CashflowSplitGroupDTO,
+  CashflowSplitGroupExpenseDTO,
 } from '@/types/dto';
 import {
   listItemMetadataClientSchema,
@@ -181,6 +183,9 @@ export function mapCashflowEntryToDTO(
     created_at?: string | null;
     tags?: string[] | null;
     receipt_url?: string | null;
+    original_currency?: string | null;
+    original_amount?: number | null;
+    exchange_rate?: number | null;
     cashflow_split_entries?: CashflowSplitEntry[];
   },
   goalTitle?: string | null,
@@ -218,6 +223,15 @@ export function mapCashflowEntryToDTO(
     tags: Array.isArray(row.tags) ? row.tags : [],
     items,
     receipt_url: row.receipt_url ?? null,
+    original_currency: row.original_currency ?? null,
+    original_amount:
+      row.original_amount !== null && row.original_amount !== undefined
+        ? Number(row.original_amount)
+        : null,
+    exchange_rate:
+      row.exchange_rate !== null && row.exchange_rate !== undefined
+        ? Number(row.exchange_rate)
+        : 1,
   };
 }
 
@@ -306,13 +320,62 @@ export function mapCashflowWithSummaryToDTO(
   };
 }
 
-export function mapBudgetToDTO(row: CashflowBudget): CashflowBudgetDTO {
+export function mapBudgetToDTO(
+  row: CashflowBudget & { enable_rollover?: boolean | null },
+): CashflowBudgetDTO {
   return {
     id: row.id,
     cashflow_id: row.cashflow_id,
     category: row.category,
     amount: Number(row.amount),
     period: 'monthly',
+    enable_rollover: !!row.enable_rollover,
+  };
+}
+
+export function mapSplitGroupToDTO(row: {
+  id: string;
+  token: string;
+  title: string;
+  currency?: string | null;
+  creator_id?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}): CashflowSplitGroupDTO {
+  return {
+    id: row.id,
+    token: row.token,
+    title: row.title,
+    currency: row.currency || 'USD',
+    creator_id: row.creator_id ?? null,
+    created_at: row.created_at ?? null,
+    updated_at: row.updated_at ?? null,
+  };
+}
+
+export function mapSplitExpenseToDTO(row: {
+  id: string;
+  group_id: string;
+  device_token: string;
+  description: string;
+  amount: number | string;
+  paid_by: string;
+  split_between: string[];
+  is_settlement?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}): CashflowSplitGroupExpenseDTO {
+  return {
+    id: row.id,
+    group_id: row.group_id,
+    device_token: row.device_token,
+    description: row.description,
+    amount: Number(row.amount),
+    paid_by: row.paid_by,
+    split_between: Array.isArray(row.split_between) ? row.split_between : [],
+    is_settlement: !!row.is_settlement,
+    created_at: row.created_at ?? null,
+    updated_at: row.updated_at ?? null,
   };
 }
 

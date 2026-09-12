@@ -107,6 +107,9 @@ const baseCashflowEntry: CashflowEntry = {
   created_at: '2026-03-01T00:00:00Z',
   tags: [],
   receipt_url: null,
+  exchange_rate: 1,
+  original_amount: null,
+  original_currency: null,
 };
 
 const baseShare: CashflowShare = {
@@ -126,6 +129,7 @@ const baseBudget: CashflowBudget = {
   category: 'Food',
   amount: 500,
   period: 'monthly',
+  enable_rollover: false,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: null,
 };
