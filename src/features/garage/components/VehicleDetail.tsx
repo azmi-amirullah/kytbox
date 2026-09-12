@@ -36,6 +36,7 @@ import type {
   VehicleMaintenanceRuleDTO,
   VehicleServiceDTO,
   VehicleDocumentDTO,
+  VehicleFuelLogDTO,
 } from '@/types/dto'
 import { VehicleTypeBadge } from './VehicleTypeBadge'
 import { EditVehicleModal } from './EditVehicleModal'
@@ -44,6 +45,7 @@ import { MaintenanceChecklistManager } from './MaintenanceChecklistManager'
 import { ServiceLogTimeline } from './ServiceLogTimeline'
 import { LogServiceModal } from './LogServiceModal'
 import { VehicleDocumentsManager } from './VehicleDocumentsManager'
+import { FuelLogTimeline } from './FuelLogTimeline'
 import { formatOdometer, calculateMonthlyVelocity, predictCurrentOdometer } from '../lib/odometer'
 import { setDefaultVehicle, toggleArchiveVehicle, deleteVehicle } from '../actions'
 
@@ -55,6 +57,7 @@ interface VehicleDetailProps {
   maintenanceRules?: VehicleMaintenanceRuleDTO[]
   services?: VehicleServiceDTO[]
   documents?: VehicleDocumentDTO[]
+  fuelLogs?: VehicleFuelLogDTO[]
   cashflowBooks?: { id: string; title: string; currency: string }[]
 }
 
@@ -64,6 +67,7 @@ export function VehicleDetail({
   maintenanceRules = [],
   services: initialServices = [],
   documents = [],
+  fuelLogs: initialFuelLogs = [],
   cashflowBooks = [],
 }: VehicleDetailProps) {
   const router = useRouter()
@@ -84,12 +88,20 @@ export function VehicleDetail({
 
   const [vehicle, setVehicle] = useState<VehicleDTO>(initialVehicle)
   const [services, setServices] = useState<VehicleServiceDTO[]>(initialServices)
+  const [fuelLogs, setFuelLogs] = useState<VehicleFuelLogDTO[]>(initialFuelLogs)
 
   // Sync state if initialServices prop updates from server revalidation
   const [prevInitialServices, setPrevInitialServices] = useState<VehicleServiceDTO[]>(initialServices)
   if (initialServices !== prevInitialServices) {
     setPrevInitialServices(initialServices)
     setServices(initialServices)
+  }
+
+  // Sync fuelLogs state if initialFuelLogs prop updates
+  const [prevInitialFuelLogs, setPrevInitialFuelLogs] = useState<VehicleFuelLogDTO[]>(initialFuelLogs)
+  if (initialFuelLogs !== prevInitialFuelLogs) {
+    setPrevInitialFuelLogs(initialFuelLogs)
+    setFuelLogs(initialFuelLogs)
   }
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isOdometerOpen, setIsOdometerOpen] = useState(false)
@@ -358,7 +370,11 @@ export function VehicleDetail({
           <TabsTrigger value='fuel'>
             <LuFuel className='size-3.5' aria-hidden='true' />
             Fuel Economy
-            <span className='rounded bg-secondary px-1 text-[0.65rem] text-muted-foreground'>Day 5</span>
+            {fuelLogs.length > 0 && (
+              <span className='rounded-full bg-primary/10 px-1.5 py-0.2 text-[0.65rem] font-medium text-primary'>
+                {fuelLogs.length}
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -562,17 +578,21 @@ export function VehicleDetail({
           />
         </TabsContent>
 
-        {/* Tab: Fuel Economy Placeholder (Day 5) */}
+        {/* Tab: Fuel Economy (Day 5) */}
         <TabsContent value='fuel'>
-          <div className='rounded-xl border border-dashed border-border/80 p-8 text-center'>
-            <LuFuel className='mx-auto size-8 text-muted-foreground/60' aria-hidden='true' />
-            <h3 className='mt-3 text-sm font-semibold text-foreground'>
-              Fuel Log & Mileage Efficiency
-            </h3>
-            <p className='mt-1 max-w-md mx-auto text-xs text-muted-foreground'>
-              Coming in <strong>Day 5</strong>: Gas station pump calculator, partial fill-up math, km/L economy tracking, and auto-odometer sync.
-            </p>
-          </div>
+          <FuelLogTimeline
+            vehicle={vehicle}
+            fuelLogs={fuelLogs}
+            predictedOdometer={
+              prediction.hasPrediction ? prediction.predictedOdometer : vehicle.current_odometer
+            }
+            isPredictedOdometer={prediction.hasPrediction}
+            cashflowBooks={cashflowBooks}
+            onLogsChanged={(updated) => {
+              setFuelLogs(updated)
+              router.refresh()
+            }}
+          />
         </TabsContent>
       </Tabs>
 

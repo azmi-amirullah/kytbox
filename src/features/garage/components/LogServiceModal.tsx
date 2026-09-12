@@ -746,6 +746,27 @@ export function LogServiceModal({
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {(() => {
+                    const selectedBook = cashflowBooks.find((b) => b.id === cashflowId)
+                    if (
+                      selectedBook?.currency &&
+                      selectedBook.currency.toUpperCase() !== vehicle.currency.toUpperCase()
+                    ) {
+                      return (
+                        <div className='rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5'>
+                          <LuTriangleAlert className='size-3.5 shrink-0 mt-0.5' />
+                          <span>
+                            <strong>Currency Notice:</strong> Vehicle is in{' '}
+                            <strong className='font-mono'>{vehicle.currency}</strong>, but{' '}
+                            {selectedBook.title} is in{' '}
+                            <strong className='font-mono'>{selectedBook.currency}</strong>.
+                          </span>
+                        </div>
+                      )
+                    }
+                    return null
+                  })()}
                 </div>
               )}
             </div>

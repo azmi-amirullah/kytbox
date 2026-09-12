@@ -130,3 +130,20 @@ export const driverLicenseFormClientSchema = z.object({
   expiry_date: z.optional(z.string()),
   notes: z.optional(z.nullable(z.string())),
 })
+
+export const fuelLogFormClientSchema = z.object({
+  logDate: z.string(),
+  odometer: z.number(),
+  fuelAmount: z.number(),
+  pricePerUnit: z.optional(z.nullable(z.number())),
+  totalCost: z.number(),
+  isFullTank: z.catch(z.boolean(), true),
+  isMissedPrevious: z.catch(z.boolean(), false),
+  batteryStartPct: z.optional(z.nullable(z.number())),
+  batteryEndPct: z.optional(z.nullable(z.number())),
+  notes: z.optional(z.nullable(z.string())),
+  recordToCashflow: z.optional(z.boolean()),
+  cashflowId: z.optional(z.nullable(z.string())),
+  cashflowCategory: z.optional(z.nullable(z.string())),
+  confirmTypoJump: z.optional(z.boolean()),
+})

@@ -12,6 +12,7 @@ import type {
   VehicleServiceDTO,
   VehicleDocumentDTO,
   DriverLicenseDTO,
+  VehicleFuelLogDTO,
   ServiceType,
   MaintenanceCategory,
   VehicleDocumentType,
@@ -44,15 +45,26 @@ import {
   createDriverLicenseSchema,
   updateDriverLicenseSchema,
   deleteDriverLicenseSchema,
+  createVehicleFuelLogSchema,
+  updateVehicleFuelLogSchema,
+  deleteVehicleFuelLogSchema,
+  syncMaintenanceRuleToListSchema,
 } from './schemas.server'
 import { isOdometerTypoJump } from './lib/odometer'
 import { getDefaultRulesForVehicle } from './lib/presets'
 import { advanceExpiryDate } from './lib/document-math'
 import {
+  computeNewLogEconomy,
+  recalculateFuelEconomySequence,
+  getFuelUnitLabels,
+} from './lib/fuel-math'
+import {
   isMaintenanceCategory,
   isServiceType,
   isVehicleDocumentType,
   isDriverLicenseCategory,
+  isFuelType,
+  isOdometerUnit,
 } from './types'
 import { createNotification } from '@/features/notifications/server-utils'
 
@@ -62,6 +74,28 @@ type RuleRow = Database['public']['Tables']['vehicle_maintenance_rules']['Row']
 type ServiceRow = Database['public']['Tables']['vehicle_services']['Row']
 type DocumentRow = Database['public']['Tables']['vehicle_documents']['Row']
 type LicenseRow = Database['public']['Tables']['driver_licenses']['Row']
+type FuelLogRow = Database['public']['Tables']['vehicle_fuel_logs']['Row']
+
+function mapFuelLogRowToDTO(row: FuelLogRow): VehicleFuelLogDTO {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    vehicle_id: row.vehicle_id,
+    log_date: row.log_date,
+    odometer: Number(row.odometer),
+    fuel_amount: Number(row.fuel_amount),
+    price_per_unit: row.price_per_unit !== null ? Number(row.price_per_unit) : null,
+    total_cost: Number(row.total_cost) || 0,
+    is_full_tank: Boolean(row.is_full_tank),
+    is_missed_previous: Boolean(row.is_missed_previous),
+    battery_start_pct: row.battery_start_pct,
+    battery_end_pct: row.battery_end_pct,
+    calculated_kml: row.calculated_kml !== null ? Number(row.calculated_kml) : null,
+    notes: row.notes,
+    cashflow_entry_id: row.cashflow_entry_id || null,
+    created_at: row.created_at,
+  }
+}
 
 function mapDocumentRowToDTO(row: DocumentRow): VehicleDocumentDTO {
   const documentType: VehicleDocumentType = isVehicleDocumentType(row.document_type)
@@ -246,13 +280,14 @@ export async function getVehicleById(vehicleId: string): Promise<{
   maintenanceRules?: VehicleMaintenanceRuleDTO[]
   services?: VehicleServiceDTO[]
   documents?: VehicleDocumentDTO[]
+  fuelLogs?: VehicleFuelLogDTO[]
   error?: string
 }> {
   try {
     const { user } = await getAuthenticatedUser()
     const supabase = await createClient()
 
-    const [vehicleRes, monthlyRes, rulesRes, servicesRes, docsRes] = await Promise.all([
+    const [vehicleRes, monthlyRes, rulesRes, servicesRes, docsRes, fuelRes] = await Promise.all([
       supabase
         .from('vehicles')
         .select('*')
@@ -286,6 +321,13 @@ export async function getVehicleById(vehicleId: string): Promise<{
         .eq('vehicle_id', vehicleId)
         .eq('user_id', user.id)
         .order('expiry_date', { ascending: true }),
+      supabase
+        .from('vehicle_fuel_logs')
+        .select('*')
+        .eq('vehicle_id', vehicleId)
+        .eq('user_id', user.id)
+        .order('log_date', { ascending: false })
+        .order('created_at', { ascending: false }),
     ])
 
     if (vehicleRes.error || !vehicleRes.data) {
@@ -297,6 +339,7 @@ export async function getVehicleById(vehicleId: string): Promise<{
     const maintenanceRules = (rulesRes.data || []).map(mapRuleRowToDTO)
     const services = (servicesRes.data || []).map(mapVehicleServiceRowToDTO)
     const documents = (docsRes.data || []).map(mapDocumentRowToDTO)
+    const fuelLogs = (fuelRes.data || []).map(mapFuelLogRowToDTO)
 
     return {
       success: true,
@@ -305,6 +348,7 @@ export async function getVehicleById(vehicleId: string): Promise<{
       maintenanceRules,
       services,
       documents,
+      fuelLogs,
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to fetch vehicle'
@@ -2212,6 +2256,518 @@ export async function checkAndEmitDocumentAlerts(vehicleId?: string): Promise<{
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to emit document alerts'
     return { success: false, alertsEmitted: 0, error: message }
+  }
+}
+
+/**
+ * ============================================================================
+ * DAY 5: FUEL LOG & MILEAGE EFFICIENCY ENGINE
+ * ============================================================================
+ */
+
+/**
+ * Loads fuel logs for a specific vehicle ordered chronologically descending.
+ */
+export async function getVehicleFuelLogs(vehicleId: string): Promise<{
+  success: boolean
+  data?: VehicleFuelLogDTO[]
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUser()
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('vehicle_fuel_logs')
+      .select('*')
+      .eq('vehicle_id', vehicleId)
+      .eq('user_id', user.id)
+      .order('log_date', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return {
+      success: true,
+      data: (data || []).map(mapFuelLogRowToDTO),
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to fetch fuel logs'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Records a new fuel fill-up log:
+ * 1. Computes economy (km/L, MPG, or km/kWh) with partial fill-up accumulation.
+ * 2. Syncs vehicle current odometer (forward-only) and upserts monthly snapshot.
+ * 3. Optional 1-click Cashflow ledger sync.
+ */
+export async function createVehicleFuelLog(rawInput: unknown): Promise<{
+  success: boolean
+  data?: VehicleFuelLogDTO
+  requiresConfirmation?: boolean
+  jumpDelta?: number
+  warning?: string
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const supabase = await createClient()
+
+    const validated = createVehicleFuelLogSchema.parse(rawInput)
+
+    // Verify vehicle ownership
+    const { data: vehicle, error: vehicleErr } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (vehicleErr || !vehicle) {
+      return { success: false, error: 'Vehicle not found or unauthorized' }
+    }
+
+    // Fat-Finger Typo Guard (> 3,000 km in a single log)
+    const isJump = isOdometerTypoJump(validated.odometer, vehicle.current_odometer)
+    if (isJump && !validated.confirmTypoJump) {
+      const jumpDelta = validated.odometer - vehicle.current_odometer
+      return {
+        success: false,
+        requiresConfirmation: true,
+        jumpDelta,
+        error: `Odometer reading (+${jumpDelta.toLocaleString()} ${vehicle.odometer_unit}) is significantly higher than current odometer (${vehicle.current_odometer.toLocaleString()} ${vehicle.odometer_unit}). Please confirm.`,
+      }
+    }
+
+    // Fetch existing fuel logs for calculation
+    const { data: existingLogsRaw } = await supabase
+      .from('vehicle_fuel_logs')
+      .select('*')
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .order('odometer', { ascending: true })
+
+    const existingLogs = (existingLogsRaw || []).map(mapFuelLogRowToDTO)
+
+    // Calculate economy for the new log
+    const calculatedKml = computeNewLogEconomy(
+      {
+        odometer: validated.odometer,
+        fuel_amount: validated.fuelAmount,
+        is_full_tank: validated.isFullTank,
+        is_missed_previous: validated.isMissedPrevious,
+      },
+      existingLogs,
+    )
+
+    // Insert fuel log
+    const { data: fuelLog, error: insertErr } = await supabase
+      .from('vehicle_fuel_logs')
+      .insert({
+        user_id: user.id,
+        vehicle_id: validated.vehicleId,
+        log_date: validated.logDate,
+        odometer: validated.odometer,
+        fuel_amount: validated.fuelAmount,
+        price_per_unit: validated.pricePerUnit || null,
+        total_cost: validated.totalCost,
+        is_full_tank: validated.isFullTank,
+        is_missed_previous: validated.isMissedPrevious,
+        battery_start_pct: validated.batteryStartPct ?? null,
+        battery_end_pct: validated.batteryEndPct ?? null,
+        calculated_kml: calculatedKml,
+        notes: validated.notes || null,
+      })
+      .select()
+      .single()
+
+    if (insertErr || !fuelLog) {
+      return { success: false, error: insertErr?.message || 'Failed to record fuel log' }
+    }
+
+    let savedFuelLog = fuelLog
+    let syncWarning: string | undefined = undefined
+
+    // Day 6: 1-Click Cashflow Ledger Sync
+    if (
+      validated.recordToCashflow &&
+      validated.cashflowId &&
+      validated.totalCost > 0
+    ) {
+      const fuelType: FuelType = isFuelType(vehicle.fuel_type) ? vehicle.fuel_type : 'petrol'
+      const odometerUnit: OdometerUnit = isOdometerUnit(vehicle.odometer_unit) ? vehicle.odometer_unit : 'km'
+      const labels = getFuelUnitLabels(fuelType, odometerUnit)
+      const vehicleLabel = `${vehicle.name}${vehicle.license_plate ? ` (${vehicle.license_plate})` : ''}`
+      const desc = `Fuel: ${vehicleLabel} - ${validated.fuelAmount} ${labels.volumeUnit}`
+
+      const { data: cfData, error: cfError } = await supabase
+        .from('cashflow_entries')
+        .insert({
+          cashflow_id: validated.cashflowId,
+          amount: validated.totalCost,
+          type: 'expense',
+          category: validated.cashflowCategoryId || validated.cashflowCategory || 'Transport',
+          description: desc,
+          date: validated.logDate,
+          tags: ['garage', 'fuel', vehicle.fuel_type],
+        })
+        .select('id')
+        .single()
+
+      if (cfError) {
+        console.error('[Garage] Failed to sync fuel log to Cashflow:', cfError.message)
+        syncWarning = `Fuel logged, but failed to sync to Cashflow: ${cfError.message}`
+      } else if (cfData) {
+        const { data: updatedFuel } = await supabase
+          .from('vehicle_fuel_logs')
+          .update({ cashflow_entry_id: cfData.id })
+          .eq('id', fuelLog.id)
+          .eq('user_id', user.id)
+          .select()
+          .single()
+
+        if (updatedFuel) {
+          savedFuelLog = updatedFuel
+        }
+
+        // Update sticky preferred cashflow on vehicle
+        await supabase
+          .from('vehicles')
+          .update({ preferred_cashflow_id: validated.cashflowId })
+          .eq('id', vehicle.id)
+          .eq('user_id', user.id)
+
+        revalidatePath(`/cashflow/${validated.cashflowId}`)
+      }
+    }
+
+    // Auto-Odometer Sync (forward-only)
+    if (validated.odometer > vehicle.current_odometer) {
+      await supabase
+        .from('vehicles')
+        .update({
+          current_odometer: validated.odometer,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', vehicle.id)
+        .eq('user_id', user.id)
+
+      // Upsert monthly snapshot
+      const yearMonth = validated.logDate.slice(0, 7)
+      await supabase
+        .from('vehicle_monthly_odometers')
+        .upsert(
+          {
+            user_id: user.id,
+            vehicle_id: vehicle.id,
+            year_month: yearMonth,
+            odometer: validated.odometer,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'vehicle_id,year_month' },
+        )
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+
+    return {
+      success: true,
+      data: mapFuelLogRowToDTO(savedFuelLog),
+      warning: syncWarning,
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to record fuel log'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Updates an existing fuel log and re-evaluates the chronological economy sequence.
+ */
+export async function updateVehicleFuelLog(rawInput: unknown): Promise<{
+  success: boolean
+  data?: VehicleFuelLogDTO
+  requiresConfirmation?: boolean
+  jumpDelta?: number
+  warning?: string
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const supabase = await createClient()
+
+    const validated = updateVehicleFuelLogSchema.parse(rawInput)
+
+    // Verify vehicle ownership
+    const { data: vehicle, error: vehicleErr } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (vehicleErr || !vehicle) {
+      return { success: false, error: 'Vehicle not found or unauthorized' }
+    }
+
+    // Fat-Finger Typo Guard (> 3,000 km in a single log)
+    const isJump = isOdometerTypoJump(validated.odometer, vehicle.current_odometer)
+    if (isJump && !validated.confirmTypoJump) {
+      const jumpDelta = validated.odometer - vehicle.current_odometer
+      return {
+        success: false,
+        requiresConfirmation: true,
+        jumpDelta,
+        error: `Odometer reading (+${jumpDelta.toLocaleString()} ${vehicle.odometer_unit}) is significantly higher than current odometer (${vehicle.current_odometer.toLocaleString()} ${vehicle.odometer_unit}). Please confirm.`,
+      }
+    }
+
+    const { data: updated, error } = await supabase
+      .from('vehicle_fuel_logs')
+      .update({
+        log_date: validated.logDate,
+        odometer: validated.odometer,
+        fuel_amount: validated.fuelAmount,
+        price_per_unit: validated.pricePerUnit || null,
+        total_cost: validated.totalCost,
+        is_full_tank: validated.isFullTank,
+        is_missed_previous: validated.isMissedPrevious,
+        battery_start_pct: validated.batteryStartPct ?? null,
+        battery_end_pct: validated.batteryEndPct ?? null,
+        notes: validated.notes || null,
+      })
+      .eq('id', validated.id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error || !updated) {
+      return { success: false, error: error?.message || 'Failed to update fuel log' }
+    }
+
+    // Sequence recalculation
+    const { data: allLogsRaw } = await supabase
+      .from('vehicle_fuel_logs')
+      .select('*')
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+
+    if (allLogsRaw && allLogsRaw.length > 0) {
+      const recalculated = recalculateFuelEconomySequence(allLogsRaw.map(mapFuelLogRowToDTO))
+      for (const item of recalculated) {
+        if (item.calculated_kml !== null) {
+          await supabase
+            .from('vehicle_fuel_logs')
+            .update({ calculated_kml: item.calculated_kml })
+            .eq('id', item.id)
+            .eq('user_id', user.id)
+        }
+      }
+    }
+
+    // If linked cashflow entry exists, synchronize amount and date
+    if (updated.cashflow_entry_id) {
+      const { error: cfUpdateErr } = await supabase
+        .from('cashflow_entries')
+        .update({
+          amount: validated.totalCost,
+          date: validated.logDate,
+        })
+        .eq('id', updated.cashflow_entry_id)
+        .eq('user_id', user.id)
+
+      if (cfUpdateErr) {
+        console.error('[Garage] Failed to update linked cashflow entry:', cfUpdateErr.message)
+      }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+
+    return {
+      success: true,
+      data: mapFuelLogRowToDTO(updated),
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to update fuel log'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Deletes a fuel log and re-evaluates the remaining sequence.
+ */
+export async function deleteVehicleFuelLog(rawInput: unknown): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUser()
+    const supabase = await createClient()
+
+    const validated = deleteVehicleFuelLogSchema.parse(rawInput)
+
+    const { data: log, error: fetchErr } = await supabase
+      .from('vehicle_fuel_logs')
+      .select('vehicle_id, cashflow_entry_id')
+      .eq('id', validated.id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchErr || !log) {
+      return { success: false, error: 'Fuel log not found or unauthorized' }
+    }
+
+    const { error: delErr } = await supabase
+      .from('vehicle_fuel_logs')
+      .delete()
+      .eq('id', validated.id)
+      .eq('user_id', user.id)
+
+    if (delErr) {
+      return { success: false, error: delErr.message }
+    }
+
+    // Recalculate remaining sequence
+    const { data: remainingRaw } = await supabase
+      .from('vehicle_fuel_logs')
+      .select('*')
+      .eq('vehicle_id', log.vehicle_id)
+      .eq('user_id', user.id)
+
+    if (remainingRaw && remainingRaw.length > 0) {
+      const recalculated = recalculateFuelEconomySequence(remainingRaw.map(mapFuelLogRowToDTO))
+      for (const item of recalculated) {
+        await supabase
+          .from('vehicle_fuel_logs')
+          .update({ calculated_kml: item.calculated_kml })
+          .eq('id', item.id)
+          .eq('user_id', user.id)
+      }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${log.vehicle_id}`, 'page')
+
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to delete fuel log'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * ============================================================================
+ * DAY 6: CROSS-APP LIST & TASK SYNC ACTIONS
+ * ============================================================================
+ */
+
+/**
+ * Loads user lists for the "Add to List" task sync picker.
+ */
+export async function getUserLists(): Promise<{
+  success: boolean
+  data?: Array<{ id: string; title: string; type: string }>
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUser()
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('lists')
+      .select('id, title, type')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+
+    if (error) throw error
+
+    return { success: true, data: data || [] }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to fetch user lists'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Adds an upcoming or overdue vehicle maintenance rule to a designated List board.
+ */
+export async function syncMaintenanceRuleToList(rawInput: unknown): Promise<{
+  success: boolean
+  error?: string
+  data?: { itemId: string; listId: string }
+}> {
+  try {
+    const { user } = await getAuthenticatedUser()
+    const supabase = await createClient()
+
+    const validated = syncMaintenanceRuleToListSchema.parse(rawInput)
+
+    // Check list ownership
+    const { data: list, error: listErr } = await supabase
+      .from('lists')
+      .select('id, title')
+      .eq('id', validated.listId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (listErr || !list) {
+      return { success: false, error: 'List not found or unauthorized' }
+    }
+
+    // Check vehicle
+    const { data: vehicle } = await supabase
+      .from('vehicles')
+      .select('name, license_plate')
+      .eq('id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .single()
+
+    const vehicleTag = vehicle ? `[${vehicle.name}] ` : ''
+    const itemTitle = `${vehicleTag}${validated.ruleName}`
+
+    // Compute next sort order
+    const { data: items } = await supabase
+      .from('list_items')
+      .select('sort_order')
+      .eq('list_id', validated.listId)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+
+    const nextSortOrder = items && items.length > 0 ? items[0].sort_order + 1024 : 1024
+
+    const { data: newItem, error: itemErr } = await supabase
+      .from('list_items')
+      .insert({
+        list_id: validated.listId,
+        title: itemTitle,
+        description:
+          validated.notes ||
+          `Vehicle maintenance reminder from Garage for ${vehicle?.name || 'vehicle'}.`,
+        due_date: validated.dueDate || null,
+        priority: validated.priority,
+        sort_order: nextSortOrder,
+      })
+      .select('id')
+      .single()
+
+    if (itemErr || !newItem) {
+      return { success: false, error: itemErr?.message || 'Failed to add item to list' }
+    }
+
+    revalidatePath('/list')
+    revalidatePath(`/list/${validated.listId}`)
+
+    return {
+      success: true,
+      data: { itemId: newItem.id, listId: validated.listId },
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to sync maintenance rule to list'
+    return { success: false, error: message }
   }
 }
 

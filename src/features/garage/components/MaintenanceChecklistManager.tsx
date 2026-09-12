@@ -22,6 +22,7 @@ import {
   LuShieldCheck,
   LuShieldAlert,
   LuClock,
+  LuListTodo,
 } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -55,6 +56,7 @@ import {
 } from '../actions'
 import { MaintenanceRuleModal } from './MaintenanceRuleModal'
 import { ApplyPresetsDialog } from './ApplyPresetsDialog'
+import { AddToListModal } from './AddToListModal'
 
 interface MaintenanceChecklistManagerProps {
   vehicle: VehicleDTO
@@ -127,6 +129,11 @@ export function MaintenanceChecklistManager({
     useState<VehicleMaintenanceRuleDTO | null>(null)
   const [ruleToDelete, setRuleToDelete] =
     useState<VehicleMaintenanceRuleDTO | null>(null)
+  const [ruleForList, setRuleForList] = useState<{
+    ruleName: string
+    predictedDueDate: string | null
+    isOverdue: boolean
+  } | null>(null)
   const [isPending, startTransition] = useTransition()
 
   // Compute status for each rule and sort by lower % remaining first (urgency order)
@@ -691,6 +698,26 @@ export function MaintenanceChecklistManager({
                             Reset to Today
                           </DropdownMenuItem>
 
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const dueDate =
+                                status.remainingDays !== null && status.remainingDays > 0
+                                  ? new Date(Date.now() + status.remainingDays * 86400000)
+                                      .toISOString()
+                                      .slice(0, 10)
+                                  : new Date().toISOString().slice(0, 10)
+                              setRuleForList({
+                                ruleName: rule.name,
+                                predictedDueDate: dueDate,
+                                isOverdue,
+                              })
+                            }}
+                            className='text-xs cursor-pointer'
+                          >
+                            <LuListTodo className='size-3.5 mr-2 text-primary' />
+                            Add to List Board
+                          </DropdownMenuItem>
+
                           <DropdownMenuSeparator />
 
                           <DropdownMenuItem
@@ -860,18 +887,43 @@ export function MaintenanceChecklistManager({
                     {rule.last_service_date && ` · ${rule.last_service_date}`}
                   </span>
 
-                  {/* Inline Quick Action Button */}
-                  {rule.is_active && (
-                    <button
-                      type='button'
-                      onClick={() => handleResetBaseline(rule)}
-                      className='text-primary hover:underline font-medium cursor-pointer'
-                    >
-                      {rule.last_service_odometer === null
-                        ? 'Set Baseline'
-                        : 'Reset to Today'}
-                    </button>
-                  )}
+                  {/* Inline Quick Action Buttons */}
+                  <div className='flex items-center gap-3'>
+                    {rule.is_active && (isOverdue || isDueSoon) && (
+                      <button
+                        type='button'
+                        onClick={() => {
+                          const dueDate =
+                            status.remainingDays !== null && status.remainingDays > 0
+                              ? new Date(Date.now() + status.remainingDays * 86400000)
+                                  .toISOString()
+                                  .slice(0, 10)
+                              : new Date().toISOString().slice(0, 10)
+                          setRuleForList({
+                            ruleName: rule.name,
+                            predictedDueDate: dueDate,
+                            isOverdue,
+                          })
+                        }}
+                        className='inline-flex items-center gap-1 text-[0.68rem] text-primary hover:underline font-semibold cursor-pointer'
+                      >
+                        <LuListTodo className='size-3' aria-hidden='true' />
+                        Add to List
+                      </button>
+                    )}
+
+                    {rule.is_active && (
+                      <button
+                        type='button'
+                        onClick={() => handleResetBaseline(rule)}
+                        className='text-muted-foreground hover:text-foreground font-medium cursor-pointer'
+                      >
+                        {rule.last_service_odometer === null
+                          ? 'Set Baseline'
+                          : 'Reset to Today'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )
@@ -953,6 +1005,18 @@ export function MaintenanceChecklistManager({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 8. Add to List Modal (Cross-App Sync) */}
+      {ruleForList && (
+        <AddToListModal
+          vehicle={vehicle}
+          ruleName={ruleForList.ruleName}
+          predictedDueDate={ruleForList.predictedDueDate}
+          isOverdue={ruleForList.isOverdue}
+          isOpen={Boolean(ruleForList)}
+          onClose={() => setRuleForList(null)}
+        />
+      )}
     </div>
   )
 }

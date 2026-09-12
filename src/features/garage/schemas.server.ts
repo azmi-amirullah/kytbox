@@ -714,3 +714,114 @@ export const updateDriverLicenseSchema = z
 export const deleteDriverLicenseSchema = z.object({
   id: z.string().uuid('Invalid license ID'),
 })
+
+export const createVehicleFuelLogSchema = z.object({
+  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  logDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  odometer: z
+    .coerce
+    .number({ message: 'Odometer reading must be a valid number' })
+    .int('Odometer must be an integer')
+    .min(0, 'Odometer cannot be negative')
+    .max(2000000, 'Odometer value exceeds realistic bounds (max 2,000,000)'),
+  fuelAmount: z
+    .coerce
+    .number({ message: 'Fuel volume must be a valid number' })
+    .min(0.01, 'Fuel volume must be greater than 0')
+    .max(10000, 'Fuel volume exceeds maximum limit'),
+  pricePerUnit: z
+    .coerce
+    .number()
+    .min(0, 'Price per unit cannot be negative')
+    .max(1000000000, 'Price per unit exceeds bounds')
+    .optional()
+    .nullable(),
+  totalCost: z
+    .coerce
+    .number({ message: 'Total cost must be a valid number' })
+    .min(0, 'Total cost cannot be negative')
+    .max(10000000000, 'Total cost exceeds bounds'),
+  isFullTank: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .default(true),
+  isMissedPrevious: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .default(false),
+  batteryStartPct: z
+    .coerce
+    .number()
+    .int()
+    .min(0)
+    .max(100)
+    .optional()
+    .nullable(),
+  batteryEndPct: z
+    .coerce
+    .number()
+    .int()
+    .min(0)
+    .max(100)
+    .optional()
+    .nullable(),
+  notes: z
+    .string()
+    .trim()
+    .max(2000, 'Notes are too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  confirmTypoJump: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
+  // Cashflow sync
+  recordToCashflow: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
+  cashflowId: z
+    .string()
+    .uuid('Invalid cashflow book ID')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  cashflowCategory: z
+    .string()
+    .trim()
+    .max(100, 'Category name is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  cashflowCategoryId: z
+    .string()
+    .trim()
+    .max(100, 'Category name is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+})
+
+export const updateVehicleFuelLogSchema = createVehicleFuelLogSchema.extend({
+  id: z.string().uuid('Invalid fuel log ID'),
+})
+
+export const deleteVehicleFuelLogSchema = z.object({
+  id: z.string().uuid('Invalid fuel log ID'),
+})
+
+export const syncMaintenanceRuleToListSchema = z.object({
+  listId: z.string().uuid('Invalid list ID'),
+  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  ruleName: z.string().trim().min(1, 'Rule name is required'),
+  dueDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format')
+    .optional()
+    .nullable(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  notes: z.string().trim().optional().nullable(),
+})

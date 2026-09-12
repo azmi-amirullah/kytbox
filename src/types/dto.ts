@@ -358,3 +358,22 @@ export interface DriverLicenseDTO {
   created_at: string | null
 }
 
+export interface VehicleFuelLogDTO {
+  id: string
+  user_id: string
+  vehicle_id: string
+  log_date: string
+  odometer: number
+  fuel_amount: number
+  price_per_unit: number | null
+  total_cost: number
+  is_full_tank: boolean
+  is_missed_previous: boolean
+  battery_start_pct: number | null
+  battery_end_pct: number | null
+  calculated_kml: number | null
+  notes: string | null
+  cashflow_entry_id: string | null
+  created_at: string | null
+}
+

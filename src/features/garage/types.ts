@@ -14,6 +14,7 @@ export type {
   DriverLicenseCategory,
   VehicleDocumentDTO,
   DriverLicenseDTO,
+  VehicleFuelLogDTO,
 } from '@/types/dto'
 
 import type {
@@ -73,6 +74,25 @@ export interface MonthlyOdometerReading {
   yearMonth: string
   odometer: number
   deltaKm: number | null
+}
+
+export interface FuelUnitLabels {
+  volumeUnit: string // 'L', 'gal', 'kWh'
+  volumeUnitFull: string // 'Liters', 'Gallons', 'kWh'
+  efficiencyUnit: string // 'km/L', 'MPG', 'km/kWh', 'mi/kWh'
+  priceUnitLabel: string // 'Price / Liter', 'Price / Gallon', 'Price / kWh'
+}
+
+export interface FuelStats {
+  totalLogs: number
+  totalCost: number
+  totalVolume: number
+  totalTrackedDistance: number
+  averageEconomy: number | null // e.g. km/L or MPG
+  lastEconomy: number | null
+  costPerDistanceUnit: number | null // cost / km or cost / mi
+  fullTankCount: number
+  partialCount: number
 }
 
 export function isVehicleType(val: string): val is VehicleType {

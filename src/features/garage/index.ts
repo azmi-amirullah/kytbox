@@ -16,6 +16,9 @@ export { VehicleDocumentsManager } from './components/VehicleDocumentsManager'
 export { VehicleDocumentModal } from './components/VehicleDocumentModal'
 export { DocumentRenewalModal } from './components/DocumentRenewalModal'
 export { DriverLicenseModal } from './components/DriverLicenseModal'
+export { AddFuelLogModal } from './components/AddFuelLogModal'
+export { FuelLogTimeline } from './components/FuelLogTimeline'
+export { AddToListModal } from './components/AddToListModal'
 
 // Actions
 export {
@@ -50,6 +53,12 @@ export {
   deleteDriverLicense,
   checkAndEmitDocumentAlerts,
   invalidateAlertCheckCooldown,
+  getVehicleFuelLogs,
+  createVehicleFuelLog,
+  updateVehicleFuelLog,
+  deleteVehicleFuelLog,
+  getUserLists,
+  syncMaintenanceRuleToList,
 } from './actions'
 
 // Types & Type Guards
@@ -69,6 +78,9 @@ export type {
   DriverLicenseCategory,
   VehicleDocumentDTO,
   DriverLicenseDTO,
+  VehicleFuelLogDTO,
+  FuelStats,
+  FuelUnitLabels,
   DocumentExpiryStatus,
   DocumentExpiryDetails,
   RuleStatus,
@@ -121,6 +133,15 @@ export {
   matchCashflowCategory,
 } from './lib/document-math'
 
+export {
+  getFuelUnitLabels,
+  calculateFuelAmountFromTotal,
+  calculateTotalCostFromAmount,
+  computeNewLogEconomy,
+  recalculateFuelEconomySequence,
+  calculateFuelStats,
+} from './lib/fuel-math'
+
 // Server schemas
 export {
   createVehicleSchema,
@@ -151,6 +172,9 @@ export {
   createDriverLicenseSchema,
   updateDriverLicenseSchema,
   deleteDriverLicenseSchema,
+  createVehicleFuelLogSchema,
+  updateVehicleFuelLogSchema,
+  deleteVehicleFuelLogSchema,
 } from './schemas.server'
 
 // Client schemas
@@ -168,5 +192,6 @@ export {
   vehicleDocumentFormClientSchema,
   renewDocumentClientSchema,
   driverLicenseFormClientSchema,
+  fuelLogFormClientSchema,
 } from './schemas.client'
 

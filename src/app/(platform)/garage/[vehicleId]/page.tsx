@@ -70,6 +70,7 @@ export default async function VehicleDetailPage({
       maintenanceRules={vehicleRes.maintenanceRules || []}
       services={vehicleRes.services || []}
       documents={vehicleRes.documents || []}
+      fuelLogs={vehicleRes.fuelLogs || []}
       cashflowBooks={booksRes.data || []}
     />
   )

@@ -49,4 +49,6 @@ export type VehicleDocument =
   Database['public']['Tables']['vehicle_documents']['Row'];
 export type DriverLicense =
   Database['public']['Tables']['driver_licenses']['Row'];
+export type VehicleFuelLog =
+  Database['public']['Tables']['vehicle_fuel_logs']['Row'];
 

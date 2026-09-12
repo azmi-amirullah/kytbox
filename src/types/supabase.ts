@@ -1311,6 +1311,78 @@ export type Database = {
           },
         ]
       }
+      vehicle_fuel_logs: {
+        Row: {
+          battery_end_pct: number | null
+          battery_start_pct: number | null
+          calculated_kml: number | null
+          cashflow_entry_id: string | null
+          created_at: string | null
+          fuel_amount: number
+          id: string
+          is_full_tank: boolean
+          is_missed_previous: boolean
+          log_date: string
+          notes: string | null
+          odometer: number
+          price_per_unit: number | null
+          total_cost: number
+          user_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          battery_end_pct?: number | null
+          battery_start_pct?: number | null
+          calculated_kml?: number | null
+          cashflow_entry_id?: string | null
+          created_at?: string | null
+          fuel_amount: number
+          id?: string
+          is_full_tank?: boolean
+          is_missed_previous?: boolean
+          log_date: string
+          notes?: string | null
+          odometer: number
+          price_per_unit?: number | null
+          total_cost: number
+          user_id: string
+          vehicle_id: string
+        }
+        Update: {
+          battery_end_pct?: number | null
+          battery_start_pct?: number | null
+          calculated_kml?: number | null
+          cashflow_entry_id?: string | null
+          created_at?: string | null
+          fuel_amount?: number
+          id?: string
+          is_full_tank?: boolean
+          is_missed_previous?: boolean
+          log_date?: string
+          notes?: string | null
+          odometer?: number
+          price_per_unit?: number | null
+          total_cost?: number
+          user_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_fuel_logs_cashflow_entry_id_fkey"
+            columns: ["cashflow_entry_id"]
+            isOneToOne: false
+            referencedRelation: "cashflow_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_fuel_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_maintenance_rules: {
         Row: {
           category: string
