@@ -54,16 +54,26 @@ export function calculateRuleDueStatus(
   let remainingDays: number | null = null
   let timePercent: number | null = null
   if (rule.interval_months != null && rule.interval_months > 0 && rule.last_service_date) {
-    const lastDate = new Date(rule.last_service_date)
-    if (!isNaN(lastDate.getTime())) {
-      // Advance by months
-      const targetDate = new Date(lastDate)
-      targetDate.setMonth(targetDate.getMonth() + rule.interval_months)
+    const parts = rule.last_service_date.split('-').map((p) => parseInt(p, 10))
+    if (parts.length === 3 && !parts.some((n) => isNaN(n))) {
+      const [year, month, day] = parts
+      let newYear = year
+      let newMonth = month + rule.interval_months
+      if (newMonth > 12) {
+        newYear += Math.floor((newMonth - 1) / 12)
+        newMonth = ((newMonth - 1) % 12) + 1
+      }
+      const maxDaysInMonth = new Date(Date.UTC(newYear, newMonth, 0)).getUTCDate()
+      const newDay = Math.min(day, maxDaysInMonth)
 
-      const diffMs = targetDate.getTime() - nowDate.getTime()
-      remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+      const targetUtc = Date.UTC(newYear, newMonth - 1, newDay)
+      const lastUtc = Date.UTC(year, month - 1, day)
+      const nowUtc = Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), nowDate.getUTCDate())
 
-      const totalSpanMs = targetDate.getTime() - lastDate.getTime()
+      const diffMs = targetUtc - nowUtc
+      remainingDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
+
+      const totalSpanMs = targetUtc - lastUtc
       if (totalSpanMs > 0) {
         const pct = Math.max(0, (diffMs / totalSpanMs) * 100)
         timePercent = Math.min(100, Math.round(pct))
@@ -203,5 +213,91 @@ export function sortRulesByUrgency(items: RuleWithStatusItem[]): RuleWithStatusI
     // 6. Alphabetical fallback
     return a.rule.name.localeCompare(b.rule.name)
   })
+}
+
+export interface MaintenancePrediction {
+  status: 'good' | 'due_soon' | 'overdue' | 'untracked'
+  overdueCount: number
+  dueSoonCount: number
+  goodCount: number
+  untrackedCount: number
+  mostUrgentRule: RuleWithStatusItem | null
+  nextDueDistance: number | null
+  nextDueDate: string | null
+}
+
+/**
+ * Evaluates all vehicle maintenance rules to predict the next due service
+ * and aggregate fleet health indicators.
+ */
+export function predictNextMaintenance(
+  rules: VehicleMaintenanceRuleDTO[],
+  options: CalculateRuleOptions
+): MaintenancePrediction {
+  const { nowDate = new Date() } = options
+
+  if (!rules || rules.length === 0) {
+    return {
+      status: 'untracked',
+      overdueCount: 0,
+      dueSoonCount: 0,
+      goodCount: 0,
+      untrackedCount: 0,
+      mostUrgentRule: null,
+      nextDueDistance: null,
+      nextDueDate: null,
+    }
+  }
+
+  const itemsWithStatus: RuleWithStatusItem[] = rules.map((rule) => ({
+    rule,
+    status: calculateRuleDueStatus(rule, options),
+  }))
+
+  const activeItems = itemsWithStatus.filter((item) => item.rule.is_active)
+  const untrackedCount = itemsWithStatus.filter((item) => item.status.status === 'untracked').length
+  const overdueCount = activeItems.filter((item) => item.status.status === 'overdue').length
+  const dueSoonCount = activeItems.filter((item) => item.status.status === 'due_soon').length
+  const goodCount = activeItems.filter((item) => item.status.status === 'good').length
+
+  let overallStatus: 'good' | 'due_soon' | 'overdue' | 'untracked' = 'untracked'
+  if (activeItems.length > 0) {
+    if (overdueCount > 0) {
+      overallStatus = 'overdue'
+    } else if (dueSoonCount > 0) {
+      overallStatus = 'due_soon'
+    } else if (goodCount > 0) {
+      overallStatus = 'good'
+    }
+  }
+
+  const sortedActive = sortRulesByUrgency(activeItems)
+  const mostUrgentRule = sortedActive[0] || null
+
+  let nextDueDistance: number | null = null
+  let nextDueDate: string | null = null
+
+  if (mostUrgentRule) {
+    nextDueDistance = mostUrgentRule.status.remainingDistance
+
+    if (mostUrgentRule.status.remainingDays != null) {
+      const todayUtc = Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), nowDate.getUTCDate())
+      const targetDate = new Date(todayUtc + mostUrgentRule.status.remainingDays * 86400000)
+      if (!isNaN(targetDate.getTime())) {
+        nextDueDate = targetDate.toISOString().slice(0, 10)
+      }
+    }
+  }
+
+  return {
+    status: overallStatus,
+    overdueCount,
+    dueSoonCount,
+    goodCount,
+    untrackedCount,
+    mostUrgentRule,
+    nextDueDistance,
+    nextDueDate,
+  }
 }
 

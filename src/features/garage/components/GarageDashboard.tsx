@@ -1,15 +1,18 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'react-toastify'
 import {
   LuPlus,
   LuCar,
   LuSearch,
   LuShieldCheck,
+  LuShieldAlert,
+  LuTriangleAlert,
   LuArchive,
   LuStar,
+  LuCreditCard,
 } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,29 +28,135 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import type { VehicleDTO } from '@/types/dto'
+import type { VehicleDTO, DriverLicenseDTO } from '@/types/dto'
+import { calculateDocumentExpiry } from '../lib/document-math'
 import { VehicleCard } from './VehicleCard'
 import { AddVehicleModal } from './AddVehicleModal'
 import { EditVehicleModal } from './EditVehicleModal'
+import { DriverLicenseModal } from './DriverLicenseModal'
 import { QuickFuelFab } from './QuickFuelFab'
 import { setDefaultVehicle, toggleArchiveVehicle, deleteVehicle } from '../actions'
 
 interface GarageDashboardProps {
   vehicles: VehicleDTO[]
   cashflowBooks?: { id: string; title: string; currency: string }[]
+  driverLicenses?: DriverLicenseDTO[]
 }
+
+const EMPTY_BOOKS: { id: string; title: string; currency: string }[] = []
+const EMPTY_LICENSES: DriverLicenseDTO[] = []
 
 export function GarageDashboard({
   vehicles,
-  cashflowBooks = [],
+  cashflowBooks = EMPTY_BOOKS,
+  driverLicenses = EMPTY_LICENSES,
 }: GarageDashboardProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [licenses, setLicenses] = useState<DriverLicenseDTO[]>(driverLicenses)
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active')
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingVehicle, setEditingVehicle] = useState<VehicleDTO | null>(null)
   const [deletingVehicleId, setDeletingVehicleId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isLicenseModalOpen, setIsLicenseModalOpen] = useState(
+    () => searchParams.get('tab') === 'licenses'
+  )
+  const [prevTab, setPrevTab] = useState(() => searchParams.get('tab'))
+  const currentTab = searchParams.get('tab')
+
+  // Sync licenses if prop changes from SSR
+  const [prevDriverLicenses, setPrevDriverLicenses] = useState<DriverLicenseDTO[]>(driverLicenses)
+  if (driverLicenses !== prevDriverLicenses) {
+    setPrevDriverLicenses(driverLicenses)
+    if (driverLicenses.length > 0 || prevDriverLicenses.length > 0) {
+      setLicenses(driverLicenses)
+    }
+  }
+
+  if (currentTab !== prevTab) {
+    setPrevTab(currentTab)
+    if (currentTab === 'licenses') {
+      setIsLicenseModalOpen(true)
+    }
+  }
+
+  // Derived license expiration status
+  const licenseStats = useMemo(() => {
+    if (licenses.length === 0) {
+      return {
+        status: 'empty' as const,
+        title: 'No SIM Logged',
+        subtitle: 'Tap to track driver licenses',
+        color: 'text-muted-foreground',
+        badge: 'Not Set',
+        badgeColor: 'text-muted-foreground',
+      }
+    }
+
+    const sorted = [...licenses].sort((a, b) => a.expiry_date.localeCompare(b.expiry_date))
+    const mostUrgent = sorted[0]
+    const expiry = calculateDocumentExpiry(mostUrgent.expiry_date)
+
+    if (expiry.status === 'expired') {
+      return {
+        status: 'expired' as const,
+        title: mostUrgent.license_name,
+        subtitle: `Expired ${expiry.formattedDays} — Renew immediately!`,
+        color: 'text-destructive',
+        badge: 'Expired',
+        badgeColor: 'text-destructive',
+      }
+    }
+
+    if (expiry.status === 'expiring_soon') {
+      return {
+        status: 'expiring_soon' as const,
+        title: mostUrgent.license_name,
+        subtitle: `Expires in ${expiry.formattedDays} (${mostUrgent.expiry_date})`,
+        color: 'text-amber-600 dark:text-amber-400',
+        badge: 'Expiring Soon',
+        badgeColor: 'text-amber-600 dark:text-amber-400',
+      }
+    }
+
+    return {
+      status: 'valid' as const,
+      title: `${licenses.length} License${licenses.length === 1 ? '' : 's'} Active`,
+      subtitle: `Next renewal in ${expiry.formattedDays} (${mostUrgent.license_name})`,
+      color: 'text-emerald-600 dark:text-emerald-400',
+      badge: 'All Valid',
+      badgeColor: 'text-emerald-600 dark:text-emerald-400',
+    }
+  }, [licenses])
+
+  const handleCloseLicenseModal = () => {
+    setIsLicenseModalOpen(false)
+    if (typeof window !== 'undefined' && window.location.search) {
+      const url = new URL(window.location.href)
+      let changed = false
+      if (url.searchParams.has('tab')) {
+        url.searchParams.delete('tab')
+        changed = true
+      }
+      if (url.searchParams.has('doc')) {
+        url.searchParams.delete('doc')
+        changed = true
+      }
+      if (url.searchParams.has('alert')) {
+        url.searchParams.delete('alert')
+        changed = true
+      }
+      if (changed) {
+        window.history.replaceState(
+          {},
+          '',
+          `${url.pathname}${url.searchParams.toString() ? `?${url.searchParams.toString()}` : ''}`
+        )
+      }
+    }
+  }
 
   // Derived counts and statistics
   const activeVehicles = useMemo(
@@ -151,13 +260,24 @@ export function GarageDashboard({
             </p>
           </div>
 
-        <Button
-          onClick={() => setIsAddOpen(true)}
-          className='flex items-center gap-2 min-h-11 rounded-lg px-4 text-xs font-semibold'
-        >
-          <LuPlus className='size-4' aria-hidden='true' />
-          <span>Add Vehicle</span>
-        </Button>
+        <div className='flex items-center gap-2.5 shrink-0'>
+          <Button
+            variant='outline'
+            onClick={() => setIsLicenseModalOpen(true)}
+            className='flex items-center gap-1.5 min-h-11 rounded-lg px-3.5 text-xs font-semibold'
+          >
+            <LuCreditCard className='size-4 text-primary' aria-hidden='true' />
+            <span>Driver&apos;s Licenses (SIM)</span>
+          </Button>
+
+          <Button
+            onClick={() => setIsAddOpen(true)}
+            className='flex items-center gap-2 min-h-11 rounded-lg px-4 text-xs font-semibold'
+          >
+            <LuPlus className='size-4' aria-hidden='true' />
+            <span>Add Vehicle</span>
+          </Button>
+        </div>
       </div>
     </div>
 
@@ -181,21 +301,43 @@ export function GarageDashboard({
           </p>
         </div>
 
-        <div className='rounded-xl border border-border/80 bg-card p-4 sm:p-5'>
+        {/* Dynamic Regulatory & Driver License Health KPI */}
+        <div
+          onClick={() => setIsLicenseModalOpen(true)}
+          role='button'
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setIsLicenseModalOpen(true)
+            }
+          }}
+          className='group rounded-xl border border-border/80 bg-card p-4 sm:p-5 text-left cursor-pointer transition-all hover:border-primary/50 hover:shadow-xs'
+        >
           <div className='flex items-center justify-between text-xs text-muted-foreground'>
             <span className='font-medium flex items-center gap-1.5'>
-              <LuShieldCheck className='size-4 text-emerald-600 dark:text-emerald-400' aria-hidden='true' />
-              Maintenance Health
+              {licenseStats.status === 'expired' ? (
+                <LuShieldAlert className='size-4 text-destructive' aria-hidden='true' />
+              ) : licenseStats.status === 'expiring_soon' ? (
+                <LuTriangleAlert className='size-4 text-amber-600 dark:text-amber-400' aria-hidden='true' />
+              ) : (
+                <LuShieldCheck className='size-4 text-emerald-600 dark:text-emerald-400' aria-hidden='true' />
+              )}
+              Regulatory & License Health
             </span>
-            <span className='font-mono text-[0.68rem] uppercase font-semibold text-emerald-600 dark:text-emerald-400'>
-              Optimal
+            <span
+              className={`font-mono text-[0.68rem] uppercase font-semibold ${licenseStats.badgeColor}`}
+            >
+              {licenseStats.badge}
             </span>
           </div>
-          <div className='mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 flex items-center gap-2'>
-            <span>All Good</span>
+          <div
+            className={`mt-2 text-xl sm:text-2xl font-bold tracking-tight truncate ${licenseStats.color}`}
+          >
+            {licenseStats.title}
           </div>
           <p className='mt-0.5 text-[0.72rem] text-muted-foreground truncate'>
-            {activeVehicles.length === 0 ? 'No vehicles registered' : 'No overdue service alerts'}
+            {licenseStats.subtitle}
           </p>
         </div>
 
@@ -331,6 +473,13 @@ export function GarageDashboard({
         onClose={() => setEditingVehicle(null)}
         onSuccess={handleEditSuccess}
         cashflowBooks={cashflowBooks}
+      />
+
+      <DriverLicenseModal
+        isOpen={isLicenseModalOpen}
+        onClose={handleCloseLicenseModal}
+        initialLicenses={licenses}
+        onLicensesChange={setLicenses}
       />
 
       {/* Delete / Archive Confirmation Alert */}

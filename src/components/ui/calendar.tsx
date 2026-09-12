@@ -44,22 +44,22 @@ function Calendar({
       defaultClassNames.month_caption,
     ),
     dropdowns: cn(
-      'flex h-7 w-full items-center justify-center gap-1.5 text-sm font-medium',
+      'flex h-7 w-full items-center justify-center gap-1.5 text-xs font-medium',
       defaultClassNames.dropdowns,
     ),
     dropdown_root: cn(
-      'relative rounded-md border border-input shadow-xs',
+      'relative rounded-md border border-input/60 bg-background/80 shadow-xs hover:bg-accent/60 transition-colors',
       defaultClassNames.dropdown_root,
     ),
     dropdown: cn(
-      'absolute inset-0 bg-popover opacity-0',
+      'absolute inset-0 z-10 w-full cursor-pointer opacity-0',
       defaultClassNames.dropdown,
     ),
     caption_label: cn(
-      'font-medium text-sm select-none',
+      'font-medium text-xs select-none',
       captionLayout === 'label'
         ? 'text-sm'
-        : 'flex h-8 items-center gap-1 rounded-md pr-1 pl-2 text-sm',
+        : 'flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium',
       defaultClassNames.caption_label,
     ),
     table: 'w-full border-collapse space-y-1',

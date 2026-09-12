@@ -1,4 +1,5 @@
 import { LuCar, LuBike, LuGauge } from 'react-icons/lu'
+import { Badge } from '@/components/ui/badge'
 import type { VehicleType } from '@/types/dto'
 
 interface VehicleTypeBadgeProps {
@@ -35,11 +36,12 @@ export function VehicleTypeBadge({ type, className = '' }: VehicleTypeBadgeProps
   }
 
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-secondary/50 px-2.5 py-0.5 text-xs font-medium text-foreground ${className}`}
+    <Badge
+      variant='secondary'
+      className={`inline-flex items-center gap-1.5 border border-border/70 bg-secondary/50 px-2.5 py-0.5 text-xs font-medium text-foreground ${className}`}
     >
       {getIcon()}
       <span>{getLabel()}</span>
-    </span>
+    </Badge>
   )
 }

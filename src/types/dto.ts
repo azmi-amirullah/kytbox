@@ -304,3 +304,57 @@ export interface VehicleMaintenanceRuleDTO {
   created_at: string | null
 }
 
+export type ServiceType = 'routine' | 'repair' | 'inspection' | 'upgrade'
+
+export interface VehicleServiceDTO {
+  id: string
+  user_id: string
+  vehicle_id: string
+  service_date: string
+  odometer: number
+  service_type: ServiceType
+  items_serviced: string[]
+  serviced_rule_ids: string[]
+  cost: number
+  workshop_name: string | null
+  invoice_number: string | null
+  external_invoice_url: string | null
+  notes: string | null
+  cashflow_entry_id?: string | null
+  created_at: string | null
+}
+
+export type VehicleDocumentType =
+  | 'road_tax_annual'
+  | 'registration_renewal'
+  | 'insurance'
+  | 'inspection'
+  | 'other'
+
+export interface VehicleDocumentDTO {
+  id: string
+  user_id: string
+  vehicle_id: string
+  title: string
+  document_type: VehicleDocumentType
+  document_number: string | null
+  expiry_date: string
+  cost: number
+  notes: string | null
+  cashflow_entry_id?: string | null
+  created_at: string | null
+}
+
+export type DriverLicenseCategory = 'car' | 'motorcycle' | 'commercial' | 'other'
+
+export interface DriverLicenseDTO {
+  id: string
+  user_id: string
+  license_name: string
+  category: DriverLicenseCategory
+  license_number: string | null
+  expiry_date: string
+  notes: string | null
+  created_at: string | null
+}
+

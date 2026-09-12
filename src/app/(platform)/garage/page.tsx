@@ -1,5 +1,12 @@
 import type { Metadata } from 'next'
-import { getVehicles, getUserCashflowBooks, GarageDashboard } from '@/features/garage'
+import { after } from 'next/server'
+import {
+  getVehicles,
+  getUserCashflowBooks,
+  getDriverLicenses,
+  GarageDashboard,
+  checkAndEmitDocumentAlerts,
+} from '@/features/garage'
 
 export const metadata: Metadata = {
   title: 'Garage',
@@ -8,15 +15,26 @@ export const metadata: Metadata = {
 }
 
 export default async function GaragePage() {
-  const [vehiclesRes, booksRes] = await Promise.all([
+  // Guaranteed serverless lifecycle execution via Next.js after()
+  after(async () => {
+    try {
+      await checkAndEmitDocumentAlerts()
+    } catch (err) {
+      console.error('[Garage] Failed to check document alerts:', err)
+    }
+  })
+
+  const [vehiclesRes, booksRes, licensesRes] = await Promise.all([
     getVehicles(true), // load both active and archived for tab switching
     getUserCashflowBooks(),
+    getDriverLicenses(),
   ])
 
   return (
     <GarageDashboard
       vehicles={vehiclesRes.data || []}
       cashflowBooks={booksRes.data || []}
+      driverLicenses={licensesRes.data || []}
     />
   )
 }

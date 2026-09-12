@@ -9,7 +9,13 @@ import type {
   VehicleDTO,
   VehicleMonthlyOdometerDTO,
   VehicleMaintenanceRuleDTO,
+  VehicleServiceDTO,
+  VehicleDocumentDTO,
+  DriverLicenseDTO,
+  ServiceType,
   MaintenanceCategory,
+  VehicleDocumentType,
+  DriverLicenseCategory,
   VehicleType,
   FuelType,
   TransmissionType,
@@ -28,14 +34,95 @@ import {
   toggleRuleActiveSchema,
   resetRuleBaselineSchema,
   applyDefaultPresetsSchema,
+  createVehicleServiceSchema,
+  updateVehicleServiceSchema,
+  deleteVehicleServiceSchema,
+  createVehicleDocumentSchema,
+  updateVehicleDocumentSchema,
+  renewVehicleDocumentSchema,
+  deleteVehicleDocumentSchema,
+  createDriverLicenseSchema,
+  updateDriverLicenseSchema,
+  deleteDriverLicenseSchema,
 } from './schemas.server'
 import { isOdometerTypoJump } from './lib/odometer'
 import { getDefaultRulesForVehicle } from './lib/presets'
-import { isMaintenanceCategory } from './types'
+import { advanceExpiryDate } from './lib/document-math'
+import {
+  isMaintenanceCategory,
+  isServiceType,
+  isVehicleDocumentType,
+  isDriverLicenseCategory,
+} from './types'
+import { createNotification } from '@/features/notifications/server-utils'
 
 type VehicleRow = Database['public']['Tables']['vehicles']['Row']
 type MonthlyOdoRow = Database['public']['Tables']['vehicle_monthly_odometers']['Row']
 type RuleRow = Database['public']['Tables']['vehicle_maintenance_rules']['Row']
+type ServiceRow = Database['public']['Tables']['vehicle_services']['Row']
+type DocumentRow = Database['public']['Tables']['vehicle_documents']['Row']
+type LicenseRow = Database['public']['Tables']['driver_licenses']['Row']
+
+function mapDocumentRowToDTO(row: DocumentRow): VehicleDocumentDTO {
+  const documentType: VehicleDocumentType = isVehicleDocumentType(row.document_type)
+    ? row.document_type
+    : 'other'
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    vehicle_id: row.vehicle_id,
+    title: row.title,
+    document_type: documentType,
+    document_number: row.document_number,
+    expiry_date: row.expiry_date,
+    cost: Number(row.cost) || 0,
+    notes: row.notes,
+    cashflow_entry_id: row.cashflow_entry_id || null,
+    created_at: row.created_at,
+  }
+}
+
+function mapLicenseRowToDTO(row: LicenseRow): DriverLicenseDTO {
+  const category: DriverLicenseCategory = isDriverLicenseCategory(row.category)
+    ? row.category
+    : 'other'
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    license_name: row.license_name,
+    category,
+    license_number: row.license_number,
+    expiry_date: row.expiry_date,
+    notes: row.notes,
+    created_at: row.created_at,
+  }
+}
+
+function mapVehicleServiceRowToDTO(row: ServiceRow): VehicleServiceDTO {
+  const serviceType: ServiceType = isServiceType(row.service_type)
+    ? row.service_type
+    : 'routine'
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    vehicle_id: row.vehicle_id,
+    service_date: row.service_date,
+    odometer: Number(row.odometer),
+    service_type: serviceType,
+    items_serviced: Array.isArray(row.items_serviced) ? row.items_serviced : [],
+    serviced_rule_ids: Array.isArray(row.serviced_rule_ids) ? row.serviced_rule_ids : [],
+    cost: Number(row.cost) || 0,
+    workshop_name: row.workshop_name,
+    invoice_number: row.invoice_number,
+    external_invoice_url: row.external_invoice_url,
+    notes: row.notes,
+    cashflow_entry_id: row.cashflow_entry_id || null,
+    created_at: row.created_at,
+  }
+}
 
 function mapRuleRowToDTO(row: RuleRow): VehicleMaintenanceRuleDTO {
   const category: MaintenanceCategory = isMaintenanceCategory(row.category)
@@ -157,13 +244,15 @@ export async function getVehicleById(vehicleId: string): Promise<{
   vehicle?: VehicleDTO
   monthlyOdometers?: VehicleMonthlyOdometerDTO[]
   maintenanceRules?: VehicleMaintenanceRuleDTO[]
+  services?: VehicleServiceDTO[]
+  documents?: VehicleDocumentDTO[]
   error?: string
 }> {
   try {
     const { user } = await getAuthenticatedUser()
     const supabase = await createClient()
 
-    const [vehicleRes, monthlyRes, rulesRes] = await Promise.all([
+    const [vehicleRes, monthlyRes, rulesRes, servicesRes, docsRes] = await Promise.all([
       supabase
         .from('vehicles')
         .select('*')
@@ -184,6 +273,19 @@ export async function getVehicleById(vehicleId: string): Promise<{
         .eq('user_id', user.id)
         .order('category', { ascending: true })
         .order('name', { ascending: true }),
+      supabase
+        .from('vehicle_services')
+        .select('*')
+        .eq('vehicle_id', vehicleId)
+        .eq('user_id', user.id)
+        .order('service_date', { ascending: false })
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('vehicle_documents')
+        .select('*')
+        .eq('vehicle_id', vehicleId)
+        .eq('user_id', user.id)
+        .order('expiry_date', { ascending: true }),
     ])
 
     if (vehicleRes.error || !vehicleRes.data) {
@@ -193,12 +295,16 @@ export async function getVehicleById(vehicleId: string): Promise<{
     const vehicle = mapVehicleRowToDTO(vehicleRes.data)
     const monthlyOdometers = (monthlyRes.data || []).map(mapMonthlyOdoRowToDTO)
     const maintenanceRules = (rulesRes.data || []).map(mapRuleRowToDTO)
+    const services = (servicesRes.data || []).map(mapVehicleServiceRowToDTO)
+    const documents = (docsRes.data || []).map(mapDocumentRowToDTO)
 
     return {
       success: true,
       vehicle,
       monthlyOdometers,
       maintenanceRules,
+      services,
+      documents,
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to fetch vehicle'
@@ -1068,4 +1174,1045 @@ export async function applyDefaultMaintenancePresets(rawInput: unknown): Promise
     return { success: false, error: message }
   }
 }
+
+/**
+ * Fetches all service and maintenance history records for a vehicle.
+ */
+export async function getVehicleServices(vehicleId: string): Promise<{
+  success: boolean
+  data?: VehicleServiceDTO[]
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUser()
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('vehicle_services')
+      .select('*')
+      .eq('vehicle_id', vehicleId)
+      .eq('user_id', user.id)
+      .order('service_date', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      return { success: false, data: [], error: error.message }
+    }
+
+    return { success: true, data: (data || []).map(mapVehicleServiceRowToDTO) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to fetch vehicle services'
+    return { success: false, data: [], error: message }
+  }
+}
+
+/**
+ * Records a vehicle service log:
+ * 1. Inserts row into vehicle_services
+ * 2. Forward-only update of vehicle.current_odometer
+ * 3. Upserts vehicle_monthly_odometers for service month
+ * 4. Advances last_service_odometer & last_service_date on matching serviced rules
+ */
+export async function createVehicleService(rawInput: unknown): Promise<{
+  success: boolean
+  data?: VehicleServiceDTO
+  error?: string
+  warning?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = createVehicleServiceSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    // 1. Verify vehicle ownership
+    const { data: vehicle, error: vehicleErr } = await supabase
+      .from('vehicles')
+      .select('id, name, license_plate, current_odometer')
+      .eq('id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (vehicleErr || !vehicle) {
+      return { success: false, error: 'Vehicle not found or unauthorized' }
+    }
+
+    // 1b. Typo Jump Guard (protect against accidental jumps like 450,000 instead of 45,000)
+    if (
+      isOdometerTypoJump(validated.odometer, vehicle.current_odometer, 3000) &&
+      !validated.confirmTypoJump
+    ) {
+      return {
+        success: false,
+        error: `Odometer jump exceeds 3,000. Please confirm if this is intentional.`,
+      }
+    }
+
+    // 2. Insert service record
+    const { data: service, error: serviceErr } = await supabase
+      .from('vehicle_services')
+      .insert({
+        user_id: user.id,
+        vehicle_id: validated.vehicleId,
+        service_date: validated.serviceDate,
+        odometer: validated.odometer,
+        service_type: validated.serviceType,
+        items_serviced: validated.itemsServiced,
+        serviced_rule_ids: validated.servicedRuleIds,
+        cost: validated.cost,
+        workshop_name: validated.workshopName,
+        invoice_number: validated.invoiceNumber,
+        external_invoice_url: validated.externalInvoiceUrl,
+        notes: validated.notes,
+      })
+      .select()
+      .single()
+
+    if (serviceErr || !service) {
+      return { success: false, error: serviceErr?.message || 'Failed to record service log' }
+    }
+
+    // 3. Forward-only vehicle current odometer update
+    if (validated.odometer > vehicle.current_odometer) {
+      await supabase
+        .from('vehicles')
+        .update({
+          current_odometer: validated.odometer,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', validated.vehicleId)
+        .eq('user_id', user.id)
+    }
+
+    // 4. Upsert monthly odometer snapshot for service month
+    const serviceYearMonth = validated.serviceDate.slice(0, 7)
+    const { data: existingMonthly } = await supabase
+      .from('vehicle_monthly_odometers')
+      .select('id, odometer')
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('year_month', serviceYearMonth)
+      .maybeSingle()
+
+    if (!existingMonthly) {
+      await supabase
+        .from('vehicle_monthly_odometers')
+        .insert({
+          user_id: user.id,
+          vehicle_id: validated.vehicleId,
+          year_month: serviceYearMonth,
+          odometer: validated.odometer,
+        })
+    } else if (validated.odometer > existingMonthly.odometer) {
+      await supabase
+        .from('vehicle_monthly_odometers')
+        .update({
+          odometer: validated.odometer,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingMonthly.id)
+        .eq('user_id', user.id)
+    }
+
+    // 5. Forward-only advance of serviced maintenance rules (prevent historical time-machine rewinds)
+    if (validated.servicedRuleIds && validated.servicedRuleIds.length > 0) {
+      const { data: existingRules } = await supabase
+        .from('vehicle_maintenance_rules')
+        .select('id, last_service_odometer, last_service_date')
+        .in('id', validated.servicedRuleIds)
+        .eq('vehicle_id', validated.vehicleId)
+        .eq('user_id', user.id)
+
+      for (const rule of existingRules || []) {
+        const patch: { last_service_odometer?: number; last_service_date?: string } = {}
+
+        const shouldAdvanceOdo =
+          rule.last_service_odometer === null || validated.odometer >= rule.last_service_odometer
+        if (shouldAdvanceOdo) {
+          patch.last_service_odometer = validated.odometer
+        }
+
+        const shouldAdvanceDate =
+          !rule.last_service_date || validated.serviceDate >= rule.last_service_date
+        if (shouldAdvanceDate) {
+          patch.last_service_date = validated.serviceDate
+        }
+
+        if (Object.keys(patch).length > 0) {
+          await supabase
+            .from('vehicle_maintenance_rules')
+            .update(patch)
+            .eq('id', rule.id)
+            .eq('vehicle_id', validated.vehicleId)
+            .eq('user_id', user.id)
+        }
+      }
+    }
+
+    // 6. Optional Cashflow Ledger Sync
+    let savedService = service
+    let syncWarning: string | undefined = undefined
+    if (
+      validated.recordToCashflow &&
+      validated.cashflowId &&
+      validated.cost &&
+      validated.cost > 0
+    ) {
+      const vehicleLabel = `${vehicle.name}${vehicle.license_plate ? ` (${vehicle.license_plate})` : ''}`
+      const desc = `Service: ${validated.serviceType.toUpperCase()} - ${vehicleLabel}`
+
+      const { data: cfData, error: cfError } = await supabase
+        .from('cashflow_entries')
+        .insert({
+          cashflow_id: validated.cashflowId,
+          amount: validated.cost,
+          type: 'expense',
+          category: validated.cashflowCategoryId || validated.cashflowCategory || 'transport',
+          description: desc,
+          date: validated.serviceDate,
+          tags: ['garage', 'service', validated.serviceType],
+        })
+        .select('id')
+        .single()
+
+      if (cfError) {
+        console.error('[Garage] Failed to sync service to cashflow:', cfError.message)
+        syncWarning = `Service recorded, but failed to sync to Cashflow: ${cfError.message}`
+      } else if (cfData) {
+        // Link cashflow_entry_id to vehicle_services row
+        const { data: updatedService } = await supabase
+          .from('vehicle_services')
+          .update({ cashflow_entry_id: cfData.id })
+          .eq('id', service.id)
+          .eq('user_id', user.id)
+          .select()
+          .single()
+
+        if (updatedService) {
+          savedService = updatedService
+        }
+        revalidatePath(`/cashflow/${validated.cashflowId}`)
+      }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+
+    return {
+      success: true,
+      data: mapVehicleServiceRowToDTO(savedService),
+      warning: syncWarning,
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to record service log'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Deletes a vehicle service record with user ownership validation.
+ * Optionally cascades deletion to linked Cashflow expense entry.
+ */
+export async function deleteVehicleService(rawInput: unknown): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = deleteVehicleServiceSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    // Fetch existing service to verify ownership and check for linked cashflow entry
+    const { data: existingService } = await supabase
+      .from('vehicle_services')
+      .select('id, cashflow_entry_id')
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    const { error } = await supabase
+      .from('vehicle_services')
+      .delete()
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    // Cascade delete linked cashflow expense if requested
+    if (validated.deleteCashflowEntry && existingService?.cashflow_entry_id) {
+      const { error: cfDelErr } = await supabase
+        .from('cashflow_entries')
+        .delete()
+        .eq('id', existingService.cashflow_entry_id)
+
+      if (cfDelErr) {
+        console.error('[Garage] Failed to delete linked cashflow entry:', cfDelErr.message)
+      }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to delete service record'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Updates metadata & cost of an existing service record with user ownership validation.
+ * Odometer and serviced rules are intentionally immutable to protect countdown integrity.
+ * If cost is changed and a linked Cashflow entry exists, updates Cashflow entry amount.
+ */
+export async function updateVehicleService(rawInput: unknown): Promise<{
+  success: boolean
+  data?: VehicleServiceDTO
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = updateVehicleServiceSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    // 1. Verify service ownership & fetch existing record
+    const { data: existingService, error: fetchErr } = await supabase
+      .from('vehicle_services')
+      .select('*')
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchErr || !existingService) {
+      return { success: false, error: 'Service record not found or unauthorized' }
+    }
+
+    // 2. Prepare safe update payload (metadata & cost only)
+    const updatePayload: Record<string, unknown> = {
+      workshop_name: validated.workshopName,
+      invoice_number: validated.invoiceNumber,
+      external_invoice_url: validated.externalInvoiceUrl,
+      notes: validated.notes,
+    }
+
+    if (validated.cost !== undefined) {
+      updatePayload.cost = validated.cost
+    }
+
+    const { data: updatedService, error: updateErr } = await supabase
+      .from('vehicle_services')
+      .update(updatePayload)
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (updateErr || !updatedService) {
+      return { success: false, error: updateErr?.message || 'Failed to update service log' }
+    }
+
+    // 3. If cost changed and linked cashflow entry exists, update cashflow entry amount
+    if (
+      validated.cost !== undefined &&
+      existingService.cashflow_entry_id &&
+      Number(validated.cost) !== Number(existingService.cost)
+    ) {
+      const { error: cfUpdateErr } = await supabase
+        .from('cashflow_entries')
+        .update({
+          amount: validated.cost,
+        })
+        .eq('id', existingService.cashflow_entry_id)
+
+      if (cfUpdateErr) {
+        console.error('[Garage] Failed to update linked cashflow amount:', cfUpdateErr.message)
+      }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+
+    return {
+      success: true,
+      data: mapVehicleServiceRowToDTO(updatedService),
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to update service log'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Loads all documents for a given vehicle.
+ */
+export async function getVehicleDocuments(vehicleId: string): Promise<{
+  success: boolean
+  data: VehicleDocumentDTO[]
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUser()
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('vehicle_documents')
+      .select('*')
+      .eq('vehicle_id', vehicleId)
+      .eq('user_id', user.id)
+      .order('expiry_date', { ascending: true })
+
+    if (error) {
+      return { success: false, data: [], error: error.message }
+    }
+
+    return { success: true, data: (data || []).map(mapDocumentRowToDTO) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to load vehicle documents'
+    return { success: false, data: [], error: message }
+  }
+}
+
+/**
+ * Creates a new vehicle document (tax, insurance, registration, etc.).
+ */
+export async function createVehicleDocument(rawInput: unknown): Promise<{
+  success: boolean
+  data?: VehicleDocumentDTO
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = createVehicleDocumentSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    // Verify vehicle belongs to user
+    const { data: vehicle, error: vErr } = await supabase
+      .from('vehicles')
+      .select('id')
+      .eq('id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (vErr || !vehicle) {
+      return { success: false, error: 'Vehicle not found or unauthorized' }
+    }
+
+    const { data, error } = await supabase
+      .from('vehicle_documents')
+      .insert({
+        user_id: user.id,
+        vehicle_id: validated.vehicleId,
+        title: validated.title.trim(),
+        document_type: validated.documentType,
+        document_number: validated.documentNumber || null,
+        expiry_date: validated.expiryDate,
+        cost: validated.cost ?? 0,
+        notes: validated.notes || null,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+    resetAlertCooldown(user.id)
+
+    return { success: true, data: mapDocumentRowToDTO(data) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to create vehicle document'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Updates an existing vehicle document.
+ */
+export async function updateVehicleDocument(rawInput: unknown): Promise<{
+  success: boolean
+  data?: VehicleDocumentDTO
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = updateVehicleDocumentSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('vehicle_documents')
+      .update({
+        title: validated.title.trim(),
+        document_type: validated.documentType,
+        document_number: validated.documentNumber || null,
+        expiry_date: validated.expiryDate,
+        cost: validated.cost ?? 0,
+        notes: validated.notes || null,
+      })
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+    resetAlertCooldown(user.id)
+
+    return { success: true, data: mapDocumentRowToDTO(data) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to update vehicle document'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Deletes a vehicle document.
+ * Optionally cascades deletion to linked Cashflow expense entry.
+ */
+export async function deleteVehicleDocument(rawInput: unknown): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = deleteVehicleDocumentSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    // Fetch existing document to verify ownership and check for linked cashflow entry
+    const { data: existingDoc } = await supabase
+      .from('vehicle_documents')
+      .select('id, cashflow_entry_id')
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    const { error } = await supabase
+      .from('vehicle_documents')
+      .delete()
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    // Cascade delete linked cashflow expense if requested
+    if (validated.deleteCashflowEntry && existingDoc?.cashflow_entry_id) {
+      const { error: cfDelErr } = await supabase
+        .from('cashflow_entries')
+        .delete()
+        .eq('id', existingDoc.cashflow_entry_id)
+
+      if (cfDelErr) {
+        console.error('[Garage] Failed to delete linked cashflow entry:', cfDelErr.message)
+      }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+    resetAlertCooldown(user.id)
+
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to delete vehicle document'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Renews a vehicle document with 1-tap presets and optional Cashflow ledger sync.
+ */
+export async function renewVehicleDocument(rawInput: unknown): Promise<{
+  success: boolean
+  data?: VehicleDocumentDTO
+  error?: string
+  warning?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = renewVehicleDocumentSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    // 1. Fetch current document
+    const { data: doc, error: fetchErr } = await supabase
+      .from('vehicle_documents')
+      .select('*')
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchErr || !doc) {
+      return { success: false, error: 'Document not found or unauthorized' }
+    }
+
+    // 2. Compute new expiry date using pure UTC math
+    const newExpiry =
+      validated.customExpiryDate ||
+      validated.expiryDate ||
+      advanceExpiryDate(
+        doc.expiry_date,
+        validated.preset || '1y',
+        validated.customExpiryDate,
+        Boolean(validated.advanceFromToday)
+      )
+
+    const updatePayload: {
+      expiry_date: string
+      cost?: number
+    } = {
+      expiry_date: newExpiry,
+    }
+
+    const renewalCost = validated.renewalCost ?? validated.cost
+    if (renewalCost !== undefined) {
+      updatePayload.cost = renewalCost
+    }
+
+    // 3. Update vehicle document
+    const { data: updatedDoc, error: updateErr } = await supabase
+      .from('vehicle_documents')
+      .update(updatePayload)
+      .eq('id', validated.id)
+      .eq('vehicle_id', validated.vehicleId)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message }
+    }
+
+    let finalDoc = updatedDoc
+    let syncWarning: string | undefined = undefined
+
+    // 4. Optional Cashflow Ledger Sync
+    if (
+      validated.recordToCashflow &&
+      validated.cashflowId &&
+      renewalCost &&
+      renewalCost > 0
+    ) {
+      const { data: vehicle } = await supabase
+        .from('vehicles')
+        .select('name, license_plate')
+        .eq('id', validated.vehicleId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const vehicleLabel = vehicle
+        ? `${vehicle.name}${vehicle.license_plate ? ` (${vehicle.license_plate})` : ''}`
+        : 'Vehicle'
+      const desc = `Renewal: ${doc.title} - ${vehicleLabel}`
+      const paymentDate = validated.paymentDate || new Date().toISOString().split('T')[0]
+
+      const { data: cfData, error: cfError } = await supabase
+        .from('cashflow_entries')
+        .insert({
+          cashflow_id: validated.cashflowId,
+          amount: renewalCost,
+          type: 'expense',
+          category: validated.cashflowCategoryId || validated.cashflowCategory || 'transport',
+          description: desc,
+          date: paymentDate,
+          tags: ['garage', 'document', 'renewal'],
+        })
+        .select('id')
+        .single()
+
+      if (cfError) {
+        console.error('[Garage] Failed to sync document renewal to cashflow:', cfError.message)
+        syncWarning = `Document renewed, but failed to sync to Cashflow: ${cfError.message}`
+      } else if (cfData) {
+        // Link cashflow_entry_id to updated document row
+        const { data: relinkedDoc } = await supabase
+          .from('vehicle_documents')
+          .update({ cashflow_entry_id: cfData.id })
+          .eq('id', validated.id)
+          .eq('user_id', user.id)
+          .select()
+          .single()
+
+        if (relinkedDoc) {
+          finalDoc = relinkedDoc
+        }
+        revalidatePath(`/cashflow/${validated.cashflowId}`)
+      }
+    }
+
+    revalidatePath('/garage', 'page')
+    revalidatePath(`/garage/${validated.vehicleId}`, 'page')
+    resetAlertCooldown(user.id)
+
+    return {
+      success: true,
+      data: mapDocumentRowToDTO(finalDoc),
+      warning: syncWarning,
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to renew document'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Loads all driver licenses for the user.
+ */
+export async function getDriverLicenses(): Promise<{
+  success: boolean
+  data: DriverLicenseDTO[]
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUser()
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('driver_licenses')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('expiry_date', { ascending: true })
+
+    if (error) {
+      return { success: false, data: [], error: error.message }
+    }
+
+    return { success: true, data: (data || []).map(mapLicenseRowToDTO) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to load driver licenses'
+    return { success: false, data: [], error: message }
+  }
+}
+
+/**
+ * Creates a new driver license record.
+ */
+export async function createDriverLicense(rawInput: unknown): Promise<{
+  success: boolean
+  data?: DriverLicenseDTO
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = createDriverLicenseSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    const licenseName = (validated.licenseName || validated.title || '').trim()
+    const { data, error } = await supabase
+      .from('driver_licenses')
+      .insert({
+        user_id: user.id,
+        license_name: licenseName,
+        category: validated.category,
+        license_number: validated.licenseNumber || null,
+        expiry_date: validated.expiryDate,
+        notes: validated.notes || null,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/garage', 'page')
+    resetAlertCooldown(user.id)
+
+    return { success: true, data: mapLicenseRowToDTO(data) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to create driver license'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Updates an existing driver license record.
+ */
+export async function updateDriverLicense(rawInput: unknown): Promise<{
+  success: boolean
+  data?: DriverLicenseDTO
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = updateDriverLicenseSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    const licenseName = (validated.licenseName || validated.title || '').trim()
+    const { data, error } = await supabase
+      .from('driver_licenses')
+      .update({
+        license_name: licenseName,
+        category: validated.category,
+        license_number: validated.licenseNumber || null,
+        expiry_date: validated.expiryDate,
+        notes: validated.notes || null,
+      })
+      .eq('id', validated.id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/garage', 'page')
+    resetAlertCooldown(user.id)
+
+    return { success: true, data: mapLicenseRowToDTO(data) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to update driver license'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Deletes a driver license record.
+ */
+export async function deleteDriverLicense(rawInput: unknown): Promise<{
+  success: boolean
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUserWithRateLimit()
+    const validated = deleteDriverLicenseSchema.parse(rawInput)
+    const supabase = await createClient()
+
+    const { error } = await supabase
+      .from('driver_licenses')
+      .delete()
+      .eq('id', validated.id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/garage', 'page')
+    resetAlertCooldown(user.id)
+
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to delete driver license'
+    return { success: false, error: message }
+  }
+}
+
+// Container-level in-memory cooldown to prevent read-query thrashing on page navigation
+const alertCheckCooldowns = new Map<string, number>()
+const ALERT_CHECK_COOLDOWN_MS = 6 * 60 * 60 * 1000 // 6 hours
+
+function resetAlertCooldown(userId: string) {
+  for (const key of alertCheckCooldowns.keys()) {
+    if (key === userId || key.startsWith(`${userId}:`)) {
+      alertCheckCooldowns.delete(key)
+    }
+  }
+}
+
+export async function invalidateAlertCheckCooldown(userId: string): Promise<void> {
+  resetAlertCooldown(userId)
+}
+
+/**
+ * Checks for expiring or overdue documents and driver licenses,
+ * emitting garage_alert notifications while strictly deduplicating within a 7-day window.
+ * Throttled to 1 run per 6 hours per user/vehicle context unless invalidated.
+ */
+export async function checkAndEmitDocumentAlerts(vehicleId?: string): Promise<{
+  success: boolean
+  alertsEmitted: number
+  error?: string
+}> {
+  try {
+    const { user } = await getAuthenticatedUser()
+    const cooldownKey = vehicleId ? `${user.id}:${vehicleId}` : user.id
+    const lastCheck = alertCheckCooldowns.get(cooldownKey)
+    if (lastCheck && Date.now() - lastCheck < ALERT_CHECK_COOLDOWN_MS) {
+      return { success: true, alertsEmitted: 0 }
+    }
+
+    const supabase = await createClient()
+
+    // 1. Fetch active (non-archived) vehicles for user
+    const { data: activeVehicles } = await supabase
+      .from('vehicles')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_archived', false)
+
+    const activeVehicleIds = new Set((activeVehicles || []).map((v) => v.id))
+
+    // If a specific vehicleId was requested, verify it is active
+    if (vehicleId && !activeVehicleIds.has(vehicleId)) {
+      return { success: true, alertsEmitted: 0 }
+    }
+
+    // Look ahead 30 days, and only look back 60 days to prevent infinite spam for ancient expired docs
+    const now = new Date()
+    const thirtyDaysAhead = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0]
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0]
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+    // 2. Fetch recent notifications to prevent spam (7-day deduplication window)
+    const { data: recentNotifications } = await supabase
+      .from('notifications')
+      .select('id, link_url, created_at')
+      .eq('user_id', user.id)
+      .eq('type', 'garage_alert')
+      .gte('created_at', sevenDaysAgo)
+
+    const recentLinks = new Set((recentNotifications || []).map((n) => n.link_url))
+
+    let alertsEmitted = 0
+
+    // 3. Query documents expiring between sixtyDaysAgo and thirtyDaysAhead
+    let docQuery = supabase
+      .from('vehicle_documents')
+      .select('id, vehicle_id, title, document_number, expiry_date')
+      .eq('user_id', user.id)
+      .gte('expiry_date', sixtyDaysAgo)
+      .lte('expiry_date', thirtyDaysAhead)
+
+    if (vehicleId) {
+      docQuery = docQuery.eq('vehicle_id', vehicleId)
+    }
+
+    const { data: expiringDocs } = await docQuery
+
+    if (expiringDocs && expiringDocs.length > 0) {
+      const todayIso = now.toISOString().split('T')[0]
+
+      for (const doc of expiringDocs) {
+        // Skip documents of archived vehicles
+        if (!activeVehicleIds.has(doc.vehicle_id)) continue
+
+        const [docY, docM, docD] = doc.expiry_date.split('-').map(Number)
+        const [nowY, nowM, nowD] = todayIso.split('-').map(Number)
+        const docUtc = Date.UTC(docY, docM - 1, docD)
+        const nowUtc = Date.UTC(nowY, nowM - 1, nowD)
+        const diffDays = Math.round((docUtc - nowUtc) / (1000 * 60 * 60 * 24))
+
+        let urgencyTier: 'expired' | 'today' | '7d' | '30d' = '30d'
+        if (diffDays < 0) {
+          urgencyTier = 'expired'
+        } else if (diffDays === 0) {
+          urgencyTier = 'today'
+        } else if (diffDays <= 7) {
+          urgencyTier = '7d'
+        } else {
+          urgencyTier = '30d'
+        }
+
+        const linkUrl = `/garage/${doc.vehicle_id}?doc=${doc.id}&alert=${urgencyTier}`
+        // Deduplication: check if alert for this urgency tier was emitted in the last 7 days
+        if (recentLinks.has(linkUrl)) continue
+
+        let title = 'Document Renewal Reminder ⚠️'
+        let body = `${doc.title}${doc.document_number ? ` (${doc.document_number})` : ''} expires in ${diffDays} days (${doc.expiry_date}).`
+
+        if (diffDays < 0) {
+          title = 'Document Expired 🔴'
+          body = `${doc.title}${doc.document_number ? ` (${doc.document_number})` : ''} expired on ${doc.expiry_date}. Please renew it promptly.`
+        } else if (diffDays === 0) {
+          title = 'Document Expiring Today ⚠️'
+          body = `${doc.title}${doc.document_number ? ` (${doc.document_number})` : ''} expires today!`
+        }
+
+        await createNotification({
+          userId: user.id,
+          type: 'garage_alert',
+          title,
+          body,
+          linkUrl,
+        })
+
+        recentLinks.add(linkUrl)
+        alertsEmitted++
+      }
+    }
+
+    // 4. Query driver licenses (only if vehicleId is not specified)
+    if (!vehicleId) {
+      const { data: expiringLicenses } = await supabase
+        .from('driver_licenses')
+        .select('id, license_name, category, license_number, expiry_date')
+        .eq('user_id', user.id)
+        .gte('expiry_date', sixtyDaysAgo)
+        .lte('expiry_date', thirtyDaysAhead)
+
+      if (expiringLicenses && expiringLicenses.length > 0) {
+        const todayIso = now.toISOString().split('T')[0]
+
+        for (const lic of expiringLicenses) {
+          const [licY, licM, licD] = lic.expiry_date.split('-').map(Number)
+          const [nowY, nowM, nowD] = todayIso.split('-').map(Number)
+          const licUtc = Date.UTC(licY, licM - 1, licD)
+          const nowUtc = Date.UTC(nowY, nowM - 1, nowD)
+          const diffDays = Math.round((licUtc - nowUtc) / (1000 * 60 * 60 * 24))
+
+          let urgencyTier: 'expired' | 'today' | '7d' | '30d' = '30d'
+          if (diffDays < 0) {
+            urgencyTier = 'expired'
+          } else if (diffDays === 0) {
+            urgencyTier = 'today'
+          } else if (diffDays <= 7) {
+            urgencyTier = '7d'
+          } else {
+            urgencyTier = '30d'
+          }
+
+          const linkUrl = `/garage?tab=licenses&doc=${lic.id}&alert=${urgencyTier}`
+          if (recentLinks.has(linkUrl)) continue
+
+          let title = "Driver's License Renewal Reminder ⚠️"
+          let body = `${lic.license_name} (${lic.category.toUpperCase()}) expires in ${diffDays} days (${lic.expiry_date}).`
+
+          if (diffDays < 0) {
+            title = "Driver's License Expired 🔴"
+            body = `${lic.license_name} (${lic.category.toUpperCase()}) expired on ${lic.expiry_date}. Driving with an expired license is illegal!`
+          } else if (diffDays === 0) {
+            title = "Driver's License Expiring Today ⚠️"
+            body = `${lic.license_name} (${lic.category.toUpperCase()}) expires today!`
+          }
+
+          await createNotification({
+            userId: user.id,
+            type: 'garage_alert',
+            title,
+            body,
+            linkUrl,
+          })
+
+          recentLinks.add(linkUrl)
+          alertsEmitted++
+        }
+      }
+    }
+
+    alertCheckCooldowns.set(cooldownKey, Date.now())
+    return { success: true, alertsEmitted }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to emit document alerts'
+    return { success: false, alertsEmitted: 0, error: message }
+  }
+}
+
 

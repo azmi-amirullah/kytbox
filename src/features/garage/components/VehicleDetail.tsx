@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'react-toastify'
 import {
   LuPencil,
@@ -30,11 +30,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import type { VehicleDTO, VehicleMonthlyOdometerDTO, VehicleMaintenanceRuleDTO } from '@/types/dto'
+import type {
+  VehicleDTO,
+  VehicleMonthlyOdometerDTO,
+  VehicleMaintenanceRuleDTO,
+  VehicleServiceDTO,
+  VehicleDocumentDTO,
+} from '@/types/dto'
 import { VehicleTypeBadge } from './VehicleTypeBadge'
 import { EditVehicleModal } from './EditVehicleModal'
 import { UpdateOdometerModal } from './UpdateOdometerModal'
 import { MaintenanceChecklistManager } from './MaintenanceChecklistManager'
+import { ServiceLogTimeline } from './ServiceLogTimeline'
+import { LogServiceModal } from './LogServiceModal'
+import { VehicleDocumentsManager } from './VehicleDocumentsManager'
 import { formatOdometer, calculateMonthlyVelocity, predictCurrentOdometer } from '../lib/odometer'
 import { setDefaultVehicle, toggleArchiveVehicle, deleteVehicle } from '../actions'
 
@@ -44,6 +53,8 @@ interface VehicleDetailProps {
   vehicle: VehicleDTO
   monthlyOdometers: VehicleMonthlyOdometerDTO[]
   maintenanceRules?: VehicleMaintenanceRuleDTO[]
+  services?: VehicleServiceDTO[]
+  documents?: VehicleDocumentDTO[]
   cashflowBooks?: { id: string; title: string; currency: string }[]
 }
 
@@ -51,15 +62,59 @@ export function VehicleDetail({
   vehicle: initialVehicle,
   monthlyOdometers: initialOdometers,
   maintenanceRules = [],
+  services: initialServices = [],
+  documents = [],
   cashflowBooks = [],
 }: VehicleDetailProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const targetDocId = searchParams.get('doc')
+  const tabParam = searchParams.get('tab')
+  const initialTab: GarageTab =
+    targetDocId || tabParam === 'tax'
+      ? 'tax'
+      : tabParam === 'rules'
+        ? 'rules'
+        : tabParam === 'service'
+          ? 'service'
+          : tabParam === 'fuel'
+            ? 'fuel'
+            : 'specs'
+
   const [vehicle, setVehicle] = useState<VehicleDTO>(initialVehicle)
+  const [services, setServices] = useState<VehicleServiceDTO[]>(initialServices)
+
+  // Sync state if initialServices prop updates from server revalidation
+  const [prevInitialServices, setPrevInitialServices] = useState<VehicleServiceDTO[]>(initialServices)
+  if (initialServices !== prevInitialServices) {
+    setPrevInitialServices(initialServices)
+    setServices(initialServices)
+  }
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isOdometerOpen, setIsOdometerOpen] = useState(false)
+  const [isLogServiceOpen, setIsLogServiceOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [activeTab, setActiveTab] = useState<GarageTab>('specs')
+  const [activeTab, setActiveTab] = useState<GarageTab>(initialTab)
+
+  // React to searchParam changes in render phase per React guidelines
+  const [prevDocParam, setPrevDocParam] = useState<string | null>(targetDocId)
+  const [prevTabParam, setPrevTabParam] = useState<string | null>(tabParam)
+
+  if (targetDocId !== prevDocParam || tabParam !== prevTabParam) {
+    setPrevDocParam(targetDocId)
+    setPrevTabParam(tabParam)
+    if (targetDocId || tabParam === 'tax') {
+      setActiveTab('tax')
+    } else if (tabParam === 'rules') {
+      setActiveTab('rules')
+    } else if (tabParam === 'service') {
+      setActiveTab('service')
+    } else if (tabParam === 'fuel') {
+      setActiveTab('fuel')
+    }
+  }
 
   const velocity = calculateMonthlyVelocity(
     initialOdometers.map((m) => ({ yearMonth: m.year_month, odometer: m.odometer })),
@@ -180,14 +235,26 @@ export function VehicleDetail({
           {/* Quick Actions */}
           <div className='flex flex-wrap items-center gap-2'>
             {!vehicle.is_archived && (
-              <Button
-                size='sm'
-                onClick={() => setIsOdometerOpen(true)}
-                className='min-h-9 text-xs gap-1.5 font-medium shadow-xs'
-              >
-                <LuGauge className='size-3.5' aria-hidden='true' />
-                Update Odometer
-              </Button>
+              <>
+                <Button
+                  size='sm'
+                  onClick={() => setIsLogServiceOpen(true)}
+                  className='min-h-9 text-xs gap-1.5 font-medium shadow-xs'
+                >
+                  <LuWrench className='size-3.5' aria-hidden='true' />
+                  Log Service
+                </Button>
+
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setIsOdometerOpen(true)}
+                  className='min-h-9 text-xs gap-1.5'
+                >
+                  <LuGauge className='size-3.5 text-primary' aria-hidden='true' />
+                  Update Odometer
+                </Button>
+              </>
             )}
 
             <Button
@@ -271,13 +338,21 @@ export function VehicleDetail({
           <TabsTrigger value='service'>
             <LuHistory className='size-3.5' aria-hidden='true' />
             Service History
-            <span className='rounded bg-secondary px-1 text-[0.65rem] text-muted-foreground'>Day 3</span>
+            {services.length > 0 && (
+              <span className='rounded-full bg-primary/10 px-1.5 py-0.2 text-[0.65rem] font-medium text-primary'>
+                {services.length}
+              </span>
+            )}
           </TabsTrigger>
 
           <TabsTrigger value='tax'>
             <LuFileText className='size-3.5' aria-hidden='true' />
             Tax & Documents
-            <span className='rounded bg-secondary px-1 text-[0.65rem] text-muted-foreground'>Day 4</span>
+            {documents.length > 0 && (
+              <span className='rounded-full bg-primary/10 px-1.5 py-0.2 text-[0.65rem] font-medium text-primary'>
+                {documents.length}
+              </span>
+            )}
           </TabsTrigger>
 
           <TabsTrigger value='fuel'>
@@ -461,30 +536,30 @@ export function VehicleDetail({
           />
         </TabsContent>
 
-        {/* Tab: Service History Placeholder (Day 3) */}
+        {/* Tab: Service History (Day 3) */}
         <TabsContent value='service'>
-          <div className='rounded-xl border border-dashed border-border/80 p-8 text-center'>
-            <LuHistory className='mx-auto size-8 text-muted-foreground/60' aria-hidden='true' />
-            <h3 className='mt-3 text-sm font-semibold text-foreground'>
-              Service Logging & Due Predictor
-            </h3>
-            <p className='mt-1 max-w-md mx-auto text-xs text-muted-foreground'>
-              Coming in <strong>Day 3</strong>: Timeline logging, receipt bookmarks, and real-time maintenance countdown badges (🟢 Good, 🟡 Due Soon, 🔴 Overdue).
-            </p>
-          </div>
+          <ServiceLogTimeline
+            vehicle={vehicle}
+            maintenanceRules={maintenanceRules}
+            services={services}
+            onDeleteService={(deletedId) => {
+              setServices((prev) => prev.filter((s) => s.id !== deletedId))
+            }}
+            onUpdateService={(updated) => {
+              setServices((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+            }}
+            onOpenLogModal={() => setIsLogServiceOpen(true)}
+          />
         </TabsContent>
 
-        {/* Tab: Tax & Documents Placeholder (Day 4) */}
+        {/* Tab: Tax & Documents (Day 4) */}
         <TabsContent value='tax'>
-          <div className='rounded-xl border border-dashed border-border/80 p-8 text-center'>
-            <LuFileText className='mx-auto size-8 text-muted-foreground/60' aria-hidden='true' />
-            <h3 className='mt-3 text-sm font-semibold text-foreground'>
-              Vehicle Tax, Registration & Insurance Expiry
-            </h3>
-            <p className='mt-1 max-w-md mx-auto text-xs text-muted-foreground'>
-              Coming in <strong>Day 4</strong>: Renewal countdown cards and 1-click Cashflow sync for annual road tax, registration, and insurance policies.
-            </p>
-          </div>
+          <VehicleDocumentsManager
+            vehicle={vehicle}
+            initialDocuments={documents}
+            cashflowBooks={cashflowBooks}
+            targetDocId={targetDocId}
+          />
         </TabsContent>
 
         {/* Tab: Fuel Economy Placeholder (Day 5) */}
@@ -520,6 +595,27 @@ export function VehicleDetail({
         onClose={() => setIsOdometerOpen(false)}
         onSuccess={(updated) => {
           setVehicle(updated)
+          router.refresh()
+        }}
+      />
+
+      {/* Log Service Modal */}
+      <LogServiceModal
+        vehicle={vehicle}
+        maintenanceRules={maintenanceRules}
+        predictedOdometer={prediction.hasPrediction ? prediction.predictedOdometer : vehicle.current_odometer}
+        isPredictedOdometer={prediction.hasPrediction && prediction.predictedOdometer !== vehicle.current_odometer}
+        isOpen={isLogServiceOpen}
+        onClose={() => setIsLogServiceOpen(false)}
+        cashflowBooks={cashflowBooks}
+        onSuccess={(newService) => {
+          setServices((prev) => [newService, ...prev])
+          if (newService.odometer > vehicle.current_odometer) {
+            setVehicle((prev) => ({
+              ...prev,
+              current_odometer: newService.odometer,
+            }))
+          }
           router.refresh()
         }}
       />

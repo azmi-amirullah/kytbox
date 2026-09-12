@@ -10,8 +10,8 @@
 
 - [x] [Day 1 — Garage: Vehicle Garage & Profile Management (`/garage`)](#day-1)
 - [x] [Day 2 — Garage: Maintenance Checklist & Interval Rules Engine](#day-2)
-- [ ] [Day 3 — Garage: Service & Maintenance Logging Engine & Due Predictor](#day-3)
-- [ ] [Day 4 — Garage: Vehicle Tax, STNK, Insurance & Driver's License (`SIM`) Expiry](#day-4)
+- [x] [Day 3 — Garage: Service & Maintenance Logging Engine & Due Predictor](#day-3)
+- [x] [Day 4 — Garage: Vehicle Tax, STNK, Insurance & Driver's License (`SIM`) Expiry](#day-4)
 - [ ] [Day 5 — Garage: Fuel Log, Mileage Efficiency & Auto-Odometer Sync](#day-5)
 - [ ] [Day 6 — Garage: Cross-App Integration with Cashflow & List](#day-6)
 - [ ] [Day 7 — Weekly Sprint Audit & Garage E2E Test Suite](#day-7)
@@ -45,7 +45,7 @@
 
 1. **Dogfooding First (Build What You Actually Use Daily)**: Front-loading **Garage (`/garage`)** in Week 1 directly solves the founder's daily personal need. You can add your car or motorbike, log oil changes, track fuel efficiency, and monitor tax renewals immediately.
 2. **Cross-App Synergy (The Kytbox Moat)**: Garage is not an isolated silo. Maintenance costs and fuel fill-ups log directly to **Cashflow** under the `Vehicle/Transport` category with 1 click, and service deadlines generate automatic reminder cards in **List**.
-3. **Zero Storage Risk (Free Tier Safe Forever)**: No raw PDF or audio hosting on Supabase. Uses cloud bookmarks (Google Drive, Figma, GitHub) and external audio streams to keep Supabase storage at **0 bytes**.
+3. **Zero Storage Risk (Lightweight Architecture)**: Eliminates heavy binary file hosting by leveraging external cloud bookmarks (Google Drive, Figma, GitHub) and direct streaming.
 4. **Edge-Case Hardening**: Built-in cold-start defaults, partial fill-up math guards, sticky Cashflow book memory, and strict multi-vehicle data isolation prevent common tracking errors.
 
 ---
@@ -192,54 +192,34 @@
     - 🟢 `Good` (due in > 1,000 km and > 30 days)
     - 🟡 `Due Soon` (due within 500 km or 14 days)
     - 🔴 `Overdue` (exceeded km or date)
-  - **Zero Supabase Storage & Drive Thumbnail Sanitizer**: Physical receipts are tracked via structured text notes, workshop invoice numbers, and external cloud URLs rather than burning Supabase storage quotas. Google Drive view URLs (`/file/d/[id]/view`) are automatically transformed into direct thumbnail image streams (`https://drive.google.com/thumbnail?id=[id]&sz=w800`), preventing broken image icons in `ServiceLogTimeline.tsx`.
+  - **Cloud Receipt & Drive Thumbnail Sanitizer**: Physical receipts are tracked via structured text notes, workshop invoice numbers, and external cloud URLs. Google Drive view URLs (`/file/d/[id]/view`) are automatically transformed into direct thumbnail image streams (`https://drive.google.com/thumbnail?id=[id]&sz=w800`), preventing broken image icons in `ServiceLogTimeline.tsx`.
 
 ---
 
 <a id="day-4"></a>
 #### Day 4 — Friday, Sep 4 | ✨ Feature
 ##### Garage: Vehicle Registration, Road Tax, Insurance & Driver's License Expiry
-- **Why**: Expired vehicle registration, annual road taxes, insurance, or driver's licenses result in government fines, impound risk, or re-taking driving examinations.
+- **Why**: Expired vehicle registration, annual road taxes (PKB), 5-year plate renewals (STNK), insurance policies, or driver's licenses (SIM) result in costly penalties, vehicle impoundment, or invalid driving rights.
 - **Implementation Blueprint**:
-  - Create `vehicle_documents` table (scoped to `vehicle_id`):
-    ```sql
-    create table vehicle_documents (
-      id uuid primary key default gen_random_uuid(),
-      vehicle_id uuid references vehicles(id) on delete cascade not null,
-      user_id uuid references auth.users(id) on delete cascade not null,
-      title text not null,             -- e.g. "Annual Road Tax", "Registration Renewal", "Comprehensive Insurance"
-      document_type text not null,     -- 'road_tax_annual' | 'registration_renewal' | 'insurance' | 'inspection'
-      expiry_date date not null,
-      notes text,
-      created_at timestamptz default now()
-    );
-    create index idx_vehicle_documents_user on vehicle_documents(user_id);
-    create index idx_vehicle_documents_vehicle on vehicle_documents(vehicle_id);
-    alter table vehicle_documents enable row level security;
-    create policy "Users manage their own vehicle documents" on vehicle_documents for all using (auth.uid() = user_id);
-    ```
-  - Create `driver_licenses` table (scoped to `user_id` on root `/garage` dashboard):
-    ```sql
-    create table driver_licenses (
-      id uuid primary key default gen_random_uuid(),
-      user_id uuid references auth.users(id) on delete cascade not null,
-      license_name text not null,      -- e.g. "Class C (Driver)", "Class M (Motorcycle)"
-      category text not null,          -- 'car' | 'motorcycle' | 'commercial' | 'other'
-      license_number text,
-      expiry_date date not null,
-      notes text,
-      created_at timestamptz default now()
-    );
-    create index idx_driver_licenses_user on driver_licenses(user_id);
-    alter table driver_licenses enable row level security;
-    create policy "Users manage their own driver licenses" on driver_licenses for all using (auth.uid() = user_id);
-    ```
-  - Render countdown alert cards: *"Annual Road Tax expires in 18 days (Sep 21, 2026)"* on `/garage/[vehicleId]` and *"Driver's License (Class C) expires in 14 days"* on the root `/garage` KPI strip.
-  - Visual urgency badges (`Expired`, `Expiring in < 30 days`, `Valid`).
-- **🛡️ Driver Document Safety & Global Notification Center Integration**:
-  - **Clean Domain Ownership**: Driver licenses belong to the human user, not the machine; they live on the root `/garage` dashboard and are preserved when vehicles are sold or deleted. Vehicle documents (road tax, registration, insurance) are strictly tied to `vehicle_id`.
-  - **Platform Notification Bell Integration**: When any document or license enters `<= 14 days` before expiry (or overdue), emit an in-app notification to the platform header bell via `createNotification({ type: 'garage_alert', ... })` so users never miss a renewal even if they only visit Cashflow or List.
-  - **1-Click Cashflow Renewal Sync**: Paying annual road tax or comprehensive insurance is often a household's largest single vehicle expense. When renewing a document, `DocumentRenewalModal.tsx` provides an inline `[x] Record to Cashflow Book` toggle, pre-populating `vehicles.preferred_cashflow_id` and category `Vehicle & Transport`, automatically creating the transaction in Cashflow without manual double entry.
+  - Migration applied: `supabase/migrations/20260904050000_create_vehicle_documents_and_licenses.sql`
+  - Patched `notifications.type` check constraint to officially include `'garage_alert'`.
+  - Created `vehicle_documents` table (scoped to `vehicle_id` + `user_id` with `document_number`, `cost`, indexes, and RLS).
+  - Created `driver_licenses` table (scoped to `user_id` with `license_name`, category enum check, indexes, and RLS).
+  - Created pure calculation helpers `src/features/garage/lib/document-math.ts` (`calculateDocumentExpiry`, `advanceExpiryDate`, `matchCashflowCategory`) with strict UTC date boundaries.
+  - Colocated server schemas in `schemas.server.ts` and client mini-schemas in `schemas.client.ts`.
+  - Built interactive UI components:
+    - `VehicleDocumentsManager.tsx`: Bento metric cards, live urgency badges (🟢 Valid, 🟡 Expiring Soon, 🔴 Expired), sort by expiry.
+    - `VehicleDocumentModal.tsx`: Add/edit modal with presets for PKB, STNK 5-tahunan, insurance, inspection.
+    - `DocumentRenewalModal.tsx`: 1-tap presets (`+1 Year`, `+5 Years`, `+6 Months`, `Custom Date`), projected expiry preview, and optional Cashflow ledger sync.
+    - `DriverLicenseModal.tsx`: Independent driver license tracker for SIM A, SIM C, SIM B, and International licenses with instant SSR hydration.
+    - `GarageDashboard.tsx`: Dynamic Regulatory & License Health KPI card surfacing real-time SIM countdowns and overdue alerts directly on the fleet overview.
+  - Mounted `VehicleDocumentsManager` in `<TabsContent value='tax'>` on `/garage/[vehicleId]` with live document count badge on the tab trigger.
+- **🛡️ Driver Document Safety & Enterprise Guardrails**:
+  - **Clean Domain Ownership**: Driver licenses belong to the human user, not the machine; they live on the user profile level and are preserved when vehicles are sold or deleted. Vehicle documents (road tax, registration, insurance) are strictly tied to `vehicle_id`.
+  - **Spam Prevention & 6-Hour Query Cooldown**: Background alert generator `checkAndEmitDocumentAlerts()` enforces a 6-hour in-memory cache barrier per user/vehicle context alongside a 7-day deduplication window in the `notifications` table, preventing database thrashing on casual page navigation.
+  - **Structured Document Tracking**: Stores identifiers, policy numbers, and expiration dates as clean structured records rather than requiring heavy manual document scan uploads.
+  - **1-Click Cashflow Renewal Sync**: Paying annual road tax or comprehensive insurance is often a household's largest single vehicle expense. `DocumentRenewalModal.tsx` provides an inline `[x] Sync expense to Cashflow ledger` toggle, pre-populating `vehicles.preferred_cashflow_id` and category `Transportation`, automatically recording the expense without manual double entry.
+  - **Clean URL Hygiene**: Deep-linking query params (`?doc=`, `?tab=licenses`, `?alert=`) are silently purged via `window.history.replaceState` upon modal dismissals, preventing sticky modal reopenings on page reloads.
 
 ---
 
@@ -553,8 +533,8 @@
 
 <a id="day-26"></a>
 #### Day 26 — Saturday, Sep 26 | ✨ Feature
-##### Bio: Persistent Audio & Podcast Stream Widget (`Zero-Storage External Stream`)
-- **Why**: Musicians, podcasters, and voice artists want visitors to sample their audio directly on their bio page without bouncing away to Spotify or Apple Podcasts. Streaming directly from external public audio URLs or podcast feeds uses **zero Supabase storage**.
+##### Bio: Persistent Audio & Podcast Stream Widget (`External Cloud Stream`)
+- **Why**: Musicians, podcasters, and voice artists want visitors to sample their audio directly on their bio page without bouncing away to Spotify or Apple Podcasts by streaming directly from external public audio URLs or podcast feeds.
 - **Implementation Blueprint**:
   - **First-Class Bio Tile Integration (Anti-Overengineering)**: Integrate audio blocks directly into `links` by extending link types with `type: 'audio'` (storing `stream_url`, `title`, `artist`, and `cover_url`), maintaining unified drag-and-drop ordering with Bento tiles rather than maintaining a disjointed relational table.
   - **Layout-Level Audio Persistence**: Mount `<BioAudioPlayer />` and its underlying HTML `<audio>` instance inside the shared layout `src/app/[username]/layout.tsx` (backed by a persistent `AudioProvider` context), ensuring playback is never destroyed or cut off when a visitor navigates between `/[username]` and `/[username]/list`.

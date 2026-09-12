@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -516,12 +517,12 @@ export function MaintenanceRuleModal({
                     <Label htmlFor='baseline-date' className='text-xs text-muted-foreground'>
                       Last Service Date
                     </Label>
-                    <Input
+                    <DatePicker
                       id='baseline-date'
-                      type='date'
                       value={lastServiceDate}
-                      onChange={(e) => setLastServiceDate(e.target.value)}
+                      onChange={setLastServiceDate}
                       className='h-9 text-xs'
+                      placeholder='Select date'
                     />
                   </div>
                 </div>
@@ -552,12 +553,12 @@ export function MaintenanceRuleModal({
                   <Label htmlFor='edit-last-date' className='text-xs text-muted-foreground'>
                     Last Date
                   </Label>
-                  <Input
+                  <DatePicker
                     id='edit-last-date'
-                    type='date'
                     value={lastServiceDate}
-                    onChange={(e) => setLastServiceDate(e.target.value)}
+                    onChange={setLastServiceDate}
                     className='h-9 text-xs'
+                    placeholder='Select date'
                   />
                 </div>
               </div>

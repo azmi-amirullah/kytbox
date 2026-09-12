@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit, exportRateLimit } from '@/lib/upstash/redis';
 import { extractUserData, generateExportZip } from '@/features/settings/data-export';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  void request.headers;
   try {
     const supabase = await createClient();
     const {
@@ -47,6 +48,14 @@ export async function GET() {
       },
     });
   } catch (err: unknown) {
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      'digest' in err &&
+      typeof err.digest === 'string'
+    ) {
+      throw err;
+    }
     const message = err instanceof Error ? err.message : 'Internal Server Error';
     console.error('[GDPR Data Export Error]:', err);
     return NextResponse.json({ error: message }, { status: 500 });

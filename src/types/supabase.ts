@@ -516,6 +516,39 @@ export type Database = {
           },
         ]
       }
+      driver_licenses: {
+        Row: {
+          category: string
+          created_at: string | null
+          expiry_date: string
+          id: string
+          license_name: string
+          license_number: string | null
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          expiry_date: string
+          id?: string
+          license_name: string
+          license_number?: string | null
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          expiry_date?: string
+          id?: string
+          license_name?: string
+          license_number?: string | null
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoice_items: {
         Row: {
           amount: number
@@ -1221,6 +1254,63 @@ export type Database = {
           },
         ]
       }
+      vehicle_documents: {
+        Row: {
+          cashflow_entry_id: string | null
+          cost: number
+          created_at: string | null
+          document_number: string | null
+          document_type: string
+          expiry_date: string
+          id: string
+          notes: string | null
+          title: string
+          user_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          cashflow_entry_id?: string | null
+          cost?: number
+          created_at?: string | null
+          document_number?: string | null
+          document_type: string
+          expiry_date: string
+          id?: string
+          notes?: string | null
+          title: string
+          user_id: string
+          vehicle_id: string
+        }
+        Update: {
+          cashflow_entry_id?: string | null
+          cost?: number
+          created_at?: string | null
+          document_number?: string | null
+          document_type?: string
+          expiry_date?: string
+          id?: string
+          notes?: string | null
+          title?: string
+          user_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_documents_cashflow_entry_id_fkey"
+            columns: ["cashflow_entry_id"]
+            isOneToOne: false
+            referencedRelation: "cashflow_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_documents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_maintenance_rules: {
         Row: {
           category: string
@@ -1299,6 +1389,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "vehicle_monthly_odometers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_services: {
+        Row: {
+          cashflow_entry_id: string | null
+          cost: number
+          created_at: string | null
+          external_invoice_url: string | null
+          id: string
+          invoice_number: string | null
+          items_serviced: string[]
+          notes: string | null
+          odometer: number
+          service_date: string
+          service_type: string
+          serviced_rule_ids: string[]
+          user_id: string
+          vehicle_id: string
+          workshop_name: string | null
+        }
+        Insert: {
+          cashflow_entry_id?: string | null
+          cost?: number
+          created_at?: string | null
+          external_invoice_url?: string | null
+          id?: string
+          invoice_number?: string | null
+          items_serviced?: string[]
+          notes?: string | null
+          odometer: number
+          service_date: string
+          service_type: string
+          serviced_rule_ids?: string[]
+          user_id: string
+          vehicle_id: string
+          workshop_name?: string | null
+        }
+        Update: {
+          cashflow_entry_id?: string | null
+          cost?: number
+          created_at?: string | null
+          external_invoice_url?: string | null
+          id?: string
+          invoice_number?: string | null
+          items_serviced?: string[]
+          notes?: string | null
+          odometer?: number
+          service_date?: string
+          service_type?: string
+          serviced_rule_ids?: string[]
+          user_id?: string
+          vehicle_id?: string
+          workshop_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_services_cashflow_entry_id_fkey"
+            columns: ["cashflow_entry_id"]
+            isOneToOne: false
+            referencedRelation: "cashflow_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_services_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"

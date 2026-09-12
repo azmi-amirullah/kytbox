@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useId } from 'react'
 import { toast } from 'react-toastify'
 import { LuGauge, LuTriangleAlert, LuTrendingUp } from 'react-icons/lu'
 import {
@@ -13,7 +13,9 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { InputGroup } from '@/components/ui/input-group'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { VehicleDTO } from '@/types/dto'
 import { updateOdometer } from '../actions'
 import { formatOdometer } from '../lib/odometer'
@@ -31,6 +33,7 @@ export function UpdateOdometerModal({
   onClose,
   onSuccess,
 }: UpdateOdometerModalProps) {
+  const confirmJumpId = useId()
   const [odometerInput, setOdometerInput] = useState(String(vehicle.current_odometer))
   const [confirmJump, setConfirmJump] = useState(false)
   const [isPending, setIsPending] = useState(false)
@@ -133,9 +136,9 @@ export function UpdateOdometerModal({
           {/* New Reading Input */}
           <div className='space-y-1.5'>
             <Label htmlFor='newOdometerInput' className='text-xs font-medium'>
-              New Odometer Reading ({vehicle.odometer_unit})
+              New Odometer Reading
             </Label>
-            <div className='relative'>
+            <InputGroup suffix={vehicle.odometer_unit}>
               <Input
                 id='newOdometerInput'
                 type='number'
@@ -148,15 +151,12 @@ export function UpdateOdometerModal({
                   setErrorMessage(null)
                   setIsTypoWarning(false)
                 }}
-                className='font-mono text-base pr-14'
+                className='font-mono text-base min-h-10'
                 placeholder='e.g. 18500'
                 disabled={isPending}
                 required
               />
-              <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono uppercase text-muted-foreground select-none pointer-events-none'>
-                {vehicle.odometer_unit}
-              </span>
-            </div>
+            </InputGroup>
 
             {/* Live Delta Feedback */}
             {!isNaN(parsedOdo) && numericOdo >= 0 && (
@@ -191,20 +191,25 @@ export function UpdateOdometerModal({
                   You entered an odometer jump of <strong>+{delta.toLocaleString()} {vehicle.odometer_unit}</strong>. Make sure this is not an extra zero typo.
                 </p>
               </div>
-              <label className='flex items-center gap-2 cursor-pointer text-xs font-medium pt-1'>
-                <input
-                  type='checkbox'
+              <div className='flex items-center gap-2 pt-1'>
+                <Checkbox
+                  id={confirmJumpId}
                   checked={confirmJump}
-                  onChange={(e) => {
-                    setConfirmJump(e.target.checked)
-                    if (e.target.checked) {
+                  onCheckedChange={(checked) => {
+                    const val = Boolean(checked)
+                    setConfirmJump(val)
+                    if (val) {
                       setErrorMessage(null)
                     }
                   }}
-                  className='rounded border-amber-400 text-primary focus:ring-amber-500 size-4'
                 />
-                <span>I confirm this reading is accurate</span>
-              </label>
+                <Label
+                  htmlFor={confirmJumpId}
+                  className='cursor-pointer text-xs font-medium text-foreground'
+                >
+                  I confirm this reading is accurate
+                </Label>
+              </div>
             </div>
           )}
 

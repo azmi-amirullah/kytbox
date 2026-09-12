@@ -61,6 +61,8 @@ function NotificationIcon({ type }: { type: NotificationType }) {
       return <LuCircleAlert className='h-4 w-4 text-destructive shrink-0' />
     case 'click_milestone':
       return <LuSparkles className='h-4 w-4 text-emerald-500 shrink-0' />
+    case 'garage_alert':
+      return <LuTriangleAlert className='h-4 w-4 text-amber-500 shrink-0' />
     case 'system':
     default:
       return <LuInfo className='h-4 w-4 text-sky-500 shrink-0' />

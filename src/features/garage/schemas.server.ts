@@ -297,3 +297,420 @@ export const toggleRuleActiveSchema = z.object({
 export const resetRuleBaselineSchema = z.object({
   id: z.string().uuid('Invalid rule ID'),
 })
+
+export const serviceTypeSchema = z.enum(['routine', 'repair', 'inspection', 'upgrade'])
+
+export const createVehicleServiceSchema = z.object({
+  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  serviceDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  odometer: z
+    .coerce
+    .number()
+    .int()
+    .min(0, 'Odometer cannot be negative')
+    .max(2000000, 'Odometer exceeds realistic bounds'),
+  serviceType: serviceTypeSchema.default('routine'),
+  itemsServiced: z
+    .array(z.string().trim().min(1, 'Item name cannot be empty'))
+    .default([]),
+  servicedRuleIds: z
+    .array(z.string().uuid('Invalid rule ID'))
+    .default([]),
+  cost: z
+    .coerce
+    .number()
+    .min(0, 'Cost cannot be negative')
+    .max(10000000000, 'Cost exceeds bounds')
+    .default(0),
+  workshopName: z
+    .string()
+    .trim()
+    .max(100, 'Workshop name is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  invoiceNumber: z
+    .string()
+    .trim()
+    .max(100, 'Invoice number is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  externalInvoiceUrl: z
+    .string()
+    .trim()
+    .max(1000, 'URL is too long')
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val) return true
+        try {
+          const u = new URL(val)
+          return u.protocol === 'http:' || u.protocol === 'https:'
+        } catch {
+          return false
+        }
+      },
+      { message: 'Invalid URL format (must be http:// or https://)' }
+    )
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  notes: z
+    .string()
+    .trim()
+    .max(2000, 'Notes are too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  recordToCashflow: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
+  cashflowId: z
+    .string()
+    .uuid('Invalid cashflow book ID')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  cashflowCategory: z
+    .string()
+    .trim()
+    .max(100, 'Category name is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  cashflowCategoryId: z
+    .string()
+    .trim()
+    .max(100, 'Category ID is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  confirmTypoJump: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
+})
+
+export const updateVehicleServiceSchema = z.object({
+  id: z.string().uuid('Invalid service ID'),
+  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  cost: z
+    .coerce
+    .number()
+    .min(0, 'Cost cannot be negative')
+    .max(10000000000, 'Cost exceeds bounds')
+    .optional(),
+  workshopName: z
+    .string()
+    .trim()
+    .max(100, 'Workshop name is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  invoiceNumber: z
+    .string()
+    .trim()
+    .max(100, 'Invoice number is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  externalInvoiceUrl: z
+    .string()
+    .trim()
+    .max(1000, 'URL is too long')
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val) return true
+        try {
+          const u = new URL(val)
+          return u.protocol === 'http:' || u.protocol === 'https:'
+        } catch {
+          return false
+        }
+      },
+      { message: 'Invalid URL format (must be http:// or https://)' }
+    )
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  notes: z
+    .string()
+    .trim()
+    .max(2000, 'Notes are too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+})
+
+export const deleteVehicleServiceSchema = z.object({
+  id: z.string().uuid('Invalid service ID'),
+  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  deleteCashflowEntry: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
+})
+
+export const vehicleDocumentTypeSchema = z.enum([
+  'road_tax_annual',
+  'registration_renewal',
+  'insurance',
+  'inspection',
+  'other',
+])
+
+export const createVehicleDocumentSchema = z.object({
+  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  title: z.string().trim().min(1, 'Title is required').max(100, 'Title is too long'),
+  documentType: vehicleDocumentTypeSchema,
+  documentNumber: z
+    .string()
+    .trim()
+    .max(100, 'Document number is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  expiryDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  cost: z
+    .coerce
+    .number()
+    .min(0, 'Cost cannot be negative')
+    .max(10000000000, 'Cost exceeds bounds')
+    .default(0),
+  notes: z
+    .string()
+    .trim()
+    .max(2000, 'Notes are too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+})
+
+export const updateVehicleDocumentSchema = z.object({
+  id: z.string().uuid('Invalid document ID'),
+  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  title: z.string().trim().min(1, 'Title is required').max(100, 'Title is too long'),
+  documentType: vehicleDocumentTypeSchema,
+  documentNumber: z
+    .string()
+    .trim()
+    .max(100, 'Document number is too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+  expiryDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  cost: z
+    .coerce
+    .number()
+    .min(0, 'Cost cannot be negative')
+    .max(10000000000, 'Cost exceeds bounds')
+    .default(0),
+  notes: z
+    .string()
+    .trim()
+    .max(2000, 'Notes are too long')
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
+})
+
+export const renewVehicleDocumentSchema = z
+  .object({
+    id: z.string().uuid('Invalid document ID'),
+    vehicleId: z.string().uuid('Invalid vehicle ID'),
+    preset: z.enum(['1y', '5y', '6m', 'custom']).optional().default('1y'),
+    customExpiryDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+      .optional(),
+    expiryDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+      .optional(),
+    cost: z
+      .coerce
+      .number()
+      .min(0, 'Cost cannot be negative')
+      .max(10000000000, 'Cost exceeds bounds')
+      .optional(),
+    renewalCost: z
+      .coerce
+      .number()
+      .min(0, 'Renewal cost cannot be negative')
+      .max(10000000000, 'Cost exceeds bounds')
+      .optional(),
+    recordToCashflow: z
+      .preprocess((val) => val === 'true' || val === true, z.boolean())
+      .optional()
+      .default(false),
+    cashflowId: z
+      .string()
+      .uuid('Invalid cashflow book ID')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+    cashflowCategory: z
+      .string()
+      .trim()
+      .max(100, 'Category name is too long')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+    cashflowCategoryId: z
+      .string()
+      .trim()
+      .max(100, 'Category name is too long')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+    advanceFromToday: z
+      .preprocess((val) => val === 'true' || val === true, z.boolean())
+      .optional()
+      .default(false),
+    paymentDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+  })
+  .refine(
+    (data) => {
+      if (data.preset === 'custom' && !data.customExpiryDate && !data.expiryDate) {
+        return false
+      }
+      return true
+    },
+    {
+      message: 'Custom expiry date is required when using custom preset',
+      path: ['customExpiryDate'],
+    }
+  )
+
+export const deleteVehicleDocumentSchema = z.object({
+  id: z.string().uuid('Invalid document ID'),
+  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  deleteCashflowEntry: z
+    .preprocess((val) => val === 'true' || val === true, z.boolean())
+    .optional()
+    .default(false),
+})
+
+export const driverLicenseCategorySchema = z.enum([
+  'car',
+  'motorcycle',
+  'commercial',
+  'other',
+])
+
+export const createDriverLicenseSchema = z
+  .object({
+    licenseName: z
+      .string()
+      .trim()
+      .max(100, 'License name is too long')
+      .optional(),
+    title: z
+      .string()
+      .trim()
+      .max(100, 'Title is too long')
+      .optional(),
+    category: driverLicenseCategorySchema,
+    licenseNumber: z
+      .string()
+      .trim()
+      .max(100, 'License number is too long')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+    expiryDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+    issueDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+    notes: z
+      .string()
+      .trim()
+      .max(2000, 'Notes are too long')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+  })
+  .refine(
+    (data) => Boolean((data.licenseName && data.licenseName.length > 0) || (data.title && data.title.length > 0)),
+    {
+      message: 'License name is required',
+      path: ['licenseName'],
+    }
+  )
+
+export const updateDriverLicenseSchema = z
+  .object({
+    id: z.string().uuid('Invalid license ID'),
+    licenseName: z
+      .string()
+      .trim()
+      .max(100, 'License name is too long')
+      .optional(),
+    title: z
+      .string()
+      .trim()
+      .max(100, 'Title is too long')
+      .optional(),
+    category: driverLicenseCategorySchema,
+    licenseNumber: z
+      .string()
+      .trim()
+      .max(100, 'License number is too long')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+    expiryDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+    issueDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+    notes: z
+      .string()
+      .trim()
+      .max(2000, 'Notes are too long')
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.length > 0 ? val : null)),
+  })
+  .refine(
+    (data) => Boolean((data.licenseName && data.licenseName.length > 0) || (data.title && data.title.length > 0)),
+    {
+      message: 'License name is required',
+      path: ['licenseName'],
+    }
+  )
+
+export const deleteDriverLicenseSchema = z.object({
+  id: z.string().uuid('Invalid license ID'),
+})

@@ -253,27 +253,20 @@ export function MaintenanceChecklistManager({
 
   return (
     <div className='space-y-6'>
-      {/* 1. Header & Primary Action Controls */}
-      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-5'>
-        <div className='space-y-1'>
-          <div className='flex items-center gap-2'>
-            <h2 className='text-lg sm:text-xl font-bold tracking-tight text-foreground'>
-              Maintenance Checklist
-            </h2>
-          </div>
-          <p className='text-xs text-muted-foreground'>
-            Component service countdowns tailored for {vehicle.name} (
-            {vehicle.type.toUpperCase()} · {vehicle.fuel_type.toUpperCase()}).
-          </p>
-        </div>
+      {/* 1. Action Toolbar */}
+      <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+        <p className='text-xs text-muted-foreground'>
+          Component service countdowns tailored for {vehicle.name} (
+          {vehicle.type.toUpperCase()} · {vehicle.fuel_type.toUpperCase()}).
+        </p>
 
-        <div className='flex flex-wrap items-center gap-2.5'>
+        <div className='flex items-center gap-2 shrink-0 self-end sm:self-auto'>
           <Button
             type='button'
             variant='outline'
             size='sm'
             onClick={() => setIsPresetsOpen(true)}
-            className='h-9 text-xs font-medium border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-colors cursor-pointer'
+            className='text-xs font-medium border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-colors cursor-pointer'
           >
             <LuSparkles
               className='size-3.5 mr-1.5 text-primary'
@@ -282,18 +275,20 @@ export function MaintenanceChecklistManager({
             Apply Presets
           </Button>
 
-          <Button
-            type='button'
-            size='sm'
-            onClick={() => {
-              setEditingRule(null)
-              setIsAddModalOpen(true)
-            }}
-            className='h-9 text-xs font-semibold shadow-xs cursor-pointer'
-          >
-            <LuPlus className='size-3.5 mr-1.5' aria-hidden='true' />
-            Add Rule
-          </Button>
+          {!vehicle.is_archived && (
+            <Button
+              type='button'
+              size='sm'
+              onClick={() => {
+                setEditingRule(null)
+                setIsAddModalOpen(true)
+              }}
+              className='text-xs font-semibold shadow-xs cursor-pointer'
+            >
+              <LuPlus className='size-3.5 mr-1.5' aria-hidden='true' />
+              Add Rule
+            </Button>
+          )}
         </div>
       </div>
 

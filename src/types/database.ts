@@ -43,4 +43,10 @@ export type VehicleMonthlyOdometer =
   Database['public']['Tables']['vehicle_monthly_odometers']['Row'];
 export type VehicleMaintenanceRule =
   Database['public']['Tables']['vehicle_maintenance_rules']['Row'];
+export type VehicleService =
+  Database['public']['Tables']['vehicle_services']['Row'];
+export type VehicleDocument =
+  Database['public']['Tables']['vehicle_documents']['Row'];
+export type DriverLicense =
+  Database['public']['Tables']['driver_licenses']['Row'];
 

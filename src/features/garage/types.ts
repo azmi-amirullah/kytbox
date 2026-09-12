@@ -8,6 +8,12 @@ export type {
   VehicleMonthlyOdometerDTO,
   MaintenanceCategory,
   VehicleMaintenanceRuleDTO,
+  ServiceType,
+  VehicleServiceDTO,
+  VehicleDocumentType,
+  DriverLicenseCategory,
+  VehicleDocumentDTO,
+  DriverLicenseDTO,
 } from '@/types/dto'
 
 import type {
@@ -17,7 +23,11 @@ import type {
   TransmissionType,
   OdometerUnit,
   MaintenanceCategory,
+  ServiceType,
+  VehicleDocumentType,
+  DriverLicenseCategory,
 } from '@/types/dto'
+export type { RuleWithStatusItem, MaintenancePrediction } from './lib/rules-math'
 
 export type RuleStatus = 'good' | 'due_soon' | 'overdue' | 'untracked'
 
@@ -29,6 +39,17 @@ export interface RuleDueStatus {
   isOverdue: boolean
   isDueSoon: boolean
   primaryTrigger: 'distance' | 'time' | 'both' | 'none'
+}
+
+export type DocumentExpiryStatus = 'valid' | 'expiring_soon' | 'expired'
+
+export interface DocumentExpiryDetails {
+  status: DocumentExpiryStatus
+  daysRemaining: number
+  formattedDays: string
+  isExpired: boolean
+  isExpiringSoon: boolean
+  badgeLabel: string
 }
 
 export interface MaintenanceRulePresetItem {
@@ -78,6 +99,34 @@ export function isMaintenanceCategory(val: string): val is MaintenanceCategory {
     val === 'tires' ||
     val === 'powertrain' ||
     val === 'electrical' ||
+    val === 'other'
+  )
+}
+
+export function isServiceType(val: string): val is ServiceType {
+  return (
+    val === 'routine' ||
+    val === 'repair' ||
+    val === 'inspection' ||
+    val === 'upgrade'
+  )
+}
+
+export function isVehicleDocumentType(val: unknown): val is VehicleDocumentType {
+  return (
+    val === 'road_tax_annual' ||
+    val === 'registration_renewal' ||
+    val === 'insurance' ||
+    val === 'inspection' ||
+    val === 'other'
+  )
+}
+
+export function isDriverLicenseCategory(val: unknown): val is DriverLicenseCategory {
+  return (
+    val === 'car' ||
+    val === 'motorcycle' ||
+    val === 'commercial' ||
     val === 'other'
   )
 }

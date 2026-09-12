@@ -1,7 +1,13 @@
 import type { Metadata } from 'next'
+import { after } from 'next/server'
 import { notFound, redirect } from 'next/navigation'
 import { z } from 'zod'
-import { getVehicleById, getUserCashflowBooks, VehicleDetail } from '@/features/garage'
+import {
+  getVehicleById,
+  getUserCashflowBooks,
+  VehicleDetail,
+  checkAndEmitDocumentAlerts,
+} from '@/features/garage'
 
 const vehicleIdSchema = z.string().uuid()
 
@@ -39,6 +45,15 @@ export default async function VehicleDetailPage({
     notFound()
   }
 
+  // Guaranteed serverless lifecycle execution via Next.js after()
+  after(async () => {
+    try {
+      await checkAndEmitDocumentAlerts(vehicleId)
+    } catch (err) {
+      console.error('[Garage] Failed to check vehicle document alerts:', err)
+    }
+  })
+
   const [vehicleRes, booksRes] = await Promise.all([
     getVehicleById(vehicleId),
     getUserCashflowBooks(),
@@ -53,6 +68,8 @@ export default async function VehicleDetailPage({
       vehicle={vehicleRes.vehicle}
       monthlyOdometers={vehicleRes.monthlyOdometers || []}
       maintenanceRules={vehicleRes.maintenanceRules || []}
+      services={vehicleRes.services || []}
+      documents={vehicleRes.documents || []}
       cashflowBooks={booksRes.data || []}
     />
   )

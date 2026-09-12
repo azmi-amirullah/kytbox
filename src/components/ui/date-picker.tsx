@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { format, parseISO } from 'date-fns'
 import { LuCalendar } from 'react-icons/lu'
+import type { Matcher } from 'react-day-picker'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,12 @@ export interface DatePickerProps {
   disabled?: boolean
   required?: boolean
   align?: 'center' | 'start' | 'end'
+  dateFormat?: string
+  maxDate?: string | Date
+  minDate?: string | Date
+  captionLayout?: 'label' | 'dropdown' | 'dropdown-months' | 'dropdown-years'
+  startYear?: number
+  endYear?: number
 }
 
 function parseDateValue(value?: string | Date | null): Date | undefined {
@@ -55,10 +62,47 @@ export function DatePicker({
   className,
   disabled = false,
   align = 'start',
+  dateFormat = 'dd/MM/yyyy',
+  maxDate,
+  minDate,
+  captionLayout = 'dropdown',
+  startYear,
+  endYear,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
 
   const selectedDate = React.useMemo(() => parseDateValue(value), [value])
+
+  const currentYear = new Date().getFullYear()
+
+  const computedStartMonth = React.useMemo(() => {
+    if (minDate) {
+      const parsed = parseDateValue(minDate)
+      if (parsed) return new Date(parsed.getFullYear(), 0)
+    }
+    return new Date(startYear ?? currentYear - 30, 0)
+  }, [minDate, startYear, currentYear])
+
+  const computedEndMonth = React.useMemo(() => {
+    if (maxDate) {
+      const parsed = parseDateValue(maxDate)
+      if (parsed) return new Date(parsed.getFullYear(), 11)
+    }
+    return new Date(endYear ?? currentYear + 30, 11)
+  }, [maxDate, endYear, currentYear])
+
+  const disabledMatcher = React.useMemo<Matcher[] | undefined>(() => {
+    const matchers: Matcher[] = []
+    if (maxDate) {
+      const parsedMax = parseDateValue(maxDate)
+      if (parsedMax) matchers.push({ after: parsedMax })
+    }
+    if (minDate) {
+      const parsedMin = parseDateValue(minDate)
+      if (parsedMin) matchers.push({ before: parsedMin })
+    }
+    return matchers.length > 0 ? matchers : undefined
+  }, [maxDate, minDate])
 
   function handleSelect(date: Date | undefined) {
     if (!date) {
@@ -90,7 +134,7 @@ export function DatePicker({
           <LuCalendar className='mr-2.5 h-4 w-4 text-muted-foreground shrink-0' />
           {selectedDate ? (
             <span className='truncate font-medium text-foreground'>
-              {format(selectedDate, 'dd MMM yyyy')}
+              {format(selectedDate, dateFormat)}
             </span>
           ) : (
             <span className='text-muted-foreground'>{placeholder}</span>
@@ -105,7 +149,12 @@ export function DatePicker({
         <Calendar
           mode='single'
           selected={selectedDate}
+          defaultMonth={selectedDate}
           onSelect={handleSelect}
+          disabled={disabledMatcher}
+          captionLayout={captionLayout}
+          startMonth={computedStartMonth}
+          endMonth={computedEndMonth}
         />
       </PopoverContent>
     </Popover>
