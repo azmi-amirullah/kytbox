@@ -49,6 +49,7 @@ import {
 import type { CashflowRecurringRuleDTO, CashflowGoalDTO } from '@/types/dto'
 import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+import { getTodayDateOnlyString } from '@/lib/date-only'
 
 interface RecurringManagerModalProps {
   isOpen: boolean
@@ -88,7 +89,7 @@ export default function RecurringManagerModal({
   const [formDayOfMonth, setFormDayOfMonth] = useState('1')
   const [formGoalId, setFormGoalId] = useState<string>('none')
   const [formStartDate, setFormStartDate] = useState(
-    new Date().toISOString().split('T')[0]
+    getTodayDateOnlyString()
   )
 
   // Keep local state in sync when prop changes
@@ -106,7 +107,7 @@ export default function RecurringManagerModal({
     setFormYearlyCalc('prorated')
     setFormDayOfMonth(String(new Date().getDate()))
     setFormGoalId('none')
-    setFormStartDate(new Date().toISOString().split('T')[0])
+    setFormStartDate(getTodayDateOnlyString())
     setIsCreating(true)
   }
 
@@ -120,7 +121,7 @@ export default function RecurringManagerModal({
     setFormYearlyCalc(rule.yearly_calculation || 'prorated')
     setFormDayOfMonth(String(rule.day_of_month || 1))
     setFormGoalId(rule.goal_id || 'none')
-    setFormStartDate(rule.start_date || new Date().toISOString().split('T')[0])
+    setFormStartDate(rule.start_date || getTodayDateOnlyString())
     setIsCreating(true)
   }
 

@@ -46,6 +46,7 @@ import type {
 import { isMaintenanceCategory } from '../types'
 import { createMaintenanceRule, updateMaintenanceRule } from '../actions'
 import { getDefaultRulesForVehicle, type MaintenanceRulePresetItem } from '../lib/presets'
+import { getTodayDateOnlyString } from '@/lib/date-only'
 
 interface MaintenanceRuleModalProps {
   open: boolean
@@ -123,7 +124,7 @@ export function MaintenanceRuleModal({
       setIntervalMonths('6')
       setBaselineChoice('current')
       setLastServiceOdometer(String(currentOdometer))
-      setLastServiceDate(new Date().toISOString().split('T')[0])
+      setLastServiceDate(getTodayDateOnlyString())
       setIsActive(true)
     }
     setIsTemplatesExpanded(false)
@@ -167,7 +168,7 @@ export function MaintenanceRuleModal({
     } else {
       if (baselineChoice === 'current') {
         finalLastOdo = currentOdometer
-        finalLastDate = new Date().toISOString().split('T')[0]
+        finalLastDate = getTodayDateOnlyString()
       } else if (baselineChoice === 'custom') {
         finalLastOdo = lastServiceOdometer.trim() ? Number(lastServiceOdometer) : null
         finalLastDate = lastServiceDate.trim() ? lastServiceDate.trim() : null

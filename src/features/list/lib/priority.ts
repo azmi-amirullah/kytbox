@@ -133,3 +133,10 @@ export function filterAndSortItems(
 
   return [...result].sort((a, b) => a.sort_order - b.sort_order);
 }
+
+export function sortItemsByPriority(
+  items: ListItemDTO[],
+  sortOption: PrioritySortOption = 'manual',
+): ListItemDTO[] {
+  return filterAndSortItems(items, 'all', sortOption);
+}

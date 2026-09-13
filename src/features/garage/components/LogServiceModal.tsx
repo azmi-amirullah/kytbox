@@ -53,6 +53,7 @@ import { createVehicleService } from '../actions'
 import { sanitizeInvoiceUrl } from '../lib/invoice-url'
 import { calculateRuleDueStatus } from '../lib/rules-math'
 import { isOdometerTypoJump } from '../lib/odometer'
+import { getTodayDateOnlyString } from '@/lib/date-only'
 
 interface LogServiceModalProps {
   vehicle: VehicleDTO
@@ -106,7 +107,7 @@ export function LogServiceModal({
   const [isPending, startTransition] = useTransition()
   const baseId = useId()
 
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = getTodayDateOnlyString()
   const initialOdo = predictedOdometer || vehicle.current_odometer || 0
 
   const [serviceDate, setServiceDate] = useState<string>(todayStr)
@@ -141,7 +142,7 @@ export function LogServiceModal({
     setPrevVehicleId(vehicle.id)
     if (isOpen) {
       const resetOdo = predictedOdometer || vehicle.current_odometer || 0
-      setServiceDate(new Date().toISOString().slice(0, 10))
+      setServiceDate(getTodayDateOnlyString())
       setOdometer(resetOdo)
       setIsCustomOdo(false)
       setServiceType('routine')

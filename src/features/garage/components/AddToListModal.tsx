@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select'
 import type { VehicleDTO } from '@/types/dto'
 import { getUserLists, syncMaintenanceRuleToList } from '../actions'
+import { getTodayDateOnlyString } from '@/lib/date-only'
 
 interface AddToListModalProps {
   vehicle: VehicleDTO
@@ -54,7 +55,7 @@ export function AddToListModal({
   const [isLoadingLists, setIsLoadingLists] = useState(isOpen)
 
   const defaultTitle = `[${vehicle.name}] Service: ${ruleName}`
-  const defaultDueDate = predictedDueDate || new Date().toISOString().slice(0, 10)
+  const defaultDueDate = predictedDueDate || getTodayDateOnlyString()
   const defaultPriority = isOverdue ? 'high' : 'medium'
 
   const [selectedListId, setSelectedListId] = useState<string>('')

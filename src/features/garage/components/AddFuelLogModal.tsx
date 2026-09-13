@@ -45,6 +45,7 @@ import {
   calculateTotalCostFromAmount,
 } from '../lib/fuel-math'
 import { isOdometerTypoJump } from '../lib/odometer'
+import { getTodayDateOnlyString } from '@/lib/date-only'
 
 interface AddFuelLogModalProps {
   vehicle: VehicleDTO
@@ -74,7 +75,7 @@ export function AddFuelLogModal({
   const unitLabels = getFuelUnitLabels(vehicle.fuel_type, vehicle.odometer_unit)
   const isElectric = vehicle.fuel_type === 'electric'
 
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = getTodayDateOnlyString()
   const initialEstOdo = predictedOdometer || vehicle.current_odometer
 
   const [logDate, setLogDate] = useState<string>(logToEdit?.log_date ?? todayStr)

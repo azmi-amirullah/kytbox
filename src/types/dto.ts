@@ -225,6 +225,25 @@ export interface ListColumnDTO {
   title: string
   sort_order: number
   is_done_column: boolean
+  wip_limit?: number | null
+}
+
+export interface ListLabelDTO {
+  id: string
+  list_id: string
+  name: string
+  color_index: number
+  created_at?: string | null
+}
+
+export interface ListItemResourceDTO {
+  id: string
+  item_id: string
+  url: string
+  title: string | null
+  domain: string | null
+  icon_url: string | null
+  created_at?: string | null
 }
 
 export interface ListSubtaskDTO {
@@ -254,6 +273,8 @@ export interface ListItemDTO {
   priority?: ListItemPriority | null
   recurrence_rule?: ListItemRecurrenceRule | null
   subtasks?: ListSubtaskDTO[]
+  labels?: string[]
+  resources?: ListItemResourceDTO[]
 }
 
 export interface WishlistItemMeta {

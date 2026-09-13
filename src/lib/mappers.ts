@@ -11,6 +11,8 @@ import type {
   ListColumn,
   ListItem,
   ListSubtask,
+  ListLabel,
+  ListItemResource,
   ListWithSummary,
 } from '@/types/database';
 import {
@@ -38,6 +40,8 @@ import type {
   ListColumnDTO,
   ListItemDTO,
   ListSubtaskDTO,
+  ListLabelDTO,
+  ListItemResourceDTO,
   CashflowSplitGroupDTO,
   CashflowSplitGroupExpenseDTO,
 } from '@/types/dto';
@@ -446,6 +450,29 @@ export function mapListColumnToDTO(row: ListColumn): ListColumnDTO {
     title: row.title,
     sort_order: row.sort_order,
     is_done_column: row.is_done_column,
+    wip_limit: row.wip_limit ?? null,
+  };
+}
+
+export function mapListLabelToDTO(row: ListLabel): ListLabelDTO {
+  return {
+    id: row.id,
+    list_id: row.list_id,
+    name: row.name,
+    color_index: row.color_index,
+    created_at: row.created_at ?? null,
+  };
+}
+
+export function mapListItemResourceToDTO(row: ListItemResource): ListItemResourceDTO {
+  return {
+    id: row.id,
+    item_id: row.item_id,
+    url: row.url,
+    title: row.title ?? null,
+    domain: row.domain ?? null,
+    icon_url: row.icon_url ?? null,
+    created_at: row.created_at ?? null,
   };
 }
 
@@ -461,12 +488,16 @@ export function mapListSubtaskToDTO(row: ListSubtask): ListSubtaskDTO {
 }
 
 export function mapListItemToDTO(
-  row: ListItem & { list_subtasks?: ListSubtask[] },
+  row: ListItem & { list_subtasks?: ListSubtask[]; list_item_resources?: ListItemResource[] },
 ): ListItemDTO {
   const subtasks = Array.isArray(row.list_subtasks) && row.list_subtasks.length > 0
     ? row.list_subtasks
         .map(mapListSubtaskToDTO)
         .sort((a, b) => a.position - b.position || (a.created_at ?? '').localeCompare(b.created_at ?? ''))
+    : undefined;
+
+  const resources = Array.isArray(row.list_item_resources) && row.list_item_resources.length > 0
+    ? row.list_item_resources.map(mapListItemResourceToDTO)
     : undefined;
 
   return {
@@ -484,5 +515,7 @@ export function mapListItemToDTO(
     priority: listItemPriorityClientSchema.parse(row.priority),
     recurrence_rule: listItemRecurrenceClientSchema.parse(row.recurrence_rule),
     subtasks,
+    labels: Array.isArray(row.labels) ? row.labels : [],
+    resources,
   };
 }

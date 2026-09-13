@@ -170,6 +170,7 @@ describe('List Recurrence Engine', () => {
         priority: 'high',
         recurrence_rule: 'weekly',
         reminder_sent: false,
+        labels: [],
       };
 
       const dto = mapListItemToDTO(mockRow);
@@ -192,6 +193,7 @@ describe('List Recurrence Engine', () => {
         priority: null,
         recurrence_rule: null,
         reminder_sent: false,
+        labels: [],
       };
 
       const dto = mapListItemToDTO(mockRow);

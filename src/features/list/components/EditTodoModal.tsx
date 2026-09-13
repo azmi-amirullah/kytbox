@@ -17,20 +17,33 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import type { ListItemDTO, ListSubtaskDTO, ListItemPriority, ListItemRecurrenceRule } from '@/types/dto'
-import { updateItem, toggleItem } from '../actions'
+import type {
+  ListItemDTO,
+  ListSubtaskDTO,
+  ListItemPriority,
+  ListItemRecurrenceRule,
+  ListLabelDTO,
+  ListItemResourceDTO,
+} from '@/types/dto'
+import { updateItem, toggleItem, setCardLabels } from '../actions'
 import { getDueDateInfo } from '../lib/due-date'
 import { PRIORITY_OPTIONS, getPriorityBadgeInfo } from '../lib/priority'
 import { RECURRENCE_OPTIONS, getRecurrenceInfo } from '../lib/recurrence'
+import { resolveLabelColor } from '../lib/label-colors'
 import { toast } from 'react-toastify'
 import { Checkbox } from '@/components/ui/checkbox'
 import CardChecklist from './CardChecklist'
+import CardLabelPicker from './CardLabelPicker'
+import CardResourceBookmarks from './CardResourceBookmarks'
 
 interface EditTodoModalProps {
   item: ListItemDTO
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdated: (item: ListItemDTO) => void
+  boardLabels?: ListLabelDTO[]
+  onCreateLabel?: (name: string, colorIndex?: number) => Promise<void>
+  onDeleteLabel?: (labelId: string) => Promise<void>
 }
 
 export default function EditTodoModal({
@@ -38,6 +51,9 @@ export default function EditTodoModal({
   open,
   onOpenChange,
   onUpdated,
+  boardLabels = [],
+  onCreateLabel,
+  onDeleteLabel,
 }: EditTodoModalProps) {
   const [isPending, startTransition] = useTransition()
   const [prevItemId, setPrevItemId] = useState(item.id)
@@ -49,6 +65,8 @@ export default function EditTodoModal({
   const [priority, setPriority] = useState<ListItemPriority | null>(item.priority ?? null)
   const [recurrenceRule, setRecurrenceRule] = useState<ListItemRecurrenceRule | null>(item.recurrence_rule ?? null)
   const [subtasks, setSubtasks] = useState(item.subtasks ?? [])
+  const [labels, setLabels] = useState<string[]>(item.labels ?? [])
+  const [resources, setResources] = useState<ListItemResourceDTO[]>(item.resources ?? [])
 
   // Reset local state synchronously when props change (avoids useEffect cascading renders)
   if (item.id !== prevItemId || open !== prevOpen) {
@@ -61,11 +79,40 @@ export default function EditTodoModal({
     setPriority(item.priority ?? null)
     setRecurrenceRule(item.recurrence_rule ?? null)
     setSubtasks(item.subtasks ?? [])
+    setLabels(item.labels ?? [])
+    setResources(item.resources ?? [])
   }
 
   const dueDateInfo = getDueDateInfo(dueDate, isCompleted)
   const priorityInfo = getPriorityBadgeInfo(priority)
   const recurrenceInfo = getRecurrenceInfo(recurrenceRule)
+
+  const handleToggleLabel = (labelName: string) => {
+    const exists = labels.some((l) => l.toLowerCase() === labelName.toLowerCase())
+    const updated = exists
+      ? labels.filter((l) => l.toLowerCase() !== labelName.toLowerCase())
+      : [...labels, labelName]
+    setLabels(updated)
+    startTransition(async () => {
+      const res = await setCardLabels(item.id, updated)
+      if (res.error) {
+        toast.error(res.error)
+      } else {
+        onUpdated({
+          ...item,
+          title: title.trim(),
+          description: description.trim() || null,
+          is_completed: isCompleted,
+          due_date: dueDate || null,
+          priority: priority || null,
+          recurrence_rule: recurrenceRule || null,
+          subtasks,
+          labels: updated,
+          resources,
+        })
+      }
+    })
+  }
 
   const handleSubtasksChange = (newSubtasks: ListSubtaskDTO[]) => {
     setSubtasks(newSubtasks)
@@ -78,6 +125,8 @@ export default function EditTodoModal({
       priority: priority || null,
       recurrence_rule: recurrenceRule || null,
       subtasks: newSubtasks,
+      labels,
+      resources,
     })
   }
 
@@ -98,6 +147,8 @@ export default function EditTodoModal({
           priority: priority || null,
           recurrence_rule: recurrenceRule || null,
           subtasks,
+          labels,
+          resources,
         })
       }
     })
@@ -139,6 +190,8 @@ export default function EditTodoModal({
           priority: priority || null,
           recurrence_rule: recurrenceRule || null,
           subtasks,
+          labels,
+          resources,
         })
         onOpenChange(false)
       }
@@ -176,6 +229,29 @@ export default function EditTodoModal({
               <span className='sr-only'>Close</span>
             </DialogClose>
           </DialogHeader>
+
+          <div className='flex items-center gap-1.5 flex-wrap pl-7 pb-1'>
+            <CardLabelPicker
+              selectedLabels={labels}
+              boardLabels={boardLabels}
+              onToggleLabel={handleToggleLabel}
+              onCreateLabel={onCreateLabel}
+              onDeleteLabel={onDeleteLabel}
+              disabled={isPending}
+            />
+            {labels.map((lbl) => {
+              const style = resolveLabelColor(lbl, boardLabels)
+              return (
+                <span
+                  key={lbl}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs border font-medium ${style.bg} ${style.text} ${style.border}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                  #{lbl}
+                </span>
+              )
+            })}
+          </div>
 
           <div className='space-y-3'>
             {/* Priority Row */}
@@ -364,6 +440,30 @@ export default function EditTodoModal({
               subtasks={subtasks}
               onSubtasksChange={handleSubtasksChange}
             />
+
+            {/* Cloud Attachments & Resource Bookmarks */}
+            <div className='pl-7'>
+              <CardResourceBookmarks
+                itemId={item.id}
+                resources={resources}
+                onResourcesChange={(newResources) => {
+                  setResources(newResources)
+                  onUpdated({
+                    ...item,
+                    title: title.trim(),
+                    description: description.trim() || null,
+                    is_completed: isCompleted,
+                    due_date: dueDate || null,
+                    priority: priority || null,
+                    recurrence_rule: recurrenceRule || null,
+                    subtasks,
+                    labels,
+                    resources: newResources,
+                  })
+                }}
+                disabled={isPending}
+              />
+            </div>
 
             {/* Description Row */}
             <div className='space-y-1.5'>

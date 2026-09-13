@@ -498,6 +498,7 @@ const baseListColumn: ListColumn = {
   title: 'Todo',
   sort_order: 1024,
   is_done_column: false,
+  wip_limit: null,
   created_at: '2026-01-01T00:00:00Z',
 };
 
@@ -515,6 +516,7 @@ const baseListItem: ListItem = {
   reminder_sent: false,
   priority: 'high',
   recurrence_rule: 'weekly',
+  labels: [],
 };
 
 // ==========================================

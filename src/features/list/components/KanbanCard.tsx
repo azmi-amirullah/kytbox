@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { LuTrash2, LuCalendar, LuListTodo, LuFlag, LuRepeat } from 'react-icons/lu'
+import { LuTrash2, LuCalendar, LuListTodo, LuFlag, LuRepeat, LuPaperclip } from 'react-icons/lu'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -15,11 +15,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import type { ListItemDTO } from '@/types/dto'
+import type { ListItemDTO, ListLabelDTO } from '@/types/dto'
 import { deleteItem, toggleItem } from '../actions'
 import { getDueDateInfo } from '../lib/due-date'
 import { getPriorityBadgeInfo } from '../lib/priority'
 import { getRecurrenceInfo } from '../lib/recurrence'
+import { resolveLabelColor } from '../lib/label-colors'
 import { toast } from 'react-toastify'
 import EditTodoModal from './EditTodoModal'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -29,6 +30,9 @@ interface KanbanCardProps {
   isDragging?: boolean
   onUpdate?: (item: ListItemDTO) => void
   onDelete: (itemId: string) => void
+  boardLabels?: ListLabelDTO[]
+  onCreateLabel?: (name: string, colorIndex?: number) => Promise<void>
+  onDeleteLabel?: (labelId: string) => Promise<void>
 }
 
 export default function KanbanCard({
@@ -36,6 +40,9 @@ export default function KanbanCard({
   isDragging,
   onUpdate,
   onDelete,
+  boardLabels = [],
+  onCreateLabel,
+  onDeleteLabel,
 }: KanbanCardProps) {
   const [isPending, startTransition] = useTransition()
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -143,6 +150,22 @@ export default function KanbanCard({
             className='flex-1 text-left min-w-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 rounded p-0.5 cursor-pointer'
             aria-label={`Edit task "${item.title}"`}
           >
+            {item.labels && item.labels.length > 0 && (
+              <div className='flex flex-wrap gap-1 mb-1.5'>
+                {item.labels.map((lbl) => {
+                  const style = resolveLabelColor(lbl, boardLabels)
+                  return (
+                    <span
+                      key={lbl}
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium border ${style.bg} ${style.text} ${style.border}`}
+                    >
+                      <span className={`w-1 h-1 rounded-full ${style.dot}`} />
+                      #{lbl}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
             <p
               className={`text-sm font-medium ${
                 item.is_completed
@@ -157,7 +180,7 @@ export default function KanbanCard({
                 {item.description}
               </p>
             )}
-            {(dueDateInfo.status !== 'none' || totalSubtasks > 0 || priorityInfo !== null || recurrenceInfo !== null) && (
+            {(dueDateInfo.status !== 'none' || totalSubtasks > 0 || priorityInfo !== null || recurrenceInfo !== null || (item.resources && item.resources.length > 0)) && (
               <div className='flex flex-wrap items-center gap-1.5 mt-2'>
                 {priorityInfo && (
                   <span
@@ -201,6 +224,15 @@ export default function KanbanCard({
                     </span>
                   </span>
                 )}
+                {item.resources && item.resources.length > 0 && (
+                  <span
+                    className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border bg-muted/70 text-muted-foreground border-border/70'
+                    title={`Attachments: ${item.resources.length} cloud links`}
+                  >
+                    <LuPaperclip className='w-3 h-3 shrink-0 text-primary' />
+                    <span>{item.resources.length}</span>
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -225,6 +257,9 @@ export default function KanbanCard({
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
         onUpdated={(updatedItem) => onUpdate?.(updatedItem)}
+        boardLabels={boardLabels}
+        onCreateLabel={onCreateLabel}
+        onDeleteLabel={onDeleteLabel}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

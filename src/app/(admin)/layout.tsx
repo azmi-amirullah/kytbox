@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { connection } from 'next/server';
 import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
+import { AdminNavTabs } from '@/features/admin';
 import { LuShieldAlert } from 'react-icons/lu';
 
 export default async function AdminLayout({
@@ -51,13 +52,17 @@ export default async function AdminLayout({
         publicUrl={`/${profile.username}`}
       />
 
-      <div className='relative z-10 border-y border-blue-200 bg-blue-50/90 text-blue-700'>
+      <div className='relative z-10 border-y border-blue-200 bg-blue-50/90 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-400'>
         <div className='max-w-7xl mx-auto px-4 py-2 text-sm font-semibold flex items-center gap-2'>
           <LuShieldAlert className='h-4 w-4 shrink-0' />
           <span>
-            Admin mode. You are managing support data as an administrator.
+            Admin Portal. You have administrative visibility and management access.
           </span>
         </div>
+      </div>
+
+      <div className='relative z-10'>
+        <AdminNavTabs />
       </div>
 
       <main className='relative z-10 flex-1 w-full'>{children}</main>

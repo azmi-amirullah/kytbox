@@ -66,7 +66,7 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {user.role === 'admin' && (
-            <a href='/support-admin'>
+            <a href='/admin/users'>
               <DropdownMenuItem className='text-blue-600 font-semibold focus:text-blue-600 focus:bg-blue-50 dark:focus:bg-blue-950/30'>
                 <LuShield className='mr-2 h-4 w-4' />
                 Admin Dashboard

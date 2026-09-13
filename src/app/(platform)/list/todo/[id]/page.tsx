@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getListById, getItemsByListId, getColumnsByListId, KanbanBoard } from '@/features/list';
+import {
+  getListById,
+  getItemsByListId,
+  getColumnsByListId,
+  getListLabels,
+  KanbanBoard,
+} from '@/features/list';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -18,17 +24,23 @@ export default async function KanbanBoardPage({
   params,
 }: Params) {
   const { id } = await params;
-  const [list, columns, items] = await Promise.all([
+  const [list, columns, items, labels] = await Promise.all([
     getListById(id),
     getColumnsByListId(id),
     getItemsByListId(id),
+    getListLabels(id),
   ]);
 
   if (!list || list.type !== 'todo') notFound();
 
   return (
     <div className='max-w-full mx-auto px-4 py-8 md:py-8 w-full'>
-      <KanbanBoard list={list} initialColumns={columns} initialItems={items} />
+      <KanbanBoard
+        list={list}
+        initialColumns={columns}
+        initialItems={items}
+        initialLabels={labels}
+      />
     </div>
   );
 }

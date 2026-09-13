@@ -907,6 +907,7 @@ export type Database = {
           list_id: string
           sort_order: number
           title: string
+          wip_limit: number | null
         }
         Insert: {
           created_at?: string
@@ -915,6 +916,7 @@ export type Database = {
           list_id: string
           sort_order?: number
           title: string
+          wip_limit?: number | null
         }
         Update: {
           created_at?: string
@@ -923,6 +925,7 @@ export type Database = {
           list_id?: string
           sort_order?: number
           title?: string
+          wip_limit?: number | null
         }
         Relationships: [
           {
@@ -941,6 +944,44 @@ export type Database = {
           },
         ]
       }
+      list_item_resources: {
+        Row: {
+          created_at: string
+          domain: string | null
+          icon_url: string | null
+          id: string
+          item_id: string
+          title: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          icon_url?: string | null
+          id?: string
+          item_id: string
+          title?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          icon_url?: string | null
+          id?: string
+          item_id?: string
+          title?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_item_resources_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "list_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       list_items: {
         Row: {
           column_id: string | null
@@ -949,6 +990,7 @@ export type Database = {
           due_date: string | null
           id: string
           is_completed: boolean
+          labels: string[]
           list_id: string
           metadata: Json | null
           priority: string | null
@@ -964,6 +1006,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_completed?: boolean
+          labels?: string[]
           list_id: string
           metadata?: Json | null
           priority?: string | null
@@ -979,6 +1022,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_completed?: boolean
+          labels?: string[]
           list_id?: string
           metadata?: Json | null
           priority?: string | null
@@ -1004,6 +1048,38 @@ export type Database = {
           },
           {
             foreignKeyName: "list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      list_labels: {
+        Row: {
+          color_index: number
+          created_at: string
+          id: string
+          list_id: string
+          name: string
+        }
+        Insert: {
+          color_index?: number
+          created_at?: string
+          id?: string
+          list_id: string
+          name: string
+        }
+        Update: {
+          color_index?: number
+          created_at?: string
+          id?: string
+          list_id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_labels_list_id_fkey"
             columns: ["list_id"]
             isOneToOne: false
             referencedRelation: "lists"
@@ -1799,6 +1875,26 @@ export type Database = {
       create_support_ticket: {
         Args: { p_category: string; p_message: string; p_subject: string }
         Returns: string
+      }
+      get_admin_users_overview: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string }
+        Returns: {
+          avatar_url: string
+          cashflows_count: number
+          created_at: string
+          display_name: string
+          email: string
+          has_completed_onboarding: boolean
+          has_custom_domain: boolean
+          id: string
+          invoices_count: number
+          links_count: number
+          lists_count: number
+          role: string
+          total_count: number
+          username: string
+          vehicles_count: number
+        }[]
       }
       get_analytics_by_country: {
         Args: {

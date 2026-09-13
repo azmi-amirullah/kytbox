@@ -7,7 +7,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAuthenticatedUserWithRateLimit } from '@/lib/auth-with-rate-limit'
 import { createNotification } from '@/features/notifications'
 import type { Database } from '@/types/supabase'
-import type { ListDTO, ListItemDTO, ListType, ListColumnDTO, ListItemPriority, ListItemRecurrenceRule } from '@/types/dto'
+import type {
+  ListDTO,
+  ListItemDTO,
+  ListType,
+  ListColumnDTO,
+  ListItemPriority,
+  ListItemRecurrenceRule,
+  ListLabelDTO,
+  ListItemResourceDTO,
+} from '@/types/dto'
 import {
   createListSchema,
   createListItemSchema,
@@ -37,6 +46,13 @@ import {
   updateItemActionSchema,
   updateListActionSchema,
   createBoardFromTemplateSchema,
+  createListLabelSchema,
+  deleteListLabelSchema,
+  setCardLabelsSchema,
+  addResourceSchema,
+  deleteResourceSchema,
+  setColumnWipLimitSchema,
+  importBoardBatchSchema,
 } from './schemas.server'
 import { formatDueDateLabel } from './lib/due-date'
 import {
@@ -49,7 +65,13 @@ import {
   mapListItemToDTO,
   mapListSubtaskToDTO,
   mapListColumnToDTO,
+  mapListLabelToDTO,
+  mapListItemResourceToDTO,
 } from '@/lib/mappers'
+import { getNextAvailableLabelColorIndex } from './lib/label-colors'
+import { resolveResourceMetadata } from './lib/resource-metadata'
+import { DEFAULT_SORT_GAP } from './lib/fractional-indexing'
+import type { ParsedImportCard } from './lib/board-importer'
 import { BOARD_TEMPLATES } from './templates'
 
 /** Sentinel title for the per-user hidden "New Idea" list */
@@ -1006,7 +1028,7 @@ export async function getItemsByListId(listId: string): Promise<ListItemDTO[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('list_items')
-    .select('*, list_subtasks(*)')
+    .select('*, list_subtasks(*), list_item_resources(*)')
     .eq('list_id', listId)
     .order('sort_order', { ascending: true })
 
@@ -1561,4 +1583,342 @@ export async function createBoardFromTemplate(templateId: string) {
 
   revalidatePath('/list')
   return { success: true, data: { listId } }
+}
+
+// ==========================================
+// WEEK 3: LABELS, RESOURCES, WIP & IMPORTER
+// ==========================================
+
+export async function getListLabels(listId: string): Promise<ListLabelDTO[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('list_labels')
+    .select('*')
+    .eq('list_id', listId)
+    .order('created_at', { ascending: true })
+
+  if (error || !data) return []
+  return data.map(mapListLabelToDTO)
+}
+
+export async function createListLabel(
+  listId: string,
+  name: string,
+  colorIndex?: number,
+) {
+  const parsed = createListLabelSchema.safeParse({ listId, name, colorIndex })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId)
+  if (!ownedList) return { error: 'List not found' }
+
+  // Check label limit: maximum 50 custom labels per list
+  const { count: labelCount, error: labelCountErr } = await supabase
+    .from('list_labels')
+    .select('*', { count: 'exact', head: true })
+    .eq('list_id', parsed.data.listId)
+
+  if (labelCountErr) return { error: 'Failed to verify label limit' }
+  if ((labelCount ?? 0) >= 50) {
+    return { error: 'Maximum limit of 50 custom labels reached for this list' }
+  }
+
+  let assignedColor = parsed.data.colorIndex
+  if (typeof assignedColor !== 'number') {
+    const { data: existing } = await supabase
+      .from('list_labels')
+      .select('color_index')
+      .eq('list_id', parsed.data.listId)
+    assignedColor = getNextAvailableLabelColorIndex(existing || [])
+  }
+
+  const { data, error } = await supabase
+    .from('list_labels')
+    .insert({
+      list_id: parsed.data.listId,
+      name: parsed.data.name,
+      color_index: assignedColor,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    if (error.code === '23505') {
+      return { error: 'A label with this name already exists' }
+    }
+    return { error: 'Failed to create label' }
+  }
+
+  revalidatePath(`/list/todo/${parsed.data.listId}`)
+  return { success: true, data: mapListLabelToDTO(data) }
+}
+
+export async function deleteListLabel(listId: string, labelId: string) {
+  const parsed = deleteListLabelSchema.safeParse({ listId, labelId })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId)
+  if (!ownedList) return { error: 'List not found' }
+
+  const { error } = await supabase
+    .from('list_labels')
+    .delete()
+    .eq('id', parsed.data.labelId)
+    .eq('list_id', parsed.data.listId)
+
+  if (error) return { error: 'Failed to delete label' }
+
+  revalidatePath(`/list/todo/${parsed.data.listId}`)
+  return { success: true }
+}
+
+export async function setCardLabels(itemId: string, labels: string[]) {
+  const parsed = setCardLabelsSchema.safeParse({ itemId, labels })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId)
+  if (!ownedItem) return { error: 'Item not found' }
+
+  const { error } = await supabase
+    .from('list_items')
+    .update({ labels: parsed.data.labels })
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', ownedItem.listId)
+
+  if (error) return { error: 'Failed to update labels' }
+
+  revalidatePath(`/list/todo/${ownedItem.listId}`)
+  return { success: true }
+}
+
+export async function getItemResources(itemId: string): Promise<ListItemResourceDTO[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('list_item_resources')
+    .select('*')
+    .eq('item_id', itemId)
+    .order('created_at', { ascending: true })
+
+  if (error || !data) return []
+  return data.map(mapListItemResourceToDTO)
+}
+
+export async function addResourceBookmark(itemId: string, url: string) {
+  const parsed = addResourceSchema.safeParse({ itemId, url })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedItem = await getOwnedItem(supabase, user.id, parsed.data.itemId)
+  if (!ownedItem) return { error: 'Item not found' }
+
+  // Check resource limit: maximum 20 bookmarks per card
+  const { count, error: countError } = await supabase
+    .from('list_item_resources')
+    .select('*', { count: 'exact', head: true })
+    .eq('item_id', parsed.data.itemId)
+
+  if (countError) return { error: 'Failed to verify resource count' }
+  if ((count ?? 0) >= 20) {
+    return { error: 'Card has reached the limit of 20 resource bookmarks' }
+  }
+
+  let meta
+  try {
+    meta = await resolveResourceMetadata(parsed.data.url)
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Invalid or blocked URL' }
+  }
+
+  const { data, error } = await supabase
+    .from('list_item_resources')
+    .insert({
+      item_id: parsed.data.itemId,
+      url: meta.url,
+      title: meta.title,
+      domain: meta.domain,
+      icon_url: meta.icon_url,
+    })
+    .select()
+    .single()
+
+  if (error) return { error: 'Failed to save resource bookmark' }
+
+  revalidatePath(`/list/todo/${ownedItem.listId}`)
+  return { success: true, data: mapListItemResourceToDTO(data) }
+}
+
+export async function deleteResourceBookmark(resourceId: string) {
+  const parsed = deleteResourceSchema.safeParse({ resourceId })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase } = await getAuthenticatedUserWithRateLimit()
+
+  // Verify ownership via join
+  const { data: resource } = await supabase
+    .from('list_item_resources')
+    .select('id, item_id, list_items!inner(list_id, lists!inner(user_id))')
+    .eq('id', parsed.data.resourceId)
+    .single()
+
+  if (!resource) return { error: 'Resource not found' }
+
+  const { error } = await supabase
+    .from('list_item_resources')
+    .delete()
+    .eq('id', parsed.data.resourceId)
+
+  if (error) return { error: 'Failed to delete resource' }
+
+  return { success: true }
+}
+
+export async function setColumnWipLimit(columnId: string, wipLimit: number | null) {
+  const parsed = setColumnWipLimitSchema.safeParse({ columnId, wipLimit })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedColumn = await getOwnedColumn(supabase, user.id, parsed.data.columnId)
+  if (!ownedColumn) return { error: 'Column not found' }
+
+  const { error } = await supabase
+    .from('list_columns')
+    .update({ wip_limit: parsed.data.wipLimit })
+    .eq('id', parsed.data.columnId)
+    .eq('list_id', ownedColumn.listId)
+
+  if (error) return { error: 'Failed to update WIP limit' }
+
+  revalidatePath(`/list/todo/${ownedColumn.listId}`)
+  return { success: true }
+}
+
+export async function importBoardBatch(
+  listId: string,
+  columns: string[],
+  cards: ParsedImportCard[],
+) {
+  const parsed = importBoardBatchSchema.safeParse({ listId, columns, cards })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId)
+  if (!ownedList) return { error: 'Board not found' }
+
+  // 1. Fetch existing columns on this board
+  const { data: existingCols } = await supabase
+    .from('list_columns')
+    .select('id, title, sort_order')
+    .eq('list_id', parsed.data.listId)
+    .order('sort_order', { ascending: true })
+
+  const colMap = new Map<string, string>()
+  let maxOrder = 0
+  for (const c of existingCols || []) {
+    colMap.set(c.title.toLowerCase().trim(), c.id)
+    if (c.sort_order > maxOrder) maxOrder = c.sort_order
+  }
+
+  // 2. Create any missing columns
+  for (const requestedCol of parsed.data.columns) {
+    const key = requestedCol.toLowerCase().trim()
+    if (!colMap.has(key)) {
+      maxOrder += DEFAULT_SORT_GAP
+      const { data: newCol } = await supabase
+        .from('list_columns')
+        .insert({
+          list_id: parsed.data.listId,
+          title: requestedCol.trim(),
+          sort_order: maxOrder,
+        })
+        .select('id, title')
+        .single()
+      if (newCol) {
+        colMap.set(key, newCol.id)
+      }
+    }
+  }
+
+  const defaultColumnId = existingCols?.[0]?.id || Array.from(colMap.values())[0]
+
+  // 3. Register any labels in list_labels
+  const distinctLabels = new Set<string>()
+  for (const c of parsed.data.cards) {
+    if (c.labels) {
+      for (const l of c.labels) {
+        if (l.trim()) distinctLabels.add(l.trim())
+      }
+    }
+  }
+
+  if (distinctLabels.size > 0) {
+    const { data: existingLabels } = await supabase
+      .from('list_labels')
+      .select('name, color_index')
+      .eq('list_id', parsed.data.listId)
+
+    const existingNames = new Set((existingLabels || []).map((l) => l.name.toLowerCase()))
+    const currentLabelsList = existingLabels ? [...existingLabels] : []
+
+    for (const labelName of distinctLabels) {
+      if (!existingNames.has(labelName.toLowerCase())) {
+        const colorIndex = getNextAvailableLabelColorIndex(currentLabelsList)
+        const { data: createdLabel } = await supabase
+          .from('list_labels')
+          .insert({
+            list_id: parsed.data.listId,
+            name: labelName,
+            color_index: colorIndex,
+          })
+          .select('name, color_index')
+          .single()
+        if (createdLabel) {
+          currentLabelsList.push(createdLabel)
+          existingNames.add(labelName.toLowerCase())
+        }
+      }
+    }
+  }
+
+  // 4. Insert cards with calculated sort order
+  const cardsToInsert = parsed.data.cards.map((c, idx) => {
+    const targetColId = colMap.get(c.columnTitle.toLowerCase().trim()) || defaultColumnId
+    return {
+      list_id: parsed.data.listId,
+      column_id: targetColId,
+      title: c.title,
+      description: c.description || null,
+      due_date: c.dueDate || null,
+      priority: c.priority || null,
+      labels: c.labels || [],
+      sort_order: (idx + 1) * DEFAULT_SORT_GAP,
+      is_completed: false,
+    }
+  })
+
+  if (cardsToInsert.length > 0) {
+    const { error: insertError } = await supabase.from('list_items').insert(cardsToInsert)
+    if (insertError) {
+      return { error: 'Failed to insert cards batch' }
+    }
+  }
+
+  revalidatePath(`/list/todo/${parsed.data.listId}`)
+  return { success: true, importedCardsCount: cardsToInsert.length }
 }

@@ -41,12 +41,19 @@ export const listItemRecurrenceSchema = z
   .optional()
   .or(z.literal(''));
 
+export const labelNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Label name is required')
+  .max(40, 'Label name too long');
+
 export const listItemSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(300, 'Title too long'),
   description: z.string().max(1000).optional().or(z.literal('')),
   dueDate: dueDateSchema,
   priority: listItemPrioritySchema,
   recurrenceRule: listItemRecurrenceSchema,
+  labels: z.array(labelNameSchema).max(20).optional(),
 });
 
 export const setDueDateSchema = z.object({
@@ -210,9 +217,67 @@ export const reorderSubtasksSchema = z.object({
     }),
 });
 
-export const templateIdSchema = z.enum(TEMPLATE_IDS)
+export const templateIdSchema = z.enum(TEMPLATE_IDS);
 
 export const createBoardFromTemplateSchema = z.object({
   templateId: templateIdSchema,
-})
+});
+
+// ==========================================
+// WEEK 3: LABELS, RESOURCES, WIP & IMPORTER
+// ==========================================
+
+export const createListLabelSchema = z.object({
+  listId: listIdSchema,
+  name: labelNameSchema,
+  colorIndex: z.number().int().min(0).max(11).optional(),
+});
+
+export const deleteListLabelSchema = z.object({
+  listId: listIdSchema,
+  labelId: z.string().uuid({ message: 'Invalid label ID' }),
+});
+
+export const setCardLabelsSchema = z.object({
+  itemId: listItemIdSchema,
+  labels: z.array(labelNameSchema).max(20),
+});
+
+export const addResourceSchema = z.object({
+  itemId: listItemIdSchema,
+  url: z.string().url({ message: 'Invalid URL format' }),
+});
+
+export const deleteResourceSchema = z.object({
+  resourceId: z.string().uuid({ message: 'Invalid resource ID' }),
+});
+
+export const setColumnWipLimitSchema = z.object({
+  columnId: listColumnIdSchema,
+  wipLimit: z.preprocess(
+    (val) => (val === 0 ? null : val),
+    z
+      .number()
+      .int()
+      .min(1, 'WIP limit must be at least 1')
+      .max(99, 'WIP limit cannot exceed 99')
+      .nullable(),
+  ),
+});
+
+export const importCardSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required').max(300),
+  columnTitle: z.string().trim().min(1).max(100),
+  description: z.string().max(2000).optional().nullable(),
+  dueDate: dueDateSchema,
+  priority: listItemPrioritySchema,
+  labels: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
+});
+
+export const importBoardBatchSchema = z.object({
+  listId: listIdSchema,
+  columns: z.array(z.string().trim().min(1).max(100)).max(50),
+  cards: z.array(importCardSchema).max(100),
+});
+
 

@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select'
 import { LuPlus, LuTrash2, LuSave } from 'react-icons/lu'
 import { toast } from 'react-toastify'
+import { getTodayDateOnlyString, toLocalDateOnlyString } from '@/lib/date-only'
 
 interface InvoiceFormModalProps {
   isOpen: boolean
@@ -120,13 +121,11 @@ function InvoiceFormContent({
   )
   const [issueDate, setIssueDate] = useState(() => {
     if (invoiceToEdit) return invoiceToEdit.issue_date
-    return new Date().toISOString().split('T')[0]
+    return getTodayDateOnlyString()
   })
   const [dueDate, setDueDate] = useState(() => {
     if (invoiceToEdit) return invoiceToEdit.due_date
-    return new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0]
+    return toLocalDateOnlyString(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000))
   })
   const [status, setStatus] = useState<InvoiceStatus>(() =>
     invoiceToEdit ? invoiceToEdit.status : 'pending',
@@ -159,7 +158,7 @@ function InvoiceFormContent({
   const [signedDate, setSignedDate] = useState(() => {
     if (invoiceToEdit && invoiceToEdit.signed_date)
       return invoiceToEdit.signed_date
-    return new Date().toISOString().split('T')[0]
+    return getTodayDateOnlyString()
   })
 
   const [items, setItems] = useState<FormItem[]>(() => {

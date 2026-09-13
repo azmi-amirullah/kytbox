@@ -6,6 +6,7 @@ import { LuCalendar } from 'react-icons/lu'
 import type { Matcher } from 'react-day-picker'
 
 import { cn } from '@/lib/utils'
+import { toLocalDateOnlyString } from '@/lib/date-only'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -30,6 +31,8 @@ export interface DatePickerProps {
   captionLayout?: 'label' | 'dropdown' | 'dropdown-months' | 'dropdown-years'
   startYear?: number
   endYear?: number
+  showToday?: boolean
+  showClear?: boolean
 }
 
 function parseDateValue(value?: string | Date | null): Date | undefined {
@@ -61,6 +64,7 @@ export function DatePicker({
   placeholder = 'Pick a date',
   className,
   disabled = false,
+  required = false,
   align = 'start',
   dateFormat = 'dd/MM/yyyy',
   maxDate,
@@ -68,6 +72,8 @@ export function DatePicker({
   captionLayout = 'dropdown',
   startYear,
   endYear,
+  showToday = true,
+  showClear = !required,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -104,16 +110,37 @@ export function DatePicker({
     return matchers.length > 0 ? matchers : undefined
   }, [maxDate, minDate])
 
+  const isTodayDisabled = React.useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (maxDate) {
+      const parsedMax = parseDateValue(maxDate)
+      if (parsedMax) {
+        parsedMax.setHours(0, 0, 0, 0)
+        if (today > parsedMax) return true
+      }
+    }
+    if (minDate) {
+      const parsedMin = parseDateValue(minDate)
+      if (parsedMin) {
+        parsedMin.setHours(0, 0, 0, 0)
+        if (today < parsedMin) return true
+      }
+    }
+    return false
+  }, [maxDate, minDate])
+
   function handleSelect(date: Date | undefined) {
     if (!date) {
       onChange?.('')
     } else {
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      onChange?.(`${year}-${month}-${day}`)
+      onChange?.(toLocalDateOnlyString(date))
     }
     setOpen(false)
+  }
+
+  function handleSelectToday() {
+    handleSelect(new Date())
   }
 
   return (
@@ -156,6 +183,38 @@ export function DatePicker({
           startMonth={computedStartMonth}
           endMonth={computedEndMonth}
         />
+        {(showToday || (showClear && Boolean(selectedDate))) && (
+          <div className='flex items-center justify-between border-t border-border/60 px-3 py-2 bg-muted/15'>
+            {showToday ? (
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                disabled={disabled || isTodayDisabled}
+                onClick={handleSelectToday}
+                aria-label='Select today'
+                className='h-7 px-2.5 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 transition-colors'
+              >
+                Today
+              </Button>
+            ) : (
+              <div />
+            )}
+            {showClear && Boolean(selectedDate) && (
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                disabled={disabled}
+                onClick={() => handleSelect(undefined)}
+                aria-label='Clear date'
+                className='h-7 px-2.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors'
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   )

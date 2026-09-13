@@ -14,6 +14,7 @@ import {
   LuTrash2,
   LuCircleCheck,
   LuCircle,
+  LuGauge,
 } from 'react-icons/lu'
 import {
   DropdownMenu,
@@ -23,10 +24,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { ListColumnDTO, ListItemDTO } from '@/types/dto'
+import type { ListColumnDTO, ListItemDTO, ListLabelDTO } from '@/types/dto'
 import { updateColumn, toggleDoneColumn } from '../actions'
 import KanbanCard from './KanbanCard'
 import DeleteColumnDialog from './DeleteColumnDialog'
+import ColumnWipLimitModal from './ColumnWipLimitModal'
 import { toast } from 'react-toastify'
 
 interface KanbanColumnProps {
@@ -37,6 +39,9 @@ interface KanbanColumnProps {
   onColumnUpdated: (column: ListColumnDTO) => void
   onItemUpdated: (item: ListItemDTO) => void
   onItemDeleted: (itemId: string) => void
+  boardLabels?: ListLabelDTO[]
+  onCreateLabel?: (name: string, colorIndex?: number) => Promise<void>
+  onDeleteLabel?: (labelId: string) => Promise<void>
 }
 
 export default function KanbanColumn({
@@ -47,12 +52,16 @@ export default function KanbanColumn({
   onColumnUpdated,
   onItemUpdated,
   onItemDeleted,
+  boardLabels = [],
+  onCreateLabel,
+  onDeleteLabel,
 }: KanbanColumnProps) {
   const [isAdding, setIsAdding] = useState(false)
   const [newCardTitle, setNewCardTitle] = useState('')
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editTitle, setEditTitle] = useState(column.title)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isWipModalOpen, setIsWipModalOpen] = useState(false)
   const [, startTransition] = useTransition()
   const addCardInputRef = useRef<HTMLInputElement>(null)
   const editTitleInputRef = useRef<HTMLInputElement>(null)
@@ -181,9 +190,28 @@ export default function KanbanColumn({
                 {column.title}
               </button>
             )}
-            <span className='text-xs text-muted-foreground shrink-0'>
-              {items.length}
-            </span>
+            {column.wip_limit !== null && column.wip_limit !== undefined ? (
+              <span
+                className={`text-[11px] px-1.5 py-0.2 rounded-md font-semibold shrink-0 border ${
+                  items.length > column.wip_limit
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 font-bold'
+                    : 'bg-muted text-muted-foreground border-border/60'
+                }`}
+                title={
+                  items.length > column.wip_limit
+                    ? `WIP limit exceeded: ${items.length}/${column.wip_limit} cards`
+                    : `WIP limit: ${items.length}/${column.wip_limit} cards`
+                }
+              >
+                {items.length > column.wip_limit
+                  ? `WIP: ${items.length}/${column.wip_limit}`
+                  : `${items.length}/${column.wip_limit}`}
+              </span>
+            ) : (
+              <span className='text-xs text-muted-foreground shrink-0'>
+                {items.length}
+              </span>
+            )}
           </div>
 
           <DropdownMenu>
@@ -201,6 +229,10 @@ export default function KanbanColumn({
               <DropdownMenuItem onClick={() => setIsEditingTitle(true)}>
                 <LuPencil className='w-4 h-4 mr-2' />
                 Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsWipModalOpen(true)}>
+                <LuGauge className='w-4 h-4 mr-2 text-primary' />
+                Set WIP Limit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleToggleDone}>
                 {column.is_done_column ? (
@@ -237,7 +269,15 @@ export default function KanbanColumn({
             strategy={verticalListSortingStrategy}
           >
             {items.map((item) => (
-              <KanbanCard key={item.id} item={item} onUpdate={onItemUpdated} onDelete={onItemDeleted} />
+              <KanbanCard
+                key={item.id}
+                item={item}
+                onUpdate={onItemUpdated}
+                onDelete={onItemDeleted}
+                boardLabels={boardLabels}
+                onCreateLabel={onCreateLabel}
+                onDeleteLabel={onDeleteLabel}
+              />
             ))}
           </SortableContext>
         </div>
@@ -296,6 +336,13 @@ export default function KanbanColumn({
         open={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
         onDeleted={onColumnDeleted}
+      />
+
+      <ColumnWipLimitModal
+        column={column}
+        open={isWipModalOpen}
+        onOpenChange={setIsWipModalOpen}
+        onUpdated={onColumnUpdated}
       />
     </>
   )

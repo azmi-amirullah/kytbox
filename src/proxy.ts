@@ -135,6 +135,7 @@ export async function proxy(request: NextRequest) {
       '/settings',
       '/support',
       '/support-admin',
+      '/admin',
       '/update-password',
       '/cashflow/goal',
       '/login',
@@ -165,6 +166,7 @@ export async function proxy(request: NextRequest) {
     '/settings',
     '/support',
     '/support-admin',
+    '/admin',
     '/update-password',
     '/cashflow/goal',
   ];

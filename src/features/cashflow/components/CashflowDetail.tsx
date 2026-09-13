@@ -128,7 +128,7 @@ import { escapeCsvField } from '../lib/csv'
 import { cn } from '@/lib/utils'
 import { EntryTypeBadge, EntryMetadataBadges } from './EntryBadges'
 import { resolveTagColor, TAG_COLORS } from '../lib/tag-colors'
-import { ManageTagModal } from './ManageTagModal'
+import { ManageTagModal, type TagMutationAction } from './ManageTagModal'
 import { FinancialReportModal } from './FinancialReportModal'
 import { CreateSplitGroupModal } from './split/CreateSplitGroupModal'
 
@@ -188,6 +188,8 @@ export default function CashflowDetail({
   const [prevEntriesProp, setPrevEntriesProp] = useState(entries)
   const [localRecurringRules, setLocalRecurringRules] = useState<CashflowRecurringRuleDTO[]>(recurringRules)
   const [prevRulesProp, setPrevRulesProp] = useState(recurringRules)
+  const [localTags, setLocalTags] = useState<CashflowTagDTO[]>(tags)
+  const [prevTagsProp, setPrevTagsProp] = useState(tags)
 
   if (entries !== prevEntriesProp) {
     setPrevEntriesProp(entries)
@@ -197,6 +199,11 @@ export default function CashflowDetail({
   if (recurringRules !== prevRulesProp) {
     setPrevRulesProp(recurringRules)
     setLocalRecurringRules(recurringRules)
+  }
+
+  if (tags !== prevTagsProp) {
+    setPrevTagsProp(tags)
+    setLocalTags(tags)
   }
 
   // Initialize state from server props
@@ -255,8 +262,25 @@ export default function CashflowDetail({
   }, [localEntries])
 
   const allUniqueTags = useMemo(() => {
-    if (tags && tags.length > 0) {
-      const sortedTags = [...tags].sort((a, b) => {
+    // Collect all tag names actually present in localEntries
+    const usedTagMap = new Map<string, string>()
+    for (const e of localEntries) {
+      for (const t of e.tags ?? []) {
+        if (typeof t === 'string' && t.trim()) {
+          const lower = t.trim().toLowerCase()
+          if (!usedTagMap.has(lower)) {
+            usedTagMap.set(lower, t.trim())
+          }
+        }
+      }
+    }
+
+    if (usedTagMap.size === 0) return []
+
+    // If localTags metadata exists, sort by color_index for consistent styling
+    if (localTags && localTags.length > 0) {
+      const activeTags = localTags.filter((t) => usedTagMap.has(t.name.toLowerCase()))
+      const sortedActive = [...activeTags].sort((a, b) => {
         const slotA =
           ((a.color_index % TAG_COLORS.length) + TAG_COLORS.length) %
           TAG_COLORS.length
@@ -268,23 +292,33 @@ export default function CashflowDetail({
         }
         return a.name.localeCompare(b.name)
       })
-      return sortedTags.map((t) => t.name)
+
+      const registeredLower = new Set(sortedActive.map((t) => t.name.toLowerCase()))
+      const unlistedNames: string[] = []
+      for (const [lower, original] of usedTagMap.entries()) {
+        if (!registeredLower.has(lower)) {
+          unlistedNames.push(original)
+        }
+      }
+
+      return [...sortedActive.map((t) => t.name), ...unlistedNames]
     }
+
     const set = new Set<string>()
     for (const e of localEntries) {
       for (const t of e.tags ?? []) {
-        if (t) set.add(t)
+        if (t && t.trim()) set.add(t.trim())
       }
     }
     return Array.from(set).sort((a, b) => {
-      const colorA = resolveTagColor(a, tags)
-      const colorB = resolveTagColor(b, tags)
+      const colorA = resolveTagColor(a, localTags)
+      const colorB = resolveTagColor(b, localTags)
       const idxA = TAG_COLORS.indexOf(colorA)
       const idxB = TAG_COLORS.indexOf(colorB)
       if (idxA !== idxB) return idxA - idxB
       return a.localeCompare(b)
     })
-  }, [tags, localEntries])
+  }, [localTags, localEntries])
 
   // ── Date filter ──────────────────────────────────────────────────────────────
   const [filterState, setFilterState] = useState<DateFilterState>({
@@ -1074,6 +1108,49 @@ export default function CashflowDetail({
     }
   }
 
+  function handleTagMutationSuccess(mutation?: TagMutationAction) {
+    if (!mutation) return
+
+    if (mutation.type === 'delete') {
+      const targetLower = mutation.oldTag.toLowerCase()
+      // 1. Remove from localTags in memory immediately
+      setLocalTags((prev) => prev.filter((t) => t.name.toLowerCase() !== targetLower))
+      // 2. Remove from localEntries in memory immediately
+      setLocalEntries((prev) =>
+        prev.map((e) => {
+          if (!e.tags || e.tags.length === 0) return e
+          return {
+            ...e,
+            tags: e.tags.filter((t) => t.toLowerCase() !== targetLower),
+          }
+        }),
+      )
+      // 3. Remove from active filter selections if selected
+      setSelectedTags((prev) => prev.filter((t) => t.toLowerCase() !== targetLower))
+    } else if (mutation.type === 'rename') {
+      const targetLower = mutation.oldTag.toLowerCase()
+      const newName = mutation.newTag
+      // 1. Update in localTags in memory immediately
+      setLocalTags((prev) =>
+        prev.map((t) => (t.name.toLowerCase() === targetLower ? { ...t, name: newName } : t)),
+      )
+      // 2. Update in localEntries in memory immediately
+      setLocalEntries((prev) =>
+        prev.map((e) => {
+          if (!e.tags || e.tags.length === 0) return e
+          return {
+            ...e,
+            tags: e.tags.map((t) => (t.toLowerCase() === targetLower ? newName : t)),
+          }
+        }),
+      )
+      // 3. Update in active filter selections if selected
+      setSelectedTags((prev) =>
+        prev.map((t) => (t.toLowerCase() === targetLower ? newName : t)),
+      )
+    }
+  }
+
   function handleExportCSV() {
     if (filteredEntries.length === 0) {
       toast.info('No entries to export')
@@ -1763,7 +1840,7 @@ export default function CashflowDetail({
                 </span>
                 {allUniqueTags.map((tag) => {
                   const isActive = selectedTags.includes(tag)
-                  const tagColor = resolveTagColor(tag, tags)
+                  const tagColor = resolveTagColor(tag, localTags)
                   return (
                     <div
                       key={tag}
@@ -2314,7 +2391,7 @@ export default function CashflowDetail({
         onSuccess={handleEntrySuccess}
         goals={goals}
         availableTags={allUniqueTags}
-        bookTags={tags}
+        bookTags={localTags}
       />
 
       {/* Import CSV Modal */}
@@ -2332,8 +2409,8 @@ export default function CashflowDetail({
         tag={managingTag}
         open={isManageTagOpen}
         onOpenChange={setIsManageTagOpen}
-        onSuccess={handleEntrySuccess}
-        bookTags={tags}
+        onSuccess={handleTagMutationSuccess}
+        bookTags={localTags}
       />
 
       {/* Delete Cashflow Dialog */}
@@ -2459,7 +2536,7 @@ export default function CashflowDetail({
           onUpdateCategory={handleBulkUpdateCategory}
           onAddTags={handleBulkAddTags}
           availableTags={allUniqueTags}
-          bookTags={tags}
+          bookTags={localTags}
           activeAction={activeBulkAction}
           isPending={activeBulkAction !== null}
         />

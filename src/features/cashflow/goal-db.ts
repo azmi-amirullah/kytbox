@@ -24,13 +24,16 @@ export async function getGoalDetailData(
       .select('*')
       .eq('id', goalId)
       .maybeSingle(),
-    supabase.from('profiles').select('default_currency').eq('id', userId).single(),
+    supabase.from('profiles').select('default_currency').eq('id', userId).maybeSingle(),
   ])
 
-  if (goalResult.error || profileResult.error) {
+  if (profileResult.error) {
+    console.warn('cashflow_goal_detail_profile_lookup_warning', profileResult.error)
+  }
+
+  if (goalResult.error) {
     console.error('cashflow_goal_detail_base_lookup_failed', {
       goal: goalResult.error,
-      profile: profileResult.error,
     })
     throw new Error('GOAL_DETAIL_LOOKUP_FAILED')
   }

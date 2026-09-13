@@ -41,3 +41,9 @@ export const listItemRecurrenceClientSchema = z.catch(
   null
 );
 
+export const listLabelsClientSchema = z.catch(
+  z.array(z.string()),
+  []
+);
+
+

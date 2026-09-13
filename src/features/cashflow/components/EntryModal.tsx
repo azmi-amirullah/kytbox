@@ -56,6 +56,7 @@ import {
   isSupportedImageFile,
 } from '../lib/image-compression'
 import ReceiptLightbox from './ReceiptLightbox'
+import { getTodayDateOnlyString } from '@/lib/date-only'
 
 interface EntryModalProps {
   cashflowId: string
@@ -83,7 +84,7 @@ export default function EntryModal({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayDateOnlyString()
   const entryGoal = entry?.goal_id
     ? goals.find((goal) => goal.id === entry.goal_id)
     : undefined

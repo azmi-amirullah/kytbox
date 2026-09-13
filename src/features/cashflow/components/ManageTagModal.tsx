@@ -27,12 +27,16 @@ import { resolveTagColor } from '../lib/tag-colors'
 import type { CashflowTagDTO } from '@/types/dto'
 import { renameCashflowTag, deleteCashflowTag } from '../actions'
 
+export type TagMutationAction =
+  | { type: 'delete'; oldTag: string }
+  | { type: 'rename'; oldTag: string; newTag: string }
+
 interface ManageTagModalProps {
   cashflowId: string
   tag: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess: () => void
+  onSuccess: (action?: TagMutationAction) => void
   bookTags?: CashflowTagDTO[]
 }
 
@@ -92,7 +96,7 @@ export function ManageTagModal({
       } else {
         toast.success(`Renamed #${cleanCurrentTag} to #${cleanNewTag} across all transactions`)
         onOpenChange(false)
-        onSuccess()
+        onSuccess({ type: 'rename', oldTag: cleanCurrentTag, newTag: cleanNewTag })
       }
     } catch {
       toast.error('Failed to rename tag')
@@ -117,7 +121,7 @@ export function ManageTagModal({
         toast.success(`Removed #${cleanCurrentTag} from all transactions`)
         setShowDeleteConfirm(false)
         onOpenChange(false)
-        onSuccess()
+        onSuccess({ type: 'delete', oldTag: cleanCurrentTag })
       }
     } catch {
       toast.error('Failed to delete tag')

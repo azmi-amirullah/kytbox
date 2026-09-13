@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { parseDateOnly, formatAppDate } from '@/lib/date-only'
+import {
+  parseDateOnly,
+  formatAppDate,
+  toLocalDateOnlyString,
+  getTodayDateOnlyString,
+} from '@/lib/date-only'
 
 describe('parseDateOnly', () => {
   it('keeps a date-only value on its calendar day', () => {
@@ -34,3 +39,16 @@ describe('formatAppDate', () => {
     expect(formatAppDate('', 'N/A')).toBe('N/A')
   })
 })
+
+describe('toLocalDateOnlyString & getTodayDateOnlyString', () => {
+  it('formats local Date to YYYY-MM-DD correctly without UTC shift', () => {
+    const date = new Date(2026, 8, 13, 6, 45, 0)
+    expect(toLocalDateOnlyString(date)).toBe('2026-09-13')
+  })
+
+  it('returns valid YYYY-MM-DD for getTodayDateOnlyString', () => {
+    const todayStr = getTodayDateOnlyString()
+    expect(todayStr).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+})
+

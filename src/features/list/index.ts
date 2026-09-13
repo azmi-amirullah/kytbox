@@ -13,5 +13,12 @@ export * from './lib/due-date';
 export * from './lib/priority';
 export * from './lib/recurrence';
 export * from './lib/calendar';
+export * from './lib/label-colors';
+export * from './lib/resource-metadata';
+export * from './lib/fractional-indexing';
+export * from './lib/filter-cards';
+export * from './lib/board-importer';
+export * from './lib/board-exporter';
 export * as schemasClient from './schemas.client';
 export * as schemasServer from './schemas.server';
+

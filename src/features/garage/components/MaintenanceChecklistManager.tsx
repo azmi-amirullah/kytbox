@@ -43,6 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { toLocalDateOnlyString, getTodayDateOnlyString } from '@/lib/date-only'
 import type {
   MaintenanceCategory,
   VehicleDTO,
@@ -702,10 +703,8 @@ export function MaintenanceChecklistManager({
                             onClick={() => {
                               const dueDate =
                                 status.remainingDays !== null && status.remainingDays > 0
-                                  ? new Date(Date.now() + status.remainingDays * 86400000)
-                                      .toISOString()
-                                      .slice(0, 10)
-                                  : new Date().toISOString().slice(0, 10)
+                                  ? toLocalDateOnlyString(new Date(Date.now() + status.remainingDays * 86400000))
+                                  : getTodayDateOnlyString()
                               setRuleForList({
                                 ruleName: rule.name,
                                 predictedDueDate: dueDate,
@@ -895,10 +894,8 @@ export function MaintenanceChecklistManager({
                         onClick={() => {
                           const dueDate =
                             status.remainingDays !== null && status.remainingDays > 0
-                              ? new Date(Date.now() + status.remainingDays * 86400000)
-                                  .toISOString()
-                                  .slice(0, 10)
-                              : new Date().toISOString().slice(0, 10)
+                              ? toLocalDateOnlyString(new Date(Date.now() + status.remainingDays * 86400000))
+                              : getTodayDateOnlyString()
                           setRuleForList({
                             ruleName: rule.name,
                             predictedDueDate: dueDate,

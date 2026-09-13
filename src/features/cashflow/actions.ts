@@ -2412,41 +2412,40 @@ export async function renameCashflowTag(formData: FormData) {
   }
 
   // Fetch all entries containing oldTag
+  const searchOldTags = Array.from(new Set([oldTag, oldTag.toLowerCase(), oldTag.toUpperCase()]));
   const { data: entries, error: fetchError } = await supabase
     .from('cashflow_entries')
     .select('id, tags')
     .eq('cashflow_id', cashflowId)
-    .contains('tags', [oldTag]);
+    .overlaps('tags', searchOldTags);
 
   if (fetchError) {
     console.error('Failed to fetch entries for tag rename:', fetchError);
     return { error: 'Failed to find entries with this tag.' };
   }
 
-  if (!entries || entries.length === 0) {
-    return { success: true, count: 0 };
-  }
-
-  // Update each entry's tags array with deduplication
-  const updatePromises = entries.map((entry) => {
-    const updatedTags = Array.from(
-      new Set(
-        (entry.tags || []).map((t) =>
-          t.toLowerCase() === oldTag.toLowerCase() ? newTag : t,
+  // Update each entry's tags array with deduplication if any entries exist
+  if (entries && entries.length > 0) {
+    const updatePromises = entries.map((entry) => {
+      const updatedTags = Array.from(
+        new Set(
+          (entry.tags || []).map((t) =>
+            t.toLowerCase() === oldTag.toLowerCase() ? newTag : t,
+          ),
         ),
-      ),
-    );
-    return supabase
-      .from('cashflow_entries')
-      .update({ tags: updatedTags })
-      .eq('id', entry.id);
-  });
+      );
+      return supabase
+        .from('cashflow_entries')
+        .update({ tags: updatedTags })
+        .eq('id', entry.id);
+    });
 
-  const results = await Promise.all(updatePromises);
-  const hasError = results.some((r) => r.error);
-  if (hasError) {
-    console.error('Failed to update some entries during tag rename');
-    return { error: 'Failed to update all entries.' };
+    const results = await Promise.all(updatePromises);
+    const hasError = results.some((r) => r.error);
+    if (hasError) {
+      console.error('Failed to update some entries during tag rename');
+      return { error: 'Failed to update all entries.' };
+    }
   }
 
   // Update tag in cashflow_tags registry
@@ -2459,7 +2458,7 @@ export async function renameCashflowTag(formData: FormData) {
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
 
-  return { success: true, count: entries.length };
+  return { success: true, count: entries?.length || 0 };
 }
 
 /**
@@ -2493,50 +2492,54 @@ export async function deleteCashflowTag(formData: FormData) {
   }
 
   // Fetch all entries containing tag
+  const searchTags = Array.from(new Set([tag, tag.toLowerCase(), tag.toUpperCase()]));
   const { data: entries, error: fetchError } = await supabase
     .from('cashflow_entries')
     .select('id, tags')
     .eq('cashflow_id', cashflowId)
-    .contains('tags', [tag]);
+    .overlaps('tags', searchTags);
 
   if (fetchError) {
     console.error('Failed to fetch entries for tag delete:', fetchError);
     return { error: 'Failed to find entries with this tag.' };
   }
 
-  if (!entries || entries.length === 0) {
-    return { success: true, count: 0 };
-  }
+  // Remove tag from each entry if any entries exist
+  if (entries && entries.length > 0) {
+    const updatePromises = entries.map((entry) => {
+      const updatedTags = (entry.tags || []).filter(
+        (t) => t.toLowerCase() !== tag.toLowerCase(),
+      );
+      return supabase
+        .from('cashflow_entries')
+        .update({ tags: updatedTags })
+        .eq('id', entry.id);
+    });
 
-  // Remove tag from each entry
-  const updatePromises = entries.map((entry) => {
-    const updatedTags = (entry.tags || []).filter(
-      (t) => t.toLowerCase() !== tag.toLowerCase(),
-    );
-    return supabase
-      .from('cashflow_entries')
-      .update({ tags: updatedTags })
-      .eq('id', entry.id);
-  });
-
-  const results = await Promise.all(updatePromises);
-  const hasError = results.some((r) => r.error);
-  if (hasError) {
-    console.error('Failed to update some entries during tag delete');
-    return { error: 'Failed to remove tag from all entries.' };
+    const results = await Promise.all(updatePromises);
+    const hasError = results.some((r) => r.error);
+    if (hasError) {
+      console.error('Failed to update some entries during tag delete');
+      return { error: 'Failed to remove tag from all entries.' };
+    }
   }
 
   // Delete from cashflow_tags registry
-  await supabase
+  const deleteResult = await supabase
     .from('cashflow_tags')
     .delete()
     .eq('cashflow_id', cashflowId)
     .ilike('name', tag);
 
+  if (deleteResult.error) {
+    console.error('Failed to delete from cashflow_tags:', deleteResult.error);
+    return { error: 'Failed to delete tag.' };
+  }
+
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
 
-  return { success: true, count: entries.length };
+  return { success: true, count: entries?.length || 0 };
 }
 
 export async function createRecurringRule(cashflowId: string, formData: FormData) {

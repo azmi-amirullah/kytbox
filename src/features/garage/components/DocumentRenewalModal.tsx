@@ -35,6 +35,7 @@ import type { VehicleDTO, VehicleDocumentDTO } from '@/types/dto'
 import { EXPENSE_CATEGORIES } from '@/features/cashflow/constants'
 import { renewVehicleDocument } from '../actions'
 import { advanceExpiryDate } from '../lib/document-math'
+import { getTodayDateOnlyString } from '@/lib/date-only'
 
 interface DocumentRenewalModalProps {
   vehicle: VehicleDTO
@@ -73,7 +74,7 @@ export function DocumentRenewalModal({
   const syncCashflowId = useId()
   const advanceTodayId = useId()
 
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = getTodayDateOnlyString()
   const isDocumentExpired = Boolean(document && document.expiry_date < todayStr)
 
   // Default preset based on document type

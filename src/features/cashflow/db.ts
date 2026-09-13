@@ -3,6 +3,7 @@ import 'server-only';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { getAccessibleCashflows } from './access';
+import { DEFAULT_CURRENCY } from '@/lib/currency';
 import {
   mapCashflowWithSummaryToDTO,
   mapCashflowToDTO,
@@ -52,26 +53,71 @@ export async function getCashflowDashboardData(
       .from('profiles')
       .select('default_currency')
       .eq('id', userId)
-      .single(),
+      .maybeSingle(),
     supabase
       .from('cashflow_shares')
       .select('cashflow_id, is_included_in_totals, is_pinned')
       .eq('email', email.trim().toLowerCase()),
   ]);
 
-  const profile = profileResult.data;
-  const shares = sharesResult.data;
+  let profile = profileResult.data;
+  let shares = sharesResult.data;
 
-  if (profileResult.error || sharesResult.error) {
-    console.error('cashflow_dashboard_base_lookup_failed', {
-      profile: profileResult.error,
-      shares: sharesResult.error,
+  // Profile lookup resilience:
+  // If profileResult.error is present (e.g. 504 Gateway Timeout or transient network error), retry once
+  if (profileResult.error) {
+    if (profileResult.error.code === 'PGRST116') {
+      throw new Error('PROFILE_NOT_FOUND');
+    }
+    console.warn('cashflow_dashboard_profile_lookup_retrying', {
+      error: profileResult.error,
+      userId,
     });
-    throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
+    const retryProfile = await supabase
+      .from('profiles')
+      .select('default_currency')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!retryProfile.error) {
+      if (!retryProfile.data) {
+        throw new Error('PROFILE_NOT_FOUND');
+      }
+      profile = retryProfile.data;
+    } else {
+      console.error('cashflow_dashboard_profile_lookup_failed_after_retry', {
+        error: retryProfile.error,
+        userId,
+      });
+      // Fallback safely to default currency so a display preference timeout does not crash the dashboard
+      profile = { default_currency: DEFAULT_CURRENCY };
+    }
+  } else if (!profile) {
+    throw new Error('PROFILE_NOT_FOUND');
   }
 
-  if (!profile) {
-    throw new Error('PROFILE_NOT_FOUND');
+  // Shares lookup resilience:
+  // If sharesResult.error is present, retry once
+  if (sharesResult.error) {
+    console.warn('cashflow_dashboard_shares_lookup_retrying', {
+      error: sharesResult.error,
+      email,
+    });
+    const retryShares = await supabase
+      .from('cashflow_shares')
+      .select('cashflow_id, is_included_in_totals, is_pinned')
+      .eq('email', email.trim().toLowerCase());
+
+    if (!retryShares.error) {
+      shares = retryShares.data;
+    } else {
+      console.error('cashflow_dashboard_shares_lookup_failed_after_retry', {
+        error: retryShares.error,
+        email,
+      });
+      // Fallback safely to empty shares so user can at least view personal cashflows
+      shares = [];
+    }
   }
 
   const pinnedShareIds = new Set(
@@ -86,25 +132,33 @@ export async function getCashflowDashboardData(
 
   const allShareIds = shares?.map((s) => s.cashflow_id) || [];
 
-  // Get user's cashflow summaries from the view
-  let query = supabase
-    .from('cashflow_summaries')
-    .select(
-      'id, user_id, title, created_at, updated_at, is_public, is_pinned, is_archived, last_entry_at, entry_count, income, expense, balance',
-    )
-    .order('created_at', { ascending: false });
+  // Helper to build the cashflow_summaries query
+  const buildSummariesQuery = () => {
+    const q = supabase
+      .from('cashflow_summaries')
+      .select(
+        'id, user_id, title, created_at, updated_at, is_public, is_pinned, is_archived, last_entry_at, entry_count, income, expense, balance',
+      )
+      .order('created_at', { ascending: false });
 
-  if (allShareIds.length > 0) {
-    query = query.or(`user_id.eq.${userId},id.in.(${allShareIds.join(',')})`);
-  } else {
-    query = query.eq('user_id', userId);
-  }
+    if (allShareIds.length > 0) {
+      return q.or(`user_id.eq.${userId},id.in.(${allShareIds.join(',')})`);
+    }
+    return q.eq('user_id', userId);
+  };
 
-  const { data: cashflowSummariesData, error: cashflowSummariesError } =
-    await query;
+  const { data: initialSummariesData, error: cashflowSummariesError } =
+    await buildSummariesQuery();
+  let cashflowSummariesData = initialSummariesData;
+
   if (cashflowSummariesError) {
-    console.error('cashflow_dashboard_summary_lookup_failed', cashflowSummariesError);
-    throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
+    console.warn('cashflow_dashboard_summary_lookup_retrying', cashflowSummariesError);
+    const retrySummaries = await buildSummariesQuery();
+    if (retrySummaries.error) {
+      console.error('cashflow_dashboard_summary_lookup_failed_after_retry', retrySummaries.error);
+      throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED', { cause: retrySummaries.error });
+    }
+    cashflowSummariesData = retrySummaries.data;
   }
 
   // Active summaries (active owned + pinned shares) to aggregate charts for
@@ -129,11 +183,9 @@ export async function getCashflowDashboardData(
     );
 
     if (aggregateError) {
-      console.error('cashflow_dashboard_aggregates_lookup_failed', aggregateError);
-      throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED');
-    }
-
-    if (aggregateRows) {
+      console.warn('cashflow_dashboard_aggregates_lookup_failed_falling_back', aggregateError);
+      // Non-fatal: charts will show empty state rather than crashing the dashboard
+    } else if (aggregateRows) {
       aggregates = aggregateRows.map((row) => ({
         cashflow_id: row.cashflow_id,
         month: row.month,
@@ -194,7 +246,7 @@ export async function getCashflowDetailData(
         .from('profiles')
         .select('username, avatar_url, display_name, role, default_currency')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
     : Promise.resolve({ data: null, error: null });
 
   const cashflowPromise = supabase.from('cashflows').select('*').eq('id', cashflowId).single();
@@ -296,9 +348,11 @@ export async function getCashflowDetailData(
     console.error('cashflow_entry_lookup_failed', entriesResult.error);
     throw new Error('CASHFLOW_DETAIL_LOOKUP_FAILED');
   }
-  if (profileResult.error || shareResult.error || budgetsResult.error || tagsResult.error || recurringRulesResult.error) {
+  if (profileResult.error) {
+    console.warn('cashflow_detail_profile_lookup_warning', profileResult.error);
+  }
+  if (shareResult.error || budgetsResult.error || tagsResult.error || recurringRulesResult.error) {
     console.error('cashflow_detail_context_lookup_failed', {
-      profile: profileResult.error,
       share: shareResult.error,
       budgets: budgetsResult.error,
       tags: tagsResult.error,
