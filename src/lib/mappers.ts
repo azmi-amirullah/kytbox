@@ -193,12 +193,13 @@ export function mapCashflowEntryToDTO(
     cashflow_split_entries?: CashflowSplitEntry[];
   },
   goalTitle?: string | null,
+  goalType?: 'savings' | 'debt' | null,
 ): CashflowEntryDTO {
   const category = row.goal_id
     ? goalTitle
-      ? `Goal: ${goalTitle}`
+      ? `${goalType === 'debt' ? 'Debt:' : 'Goal:'} ${goalTitle}`
       : null
-    : row.category?.startsWith('Goal:')
+    : row.category?.startsWith('Goal:') || row.category?.startsWith('Debt:')
       ? null
       : row.category;
 
@@ -257,12 +258,13 @@ export function mapCashflowRecurringRuleToDTO(
     updated_at?: string | null;
   },
   goalTitle?: string | null,
+  goalType?: 'savings' | 'debt' | null,
 ): CashflowRecurringRuleDTO {
   const category = row.goal_id
     ? goalTitle
-      ? `Goal: ${goalTitle}`
+      ? `${goalType === 'debt' ? 'Debt:' : 'Goal:'} ${goalTitle}`
       : null
-    : row.category?.startsWith('Goal:')
+    : row.category?.startsWith('Goal:') || row.category?.startsWith('Debt:')
       ? null
       : row.category;
 
@@ -396,20 +398,28 @@ export function mapTagToDTO(row: CashflowTag): CashflowTagDTO {
 export function mapGoalToDTO(
   row: CashflowGoal,
   cashflowTitle: string | null = null,
-  savedAmount = 0,
+  savedAmount?: number,
   contributionCount = 0,
 ): CashflowGoalDTO {
+  const initialAmount = Math.max(0, Number(row.initial_amount || 0));
+  const effectiveSavedAmount =
+    savedAmount !== undefined
+      ? Math.max(0, Number(savedAmount))
+      : initialAmount;
+
   return {
     id: row.id,
     cashflow_id: row.cashflow_id,
     cashflow_title: cashflowTitle,
     title: row.title,
     target_amount: Number(row.target_amount),
-    saved_amount: Math.max(0, Number(savedAmount)),
+    initial_amount: initialAmount,
+    saved_amount: effectiveSavedAmount,
     contribution_count: Math.max(0, Number(contributionCount)),
     deadline: row.deadline ?? null,
     created_at: row.created_at,
     is_archived: Boolean(row.is_deleted),
+    type: row.type === 'debt' ? 'debt' : 'savings',
   };
 }
 

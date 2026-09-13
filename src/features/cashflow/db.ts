@@ -369,23 +369,33 @@ export async function getCashflowDetailData(
   }
   cashflowTitles.set(cashflow.id, cashflow.title);
 
-  const goalTitlesById = new Map(
-    (goalsResult.data ?? []).map((goal) => [goal.id, goal.title] as const),
+  const goalMetaById = new Map<string, { title: string; type: 'savings' | 'debt' }>(
+    (goalsResult.data ?? []).map((goal) => [
+      goal.id,
+      {
+        title: goal.title,
+        type: goal.type === 'debt' ? 'debt' : 'savings',
+      },
+    ]),
   );
 
-  const entries = (entriesResult.data ?? []).map((entry) =>
-    mapCashflowEntryToDTO(
+  const entries = (entriesResult.data ?? []).map((entry) => {
+    const meta = entry.goal_id ? goalMetaById.get(entry.goal_id) : undefined;
+    return mapCashflowEntryToDTO(
       entry,
-      entry.goal_id ? goalTitlesById.get(entry.goal_id) ?? null : undefined,
-    ),
-  );
+      meta?.title ?? null,
+      meta?.type ?? null,
+    );
+  });
 
-  const recurringRules = (recurringRulesResult.data ?? []).map((rule) =>
-    mapCashflowRecurringRuleToDTO(
+  const recurringRules = (recurringRulesResult.data ?? []).map((rule) => {
+    const meta = rule.goal_id ? goalMetaById.get(rule.goal_id) : undefined;
+    return mapCashflowRecurringRuleToDTO(
       rule,
-      rule.goal_id ? goalTitlesById.get(rule.goal_id) ?? null : undefined,
-    ),
-  );
+      meta?.title ?? null,
+      meta?.type ?? null,
+    );
+  });
 
   const isActualOwner = isOwner !== undefined ? isOwner : Boolean(userId && cashflow.user_id === userId);
   // Only map budgets if the user is the owner (budgets are owner-only)

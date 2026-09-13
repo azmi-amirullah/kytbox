@@ -171,11 +171,13 @@ export interface CashflowGoalDTO {
   cashflow_title: string | null
   title: string
   target_amount: number
+  initial_amount: number
   saved_amount: number
   contribution_count: number
   deadline: string | null
   created_at: string | null
   is_archived?: boolean
+  type?: 'savings' | 'debt'
 }
 
 export interface CashflowChartAggregateDTO {

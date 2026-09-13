@@ -135,6 +135,8 @@ export const cashflowGoalSchema = z.object({
   cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
   title: z.string().trim().min(1, 'Title is required').max(100, 'Title too long'),
   targetAmount: z.coerce.number().positive('Target amount must be positive'),
+  initialAmount: z.coerce.number().min(0, 'Initial amount must be non-negative').optional().default(0),
+  type: z.enum(['savings', 'debt']).optional().default('savings'),
   deadline: dateOnlySchema
     .nullable()
     .optional(),
@@ -154,12 +156,17 @@ export function getGoalEntryValidationError(
   type: 'income' | 'expense',
   category: string | null | undefined,
 ): string | null {
-  if (!category?.startsWith('Goal:')) return null;
-  if (category.slice('Goal:'.length).trim().length === 0) {
-    return 'A savings goal must have a name';
+  if (!category) return null;
+  const isGoal = category.startsWith('Goal:');
+  const isDebt = category.startsWith('Debt:');
+  if (!isGoal && !isDebt) return null;
+
+  const prefix = isGoal ? 'Goal:' : 'Debt:';
+  if (category.slice(prefix.length).trim().length === 0) {
+    return isDebt ? 'A debt target must have a name' : 'A savings goal must have a name';
   }
   if (type !== 'expense') {
-    return 'Savings goal entries must be expenses';
+    return isDebt ? 'Debt payments must be expenses' : 'Savings goal entries must be expenses';
   }
   return null;
 }

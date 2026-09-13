@@ -77,7 +77,11 @@ export async function getGoalDetailData(
 
   const progress = progressResult.data
   const entries = (entriesResult.data ?? []).map((entry) =>
-    mapCashflowEntryToDTO(entry, goal.title),
+    mapCashflowEntryToDTO(
+      entry,
+      goal.title,
+      goal.type === 'debt' ? 'debt' : 'savings',
+    ),
   )
 
   return {

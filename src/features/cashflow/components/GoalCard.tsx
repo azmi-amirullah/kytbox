@@ -40,6 +40,7 @@ interface GoalCardProps {
   currency: string | null
   isOwner: boolean
   cashflows?: { id: string; title: string }[]
+  onGoalChange?: (goal: CashflowGoalDTO) => void
 }
 
 export default function GoalCard({
@@ -48,6 +49,7 @@ export default function GoalCard({
   currency,
   isOwner,
   cashflows = [],
+  onGoalChange,
 }: GoalCardProps) {
   const shouldReduceMotion = useReducedMotion()
 
@@ -59,10 +61,19 @@ export default function GoalCard({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [unarchivingId, setUnarchivingId] = useState<string | null>(null)
 
+  // ── Synchronized local goals state (updated instantly on API response) ───
+  const [localGoals, setLocalGoals] = useState<CashflowGoalDTO[]>(goals)
+  const [prevGoalsProp, setPrevGoalsProp] = useState(goals)
+
+  if (goals !== prevGoalsProp) {
+    setPrevGoalsProp(goals)
+    setLocalGoals(goals)
+  }
+
   if (!cashflowId) return null
 
-  const activeGoals = goals.filter((g) => !g.is_archived)
-  const archivedGoals = goals.filter((g) => Boolean(g.is_archived))
+  const activeGoals = localGoals.filter((g) => !g.is_archived)
+  const archivedGoals = localGoals.filter((g) => Boolean(g.is_archived))
   const displayedGoals = tab === 'active' ? activeGoals : archivedGoals
 
   function handleCreateNew() {
@@ -73,6 +84,17 @@ export default function GoalCard({
   function handleEdit(goal: CashflowGoalDTO) {
     setEditingGoal(goal)
     setModalOpen(true)
+  }
+
+  function handleGoalSuccess(savedGoal: CashflowGoalDTO) {
+    setLocalGoals((prev) => {
+      const exists = prev.some((g) => g.id === savedGoal.id)
+      if (exists) {
+        return prev.map((g) => (g.id === savedGoal.id ? savedGoal : g))
+      }
+      return [...prev, savedGoal]
+    })
+    onGoalChange?.(savedGoal)
   }
 
   function requestArchive(goal: CashflowGoalDTO) {
@@ -94,11 +116,22 @@ export default function GoalCard({
         return
       }
 
+      const updatedGoal: CashflowGoalDTO = { ...goal, is_archived: true }
+      setLocalGoals((prev) =>
+        prev.map((g) => (g.id === goal.id ? updatedGoal : g)),
+      )
+      onGoalChange?.(updatedGoal)
       setArchiveDialogGoal(null)
-      toast.success('Savings goal archived')
+      toast.success(
+        goal.type === 'debt' ? 'Debt payoff archived' : 'Savings goal archived',
+      )
     } catch (error) {
-      console.error('Failed to archive savings goal:', error)
-      toast.error('Failed to archive savings goal')
+      console.error('Failed to archive target:', error)
+      toast.error(
+        goal.type === 'debt'
+          ? 'Failed to archive debt payoff'
+          : 'Failed to archive savings goal',
+      )
     } finally {
       setDeletingId(null)
     }
@@ -116,16 +149,27 @@ export default function GoalCard({
         return
       }
 
-      toast.success('Savings goal restored')
+      const updatedGoal: CashflowGoalDTO = { ...goal, is_archived: false }
+      setLocalGoals((prev) =>
+        prev.map((g) => (g.id === goal.id ? updatedGoal : g)),
+      )
+      onGoalChange?.(updatedGoal)
+      toast.success(
+        goal.type === 'debt' ? 'Debt payoff restored' : 'Savings goal restored',
+      )
     } catch (error) {
-      console.error('Failed to restore savings goal:', error)
-      toast.error('Failed to restore savings goal')
+      console.error('Failed to restore target:', error)
+      toast.error(
+        goal.type === 'debt'
+          ? 'Failed to restore debt payoff'
+          : 'Failed to restore savings goal',
+      )
     } finally {
       setUnarchivingId(null)
     }
   }
 
-  if (goals.length === 0) {
+  if (localGoals.length === 0) {
     if (!isOwner) return null
 
     return (
@@ -138,10 +182,10 @@ export default function GoalCard({
               </div>
               <div className='min-w-0'>
                 <h3 className='font-semibold text-foreground text-sm truncate'>
-                  Track Savings Goals
+                  Track Savings & Debts
                 </h3>
                 <p className='text-[11px] text-muted-foreground hidden sm:block truncate'>
-                  Set a goal amount and track contributions towards it.
+                  Set goals to save or track debts to pay down.
                 </p>
               </div>
             </div>
@@ -151,7 +195,7 @@ export default function GoalCard({
               className='h-8 text-xs gap-1.5 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs px-3 cursor-pointer'
             >
               <FiPlus className='h-3.5 w-3.5' />
-              <span>Add Goal</span>
+              <span>Add Target</span>
             </Button>
           </div>
         </div>
@@ -163,6 +207,7 @@ export default function GoalCard({
           onOpenChange={setModalOpen}
           currency={currency}
           cashflows={cashflows}
+          onSuccess={handleGoalSuccess}
         />
       </>
     )
@@ -176,7 +221,7 @@ export default function GoalCard({
             <div className='flex items-center gap-2'>
               <FiTarget className='h-4 w-4 text-primary' />
               <h3 className='font-semibold text-sm uppercase tracking-wider text-muted-foreground'>
-                Savings Goals
+                Goals & Debts
               </h3>
             </div>
             {(archivedGoals.length > 0 || tab === 'archived') && (
@@ -216,7 +261,7 @@ export default function GoalCard({
               className='h-8 gap-1.5 text-xs border-border/60 hover:bg-accent cursor-pointer'
             >
               <FiPlus className='h-3.5 w-3.5' />
-              <span>New Goal</span>
+              <span>New Target</span>
             </Button>
           )}
         </div>
@@ -227,10 +272,10 @@ export default function GoalCard({
               <>
                 <FiArchive className='h-6 w-6 text-muted-foreground mx-auto mb-2 opacity-70' />
                 <p className='text-sm font-medium text-foreground'>
-                  No archived savings goals
+                  No archived goals or debts
                 </p>
                 <p className='text-xs text-muted-foreground mt-0.5'>
-                  Goals you archive will be stored here and can be restored
+                  Targets you archive will be stored here and can be restored
                   anytime.
                 </p>
               </>
@@ -238,7 +283,7 @@ export default function GoalCard({
               <>
                 <FiTarget className='h-6 w-6 text-muted-foreground mx-auto mb-2 opacity-70' />
                 <p className='text-sm font-medium text-foreground'>
-                  No active savings goals
+                  No active goals or debts
                 </p>
                 {isOwner && (
                   <Button
@@ -247,7 +292,7 @@ export default function GoalCard({
                     className='mt-3 h-8 text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer'
                   >
                     <FiPlus className='h-3.5 w-3.5' />
-                    <span>Add Goal</span>
+                    <span>Add Target</span>
                   </Button>
                 )}
               </>
@@ -257,6 +302,7 @@ export default function GoalCard({
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             {displayedGoals.map((goal) => {
               const isArchived = Boolean(goal.is_archived)
+              const isDebt = goal.type === 'debt'
               const canManageGoal =
                 isOwner &&
                 (cashflows.length === 0 ||
@@ -269,6 +315,7 @@ export default function GoalCard({
                 Math.max(0, (rawSaved / goal.target_amount) * 100),
               )
               const isCompleted = progress >= 100
+              const remaining = Math.max(0, goal.target_amount - rawSaved)
 
               // Deadline calculation
               let daysLeft: number | null = null
@@ -295,10 +342,13 @@ export default function GoalCard({
               // Status Pace & Color Badge
               let barColor = isArchived
                 ? 'from-muted-foreground/40 to-muted-foreground/30'
+                : isDebt
+                ? 'from-indigo-500 to-violet-400'
                 : 'from-emerald-500 to-teal-400'
-              let badgeBg =
-                'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-              let statusText = 'On Track'
+              let badgeBg = isDebt
+                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+              let statusText = isDebt ? 'Paying Down' : 'On Track'
               let StatusIcon = FiCheckCircle
 
               if (isArchived) {
@@ -307,10 +357,13 @@ export default function GoalCard({
                   'bg-muted text-muted-foreground border-border/60 font-medium'
                 StatusIcon = FiArchive
               } else if (isCompleted) {
-                statusText = 'Completed! 🎉'
-                barColor = 'from-emerald-400 via-teal-400 to-cyan-400'
-                badgeBg =
-                  'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/30'
+                statusText = isDebt ? 'Paid Off! 🎉' : 'Completed! 🎉'
+                barColor = isDebt
+                  ? 'from-indigo-400 via-violet-400 to-cyan-400'
+                  : 'from-emerald-400 via-teal-400 to-cyan-400'
+                badgeBg = isDebt
+                  ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border-indigo-500/30'
+                  : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/30'
               } else if (isPastDeadline) {
                 statusText = 'Past Deadline'
                 barColor = 'from-rose-500 to-pink-500'
@@ -332,22 +385,31 @@ export default function GoalCard({
                     'group relative overflow-hidden rounded-xl border p-5 shadow-xs transition-all',
                     isArchived
                       ? 'border-border/60 bg-card/50 opacity-85 hover:opacity-100 hover:border-border'
+                      : isDebt
+                      ? 'border-border/80 bg-card hover:border-indigo-500/40 hover:shadow-md'
                       : 'border-border/80 bg-card hover:border-primary/30 hover:shadow-md',
                   )}
                 >
                   {/* Header info */}
                   <div className='flex items-start justify-between gap-3 mb-3'>
                     <div>
-                      <h4 className='font-semibold text-foreground text-base tracking-tight'>
-                        <Link
-                          href={`/cashflow/goal/${goal.id}`}
-                          className='hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
-                        >
-                          {goal.title}
-                        </Link>
-                      </h4>
+                      <div className='flex items-center gap-1.5 flex-wrap'>
+                        <h4 className='font-semibold text-foreground text-base tracking-tight'>
+                          <Link
+                            href={`/cashflow/goal/${goal.id}`}
+                            className='hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
+                          >
+                            {goal.title}
+                          </Link>
+                        </h4>
+                        {isDebt && (
+                          <span className='inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'>
+                            Debt
+                          </span>
+                        )}
+                      </div>
                       <p className='text-xs text-muted-foreground mt-0.5'>
-                        Target:{' '}
+                        {isDebt ? 'Total Debt: ' : 'Target: '}
                         {formatCurrency(goal.target_amount, currency || 'USD')}
                       </p>
                       {goal.cashflow_title && (
@@ -423,12 +485,26 @@ export default function GoalCard({
 
                   {/* Amount details */}
                   <div className='flex items-baseline justify-between mb-2'>
-                    <span className='text-2xl font-bold text-foreground tracking-tight'>
-                      {formatCurrency(rawSaved, currency || 'USD')}
-                    </span>
-                    <span className='text-sm font-bold text-muted-foreground'>
-                      {progress.toFixed(0)}%
-                    </span>
+                    <div>
+                      <span className='text-2xl font-bold text-foreground tracking-tight'>
+                        {isDebt
+                          ? formatCurrency(remaining, currency || 'USD')
+                          : formatCurrency(rawSaved, currency || 'USD')}
+                      </span>
+                      <span className='text-xs text-muted-foreground ml-1.5 font-medium'>
+                        {isDebt ? 'left to pay' : 'saved'}
+                      </span>
+                    </div>
+                    <div className='text-right'>
+                      <span className='text-sm font-bold text-muted-foreground'>
+                        {progress.toFixed(0)}%
+                      </span>
+                      {isDebt && (
+                        <span className='text-[10px] text-muted-foreground block'>
+                          Paid: {formatCurrency(rawSaved, currency || 'USD')}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Progress bar container */}
@@ -437,7 +513,7 @@ export default function GoalCard({
                     aria-valuenow={Math.round(progress)}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label={`${goal.title} savings progress`}
+                    aria-label={`${goal.title} ${isDebt ? 'debt payoff' : 'savings'} progress`}
                     className='h-2.5 w-full overflow-hidden rounded-full bg-secondary/60 relative'
                   >
                     <motion.div
@@ -482,6 +558,7 @@ export default function GoalCard({
         onOpenChange={setModalOpen}
         currency={currency}
         cashflows={cashflows}
+        onSuccess={handleGoalSuccess}
       />
 
       <AlertDialog
@@ -492,10 +569,15 @@ export default function GoalCard({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive savings goal?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {archiveDialogGoal?.type === 'debt'
+                ? 'Archive debt payoff?'
+                : 'Archive savings goal?'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Archive &quot;{archiveDialogGoal?.title}&quot;? Contributions and
-              history will be kept. You can view or restore this goal anytime
+              history will be kept. You can view or restore this{' '}
+              {archiveDialogGoal?.type === 'debt' ? 'debt payoff' : 'goal'} anytime
               from the Archived tab.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -508,7 +590,11 @@ export default function GoalCard({
               disabled={deletingId !== null}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer'
             >
-              {deletingId !== null ? 'Archiving...' : 'Archive goal'}
+              {deletingId !== null
+                ? 'Archiving...'
+                : archiveDialogGoal?.type === 'debt'
+                  ? 'Archive debt payoff'
+                  : 'Archive goal'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

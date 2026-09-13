@@ -428,7 +428,7 @@ async function resolveGoalId(
   if (goalId) {
     const { data: goal, error } = await supabase
       .from('cashflow_goals')
-      .select('id, title')
+      .select('id, title, type')
       .eq('id', goalId)
       .eq('is_deleted', false)
       .maybeSingle();
@@ -438,44 +438,54 @@ async function resolveGoalId(
       return {
         goalId: null,
         category: null,
-        error: 'Unable to validate the savings goal',
+        error: 'Unable to validate the target',
       };
     }
 
     if (!goal) {
-      return { goalId: null, category: null, error: 'Savings goal not found' };
+      return { goalId: null, category: null, error: 'Target not found' };
     }
 
+    const expectedPrefix = goal.type === 'debt' ? 'Debt:' : 'Goal:';
     if (
-      category?.startsWith('Goal:') &&
-      category.slice('Goal:'.length).trim() !== goal.title
+      category &&
+      (category.startsWith('Goal:') || category.startsWith('Debt:'))
     ) {
-      return {
-        goalId: null,
-        category: null,
-        error: 'Savings goal category does not match the selected goal',
-      };
+      const parsedTitle = category.startsWith('Debt:')
+        ? category.slice('Debt:'.length).trim()
+        : category.slice('Goal:'.length).trim();
+
+      if (parsedTitle !== goal.title) {
+        return {
+          goalId: null,
+          category: null,
+          error: 'Category does not match the selected target',
+        };
+      }
     }
 
-    return { goalId: goal.id, category: `Goal: ${goal.title}` };
+    return { goalId: goal.id, category: `${expectedPrefix} ${goal.title}` };
   }
 
-  if (!category?.startsWith('Goal:')) {
+  const isGoal = category?.startsWith('Goal:');
+  const isDebt = category?.startsWith('Debt:');
+  if (!isGoal && !isDebt) {
     return { goalId: null, category: category ?? null };
   }
 
-  const title = category.slice('Goal:'.length).trim();
+  const prefix = isGoal ? 'Goal:' : 'Debt:';
+  const title = category!.slice(prefix.length).trim();
   if (!title) {
     return {
       goalId: null,
       category: null,
-      error: 'A savings goal must have a name',
+      error: isDebt ? 'A debt target must have a name' : 'A savings goal must have a name',
     };
   }
 
   const { data: matchingGoals, error } = await supabase
     .from('cashflow_goals')
-    .select('id, title')
+    .select('id, title, type')
     .eq('is_deleted', false)
     .eq('title', title);
 
@@ -484,25 +494,27 @@ async function resolveGoalId(
     return {
       goalId: null,
       category: null,
-      error: 'Unable to validate the savings goal',
+      error: 'Unable to validate the target',
     };
   }
 
   if (!matchingGoals || matchingGoals.length === 0) {
-    return { goalId: null, category: null, error: 'Savings goal not found' };
+    return { goalId: null, category: null, error: isDebt ? 'Debt target not found' : 'Savings goal not found' };
   }
 
   if (matchingGoals.length > 1) {
     return {
       goalId: null,
       category: null,
-      error: 'Multiple savings goals have this name. Select a goal from the category menu.',
+      error: 'Multiple targets have this name. Select a target from the category menu.',
     };
   }
 
+  const match = matchingGoals[0];
+  const expectedPrefix = match.type === 'debt' ? 'Debt:' : 'Goal:';
   return {
-    goalId: matchingGoals[0].id,
-    category: `Goal: ${matchingGoals[0].title}`,
+    goalId: match.id,
+    category: `${expectedPrefix} ${match.title}`,
   };
 }
 
@@ -537,7 +549,7 @@ export async function addEntry(formData: FormData) {
   const goalEntryError = getGoalEntryValidationError(type, category);
   if (goalEntryError) return { error: goalEntryError };
   if (goalId && type !== 'expense') {
-    return { error: 'Savings goal contributions must be expense entries' };
+    return { error: 'Target contributions must be expense entries' };
   }
 
   // Parallelize: rate limit + permission check
@@ -687,10 +699,18 @@ export async function addEntry(formData: FormData) {
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
 
-  const goalTitle = resolvedGoal.category?.startsWith('Goal:')
-    ? resolvedGoal.category.replace(/^Goal:\s*/, '')
+  const isTarget = Boolean(
+    resolvedGoal.category?.startsWith('Goal:') ||
+      resolvedGoal.category?.startsWith('Debt:'),
+  );
+  const targetPrefix = resolvedGoal.category?.startsWith('Debt:')
+    ? 'Debt:'
+    : 'Goal:';
+  const goalTitle = isTarget && resolvedGoal.category
+    ? resolvedGoal.category.replace(/^(Goal|Debt):\s*/, '')
     : undefined;
-  const entryDTO = mapCashflowEntryToDTO(insertedEntry, goalTitle);
+  const goalType = targetPrefix === 'Debt:' ? 'debt' : 'savings';
+  const entryDTO = mapCashflowEntryToDTO(insertedEntry, goalTitle, goalType);
 
   return { success: true, entry: entryDTO };
 }
@@ -726,7 +746,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
   const goalEntryError = getGoalEntryValidationError(type, category);
   if (goalEntryError) return { error: goalEntryError };
   if (goalId && type !== 'expense') {
-    return { error: 'Savings goal contributions must be expense entries' };
+    return { error: 'Target contributions must be expense entries' };
   }
 
   // Batch 1: rate limit + entry fetch are independent — run in parallel
@@ -947,10 +967,20 @@ export async function updateEntry(entryId: string, formData: FormData) {
     .eq('id', entryId)
     .single();
 
-  const goalTitle = resolvedGoal.category?.startsWith('Goal:')
-    ? resolvedGoal.category.replace(/^Goal:\s*/, '')
+  const isTarget = Boolean(
+    resolvedGoal.category?.startsWith('Goal:') ||
+      resolvedGoal.category?.startsWith('Debt:'),
+  );
+  const targetPrefix = resolvedGoal.category?.startsWith('Debt:')
+    ? 'Debt:'
+    : 'Goal:';
+  const goalTitle = isTarget && resolvedGoal.category
+    ? resolvedGoal.category.replace(/^(Goal|Debt):\s*/, '')
     : undefined;
-  const entryDTO = updatedEntry ? mapCashflowEntryToDTO(updatedEntry, goalTitle) : null;
+  const goalType = targetPrefix === 'Debt:' ? 'debt' : 'savings';
+  const entryDTO = updatedEntry
+    ? mapCashflowEntryToDTO(updatedEntry, goalTitle, goalType)
+    : null;
 
   return { success: true, entry: entryDTO };
 }
@@ -1760,7 +1790,10 @@ export async function generateRecurringEntries(
     return true;
   });
 
-  const recurringGoalTitles = new Map<string, string>();
+  const recurringGoalMeta = new Map<
+    string,
+    { title: string; type: 'savings' | 'debt' }
+  >();
   const recurringGoalIds = Array.from(
     new Set(
       uniqueRecurring
@@ -1771,7 +1804,7 @@ export async function generateRecurringEntries(
   if (recurringGoalIds.length > 0) {
     const { data: recurringGoals, error: recurringGoalsError } = await supabase
       .from('cashflow_goals')
-      .select('id, title')
+      .select('id, title, type')
       .eq('is_deleted', false)
       .in('id', recurringGoalIds);
 
@@ -1781,31 +1814,40 @@ export async function generateRecurringEntries(
     }
 
     for (const goal of recurringGoals ?? []) {
-      recurringGoalTitles.set(goal.id, goal.title);
+      recurringGoalMeta.set(goal.id, {
+        title: goal.title,
+        type: goal.type === 'debt' ? 'debt' : 'savings',
+      });
     }
   }
 
   const inaccessibleGoalIds = recurringGoalIds.filter(
-    (goalId) => !recurringGoalTitles.has(goalId),
+    (goalId) => !recurringGoalMeta.has(goalId),
   );
   if (inaccessibleGoalIds.length > 0) {
     console.warn('cashflow_recurring_archived_goals_skipped', {
       goalIds: inaccessibleGoalIds,
     });
     const activeRecurring = uniqueRecurring.filter(
-      (rule) => !rule.goal_id || recurringGoalTitles.has(rule.goal_id),
+      (rule) => !rule.goal_id || recurringGoalMeta.has(rule.goal_id),
     );
     uniqueRecurring.splice(0, uniqueRecurring.length, ...activeRecurring);
   }
 
-  const getRecurringCategory = (rule: (typeof uniqueRecurring)[number]) =>
-    rule.goal_id
-      ? recurringGoalTitles.has(rule.goal_id)
-        ? `Goal: ${recurringGoalTitles.get(rule.goal_id)}`
-        : null
-      : rule.category?.startsWith('Goal:')
-        ? null
-        : rule.category;
+  const getRecurringCategory = (rule: (typeof uniqueRecurring)[number]) => {
+    if (rule.goal_id) {
+      const meta = recurringGoalMeta.get(rule.goal_id);
+      if (!meta) return null;
+      return `${meta.type === 'debt' ? 'Debt:' : 'Goal:'} ${meta.title}`;
+    }
+    if (
+      rule.category?.startsWith('Goal:') ||
+      rule.category?.startsWith('Debt:')
+    ) {
+      return null;
+    }
+    return rule.category;
+  };
 
   const formatLocalYYYYMMDD = (year: number, month: number, day: number) =>
     `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -2044,10 +2086,10 @@ export async function addGoal(formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { cashflowId, title, targetAmount, deadline } = parsed.data;
+  const { cashflowId, title, targetAmount, initialAmount, deadline, type } = parsed.data;
 
   if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
-    return { error: 'Only the cashflow owner can manage savings goals' };
+    return { error: 'Only the cashflow owner can manage goals or debt targets' };
   }
 
   const { data: goal, error } = await supabase
@@ -2056,6 +2098,8 @@ export async function addGoal(formData: FormData) {
       cashflow_id: cashflowId,
       title: title.trim(),
       target_amount: targetAmount,
+      initial_amount: initialAmount ?? 0,
+      type: type || 'savings',
       deadline: deadline || null,
       is_deleted: false,
     })
@@ -2069,7 +2113,14 @@ export async function addGoal(formData: FormData) {
 
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
-  return { goal: mapGoalToDTO(goal) };
+  return {
+    goal: mapGoalToDTO(
+      goal,
+      null,
+      initialAmount ?? 0,
+      0,
+    ),
+  };
 }
 
 export async function updateGoal(formData: FormData) {
@@ -2082,10 +2133,10 @@ export async function updateGoal(formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { goalId, cashflowId, title, targetAmount, deadline } = parsed.data;
+  const { goalId, cashflowId, title, targetAmount, initialAmount, deadline, type } = parsed.data;
 
   if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
-    return { error: 'Only the cashflow owner can manage savings goals' };
+    return { error: 'Only the cashflow owner can manage goals or debt targets' };
   }
 
   const { data: goal, error } = await supabase
@@ -2093,6 +2144,8 @@ export async function updateGoal(formData: FormData) {
     .update({
       title: title.trim(),
       target_amount: targetAmount,
+      initial_amount: initialAmount ?? 0,
+      type: type || 'savings',
       deadline: deadline || null,
     })
     .eq('id', goalId)
@@ -2106,10 +2159,25 @@ export async function updateGoal(formData: FormData) {
     return { error: 'Failed to update goal' };
   }
 
+  const { data: progress } = await supabase
+    .from('cashflow_goal_progress')
+    .select('saved_amount, contribution_count')
+    .eq('goal_id', goalId)
+    .maybeSingle();
+
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
   revalidatePath(`/cashflow/goal/${goalId}`);
-  return { goal: mapGoalToDTO(goal) };
+  return {
+    goal: mapGoalToDTO(
+      goal,
+      null,
+      progress?.saved_amount !== undefined && progress?.saved_amount !== null
+        ? Number(progress.saved_amount)
+        : (initialAmount ?? 0),
+      progress?.contribution_count ? Number(progress.contribution_count) : 0,
+    ),
+  };
 }
 
 export async function archiveGoal(goalId: string, cashflowId: string) {
@@ -2123,7 +2191,7 @@ export async function archiveGoal(goalId: string, cashflowId: string) {
   }
 
   if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
-    return { error: 'Only the cashflow owner can manage savings goals' };
+    return { error: 'Only the cashflow owner can manage goals or debt targets' };
   }
 
   const { data: goal, error: goalLookupError } = await supabase
@@ -2140,7 +2208,7 @@ export async function archiveGoal(goalId: string, cashflowId: string) {
   }
 
   if (!goal) {
-    return { error: 'Savings goal not found or already archived' };
+    return { error: 'Target not found or already archived' };
   }
 
   const { error } = await supabase
@@ -2152,7 +2220,7 @@ export async function archiveGoal(goalId: string, cashflowId: string) {
 
   if (error) {
     console.error('Failed to archive goal:', error);
-    return { error: 'Savings goal not found or already archived' };
+    return { error: 'Target not found or already archived' };
   }
 
   revalidatePath('/cashflow');
@@ -2172,7 +2240,7 @@ export async function unarchiveGoal(goalId: string, cashflowId: string) {
   }
 
   if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
-    return { error: 'Only the cashflow owner can manage savings goals' };
+    return { error: 'Only the cashflow owner can manage goals or debt targets' };
   }
 
   const { data: goal, error: goalLookupError } = await supabase
@@ -2189,7 +2257,7 @@ export async function unarchiveGoal(goalId: string, cashflowId: string) {
   }
 
   if (!goal) {
-    return { error: 'Savings goal not found or already active' };
+    return { error: 'Target not found or already active' };
   }
 
   const { error } = await supabase
@@ -2271,6 +2339,8 @@ export async function duplicateCashflow(cashflowId: string) {
           cashflow_id: newCashflow.id,
           title: goal.title,
           target_amount: goal.target_amount,
+          initial_amount: goal.initial_amount || 0,
+          type: goal.type || 'savings',
           deadline: goal.deadline,
           is_deleted: false,
         })
@@ -2305,18 +2375,27 @@ export async function duplicateCashflow(cashflowId: string) {
     .eq('cashflow_id', cashflowId);
 
   if (originalEntries && originalEntries.length > 0) {
-    const toInsertEntries = originalEntries.map((e) => ({
-      cashflow_id: newCashflow.id,
-      description: e.description,
-      amount: e.amount,
-      type: e.type,
-      category: e.category,
-      date: shiftToCurrentMonth(e.date, now),
-      is_recurring: e.is_recurring,
-      recurrence_interval: e.recurrence_interval,
-      yearly_calculation: e.yearly_calculation,
-      goal_id: e.goal_id ? goalIdMap.get(e.goal_id) || null : null,
-    }));
+    const toInsertEntries = originalEntries.map((e) => {
+      const targetGoalId = e.goal_id ? goalIdMap.get(e.goal_id) || null : null;
+      const targetCategory =
+        !targetGoalId &&
+        (e.category?.startsWith('Goal:') || e.category?.startsWith('Debt:'))
+          ? null
+          : e.category;
+
+      return {
+        cashflow_id: newCashflow.id,
+        description: e.description,
+        amount: e.amount,
+        type: e.type,
+        category: targetCategory,
+        date: shiftToCurrentMonth(e.date, now),
+        is_recurring: e.is_recurring,
+        recurrence_interval: e.recurrence_interval,
+        yearly_calculation: e.yearly_calculation,
+        goal_id: targetGoalId,
+      };
+    });
 
     await supabase.from('cashflow_entries').insert(toInsertEntries);
   }
@@ -2350,18 +2429,56 @@ export async function importCashflowEntries(
     return { error: permission.error || 'Access denied' };
   }
 
-  const toInsert = parsed.data.entries.map((entry) => ({
-    cashflow_id: cashflowId,
-    description: entry.description.trim(),
-    amount: Math.round(entry.amount * 100) / 100,
-    type: entry.type,
-    category: entry.category?.trim() || null,
-    date: entry.date,
-    is_recurring: false,
-    recurrence_interval: null,
-    yearly_calculation: null,
-    goal_id: null,
-  }));
+  const { data: activeGoals } = await supabase
+    .from('cashflow_goals')
+    .select('id, title, type')
+    .eq('cashflow_id', cashflowId)
+    .eq('is_deleted', false);
+
+  const goalsByTitle = new Map<string, { id: string; type: 'savings' | 'debt'; title: string }>();
+  for (const g of activeGoals || []) {
+    goalsByTitle.set(g.title.trim().toLowerCase(), {
+      id: g.id,
+      type: g.type === 'debt' ? 'debt' : 'savings',
+      title: g.title.trim(),
+    });
+  }
+
+  const toInsert = parsed.data.entries.map((entry) => {
+    const rawCat = entry.category?.trim() || null;
+    let goalId: string | null = null;
+    let finalCategory = rawCat;
+
+    if (rawCat) {
+      const isGoal = rawCat.startsWith('Goal:');
+      const isDebt = rawCat.startsWith('Debt:');
+      if (isGoal || isDebt) {
+        const prefix = isGoal ? 'Goal:' : 'Debt:';
+        const targetTitle = rawCat.slice(prefix.length).trim();
+        const matched = goalsByTitle.get(targetTitle.toLowerCase());
+        if (matched && entry.type === 'expense') {
+          goalId = matched.id;
+          finalCategory = `${matched.type === 'debt' ? 'Debt:' : 'Goal:'} ${matched.title}`;
+        } else {
+          // Unlinked or income cannot use reserved Goal:/Debt: category prefix without violating database trigger
+          finalCategory = targetTitle || null;
+        }
+      }
+    }
+
+    return {
+      cashflow_id: cashflowId,
+      description: entry.description.trim(),
+      amount: Math.round(entry.amount * 100) / 100,
+      type: entry.type,
+      category: finalCategory,
+      date: entry.date,
+      is_recurring: false,
+      recurrence_interval: null,
+      yearly_calculation: null,
+      goal_id: goalId,
+    };
+  });
 
   const { data, error } = await supabase
     .from('cashflow_entries')
@@ -2814,7 +2931,10 @@ export async function bulkUpdateCategory(input: { cashflowId: string; entryIds: 
   const targetCategory = category || null;
   let updateQuery = supabase
     .from('cashflow_entries')
-    .update({ category: targetCategory })
+    .update({
+      category: targetCategory,
+      goal_id: null,
+    })
     .eq('cashflow_id', cashflowId)
     .in('id', entryIds);
 

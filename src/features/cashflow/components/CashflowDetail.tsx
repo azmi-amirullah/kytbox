@@ -121,6 +121,7 @@ import {
   sortEntries,
   filterEntriesByTags,
   isCashflowSortOption,
+  formatCategoryName,
   type DateFilterState,
   type CashflowSortOption,
 } from '../math'
@@ -190,6 +191,8 @@ export default function CashflowDetail({
   const [prevRulesProp, setPrevRulesProp] = useState(recurringRules)
   const [localTags, setLocalTags] = useState<CashflowTagDTO[]>(tags)
   const [prevTagsProp, setPrevTagsProp] = useState(tags)
+  const [localGoals, setLocalGoals] = useState<CashflowGoalDTO[]>(goals)
+  const [prevGoalsProp, setPrevGoalsProp] = useState(goals)
 
   if (entries !== prevEntriesProp) {
     setPrevEntriesProp(entries)
@@ -204,6 +207,21 @@ export default function CashflowDetail({
   if (tags !== prevTagsProp) {
     setPrevTagsProp(tags)
     setLocalTags(tags)
+  }
+
+  if (goals !== prevGoalsProp) {
+    setPrevGoalsProp(goals)
+    setLocalGoals(goals)
+  }
+
+  function handleGoalChange(savedGoal: CashflowGoalDTO) {
+    setLocalGoals((prev) => {
+      const exists = prev.some((g) => g.id === savedGoal.id)
+      if (exists) {
+        return prev.map((g) => (g.id === savedGoal.id ? savedGoal : g))
+      }
+      return [...prev, savedGoal]
+    })
   }
 
   // Initialize state from server props
@@ -258,7 +276,9 @@ export default function CashflowDetail({
     for (const e of localEntries) {
       if (e.category) set.add(e.category)
     }
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
+    return Array.from(set).sort((a, b) =>
+      formatCategoryName(a).localeCompare(formatCategoryName(b)),
+    )
   }, [localEntries])
 
   const allUniqueTags = useMemo(() => {
@@ -1665,7 +1685,7 @@ export default function CashflowDetail({
                                 </SelectItem>
                                 {uniqueCategories.map((cat) => (
                                   <SelectItem key={cat} value={cat}>
-                                    {cat}
+                                    {formatCategoryName(cat)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -2361,9 +2381,10 @@ export default function CashflowDetail({
       {/* Savings Goals */}
       <GoalCard
         cashflowId={cashflow.id}
-        goals={goals.filter((goal) => goal.cashflow_id === cashflow.id)}
+        goals={localGoals.filter((goal) => goal.cashflow_id === cashflow.id)}
         currency={currency}
         isOwner={isOwner}
+        onGoalChange={handleGoalChange}
       />
 
       {/* Edit Cashflow Modal */}
@@ -2389,7 +2410,7 @@ export default function CashflowDetail({
         onOpenChange={setIsEntryModalOpen}
         currency={currency}
         onSuccess={handleEntrySuccess}
-        goals={goals}
+        goals={localGoals}
         availableTags={allUniqueTags}
         bookTags={localTags}
       />

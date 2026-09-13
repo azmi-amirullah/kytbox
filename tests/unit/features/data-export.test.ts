@@ -168,6 +168,8 @@ describe('GDPR Data Export Engine', () => {
           deadline: '2026-12-31',
           is_deleted: false,
           created_at: '2026-08-01T00:00:00Z',
+          type: 'savings',
+          initial_amount: 0,
         },
       ],
       tags: [

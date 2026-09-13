@@ -65,7 +65,7 @@ export async function globalSearch(query: string): Promise<GlobalSearchResult> {
       cashflowIds.length > 0
         ? supabase
             .from('cashflow_goals')
-            .select('id, cashflow_id, title, target_amount, deadline')
+            .select('id, cashflow_id, title, target_amount, deadline, type')
             .in('cashflow_id', cashflowIds)
             .eq('is_deleted', false)
             .ilike('title', term)
@@ -126,10 +126,13 @@ export async function globalSearch(query: string): Promise<GlobalSearchResult> {
       const bookTitle = cashflowTitleById.get(goal.cashflow_id)
       const bookStr = bookTitle ? `${bookTitle} · ` : ''
       const deadlineStr = goal.deadline ? ` · Due ${formatAppDate(goal.deadline)}` : ''
+      const isDebt = goal.type === 'debt'
+      const typeLabel = isDebt ? 'Debt Paydown' : 'Savings Goal'
+      const amountLabel = isDebt ? `Total ${goal.target_amount}` : `Target ${goal.target_amount}`
       return {
         id: goal.id,
         title: goal.title,
-        subtitle: `${bookStr}Savings Goal · Target ${goal.target_amount}${deadlineStr}`,
+        subtitle: `${bookStr}${typeLabel} · ${amountLabel}${deadlineStr}`,
         href: `/cashflow/goal/${goal.id}`,
         category: 'cashflow' as const,
         icon: 'target' as const,

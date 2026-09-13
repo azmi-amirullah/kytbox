@@ -57,15 +57,18 @@ Individual transaction records.
 
 #### cashflow_goals
 
-Savings targets owned by the cashflow owner.
+Savings targets and debt payoff targets owned by the cashflow owner.
 
 - **cashflow_id** (uuid): The owning cashflow book.
-- **title** (text): The goal name.
-- **target_amount** (numeric): Positive target amount.
+- **title** (text): The goal or debt name.
+- **target_amount** (numeric): Positive target or total owed amount.
+- **initial_amount** (numeric): Starting balance or amount already paid/saved before tracking in Kytbox (defaults to 0).
 - **deadline** (date, nullable): Optional target date.
+- **type** (text): Target kind, either `'savings'` or `'debt'` (defaults to `'savings'`).
 - **is_deleted** (boolean): Soft-archive flag; archived goals are hidden while their contributions remain.
-- **Contributions**: An expense entry in any accessible book the user can edit contributes only when its internal `goal_id` points to the selected goal. The human-readable category remains `Goal: {goal name}` and the source cashflow name is shown in goal cards, detail pages, and the category picker.
+- **Contributions**: An expense entry in any accessible book the user can edit contributes only when its internal `goal_id` points to the selected goal. The human-readable category is formatted as `Goal: {title}` for savings goals and `Debt: {title}` for debt targets, and the source cashflow name is shown in goal cards, detail pages, and the category picker.
 - **Goal ownership**: Each goal belongs to the cashflow where it was created, even when contributions come from another accessible cashflow book.
+- **Privacy and Masking**: When an entry references an inaccessible goal or debt target, the DTO layer suppresses the category label (mapping to `null`) to prevent cross-tenant information leakage.
 
 ### 3.2 User Settings
 

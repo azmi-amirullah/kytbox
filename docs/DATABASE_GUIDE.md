@@ -63,7 +63,7 @@ Analytics for link clicks (UA, Country, Referer). Used to populate the Bio analy
 - **`cashflow_entries`**: Immutable transaction log. Includes `tags text[]` array column with GIN index.
 - **`cashflow_shares`**: ACL for sharing cashflows with other users by email.
 - **`cashflow_budgets`**: Monthly spending limits per category per cashflow. Unique on `(cashflow_id, category)`.
-- **`cashflow_goals`**: Savings targets scoped to cashflows with target amounts, deadlines, and soft-archive support.
+- **`cashflow_goals`**: Savings targets and debt payoff targets scoped to cashflows with target amounts, type ('savings' | 'debt'), deadlines, and soft-archive support.
 - **`cashflow_tags`**: Persistent metadata table for custom transaction labels. Unique on `(cashflow_id, lower(name))`. Tracks `color_index` (0-11) for deterministic slot-filling tag color allocation.
 
 ### 2.4 Support System (`support_tickets`, `support_messages`)
@@ -134,6 +134,7 @@ Kytbox strictly enforces RLS at the database layer to ensure data isolation.
 | 29    | `20260806110000_create_invoice_tables.sql`          | `invoices` and `invoice_items` schema with user_id RLS.             |
 | 30    | `20260806120000_add_include_client_signature_to_invoices.sql` | `include_client_signature` boolean column on `invoices`.  |
 | 31    | `20260806121500_fix_cashflow_shares_rls_recursion.sql` | Non-recursive RLS policy for `cashflow_shares`.                    |
+| 32    | `20260913080000_add_goal_type_and_debt_tracking.sql` | `cashflow_goals.type` column and trigger support for `Debt:` entries. |
 
 ---
 

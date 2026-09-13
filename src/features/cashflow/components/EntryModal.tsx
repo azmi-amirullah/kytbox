@@ -89,7 +89,7 @@ export default function EntryModal({
     ? goals.find((goal) => goal.id === entry.goal_id)
     : undefined
   const entryCategory = entryGoal
-    ? `Goal: ${entryGoal.title}`
+    ? `${entryGoal.type === 'debt' ? 'Debt:' : 'Goal:'} ${entryGoal.title}`
     : entryCategorySchema.parse(entry?.category)
 
   const [prevOpen, setPrevOpen] = useState(open)
@@ -732,7 +732,7 @@ export default function EntryModal({
                   if (selectedGoal) {
                     setType('expense')
                     setGoalId(selectedGoal.id)
-                    setCategory(`Goal: ${selectedGoal.title}`)
+                    setCategory(`${selectedGoal.type === 'debt' ? 'Debt:' : 'Goal:'} ${selectedGoal.title}`)
                     return
                   }
                   setGoalId(null)
@@ -759,28 +759,52 @@ export default function EntryModal({
                   {type === 'expense' && isArchivedGoal && (
                     <SelectItem value='archived-goal' disabled>
                       <span className='text-muted-foreground'>
-                        Archived goal (history preserved)
+                        Archived target (history preserved)
                       </span>
                     </SelectItem>
                   )}
-                  {activeGoals.length > 0 && (
+                  {activeGoals.filter((g) => g.type !== 'debt').length > 0 && (
                     <>
                       <div className='h-px bg-border my-1.5' />
                       <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
                         Savings Goals
                       </div>
-                      {activeGoals.map((g) => (
-                        <SelectItem key={g.id} value={`goal-${g.id}`}>
-                          <span className='flex flex-col items-start'>
-                            <span>Goal: {g.title}</span>
-                            {g.cashflow_title && (
-                              <span className='text-[10px] text-muted-foreground'>
-                                Cashflow: {g.cashflow_title}
-                              </span>
-                            )}
-                          </span>
-                        </SelectItem>
-                      ))}
+                      {activeGoals
+                        .filter((g) => g.type !== 'debt')
+                        .map((g) => (
+                          <SelectItem key={g.id} value={`goal-${g.id}`}>
+                            <span className='flex flex-col items-start'>
+                              <span>Goal: {g.title}</span>
+                              {g.cashflow_title && (
+                                <span className='text-[10px] text-muted-foreground'>
+                                  Cashflow: {g.cashflow_title}
+                                </span>
+                              )}
+                            </span>
+                          </SelectItem>
+                        ))}
+                    </>
+                  )}
+                  {activeGoals.filter((g) => g.type === 'debt').length > 0 && (
+                    <>
+                      <div className='h-px bg-border my-1.5' />
+                      <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                        Debt Paydowns
+                      </div>
+                      {activeGoals
+                        .filter((g) => g.type === 'debt')
+                        .map((g) => (
+                          <SelectItem key={g.id} value={`goal-${g.id}`}>
+                            <span className='flex flex-col items-start'>
+                              <span>Debt: {g.title}</span>
+                              {g.cashflow_title && (
+                                <span className='text-[10px] text-muted-foreground'>
+                                  Cashflow: {g.cashflow_title}
+                                </span>
+                              )}
+                            </span>
+                          </SelectItem>
+                        ))}
                     </>
                   )}
                 </SelectContent>

@@ -21,3 +21,53 @@ describe('shiftToCurrentMonth', () => {
     expect(shiftToCurrentMonth('invalid-date', fixedDate)).toBe('2026-08-15');
   });
 });
+
+describe('cashflow entry duplication mapping', () => {
+  it('preserves target category when goalId is successfully mapped', () => {
+    const goalIdMap = new Map([['old-debt-id', 'new-debt-id']]);
+    const originalEntry = {
+      goal_id: 'old-debt-id',
+      category: 'Debt: Car Loan',
+    };
+
+    const targetGoalId = originalEntry.goal_id
+      ? goalIdMap.get(originalEntry.goal_id) || null
+      : null;
+    const targetCategory =
+      !targetGoalId &&
+      (originalEntry.category?.startsWith('Goal:') ||
+        originalEntry.category?.startsWith('Debt:'))
+        ? null
+        : originalEntry.category;
+
+    expect(targetGoalId).toBe('new-debt-id');
+    expect(targetCategory).toBe('Debt: Car Loan');
+  });
+
+  it('nullifies category when goal was archived or unmapped to avoid trigger exception', () => {
+    const goalIdMap = new Map<string, string>(); // empty map (e.g. archived goal wasn't duplicated)
+    const originalGoalEntry = {
+      goal_id: 'archived-goal-id',
+      category: 'Goal: Old Vacation',
+    };
+    const originalDebtEntry = {
+      goal_id: 'archived-debt-id',
+      category: 'Debt: Old Loan',
+    };
+
+    for (const entry of [originalGoalEntry, originalDebtEntry]) {
+      const targetGoalId = entry.goal_id
+        ? goalIdMap.get(entry.goal_id) || null
+        : null;
+      const targetCategory =
+        !targetGoalId &&
+        (entry.category?.startsWith('Goal:') ||
+          entry.category?.startsWith('Debt:'))
+          ? null
+          : entry.category;
+
+      expect(targetGoalId).toBeNull();
+      expect(targetCategory).toBeNull();
+    }
+  });
+});

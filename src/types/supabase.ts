@@ -199,27 +199,33 @@ export type Database = {
           created_at: string | null
           deadline: string | null
           id: string
+          initial_amount: number
           is_deleted: boolean
           target_amount: number
           title: string
+          type?: string | null
         }
         Insert: {
           cashflow_id: string
           created_at?: string | null
           deadline?: string | null
           id?: string
+          initial_amount?: number
           is_deleted?: boolean
           target_amount: number
           title: string
+          type?: string
         }
         Update: {
           cashflow_id?: string
           created_at?: string | null
           deadline?: string | null
           id?: string
+          initial_amount?: number
           is_deleted?: boolean
           target_amount?: number
           title?: string
+          type?: string
         }
         Relationships: [
           {

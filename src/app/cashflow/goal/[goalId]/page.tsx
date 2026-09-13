@@ -27,16 +27,18 @@ export async function generateMetadata({ params }: GoalDetailPageProps): Promise
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('cashflow_goals')
-    .select('title')
+    .select('title, type')
     .eq('id', goalId)
     .maybeSingle()
   if (error) {
     console.error('cashflow_goal_metadata_lookup_failed', error)
   }
-  const title = data?.title ?? 'Savings Goal'
+  const isDebt = data?.type === 'debt'
+  const defaultTitle = isDebt ? 'Debt Paydown' : 'Savings Goal'
+  const title = data?.title ?? defaultTitle
   return {
     title,
-    description: 'Savings goal tracker — ' + title,
+    description: (isDebt ? 'Debt paydown tracker — ' : 'Savings goal tracker — ') + title,
     robots: { index: false, follow: false },
   }
 }

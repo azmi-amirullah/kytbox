@@ -544,7 +544,7 @@ export default function RecurringManagerModal({
 
             {formType === 'expense' && goals.length > 0 && (
               <div className='space-y-1.5'>
-                <Label htmlFor='rule-goal'>Link to Savings Goal (Optional)</Label>
+                <Label htmlFor='rule-goal'>Link to Goal or Debt (Optional)</Label>
                 <Select value={formGoalId} onValueChange={setFormGoalId}>
                   <SelectTrigger id='rule-goal'>
                     <SelectValue placeholder='None' />
@@ -553,7 +553,7 @@ export default function RecurringManagerModal({
                     <SelectItem value='none'>None</SelectItem>
                     {goals.map((g) => (
                       <SelectItem key={g.id} value={g.id}>
-                        {g.title}
+                        {g.type === 'debt' ? `Debt: ${g.title}` : `Goal: ${g.title}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
