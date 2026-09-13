@@ -179,8 +179,15 @@ export async function proxy(request: NextRequest) {
   const authPaths = ['/login', '/signup'];
   const isAuthRoute = authPaths.some(matchesRoute);
 
-  // Public routes — still get CSP headers
-  if (!isProtectedRoute && !isAuthRoute) {
+  // Fast path for purely public routes that do not carry session cookies
+  // (e.g. landing page, public bio profiles). If cookies are present or the route
+  // is mixed-access (e.g. /cashflow/[id]), proceed to Supabase to keep sessions fresh.
+  const hasAuthCookies = request.cookies
+    .getAll()
+    .some((c) => c.name.includes('-auth-token'));
+  const isMixedRoute = pathname.startsWith('/cashflow/');
+
+  if (!isProtectedRoute && !isAuthRoute && !hasAuthCookies && !isMixedRoute) {
     const response = NextResponse.next({
       request: { headers: requestHeaders },
     });

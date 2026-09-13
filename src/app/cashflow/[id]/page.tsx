@@ -66,9 +66,11 @@ export default async function CashflowDetailPage({
       user?.email,
     );
   } catch (error) {
-    if (error instanceof Error && error.message === 'CASHFLOW_NOT_FOUND') {
-      if (!user) redirect('/login');
-      notFound();
+    if (error instanceof Error) {
+      if (error.message === 'CASHFLOW_NOT_FOUND' || error.message === 'CASHFLOW_ACCESS_LOOKUP_FAILED') {
+        if (!user) redirect('/login');
+        notFound();
+      }
     }
     throw error;
   }
