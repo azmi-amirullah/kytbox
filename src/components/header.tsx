@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 import Link from 'next/link'
 import { BrandLogo } from '@/components/brand-logo'
 import { HomeBrandLink } from '@/components/home-brand-link'
@@ -103,6 +102,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
               <div className='flex items-center gap-2 sm:gap-4'>
                 {(isLanding || isLegal) && (
                   <Button asChild className='min-h-11 rounded-full px-4'>
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Intentional full-page navigation across subdomains (apex to app host) */}
                     <a href='/app'>Dashboard</a>
                   </Button>
                 )}
@@ -112,6 +112,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
               <div className='flex items-center gap-1.5 sm:gap-2'>
                 {isLanding && (
                   <Button asChild className='min-h-11 rounded-full px-4'>
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Intentional full-page navigation across subdomains (apex to app host) */}
                     <a href='/signup'>Get started</a>
                   </Button>
                 )}
@@ -120,6 +121,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
                   variant={isLanding ? 'ghost' : 'default'}
                   className='min-h-11 rounded-full px-4'
                 >
+                  {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Intentional full-page navigation across subdomains (apex to app host) */}
                   <a href='/login'>Log in</a>
                 </Button>
               </div>

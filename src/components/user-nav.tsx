@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 'use client'
 
 import { LuLogOut, LuSettings, LuShield, LuSun, LuMoon } from 'react-icons/lu'
@@ -66,19 +65,21 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {user.role === 'admin' && (
-            <a href='/admin/users'>
-              <DropdownMenuItem className='text-blue-600 font-semibold focus:text-blue-600 focus:bg-blue-50 dark:focus:bg-blue-950/30'>
+            <DropdownMenuItem asChild className='text-blue-600 font-semibold focus:text-blue-600 focus:bg-blue-50 dark:focus:bg-blue-950/30'>
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Intentional full-page navigation across subdomains (apex to app host) */}
+              <a href='/admin/users'>
                 <LuShield className='mr-2 h-4 w-4' />
                 Admin Dashboard
-              </DropdownMenuItem>
-            </a>
+              </a>
+            </DropdownMenuItem>
           )}
-          <a href='/settings'>
-            <DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Intentional full-page navigation across subdomains (apex to app host) */}
+            <a href='/settings'>
               <LuSettings className='mr-2 h-4 w-4' />
               Settings
-            </DropdownMenuItem>
-          </a>
+            </a>
+          </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(e) => {
               e.preventDefault()
