@@ -2,10 +2,6 @@ import type { Metadata } from 'next';
 import { z } from 'zod';
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/header';
-import { Footer } from '@/components/footer';
-import { BackgroundBlobs } from '@/components/background-blobs';
-import { PlatformOverlays } from '@/components/platform-overlays';
 import { getCashflowDetailData, CashflowDetail, schemasServer } from '@/features/cashflow';
 import { connection } from 'next/server';
 
@@ -85,20 +81,6 @@ export default async function CashflowDetailPage({
     redirect('/login');
   }
 
-  // Prepare UI Data
-  const publicUrl = profile ? `/${profile.username}` : undefined;
-
-  const userData =
-    user && profile
-      ? {
-          username: profile.username,
-          email: user.email,
-          avatar_url: profile.avatar_url,
-          display_name: profile.display_name,
-          role: profile.role,
-        }
-      : undefined;
-
   // 4. Get Share Status
   let initialUserRole: 'owner' | 'edit' | 'read' | 'public' = 'public';
   let initialShareId: string | null = null;
@@ -121,30 +103,19 @@ export default async function CashflowDetailPage({
   }
 
   return (
-    <div className='min-h-screen relative bg-background flex flex-col'>
-      <BackgroundBlobs />
-
-      <Header variant='dashboard' user={userData} publicUrl={publicUrl} />
-
-      <main className='relative z-10 max-w-7xl mx-auto px-4 mt-16 py-8 flex-1 w-full'>
-        <CashflowDetail
-          key={cashflow.id}
-          cashflow={cashflow}
-          entries={entries}
-          recurringRules={recurringRules}
-          budgets={budgets}
-          tags={tags}
-          goals={goals}
-          currency={profile?.default_currency ?? null}
-          currentUserId={user?.id}
-          initialUserRole={initialUserRole}
-          initialShareId={initialShareId}
-          initialHasShare={hasShare}
-        />
-      </main>
-
-      <Footer />
-      <PlatformOverlays hasCompletedOnboarding={true} />
-    </div>
+    <CashflowDetail
+      key={cashflow.id}
+      cashflow={cashflow}
+      entries={entries}
+      recurringRules={recurringRules}
+      budgets={budgets}
+      tags={tags}
+      goals={goals}
+      currency={profile?.default_currency ?? null}
+      currentUserId={user?.id}
+      initialUserRole={initialUserRole}
+      initialShareId={initialShareId}
+      initialHasShare={hasShare}
+    />
   );
 }

@@ -162,18 +162,50 @@ export default function CashflowDetail({
   initialHasShare = false,
 }: CashflowDetailProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const action = searchParams.get('action')
   const [isPending, startTransition] = useTransition()
+
+  const isOwner = currentUserId === cashflow.user_id
+  const canEdit = isOwner || initialUserRole === 'edit'
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const [isEntryModalOpen, setIsEntryModalOpen] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
+    null,
+  )
+  const [isEntryModalOpen, setIsEntryModalOpen] = useState(
+    action === 'add' && canEdit,
+  )
+  const [prevAction, setPrevAction] = useState(action)
+
+  if (action !== prevAction) {
+    setPrevAction(action)
+    if (action === 'add' && canEdit) {
+      setEditingEntry(null)
+      setIsEntryModalOpen(true)
+    }
+  }
+
+  const handleEntryModalOpenChange = (open: boolean) => {
+    setIsEntryModalOpen(open)
+    if (!open) {
+      setEditingEntry(null)
+      if (action === 'add') {
+        const params = new URLSearchParams(window.location.search)
+        params.delete('action')
+        const newUrl = params.toString()
+          ? `?${params.toString()}`
+          : window.location.pathname
+        window.history.replaceState(null, '', newUrl)
+      }
+    }
+  }
+
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isCreateSplitModalOpen, setIsCreateSplitModalOpen] = useState(false)
-  const [editingEntry, setEditingEntry] = useState<CashflowEntryDTO | null>(
-    null,
-  )
   const [viewingReceiptEntry, setViewingReceiptEntry] =
     useState<CashflowEntryDTO | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -183,7 +215,6 @@ export default function CashflowDetail({
     null,
   )
 
-  const isOwner = currentUserId === cashflow.user_id
 
   // ── Synchronized local entries state (updated instantly on API response) ───
   const [localEntries, setLocalEntries] = useState<CashflowEntryDTO[]>(entries)
@@ -242,7 +273,6 @@ export default function CashflowDetail({
   const [managingTag, setManagingTag] = useState<string | null>(null)
 
   // ── Search query ─────────────────────────────────────────────────────────────
-  const searchParams = useSearchParams()
   const initialQuery = searchParams.get('q') || searchParams.get('search') || ''
   const [searchQuery, setSearchQuery] = useState(initialQuery)
 
@@ -702,8 +732,6 @@ export default function CashflowDetail({
     ]
   }
   // ────────────────────────────────────────────────────────────────────────────────
-
-  const canEdit = isOwner || userRole === 'edit'
 
   const [isGeneratingRecurring, setIsGeneratingRecurring] = useState(false)
   const [isGeneratingPast, setIsGeneratingPast] = useState(false)
@@ -2423,7 +2451,7 @@ export default function CashflowDetail({
         cashflowId={cashflow.id}
         entry={editingEntry}
         open={isEntryModalOpen}
-        onOpenChange={setIsEntryModalOpen}
+        onOpenChange={handleEntryModalOpenChange}
         currency={currency}
         onSuccess={handleEntrySuccess}
         goals={localGoals}

@@ -506,7 +506,7 @@ export default function EntryModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-md max-h-[90vh] p-0 overflow-hidden flex flex-col'>
+      <DialogContent className='sm:max-w-xl max-h-[90vh] p-0 overflow-hidden flex flex-col'>
         <div className='p-6 pb-0 shrink-0'>
           <ModalHeader
             title={isEdit ? 'Edit Entry' : 'Add Entry'}
@@ -521,7 +521,7 @@ export default function EntryModal({
 
         <form
           onSubmit={handleSubmit}
-          className='p-6 pt-4 space-y-4 overflow-y-auto flex-1 pr-4 sm:pr-6'
+          className='p-6 pt-4 space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar'
         >
           <div className='grid gap-4'>
             {/* Description */}
@@ -732,7 +732,9 @@ export default function EntryModal({
                   if (selectedGoal) {
                     setType('expense')
                     setGoalId(selectedGoal.id)
-                    setCategory(`${selectedGoal.type === 'debt' ? 'Debt:' : 'Goal:'} ${selectedGoal.title}`)
+                    setCategory(
+                      `${selectedGoal.type === 'debt' ? 'Debt:' : 'Goal:'} ${selectedGoal.title}`,
+                    )
                     return
                   }
                   setGoalId(null)

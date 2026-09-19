@@ -42,7 +42,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
           <Link
             href={brandHref}
             className='min-h-11 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-            aria-label={isDashboard ? 'Dashboard' : 'Home'}
+            aria-label={isDashboard ? 'Workspace' : 'Home'}
           >
             <BrandLogo />
           </Link>
@@ -109,7 +109,7 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
                 {(isLanding || isLegal) && (
                   <Button asChild className='min-h-11 rounded-full px-4'>
                     {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Intentional full-page navigation across subdomains (apex to app host) */}
-                    <a href='/app'>Dashboard</a>
+                    <a href='/app'>Workspace</a>
                   </Button>
                 )}
                 <UserNav user={user} />

@@ -1,19 +1,9 @@
-import { Footer } from '@/components/footer';
-import { BackgroundBlobs } from '@/components/background-blobs';
-import { Header } from '@/components/header';
-import { Loader } from '@/components/ui/loader';
+import { Loader } from '@/components/ui/loader'
 
 export default function Loading() {
   return (
-    <div className='min-h-screen relative bg-background flex flex-col'>
-      <BackgroundBlobs />
-      <Header variant='dashboard' />
-
-      <main className='relative z-10 max-w-7xl mx-auto px-4 mt-16 py-8 flex-1 w-full flex items-center justify-center'>
-        <Loader />
-      </main>
-
-      <Footer />
+    <div className='flex items-center justify-center min-h-[50vh] py-16'>
+      <Loader text='Loading cashflow...' />
     </div>
-  );
+  )
 }

@@ -6,6 +6,10 @@ import { Suspense } from 'react'
 import { LuLifeBuoy, LuArrowRight } from 'react-icons/lu'
 import { KYTBOX_APPS } from '@/config/apps'
 import { Loader } from '@/components/ui/loader'
+import {
+  getPinnedCashflows,
+  PinnedCashflowsSection,
+} from '@/features/cashflow'
 import { QuickStats } from './components/QuickStats'
 import { QuickActions } from './components/QuickActions'
 import { ActivityFeed } from './components/ActivityFeed'
@@ -70,6 +74,34 @@ async function AsyncQuickStats({
   )
 }
 
+async function AsyncPinnedCashflows({
+  userId,
+  userEmail,
+  defaultCurrency,
+}: {
+  userId: string
+  userEmail: string | undefined
+  defaultCurrency: string | null
+}) {
+  const supabase = await createClient()
+  const pinnedCashflows = await getPinnedCashflows(
+    supabase,
+    userId,
+    userEmail,
+  )
+
+  if (!pinnedCashflows || pinnedCashflows.length === 0) {
+    return null
+  }
+
+  return (
+    <PinnedCashflowsSection
+      pinnedCashflows={pinnedCashflows}
+      defaultCurrency={defaultCurrency}
+    />
+  )
+}
+
 async function AsyncActivityFeed({ userId }: { userId: string }) {
   const supabase = await createClient()
   const { data: recentActivity } = await supabase.rpc('get_recent_activity', {
@@ -112,6 +144,15 @@ export default async function AppHomePage() {
       >
         <AsyncQuickStats
           userId={user.id}
+          defaultCurrency={profile?.default_currency || null}
+        />
+      </Suspense>
+
+      {/* Quick Access (Pinned Cashflows) */}
+      <Suspense fallback={null}>
+        <AsyncPinnedCashflows
+          userId={user.id}
+          userEmail={user.email}
           defaultCurrency={profile?.default_currency || null}
         />
       </Suspense>

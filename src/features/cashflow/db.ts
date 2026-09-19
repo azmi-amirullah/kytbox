@@ -433,3 +433,68 @@ export async function getCashflowDetailData(
     budgetsResultData: budgetsResult?.data,
   };
 }
+
+/**
+ * Fetch pinned cashflows with summary balances for quick access on dashboard
+ */
+export async function getPinnedCashflows(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  email?: string | null,
+): Promise<CashflowWithSummaryDTO[]> {
+  let pinnedShareIds: string[] = [];
+  if (email) {
+    const { data: shares } = await supabase
+      .from('cashflow_shares')
+      .select('cashflow_id, is_pinned')
+      .eq('email', email.trim().toLowerCase())
+      .eq('is_pinned', true);
+
+    if (shares && shares.length > 0) {
+      pinnedShareIds = shares
+        .map((s) => s.cashflow_id)
+        .filter((id): id is string => Boolean(id));
+    }
+  }
+
+  let query = supabase
+    .from('cashflow_summaries')
+    .select(
+      'id, user_id, title, created_at, updated_at, is_public, is_pinned, is_archived, last_entry_at, entry_count, income, expense, balance',
+    )
+    .order('updated_at', { ascending: false });
+
+  if (pinnedShareIds.length > 0) {
+    query = query.or(
+      `and(user_id.eq.${userId},is_pinned.eq.true,is_archived.eq.false),id.in.(${pinnedShareIds.join(',')})`,
+    );
+  } else {
+    query = query
+      .eq('user_id', userId)
+      .eq('is_pinned', true)
+      .eq('is_archived', false);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('get_pinned_cashflows_error', error);
+    return [];
+  }
+
+  const pinnedShareIdSet = new Set(pinnedShareIds);
+
+  return (data || [])
+    .filter((c) => !c.is_archived)
+    .map((c) => {
+      const isOwned = c.user_id === userId;
+      const isPinned = isOwned
+        ? (c.is_pinned ?? false)
+        : (!!c.id && pinnedShareIdSet.has(c.id));
+      return {
+        ...mapCashflowWithSummaryToDTO(c),
+        isPinned,
+        isArchived: false,
+        isIncluded: true,
+      };
+    });
+}

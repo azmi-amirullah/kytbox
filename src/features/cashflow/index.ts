@@ -16,5 +16,6 @@ export * as schemasServer from './schemas.server';
 export { CreateSplitGroupLanding } from './components/split/CreateSplitGroupLanding';
 export { CreateSplitGroupModal } from './components/split/CreateSplitGroupModal';
 export { SplitGroupView } from './components/split/SplitGroupView';
+export { PinnedCashflowsSection } from './components/PinnedCashflowsSection';
 export * from './split-actions';
 

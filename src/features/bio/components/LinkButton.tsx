@@ -1,6 +1,6 @@
 'use client';
-
-import { useMemo, useState } from 'react';
+ 
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { getSocialIcon } from '@/components/ui/social-icons';
 import { getFaviconUrl } from '../utils/favicon';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,8 @@ interface LinkButtonProps {
   animationType?: string | null;
   gridSize?: '1x1' | '1x2' | '2x2' | 'full' | null;
 }
+
+const emptySubscribe = () => () => {};
 
 /**
  * Client component that captures the original page referrer
@@ -51,27 +53,32 @@ export function LinkButton({
     }
   };
 
-  // useMemo ensures we capture referrer once on mount, not on every render
-  const finalHref = useMemo(() => {
-    if (typeof document === 'undefined' || !document.referrer) {
-      return href;
-    }
-
-    try {
-      const refUrl = new URL(document.referrer);
-      const refDomain = refUrl.hostname.replace(/^www\./, '');
-      const currentDomain = window.location.hostname.replace(/^www\./, '');
-
-      // Exclude internal referers (same domain) - counts as Direct
-      if (refDomain === currentDomain) {
+  const finalHref = useSyncExternalStore(
+    emptySubscribe,
+    () => {
+      if (typeof document === 'undefined' || !document.referrer) {
         return href;
       }
+      try {
+        const refUrl = new URL(document.referrer);
+        const refDomain = refUrl.hostname.replace(/^(?:app\.|www\.)/, '');
+        const currentDomain = window.location.hostname.replace(
+          /^(?:app\.|www\.)/,
+          '',
+        );
 
-      return `${href}?ref=${encodeURIComponent(refDomain)}`;
-    } catch {
-      return href;
-    }
-  }, [href]);
+        // Exclude internal referrers (same domain or app subdomain) - counts as Direct
+        if (refDomain === currentDomain) {
+          return href;
+        }
+
+        return `${href}?ref=${encodeURIComponent(refDomain)}`;
+      } catch {
+        return href;
+      }
+    },
+    () => href,
+  );
 
   const animationClass = useMemo(() => {
     switch (animationType) {
