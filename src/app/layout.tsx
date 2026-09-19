@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import dynamic from 'next/dynamic';
 import localFont from 'next/font/local';
 import { ClientTopLoader } from '@/components/client-top-loader';
@@ -45,8 +45,20 @@ const geistMono = localFont({
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
+  manifest: '/manifest.json',
   title: {
     default: siteConfig.name,
     template: `%s | ${siteConfig.name}`,
@@ -88,6 +100,11 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     images: [siteConfig.ogImage],
     creator: '@azmi_amirullah',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: siteConfig.name,
   },
   icons: {
     icon: '/icon.png',

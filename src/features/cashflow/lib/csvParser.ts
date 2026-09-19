@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import type { ParsedCsvRow } from '../schemas.client';
+import { resolveMerchantCategory } from './merchant-rules';
 
 export interface ColumnMapping {
   dateCol: string;
@@ -389,72 +390,16 @@ const KNOWN_CATEGORIES = [
 ];
 
 /**
- * Keyword-based category guesser for common merchants and payment memos
+ * Keyword-based category guesser for common merchants and payment memos.
+ * Uses the comprehensive merchant-rules engine with 80+ curated aliases and regex patterns.
  */
 export function autoGuessCategory(
   description: string,
   type: 'income' | 'expense'
 ): string | null {
-  if (!description) return null;
-  const desc = description.toLowerCase();
-
-  if (type === 'income') {
-    if (/(salary|gaji|payroll|bonus|thr|honor|upah)/i.test(desc)) return 'salary';
-    if (/(freelance|upwork|fiverr|client|project|invoice|side gig)/i.test(desc)) return 'freelance';
-    if (/(dividend|dividen|stock|saham|crypto|binance|tokocrypto|reksadana|bibit|bareksa|yield|interest|bunga)/i.test(desc))
-      return 'investment';
-    return null;
-  }
-
-  // Expense categories
-  if (
-    /(grabfood|gofood|shopeefood|starbucks|mcdonald|kfc|burger|pizza|resto|restaurant|cafe|coffee|kopi|bakery|supermarket|indomaret|alfamart|hypermart|food|dining|lunch|dinner|breakfast|foodcourt)/i.test(
-      desc
-    )
-  ) {
-    return 'food';
-  }
-
-  if (
-    /(grab|gojek|goride|gocar|uber|lyft|taxi|pertamina|shell|bp |parking|parkir|toll|tol|train|kereta|mrt|lrt|krl|flight|airline|garuda|airasia|petrol|bensin|gas station)/i.test(
-      desc
-    )
-  ) {
-    return 'transport';
-  }
-
-  if (
-    /(pln|listrik|pdam|air|telkom|indihome|wifi|biznet|myrepublic|bpjs|internet|phone|pulsa|paket data|utility|utilities|bill|water|electric)/i.test(
-      desc
-    )
-  ) {
-    return 'utilities';
-  }
-
-  if (
-    /(netflix|spotify|youtube|disney|steam|playstation|xbox|nintendo|cinema|xxi|cgv|game|concert|ticket|entertainment|prime video)/i.test(
-      desc
-    )
-  ) {
-    return 'entertainment';
-  }
-
-  if (
-    /(tokopedia|shopee|lazada|amazon|zalora|uniqlo|zara|h&m|mall|fashion|cloth|shopping|store|retail)/i.test(
-      desc
-    )
-  ) {
-    return 'shopping';
-  }
-
-  if (
-    /(apotek|pharmacy|kimia farma|guardian|watsons|doctor|dokter|hospital|rs |klinik|clinic|gym|fitness|supplement|vitamin|dental|medical|health)/i.test(
-      desc
-    )
-  ) {
-    return 'health';
-  }
-
+  if (!description || !description.trim()) return null;
+  const match = resolveMerchantCategory(description, type);
+  if (match) return match.category;
   return null;
 }
 

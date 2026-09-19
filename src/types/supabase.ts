@@ -84,6 +84,63 @@ export type Database = {
           },
         ]
       }
+      cashflow_audit_logs: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          actor_name: string | null
+          cashflow_id: string
+          created_at: string
+          description: string
+          diff_summary: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          cashflow_id: string
+          created_at?: string
+          description: string
+          diff_summary?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          cashflow_id?: string
+          created_at?: string
+          description?: string
+          diff_summary?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashflow_audit_logs_cashflow_id_fkey"
+            columns: ["cashflow_id"]
+            isOneToOne: false
+            referencedRelation: "cashflow_summaries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashflow_audit_logs_cashflow_id_fkey"
+            columns: ["cashflow_id"]
+            isOneToOne: false
+            referencedRelation: "cashflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cashflow_budgets: {
         Row: {
           amount: number

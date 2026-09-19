@@ -43,6 +43,7 @@ import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './constants';
+import { recordCashflowAuditLog } from './audit';
 import * as Sentry from '@sentry/nextjs';
 
 const RECEIPT_BUCKET = 'cashflow-receipts';
@@ -713,6 +714,24 @@ export async function addEntry(formData: FormData) {
   const goalType = targetPrefix === 'Debt:' ? 'debt' : 'savings';
   const entryDTO = mapCashflowEntryToDTO(insertedEntry, goalTitle, goalType);
 
+  void recordCashflowAuditLog({
+    supabase,
+    cashflowId,
+    actorId: user.id,
+    actorEmail: user.email,
+    actorName: typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : user.email ?? null,
+    action: 'create_entry',
+    entityType: 'entry',
+    entityId: insertedEntry.id,
+    description: `Added "${description.trim()}" (${type === 'income' ? '+' : '-'}${finalAmount}${category ? `, ${category}` : ''})`,
+    diffSummary: {
+      amount: finalAmount,
+      type,
+      category: resolvedGoal.category,
+      date: entryDate,
+    },
+  });
+
   return { success: true, entry: entryDTO };
 }
 
@@ -983,6 +1002,24 @@ export async function updateEntry(entryId: string, formData: FormData) {
     ? mapCashflowEntryToDTO(updatedEntry, goalTitle, goalType)
     : null;
 
+  void recordCashflowAuditLog({
+    supabase,
+    cashflowId: entry.cashflow_id,
+    actorId: user.id,
+    actorEmail: user.email,
+    actorName: typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : user.email ?? null,
+    action: 'update_entry',
+    entityType: 'entry',
+    entityId: entryId,
+    description: `Updated "${description.trim()}" (${type === 'income' ? '+' : '-'}${finalAmount})`,
+    diffSummary: {
+      amount: finalAmount,
+      type,
+      category: resolvedGoal.category,
+      date,
+    },
+  });
+
   return { success: true, entry: entryDTO };
 }
 
@@ -992,7 +1029,7 @@ export async function deleteEntry(entryId: string) {
   // Verify entry exists and get receipt_url for cleanup
   const { data: entry } = await supabase
     .from('cashflow_entries')
-    .select('cashflow_id, receipt_url, cashflows(user_id)')
+    .select('cashflow_id, receipt_url, description, amount, type, cashflows(user_id)')
     .eq('id', entryId)
     .single();
 
@@ -1028,6 +1065,24 @@ export async function deleteEntry(entryId: string) {
 
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${entry.cashflow_id}`);
+
+  void recordCashflowAuditLog({
+    supabase,
+    cashflowId: entry.cashflow_id,
+    actorId: user.id,
+    actorEmail: user.email,
+    actorName: typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : user.email ?? null,
+    action: 'delete_entry',
+    entityType: 'entry',
+    entityId: entryId,
+    description: `Deleted "${entry.description}" (${entry.type === 'income' ? '+' : '-'}${entry.amount})`,
+    diffSummary: {
+      amount: entry.amount,
+      type: entry.type,
+      description: entry.description,
+    },
+  });
+
   return { success: true, id: entryId };
 }
 
@@ -2902,6 +2957,19 @@ export async function bulkDeleteEntries(input: { cashflowId: string; entryIds: s
 
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
+
+  void recordCashflowAuditLog({
+    supabase,
+    cashflowId,
+    actorId: user.id,
+    actorEmail: user.email,
+    actorName: typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : user.email ?? null,
+    action: 'bulk_delete',
+    entityType: 'entry',
+    description: `Bulk deleted ${idsToDelete.length} transaction entries`,
+    diffSummary: { deletedCount: idsToDelete.length, entryIds: idsToDelete },
+  });
+
   return { success: true, count: idsToDelete.length, deletedIds: idsToDelete };
 }
 

@@ -44,5 +44,20 @@
       "form_factor": "narrow",
       "label": "Kytbox Mobile App"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Log Expense",
+      "short_name": "Quick Log",
+      "description": "Record an expense in under 2 seconds",
+      "url": "/cashflow/quick",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

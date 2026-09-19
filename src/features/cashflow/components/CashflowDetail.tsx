@@ -59,11 +59,13 @@ import {
   LuArrowUp,
   LuTag,
   LuSlidersHorizontal,
+  LuHistory,
   LuFileText,
   LuRotateCcw,
   LuCalendar,
   LuGlobe,
   LuTriangleAlert,
+  LuZap,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -92,6 +94,7 @@ import EntryModal from './EntryModal'
 import GoalCard from './GoalCard'
 import { CashflowSummaryStats } from './CashflowSummaryStats'
 import { SafeToSpendCard } from './SafeToSpendCard'
+import { RunwayCard } from './RunwayCard'
 import { Loader } from '@/components/ui/loader'
 
 const CashflowCharts = dynamic(
@@ -122,6 +125,10 @@ const CreateSplitGroupModal = dynamic(
     import('./split/CreateSplitGroupModal').then(
       (mod) => mod.CreateSplitGroupModal,
     ),
+  { ssr: false },
+)
+const ActivityLogDrawer = dynamic(
+  () => import('./ActivityLogDrawer').then((mod) => mod.ActivityLogDrawer),
   { ssr: false },
 )
 
@@ -234,6 +241,7 @@ export default function CashflowDetail({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isCreateSplitModalOpen, setIsCreateSplitModalOpen] = useState(false)
+  const [isActivityDrawerOpen, setIsActivityDrawerOpen] = useState(false)
   const [viewingReceiptEntry, setViewingReceiptEntry] =
     useState<CashflowEntryDTO | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -1479,6 +1487,13 @@ export default function CashflowDetail({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className='cursor-pointer'
+                    onClick={() => setIsActivityDrawerOpen(true)}
+                  >
+                    <LuHistory className='w-4 h-4 mr-2' />
+                    Activity & Audit Trail
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className='cursor-pointer'
                     onClick={() => setIsCreateSplitModalOpen(true)}
                   >
                     <LuUsers className='w-4 h-4 mr-2' />
@@ -1581,11 +1596,25 @@ export default function CashflowDetail({
                 </Button>
               )}
 
+            {/* Quick Log Fast-Path */}
+            {canEdit && (
+              <Link href={`/cashflow/quick?bookId=${cashflow.id}`}>
+                <Button
+                  variant='outline'
+                  className='gap-1.5 h-10 sm:h-9 px-3 text-sm font-medium border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shadow-xs'
+                  title='2-Second Fast Log'
+                >
+                  <LuZap className='w-4 h-4' />
+                  <span className='hidden sm:inline'>Quick Log</span>
+                </Button>
+              </Link>
+            )}
+
             {/* Primary Add Entry Button */}
             {canEdit && (
               <Button
                 onClick={openAddEntry}
-                className='gap-2 h-10 sm:h-9 px-4 text-sm font-semibold flex-1 sm:flex-none shadow-xs'
+                className='gap-2 h-10 sm:h-9 px-4 text-sm font-semibold flex-1 sm:flex-none shadow-xs cursor-pointer'
               >
                 <LuPlus className='w-4 h-4' />
                 <span>Add Entry</span>
@@ -2567,6 +2596,13 @@ export default function CashflowDetail({
         }
       />
 
+      {/* Runway & Burn Rate Engine (The Survival Clock) */}
+      <RunwayCard
+        balance={balance}
+        entries={localEntries}
+        currency={currency}
+      />
+
       {/* Charts */}
       <CashflowCharts entries={filteredEntries} currency={currency} />
 
@@ -2615,6 +2651,7 @@ export default function CashflowDetail({
         goals={localGoals}
         availableTags={allUniqueTags}
         bookTags={localTags}
+        recentEntries={entries}
       />
 
       {/* Import CSV Modal */}
@@ -2748,6 +2785,12 @@ export default function CashflowDetail({
         categories={uniqueCategories}
         currency={currency}
         canEdit={canEdit}
+      />
+      {/* Activity & Audit Trail Drawer */}
+      <ActivityLogDrawer
+        cashflowId={cashflow.id}
+        isOpen={isActivityDrawerOpen}
+        onClose={() => setIsActivityDrawerOpen(false)}
       />
       {/* Floating Bulk Actions Toolbar */}
       {canEdit && (

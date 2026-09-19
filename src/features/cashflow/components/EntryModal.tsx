@@ -29,6 +29,8 @@ import {
   LuTrash2,
   LuUpload,
   LuDownload,
+  LuSparkles,
+  LuScanLine,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import { addEntry, updateEntry, getReceiptSignedUrl } from '../actions'
@@ -45,7 +47,9 @@ import {
 } from '../lib/exchange-rates'
 import * as z from 'zod/mini'
 import { entryTypeSchema, entryCategorySchema } from '../schemas.client'
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../constants'
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, formatCategoryName } from '../constants'
+import { resolveMerchantCategory } from '../lib/merchant-rules'
+import { extractReceiptData } from '../lib/receipt-extractor'
 import PurchaseBreakdownEditor, {
   type SplitItemInput,
 } from './PurchaseBreakdownEditor'
@@ -68,6 +72,7 @@ interface EntryModalProps {
   goals?: CashflowGoalDTO[]
   availableTags?: string[]
   bookTags?: CashflowTagDTO[]
+  recentEntries?: CashflowEntryDTO[]
 }
 
 export default function EntryModal({
@@ -80,6 +85,7 @@ export default function EntryModal({
   goals = [],
   availableTags = [],
   bookTags = [],
+  recentEntries = [],
 }: EntryModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -136,6 +142,38 @@ export default function EntryModal({
     useState(false)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const receiptInputRef = useRef<HTMLInputElement>(null)
+  const [isExtractingReceipt, setIsExtractingReceipt] = useState(false)
+  const [ocrStatus, setOcrStatus] = useState<string | null>(null)
+  const receiptQuickScanRef = useRef<HTMLInputElement>(null)
+
+  const merchantMatch = useMemo(() => {
+    return resolveMerchantCategory(description, type, recentEntries)
+  }, [description, type, recentEntries])
+
+  // Auto-apply category and tags when merchant is recognized (same behavior as /quick)
+  const isEdit = Boolean(entry)
+  const initialDescRef = useRef(entry?.description)
+  useEffect(() => {
+    if (open) {
+      initialDescRef.current = entry?.description
+    }
+  }, [open, entry?.description])
+
+  useEffect(() => {
+    if (!merchantMatch || !merchantMatch.category || goalId) return
+    // If editing an existing entry, only auto-apply if user actually changed the description
+    if (isEdit && description === initialDescRef.current) return
+
+    setCategory(merchantMatch.category)
+    if (
+      merchantMatch.suggestedTags &&
+      merchantMatch.suggestedTags.length > 0
+    ) {
+      setTags((prev) =>
+        Array.from(new Set([...prev, ...merchantMatch.suggestedTags!])),
+      )
+    }
+  }, [merchantMatch, goalId, isEdit, description])
 
   const initialItems: SplitItemInput[] =
     entry?.items && entry.items.length > 0
@@ -290,6 +328,48 @@ export default function EntryModal({
     setReceiptPreviewUrl(preview)
   }
 
+  const handleQuickScanReceipt = async (file: File) => {
+    if (!isSupportedImageFile(file)) {
+      toast.error('Only image files (JPG, PNG, WebP) are supported')
+      return
+    }
+    setIsExtractingReceipt(true)
+    setOcrStatus('Scanning receipt...')
+    try {
+      const extracted = await extractReceiptData(file, (_, status) => {
+        setOcrStatus(status)
+      })
+      if (extracted.amount !== null && !isSplit) {
+        setAmount(extracted.amount.toString())
+      }
+      if (extracted.merchant) {
+        setDescription(extracted.merchant)
+      }
+      if (extracted.date) {
+        setDate(extracted.date)
+      }
+      if (extracted.category && !goalId) {
+        setCategory(extracted.category)
+      }
+      if (extracted.suggestedTags && extracted.suggestedTags.length > 0) {
+        setTags((prev) =>
+          Array.from(new Set([...prev, ...extracted.suggestedTags!])),
+        )
+      }
+      toast.success(
+        extracted.merchant || extracted.amount
+          ? `Extracted: ${extracted.merchant || 'Receipt'} ${extracted.amount ? `(${extracted.amount})` : ''}`
+          : 'Scanned receipt data successfully',
+      )
+    } catch (err) {
+      console.warn('OCR extraction error:', err)
+      toast.error('Could not extract receipt data. Please enter manually.')
+    } finally {
+      setIsExtractingReceipt(false)
+      setOcrStatus(null)
+    }
+  }
+
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false)
 
   const handleDownloadExistingReceipt = async () => {
@@ -355,7 +435,6 @@ export default function EntryModal({
   }
 
   const isBusy = isLoading
-  const isEdit = !!entry
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -544,6 +623,24 @@ export default function EntryModal({
                   className='pl-9'
                 />
               </div>
+              {merchantMatch && !goalId && (
+                <div className='flex items-center justify-between text-[11px] px-1 text-primary'>
+                  <span className='inline-flex items-center gap-1 font-medium'>
+                    <LuSparkles className='w-3 h-3 shrink-0' />
+                    <span>
+                      Auto-categorized as{' '}
+                      <strong>
+                        {formatCategoryName(merchantMatch.category)}
+                      </strong>
+                    </span>
+                  </span>
+                  {merchantMatch.confidence === 'learned' && (
+                    <span className='text-[10px] text-muted-foreground'>
+                      (from history)
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Transaction Breakdown Toggle */}
@@ -830,10 +927,47 @@ export default function EntryModal({
 
             {/* Receipt / Attachment Upload */}
             <div className='grid gap-2'>
-              <Label className='font-medium text-foreground/80 flex items-center gap-1.5'>
-                <LuPaperclip className='w-3.5 h-3.5 text-muted-foreground' />
-                Receipt / Attachment
-              </Label>
+              <div className='flex items-center justify-between'>
+                <Label className='font-medium text-foreground/80 flex items-center gap-1.5'>
+                  <LuPaperclip className='w-3.5 h-3.5 text-muted-foreground' />
+                  Receipt / Attachment
+                </Label>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  disabled={isExtractingReceipt}
+                  onClick={() => receiptQuickScanRef.current?.click()}
+                  className='h-7 text-xs px-2.5 gap-1.5 border-primary/30 hover:bg-primary/10 text-primary cursor-pointer'
+                >
+                  {isExtractingReceipt ? (
+                    <>
+                      <LuLoader className='w-3 h-3 animate-spin' />
+                      <span className='truncate max-w-32.5'>
+                        {ocrStatus || 'Scanning...'}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <LuScanLine className='w-3 h-3' />
+                      <span>Quick-Extract (Zero-Storage)</span>
+                    </>
+                  )}
+                </Button>
+                <input
+                  ref={receiptQuickScanRef}
+                  type='file'
+                  accept='image/*,image/jpeg,image/png,image/webp,image/avif'
+                  className='hidden'
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      handleQuickScanReceipt(file)
+                    }
+                    e.target.value = ''
+                  }}
+                />
+              </div>
 
               {/* Case 1: Existing receipt attached and not removed */}
               {existingReceiptUrl && receiptAction === 'keep' && (

@@ -17,5 +17,12 @@ export { CreateSplitGroupLanding } from './components/split/CreateSplitGroupLand
 export { CreateSplitGroupModal } from './components/split/CreateSplitGroupModal';
 export { SplitGroupView } from './components/split/SplitGroupView';
 export { PinnedCashflowsSection } from './components/PinnedCashflowsSection';
+export { RunwayCard } from './components/RunwayCard';
+export { ActivityLogDrawer } from './components/ActivityLogDrawer';
+export * from './lib/runway';
+export * from './audit';
 export * from './split-actions';
+export { default as QuickLogForm } from './components/QuickLogForm';
+export * from './lib/merchant-rules';
+export * from './lib/receipt-extractor';
 

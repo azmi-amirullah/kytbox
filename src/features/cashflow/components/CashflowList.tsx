@@ -22,6 +22,7 @@ import {
   LuArchive,
   LuArchiveRestore,
   LuGlobe,
+  LuZap,
 } from 'react-icons/lu'
 import {
   DropdownMenu,
@@ -783,10 +784,25 @@ export default function CashflowList({
               Track your income and expenses
             </p>
           </div>
-          <Button onClick={() => setIsCreateModalOpen(true)} className='gap-2'>
-            <LuPlus className='w-4 h-4' />
-            New Cashflow
-          </Button>
+          <div className='flex items-center gap-2'>
+            <Link href='/cashflow/quick'>
+              <Button
+                variant='outline'
+                className='gap-1.5 border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shadow-xs'
+                title='2-Second Fast Log'
+              >
+                <LuZap className='w-4 h-4' />
+                <span className='hidden sm:inline'>Quick Log</span>
+              </Button>
+            </Link>
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className='gap-2 cursor-pointer shadow-xs'
+            >
+              <LuPlus className='w-4 h-4' />
+              New Cashflow
+            </Button>
+          </div>
         </div>
       </div>
 

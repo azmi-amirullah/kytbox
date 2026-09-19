@@ -43,7 +43,84 @@ describe('getAccessibleCashflows Resilience & Fault Tolerance', () => {
 
     const result = await getAccessibleCashflows(mockSupabase, userId, email);
     expect(result).toHaveLength(1);
-    expect(result[0]).toEqual({ id: 'cf-1', title: 'Personal Book' });
+    expect(result[0]).toEqual({
+      id: 'cf-1',
+      title: 'Personal Book',
+      isShared: false,
+      role: 'owner',
+    });
+  });
+
+  it('correctly maps shared books with edit and read permissions', async () => {
+    const mockSupabase = {
+      from: vi.fn((table: string) => {
+        if (table === 'cashflows') {
+          let isOwnedQuery = false;
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockImplementation(() => {
+              isOwnedQuery = true;
+              return {
+                order: vi.fn().mockResolvedValue({
+                  data: [],
+                  error: null,
+                }),
+              };
+            }),
+            in: vi.fn().mockReturnThis(),
+            order: vi.fn().mockImplementation(() => {
+              if (isOwnedQuery) {
+                return Promise.resolve({ data: [], error: null });
+              }
+              return Promise.resolve({
+                data: [
+                  { id: 'cf-shared-edit', title: 'Team Edit Book', created_at: '2026-09-02T00:00:00Z' },
+                  { id: 'cf-shared-read', title: 'Team Read Book', created_at: '2026-09-03T00:00:00Z' },
+                ],
+                error: null,
+              });
+            }),
+          };
+        }
+        if (table === 'cashflow_shares') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockResolvedValue({
+              data: [
+                { cashflow_id: 'cf-shared-edit', role: 'edit' },
+                { cashflow_id: 'cf-shared-read', role: 'read' },
+              ],
+              error: null,
+            }),
+          };
+        }
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    } as unknown as SupabaseClient<Database>;
+
+    const result = await getAccessibleCashflows(mockSupabase, userId, email);
+    expect(result).toHaveLength(2);
+
+    const editBook = result.find((b) => b.id === 'cf-shared-edit');
+    expect(editBook).toEqual({
+      id: 'cf-shared-edit',
+      title: 'Team Edit Book',
+      isShared: true,
+      role: 'edit',
+    });
+
+    const readBook = result.find((b) => b.id === 'cf-shared-read');
+    expect(readBook).toEqual({
+      id: 'cf-shared-read',
+      title: 'Team Read Book',
+      isShared: true,
+      role: 'read',
+    });
+
+    // Verify /quick filter logic: read-only books are strictly excluded
+    const quickBooks = result.filter((b) => b.role === 'owner' || b.role === 'edit');
+    expect(quickBooks.map((b) => b.id)).toEqual(['cf-shared-edit']);
+    expect(quickBooks.some((b) => b.role === 'read')).toBe(false);
   });
 
   it('recovers from transient 504 on owned lookup via retry', async () => {

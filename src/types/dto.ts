@@ -158,6 +158,20 @@ export interface CashflowSplitGroupDTO {
   updated_at: string | null
 }
 
+export interface CashflowAuditLogDTO {
+  id: string
+  cashflow_id: string
+  actor_id: string | null
+  actor_email: string | null
+  actor_name: string | null
+  action: string
+  entity_type: string
+  entity_id: string | null
+  description: string
+  diff_summary: Record<string, unknown> | null
+  created_at: string
+}
+
 export interface CashflowSplitGroupExpenseDTO {
   id: string
   group_id: string

@@ -6,6 +6,8 @@ import type { Database } from '@/types/supabase'
 export interface AccessibleCashflow {
   id: string
   title: string
+  isShared?: boolean
+  role?: 'owner' | 'edit' | 'read'
 }
 
 interface PostgrestLikeError {
@@ -49,7 +51,7 @@ export async function getAccessibleCashflows(
     userEmail
       ? supabase
           .from('cashflow_shares')
-          .select('cashflow_id')
+          .select('cashflow_id, role')
           .eq('email', userEmail.trim().toLowerCase())
       : Promise.resolve({ data: null, error: null }),
   ])
@@ -81,7 +83,7 @@ export async function getAccessibleCashflows(
     ownedCashflows = initialOwnedResult.data ?? []
   }
 
-  let sharesData: { cashflow_id: string }[] = []
+  let sharesData: { cashflow_id: string; role: string }[] = []
   if (initialSharesResult?.error) {
     if (isAuthExpiredError(initialSharesResult.error)) {
       console.warn('cashflow_access_shares_auth_expired', initialSharesResult.error)
@@ -90,7 +92,7 @@ export async function getAccessibleCashflows(
       console.warn('cashflow_access_shares_lookup_retrying', initialSharesResult.error)
       const retryShares = await supabase
         .from('cashflow_shares')
-        .select('cashflow_id')
+        .select('cashflow_id, role')
         .eq('email', (userEmail ?? '').trim().toLowerCase())
 
       if (retryShares.error) {
@@ -107,9 +109,12 @@ export async function getAccessibleCashflows(
   const ownedMap = new Map(ownedCashflows.map((c) => [c.id, c]))
 
   const sharedCashflowIds = new Set<string>()
+  const shareRoleMap = new Map<string, 'edit' | 'read'>()
   for (const share of sharesData) {
     if (!ownedMap.has(share.cashflow_id)) {
       sharedCashflowIds.add(share.cashflow_id)
+      const role = share.role === 'edit' ? 'edit' : 'read'
+      shareRoleMap.set(share.cashflow_id, role)
     }
   }
 
@@ -119,7 +124,12 @@ export async function getAccessibleCashflows(
 
   // Fast path: if no external shared books, return owned books directly (saves a database query)
   if (sharedCashflowIds.size === 0) {
-    return ownedCashflows.map(({ id, title }) => ({ id, title }))
+    return ownedCashflows.map(({ id, title }) => ({
+      id,
+      title,
+      isShared: false,
+      role: 'owner',
+    }))
   }
 
   let sharedCashflows: { id: string; title: string; created_at: string | null }[] = []
@@ -132,7 +142,12 @@ export async function getAccessibleCashflows(
   if (initialSharedResult.error) {
     if (isAuthExpiredError(initialSharedResult.error)) {
       console.warn('cashflow_access_filtered_auth_expired', initialSharedResult.error)
-      return ownedCashflows.map(({ id, title }) => ({ id, title }))
+      return ownedCashflows.map(({ id, title }) => ({
+        id,
+        title,
+        isShared: false,
+        role: 'owner',
+      }))
     }
     console.warn('cashflow_access_filtered_lookup_retrying', initialSharedResult.error)
     const retryShared = await supabase
@@ -154,5 +169,9 @@ export async function getAccessibleCashflows(
   const allCashflows = [...ownedCashflows, ...sharedCashflows]
   allCashflows.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())
 
-  return allCashflows.map(({ id, title }) => ({ id, title }))
+  return allCashflows.map(({ id, title }) => {
+    const isShared = !ownedMap.has(id)
+    const role = isShared ? (shareRoleMap.get(id) || 'read') : 'owner'
+    return { id, title, isShared, role }
+  })
 }

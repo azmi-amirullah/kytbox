@@ -46,6 +46,7 @@ import type {
   ListItemResourceDTO,
   CashflowSplitGroupDTO,
   CashflowSplitGroupExpenseDTO,
+  CashflowAuditLogDTO,
 } from '@/types/dto';
 import {
   listItemMetadataClientSchema,
@@ -417,6 +418,42 @@ export function mapSplitExpenseToDTO(row: {
     is_settlement: !!row.is_settlement,
     created_at: row.created_at ?? null,
     updated_at: row.updated_at ?? null,
+  };
+}
+
+export function mapCashflowAuditLogToDTO(row: {
+  id: string;
+  cashflow_id: string;
+  actor_id?: string | null;
+  actor_email?: string | null;
+  actor_name?: string | null;
+  action: string;
+  entity_type: string;
+  entity_id?: string | null;
+  description: string;
+  diff_summary?: unknown;
+  created_at: string;
+}): CashflowAuditLogDTO {
+  let safeDiff: Record<string, unknown> | null = null;
+  if (typeof row.diff_summary === 'object' && row.diff_summary !== null && !Array.isArray(row.diff_summary)) {
+    safeDiff = {};
+    for (const [k, v] of Object.entries(row.diff_summary)) {
+      safeDiff[k] = v;
+    }
+  }
+
+  return {
+    id: row.id,
+    cashflow_id: row.cashflow_id,
+    actor_id: row.actor_id ?? null,
+    actor_email: row.actor_email ?? null,
+    actor_name: row.actor_name ?? null,
+    action: row.action,
+    entity_type: row.entity_type,
+    entity_id: row.entity_id ?? null,
+    description: row.description,
+    diff_summary: safeDiff,
+    created_at: row.created_at,
   };
 }
 

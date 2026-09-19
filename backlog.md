@@ -12,11 +12,9 @@
 | :--- | :--- | :---: | :---: | :---: |
 | 💰 **Cashflow** | **Inter-Book Account Transfers & Net Worth** | 🔥🔥🔥 | Medium | **Top Priority** |
 | 💰 **Cashflow** | **Cash Horizon & Bill Due-Date Calendar** | 🔥🔥🔥 | Medium | **High Priority** |
-| 💰 **Cashflow** | **Merchant Memory & Auto-Categorization** | 🔥🔥 | Low | Ready |
 | 💰 **Cashflow** | **Debt Snowball & Avalanche Payoff Planner** | 🔥🔥 | Medium | Scheduled |
-| 💰 **Cashflow** | **Receipt OCR & Itemization via Gemini Flash** | 🔥🔥🔥 | Low | Ready |
 | 💰 **Cashflow** | **Smart CSV Import & Duplicate Detection** | 🔥🔥 | Low | Ready |
-| 💰 **Cashflow** | **True Expenses Sinking Funds Amortizer** | 🔥🔥 | Low | Ready |
+| 💰 **Cashflow** | **"Can I Afford It?" Purchase Sandbox** | 🔥🔥🔥 | Low | Ready |
 | 💰 **Cashflow** | **1-Click Split Settlement Sync (`/split` → Book)** | 🔥🔥 | Low | Ready |
 | 💰 **Cashflow** | **Payday-to-Payday Custom Budget Cycles** | 🔥🔥 | Low | Backlog |
 | 💰 **Cashflow** | **50/30/20 Macro Allocation Health Score** | 🔥🔥 | Low | Backlog |
@@ -37,6 +35,7 @@
 | 🛡️ **Platform** | **Multi-Language Framework (`next-intl`)** | 🔥🔥 | High | Strategic |
 | 🛡️ **Platform** | **Session Management & Device Revocation** | 🔥🔥 | Medium | Backlog |
 | 🛡️ **Platform** | **Mobile Native Shell (Capacitor PWA)** | 🔥🔥🔥 | High | Strategic |
+| 🛡️ **Platform** | **Weekly Financial Health Digest** | 🔥🔥 | Low | Ready |
 
 ---
 
@@ -58,29 +57,14 @@
   * 1-click "Mark as Paid / Post Entry" directly from bill chips.
 * **Complexity**: Medium (Leverages existing `@/components/ui` and List calendar patterns; purely calculated from `recurringRules` and `entries`).
 
-### 3. Merchant Memory & Rule-Based Auto-Categorization
-* **Problem**: Manual transaction creation and bank CSV imports force users to repeatedly assign categories and tags for known merchants ("Grab", "Starbucks", "Netflix", "Indomaret").
-* **Solution**:
-  * Rule-based engine that learns from transaction history or user-defined keyword mappings.
-  * Automatically populates category and tags when a description matches, and pre-categorizes batches in `ImportCsvModal`.
-* **Complexity**: Low (Client-side frequency map or lightweight user-level pattern table).
-
-### 4. Debt Snowball & Avalanche Payoff Planner
+### 3. Debt Snowball & Avalanche Payoff Planner
 * **Problem**: Users with multiple debts in `goals` (marked `type: 'debt'`) have no guidance on whether to pay off the smallest balance first (Snowball) or highest interest first (Avalanche).
 * **Solution**:
   * Payoff simulator comparing total interest saved and payoff horizon under both strategies.
   * Calculates monthly contribution recommendations based on monthly surplus from `SafeToSpend`.
 * **Complexity**: Medium (Pure mathematical modeling with clear interactive charts).
 
-### 5. Instant Receipt OCR & Itemization via Gemini Flash (Multimodal Edge)
-* **Problem**: Users frequently attach receipts using `ReceiptLightbox`, but they still have to manually type the date, amount, merchant, and item breakdown.
-* **Solution**:
-  * `[ 📷 Scan Receipt ]` action in `EntryModal`.
-  * Passes image to Gemini 2.0 Flash via Server Action with structured JSON output: `{ date, totalAmount, merchant, items: [{ name, price, category }] }`.
-  * Pre-fills transaction inputs and `PurchaseBreakdownEditor` in < 1 second with 1-tap review.
-* **Complexity**: Low (Leverages Google GenAI SDK with native JSON mode; graceful fallback to manual entry if parsing fails).
-
-### 6. Smart CSV Import with Duplicate Detection & Clean Merchant Parsing
+### 4. Smart CSV Import with Duplicate Detection & Clean Merchant Parsing
 * **Problem**: When importing monthly bank CSV statements, overlapping date ranges create duplicate entries, and messy bank descriptions (`POS DEBIT 0918 SQ *STORE 123`) clutter transaction tables.
 * **Solution**:
   * During the CSV preview step in `ImportCsvModal`, batch-check existing entries matching `(date ± 2 days, exact amount, normalized description)`.
@@ -88,40 +72,42 @@
   * Regex cleaner strips common banking noise (`POS DEBIT`, `PURCHASE AUTHORIZATION`, trailing store IDs).
 * **Complexity**: Low (Single batched SQL range query; zero row-by-row N+1 DB calls).
 
-### 7. "True Expenses" Sinking Funds Amortizer (Annual & Irregular Bills)
-* **Problem**: Non-monthly bills (annual vehicle tax, insurance, software renewals, holiday expenses) blindside users. A user thinks they have $1,500 safe to spend, only for an annual $1,200 bill to arrive next week.
+### 5. "Can I Afford It?" Purchase Sandbox (Impulse Buy Guard)
+* **Problem**: Users see a $1,200 laptop or $450 flight and experience decision paralysis. Backward-looking expense charts don't tell them if this purchase will blow up next month's rent or derail their savings goal.
 * **Solution**:
-  * Amortizes non-monthly recurring rules (`yearly_calculation` or `recurrence_interval = 'yearly'`) into a monthly reserve target (`Annual Cost / 12 = Monthly Sinking Target`).
-  * Automatically factors the monthly amortized reserve into the `SafeToSpendCard` daily/monthly spending allowance.
-* **Complexity**: Low (**Zero new database tables**; pure mathematical extension to `calculateSafeToSpend()`).
+  * Ephemeral simulator modal where users input `Amount`, `Category`, and `Date`.
+  * Previews ripple effects in real time: impact on **Safe-to-Spend** daily allowance, threshold breach on **Active Budgets**, and delay on **Savings Goals** target dates.
+  * Single click converts the simulated transaction into a real expense entry.
+* **Complexity**: Low (Purely client-side preview via `safe-to-spend.ts`; zero DB writes until explicitly committed).
 
-### 8. 1-Click Split Settlement Sync (`/split/[token]` → Cashflow Book)
+### 6. 1-Click Split Settlement Sync (`/split/[token]` → Cashflow Book)
 * **Problem**: Users settle shared trip/roommate expenses in `/split/[token]`, but then have to manually open Cashflow and recreate an income/expense entry to keep their personal ledger accurate.
 * **Solution**:
   * Authenticated `[ 📥 Record Settlement to Cashflow ]` button on `/split/[token]` net-balance settlement cards.
   * Pre-selects user's default cashflow book, auto-labels `[Split: {Group Title}] Settlement from {Name}`, and creates the entry in 1 click.
 * **Complexity**: Low (Reuses existing `createEntry` Server Action via clean feature boundary).
 
-### 9. Payday-to-Payday / Custom Budget Cycles (Bi-Weekly & Custom Cut-Off Days)
+### 7. Payday-to-Payday / Custom Budget Cycles (Bi-Weekly & Custom Cut-Off Days)
 * **Problem**: Calendar-month budgets (1st–31st) desync for users paid bi-weekly, on the 15th/25th, or on the last Friday of the month, making month-start envelope budgeting artificially constrained.
 * **Solution**:
   * Add `budget_cycle_start_day: integer default 1` to `cashflows`.
   * Date filter pills, envelope allocations, and safe-to-spend projections anchor dynamically to `[cycleStart, cycleEnd]` instead of hardcoding `startOfMonth(now())`.
 * **Complexity**: Low (Single column addition on `cashflows` and date utility extension).
 
-### 10. "Needs vs. Wants vs. Savings" (50/30/20) Macro Allocation Health Score
+### 8. "Needs vs. Wants vs. Savings" (50/30/20) Macro Allocation Health Score
 * **Problem**: Category pie charts with 20+ slices provide micro-details but fail to answer the macro question: *Is my core lifestyle sustainable?*
 * **Solution**:
   * Categories map to macro buckets: `Need` (Essentials), `Want` (Discretionary), or `Savings/Debt`.
   * Compact 50/30/20 benchmark card on Cashflow Dashboard tracking actual ratio vs target.
 * **Complexity**: Low (Pre-populated default mapping dictionary on existing categories; zero DB migration required if stored in category metadata).
 
-### 11. Subscription Creep & Price Spike Watchdog
+### 9. Subscription Creep & Price Spike Watchdog
 * **Problem**: Recurring subscription fees silently increase ($12.99 becomes $15.99; utility surges), and users don't notice for months.
 * **Solution**:
   * When logging or importing an entry matching an active recurring rule, compare `amount` against the rule's baseline.
   * If `new_amount > baseline_amount * 1.10`, display an inline warning badge with 1-click options: `[Update Baseline]` or `[Flag for Review]`.
-* **Complexity**: Low (Pure in-memory math check on entry creation; zero background cron jobs).
+  * **30-Day Annual Warning & Zombie Sentinel**: Alerts 30 days and 7 days prior to annual renewals; flags recurring commitments unreviewed for > 60 days.
+* **Complexity**: Low (Pure in-memory math check on entry creation and dashboard load; zero heavy background workers).
 
 ---
 
@@ -240,6 +226,16 @@
 * **Solution**:
   * Wrap existing responsive Next.js PWA into native iOS and Android binaries using Capacitor.
 * **Complexity**: High.
+
+### 6. Proactive Weekly Financial Health Digest
+* **Problem**: Passive dashboards require users to remember to log in. By the time they check their budgets, the month is already over.
+* **Solution**:
+  * Automated weekly snapshot summary delivered via in-app notification or transactional email:
+    * 7-day trailing spend vs budget pace (*"Spent $340 — 15% under budget"*).
+    * Top spend category.
+    * Current Safe-to-Spend daily rate.
+    * Upcoming recurring commitments due this week.
+* **Complexity**: Low (Scheduled Server Action aggregating trailing 7-day metrics into a clean, unstyled digest payload).
 
 ---
 

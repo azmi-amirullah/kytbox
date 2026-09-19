@@ -21,6 +21,8 @@ export type CashflowSplitGroup =
   Database['public']['Tables']['cashflow_split_groups']['Row'];
 export type CashflowSplitGroupExpense =
   Database['public']['Tables']['cashflow_split_group_expenses']['Row'];
+export type CashflowAuditLog =
+  Database['public']['Tables']['cashflow_audit_logs']['Row'];
 export type SupportTicket =
   Database['public']['Tables']['support_tickets']['Row'];
 export type SupportMessage =
