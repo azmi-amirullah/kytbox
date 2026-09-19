@@ -280,4 +280,27 @@ export const importBoardBatchSchema = z.object({
   cards: z.array(importCardSchema).max(100),
 });
 
+export const listSlugSchema = z
+  .string()
+  .trim()
+  .min(1, 'Slug is required')
+  .max(100, 'Slug too long')
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase alphanumeric with hyphens');
+
+export const claimWishlistItemSchema = z.object({
+  itemId: listItemIdSchema,
+  claimedByName: z.string().trim().min(1, 'Name is required').max(100, 'Name too long'),
+  note: z.string().trim().max(500, 'Note too long').optional().nullable(),
+});
+
+export const unclaimWishlistItemSchema = z.object({
+  itemId: listItemIdSchema,
+  claimToken: z.string().min(10, 'Invalid claim token').max(100),
+});
+
+export const releaseWishlistItemClaimSchema = z.object({
+  itemId: listItemIdSchema,
+  listId: listIdSchema,
+});
+
 

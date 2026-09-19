@@ -15,6 +15,7 @@ export function buildCspHeader(nonce: string, allowedOrigins: string[] = []): st
     worker-src 'self' blob:;
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https:;
+    media-src 'self' blob: data: https:;
     font-src 'self'${additionalOrigins};
     connect-src 'self' data: https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com${additionalOrigins};
     frame-src 'self' https://www.youtube.com https://open.spotify.com;

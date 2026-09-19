@@ -19,6 +19,7 @@ export * from './lib/fractional-indexing';
 export * from './lib/filter-cards';
 export * from './lib/board-importer';
 export * from './lib/board-exporter';
+export * from './lib/slug';
 export * as schemasClient from './schemas.client';
 export * as schemasServer from './schemas.server';
 

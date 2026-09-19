@@ -13,16 +13,20 @@ import {
   moveToFolderSchema,
   subscribeSchema,
   customDomainInputSchema,
+  contactMessageSchema,
+  updateContactMessageStatusSchema,
 } from './schemas.server';
-import { mapLinkToDTO, mapCustomDomainToDTO } from '@/lib/mappers';
+import { mapLinkToDTO, mapCustomDomainToDTO, mapBioContactMessageToDTO } from '@/lib/mappers';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getBioSubscribers, getCustomDomainForUser } from './db';
 import { verifyDnsTxtRecord } from './utils/dns';
+import { isAudioUrl } from './embed';
 import { getIp } from '@/lib/ip';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createStaticClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { subDays, subHours, startOfHour, startOfDay, format } from 'date-fns';
-import { uploadRateLimit, subscribeRateLimit, checkRateLimit } from '@/lib/upstash/redis';
+import { uploadRateLimit, subscribeRateLimit, contactRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import type {
   DateRange as AnalyticsDateRange,
   AnalyticsData,
@@ -67,7 +71,7 @@ export async function addLink(formData: FormData) {
   const parsed = addLinkSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, parentId, animationType, displayMode, icon_url, scheduled_at, expires_at, isPinned, isSensitive } = parsed.data;
+  const { title, parentId, animationType, displayMode, icon_url, scheduled_at, expires_at, isPinned, isSensitive, grid_size, stream_url, audio_artist, audio_cover_url } = parsed.data;
   let url = parsed.data.url || '';
 
   if (!/^https?:\/\//i.test(url)) {
@@ -125,6 +129,10 @@ export async function addLink(formData: FormData) {
     expires_at: expires_at ? expires_at.toISOString() : null,
     is_pinned: isPinned ?? false,
     is_sensitive: isSensitive ?? false,
+    grid_size: grid_size || 'full',
+    stream_url: (url && isAudioUrl(url)) ? url : (stream_url || null),
+    audio_artist: audio_artist || null,
+    audio_cover_url: audio_cover_url || null,
   });
 
   if (error) {
@@ -163,7 +171,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { title, isFolder, animationType, displayMode, icon_url, scheduled_at, expires_at, isPinned, isSensitive } = parsed.data;
+  const { title, isFolder, animationType, displayMode, icon_url, scheduled_at, expires_at, isPinned, isSensitive, grid_size, stream_url, audio_artist, audio_cover_url } = parsed.data;
   let url = parsed.data.url || null;
 
   const updates: {
@@ -176,6 +184,10 @@ export async function updateLink(linkId: string, formData: FormData) {
     expires_at: string | null;
     is_pinned: boolean;
     is_sensitive: boolean;
+    grid_size?: string | null;
+    stream_url?: string | null;
+    audio_artist?: string | null;
+    audio_cover_url?: string | null;
   } = {
     title,
     animation_type: animationType || 'none',
@@ -185,6 +197,10 @@ export async function updateLink(linkId: string, formData: FormData) {
     expires_at: expires_at ? expires_at.toISOString() : null,
     is_pinned: isPinned ?? false,
     is_sensitive: isSensitive ?? false,
+    grid_size: grid_size || 'full',
+    stream_url: (url && isAudioUrl(url)) ? url : (stream_url || null),
+    audio_artist: audio_artist || null,
+    audio_cover_url: audio_cover_url || null,
   };
 
   if (!isFolder && url) {
@@ -735,7 +751,7 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
   const { data, error } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, is_pinned, is_sensitive, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, is_pinned, is_sensitive, grid_size, stream_url, audio_artist, audio_cover_url, children:links(count)',
     )
     .eq('user_id', profileId)
     .eq('is_active', true)
@@ -768,6 +784,10 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
     expires_at: z.string().nullable().optional(),
     is_pinned: z.boolean().nullable().optional(),
     is_sensitive: z.boolean().nullable().optional(),
+    grid_size: z.string().nullable().optional(),
+    stream_url: z.string().nullable().optional(),
+    audio_artist: z.string().nullable().optional(),
+    audio_cover_url: z.string().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
   })).safeParse(data);
 
@@ -785,6 +805,10 @@ export async function loadMorePublicLinks(profileId: string, offset: number, lim
       expires_at: link.expires_at || null,
       is_pinned: link.is_pinned ?? false,
       is_sensitive: link.is_sensitive ?? false,
+      grid_size: link.grid_size || 'full',
+      stream_url: link.stream_url ?? null,
+      audio_artist: link.audio_artist ?? null,
+      audio_cover_url: link.audio_cover_url ?? null,
     }))
   };
 }
@@ -801,7 +825,7 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
   const { data, error, count } = await supabase
     .from('links')
     .select(
-      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, is_sensitive, children:links(count)',
+      'id, title, url, is_active, short_id, is_folder, is_header, parent_id, sort_order, animation_type, display_mode, icon_url, scheduled_at, expires_at, is_sensitive, grid_size, stream_url, audio_artist, audio_cover_url, children:links(count)',
       { count: 'exact' }
     )
     .eq('user_id', profileId)
@@ -833,6 +857,10 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
     scheduled_at: z.string().nullable().optional(),
     expires_at: z.string().nullable().optional(),
     is_sensitive: z.boolean().nullable().optional(),
+    grid_size: z.string().nullable().optional(),
+    stream_url: z.string().nullable().optional(),
+    audio_artist: z.string().nullable().optional(),
+    audio_cover_url: z.string().nullable().optional(),
     children: z.array(z.object({ count: z.number() })).optional(),
   })).safeParse(data);
 
@@ -849,6 +877,10 @@ export async function loadMorePublicFolderLinks(profileId: string, folderId: str
       scheduled_at: link.scheduled_at || null,
       expires_at: link.expires_at || null,
       is_sensitive: link.is_sensitive ?? false,
+      grid_size: link.grid_size || 'full',
+      stream_url: link.stream_url ?? null,
+      audio_artist: link.audio_artist ?? null,
+      audio_cover_url: link.audio_cover_url ?? null,
     })),
     totalFolderLinks: count || 0
   };
@@ -1657,4 +1689,167 @@ export async function deleteCustomDomainAction(domainId: string) {
   revalidatePath('/bio');
   return { success: true };
 }
+
+// ==========================================
+// CONTACT RELAY INQUIRY ACTIONS (Day 30)
+// ==========================================
+
+export async function submitBioContactMessageAction(
+  profileId: string,
+  formData: FormData
+) {
+  const website = String(formData.get('website') || '');
+  // Honeypot defense: If hidden website field was populated, spambot detected
+  if (website) {
+    return {
+      success: true,
+      message: 'Your message has been sent successfully.',
+    };
+  }
+
+  const payload = {
+    profileId,
+    senderName: String(formData.get('senderName') || ''),
+    senderEmail: String(formData.get('senderEmail') || ''),
+    message: String(formData.get('message') || ''),
+    website: website || undefined,
+  };
+
+  const parsed = contactMessageSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid form submission.',
+    };
+  }
+
+  // Upstash IP rate limiting: 5 messages per hour per IP
+  const clientIp = await getIp();
+  const limitResult = await checkRateLimit(contactRateLimit, `contact:${clientIp}`);
+  if (!limitResult.success) {
+    return {
+      success: false,
+      error: 'Too many messages sent. Please wait an hour before submitting again.',
+    };
+  }
+
+  const adminClient = createAdminClient();
+
+  // Verify target profile exists
+  const { data: profile, error: profileErr } = await adminClient
+    .from('profiles')
+    .select('id')
+    .eq('id', parsed.data.profileId)
+    .maybeSingle();
+
+  if (profileErr || !profile) {
+    return {
+      success: false,
+      error: 'Profile not found.',
+    };
+  }
+
+  const { error: insertErr } = await adminClient
+    .from('bio_contact_messages')
+    .insert({
+      profile_id: parsed.data.profileId,
+      sender_name: parsed.data.senderName,
+      sender_email: parsed.data.senderEmail.toLowerCase(),
+      message: parsed.data.message,
+      status: 'unread',
+    });
+
+  if (insertErr) {
+    return {
+      success: false,
+      error: 'Failed to send message. Please try again later.',
+    };
+  }
+
+  return {
+    success: true,
+    message: 'Your message has been sent successfully!',
+  };
+}
+
+export async function getBioContactMessages(
+  profileId: string,
+  status?: 'unread' | 'read' | 'archived'
+) {
+  const { supabase, profile } = await getAuthenticatedUserAndProfile();
+  if (!profile || profile.id !== profileId) {
+    return { error: 'Unauthorized', messages: [] };
+  }
+
+  let query = supabase
+    .from('bio_contact_messages')
+    .select('*')
+    .eq('profile_id', profileId);
+
+  if (status) {
+    query = query.eq('status', status);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
+
+  if (error) {
+    return { error: 'Failed to load messages', messages: [] };
+  }
+
+  return {
+    success: true,
+    messages: (data || []).map(mapBioContactMessageToDTO),
+  };
+}
+
+export async function updateBioContactMessageStatus(
+  messageId: string,
+  status: 'unread' | 'read' | 'archived'
+) {
+  const parsed = updateContactMessageStatusSchema.safeParse({ messageId, status });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input' };
+  }
+
+  const { supabase, profile } = await getAuthenticatedUserAndProfile();
+  if (!profile) {
+    return { success: false, error: 'Profile not found' };
+  }
+
+  const { error } = await supabase
+    .from('bio_contact_messages')
+    .update({ status: parsed.data.status })
+    .eq('id', parsed.data.messageId)
+    .eq('profile_id', profile.id);
+
+  if (error) {
+    return { success: false, error: 'Failed to update message status' };
+  }
+
+  revalidatePath('/bio/messages');
+  revalidatePath('/bio');
+  return { success: true };
+}
+
+export async function deleteBioContactMessage(messageId: string) {
+  const { supabase, profile } = await getAuthenticatedUserAndProfile();
+  if (!profile) {
+    return { success: false, error: 'Profile not found' };
+  }
+
+  const { error } = await supabase
+    .from('bio_contact_messages')
+    .delete()
+    .eq('id', messageId)
+    .eq('profile_id', profile.id);
+
+  if (error) {
+    return { success: false, error: 'Failed to delete message' };
+  }
+
+  revalidatePath('/bio/messages');
+  revalidatePath('/bio');
+  return { success: true };
+}
+
 

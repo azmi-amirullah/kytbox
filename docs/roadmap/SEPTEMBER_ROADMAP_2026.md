@@ -29,15 +29,14 @@
 - [x] [Day 19 — List: Board Data Export Engine (`Markdown, CSV & Clean Printout`)](#day-19)
 - [x] [Day 20 — List: Advanced Productivity E2E Test Suite](#day-20)
 - [x] [Day 21 — Weekly Sprint Audit & Accessibility (WCAG 2.2)](#day-21)
-- [ ] [Day 22 — Platform: Two-Factor Authentication (`TOTP 2FA + Recovery Codes`)](#day-22)
-- [ ] [Day 23 — Platform: Quick Action Shortcuts in Global Command Palette (`Cmd+K Actions`)](#day-23)
-- [ ] [Day 24 — Platform: Keyboard Shortcuts Command Reference Guide (`?` Modal)](#day-24)
-- [ ] [Day 25 — Bio: Bento-Style Grid Layout Canvas (`1x1, 1x2, 2x2 Custom Tiles`)](#day-25)
-- [ ] [Day 26 — Bio: Persistent Audio & Podcast Stream Widget (`Zero-Storage External Stream`)](#day-26)
-- [ ] [Day 27 — Platform & Bio E2E Test Suite](#day-27)
-- [ ] [Day 28 — Weekly Sprint Audit & Zero-Trust Security Verification](#day-28)
-- [ ] [Day 29 — List: Public List & Wishlist Sharing with Guest Gift Claiming (`/{username}/list`)](#day-29)
-- [ ] [Day 30 — Bio & Platform: Contact Relay Widget & September Sprint Retrospective / Q4 Planning](#day-30)
+- [x] [Day 22 — Platform: Full Account Data Vault & 1-Click Backup Export (`/settings/data`)](#day-22)
+- [x] [Day 23 — Platform: Quick Action Shortcuts in Global Command Palette (`Cmd+K Actions`)](#day-23)
+- [x] [Day 24 — Platform: Keyboard Shortcuts Command Reference Guide (`?` Modal)](#day-24)
+- [x] [Day 25 — Bio: Bento-Style Grid Layout Canvas (`1x1, 1x2, 2x2 Custom Tiles`)](#day-25)
+- [x] [Day 26 — Bio: Persistent Audio & Podcast Stream Widget (`Zero-Storage External Stream`)](#day-26)
+- [x] [Day 27 — Platform & Bio E2E Test Suite](#day-27)
+- [x] [Day 29 — List: Public List & Wishlist Sharing with Guest Gift Claiming (`/{username}/list`)](#day-29)
+- [x] [Day 30 — Bio & Platform: Contact Relay Widget & September Sprint Retrospective / Q4 Planning](#day-30)
 
 ---
 
@@ -477,21 +476,24 @@
 
 ---
 
-### Week 4 — Platform Security, Shortcuts & Bio Bento (Sep 22 - Sep 28)
+### Week 4 — Platform Data Vault, Shortcuts & Bio Bento (Sep 22 - Sep 28)
 
 <a id="day-22"></a>
-#### Day 22 — Tuesday, Sep 22 | 🛡️ Security
-##### Platform: Two-Factor Authentication (`TOTP 2FA + Recovery Codes`)
-- **Why**: Financial accounts (Cashflow) and personal vehicle records (Garage) require enterprise-grade security. TOTP 2FA prevents unauthorized account access.
+#### Day 22 — Tuesday, Sep 22 | 💾 Data Sovereignty
+##### Platform: Full Account Data Vault & 1-Click Backup Export (`/settings/data`)
+- **Why**: In a personal utility ecosystem tracking private finances (Cashflow), vehicle service histories (Garage), and personal task boards (List), data sovereignty and anti-lockin are paramount. Users need 1-click peace of mind that their complete account history can be exported into standard, portable JSON anytime with zero vendor capture.
 - **Implementation Blueprint**:
-  - Integrate Supabase MFA API (`supabase.auth.mfa.enroll`, `challenge`, `verify`).
-  - Build `TwoFactorSetupModal.tsx` with high-contrast QR code, manual secret key copy, and downloadable 8-digit emergency recovery codes.
-  - **NIST 800-63B Hashed Recovery Codes**: Emergency recovery codes are cryptographically hashed (SHA-256 / bcrypt) before database storage in `user_2fa_recovery_codes (user_id, code_hash, used_at)`. Plaintext codes are displayed only once at setup; database compromise never reveals plaintext master bypass keys.
-  - Enforce 2FA verification challenge on login when MFA is enabled.
-- **🛡️ Routing Boundary AAL2 Enforcement & Dev Guardrail**:
-  - **Middleware AAL2 Verification**: In `src/middleware.ts`, inspect `supabase.auth.mfa.getAuthenticatorAssuranceLevel()`. If `currentLevel === 'aal1'` and `nextLevel === 'aal2'`, redirect immediately to `/auth/mfa-challenge` before granting access to platform routes (`/garage`, `/cashflow`, `/list`), closing the client-side bypass loophole.
-  - **Mandatory Recovery Code Download**: The *"Enable 2FA"* button remains disabled until the user explicitly clicks *"Copy Codes"* or *"Download recovery-codes.txt"*, preventing accidental self-lockouts.
-  - **Dev Environment Reset**: Provide an administrative reset CLI script (`npm run auth:reset-mfa`) so local testing never bricks development accounts.
+  - Create `/settings/data` hub with 1-click comprehensive export and telemetry status.
+  - Server Action / Route Handler `exportAccountData()` querying all user-scoped records:
+    - **Garage**: `vehicles`, `maintenance_logs`, `maintenance_checklists`, `fuel_logs`, `tax_expiries`
+    - **Cashflow**: `cashflow_books`, `cashflow_entries`, `cashflow_categories`, `cashflow_recurring_rules`, `cashflow_budgets`
+    - **List**: `lists`, `list_items`, `list_labels`
+    - **Bio**: `profiles`, `links`, `bio_contact_messages`
+  - Structured schema packaging: `{ schema_version: "2026.09", exported_at: ISOString, account: { id, email }, data: { ... } }`.
+  - Stream as downloadable attachment `kytbox-backup-{username}-{YYYY-MM-DD}.json` via streaming response (`Content-Disposition: attachment`).
+- **🛡️ Data Sanitization & Memory Stream Guardrail**:
+  - **Sensitive Token Stripping**: Strictly exclude internal session secrets, auth hashes, and private tokens from the JSON serialization payload.
+  - **Chunked Cursor Streaming**: Process large record tables using batched cursor pagination instead of loading raw database tables into memory all at once, preventing Node.js out-of-memory (OOM) crashes on deep mileage or expense logs.
 
 ---
 
@@ -548,7 +550,7 @@
 <a id="day-27"></a>
 #### Day 27 — Sunday, Sep 27 | 🧪 Testing
 ##### Platform & Bio E2E Test Suite
-- **Why**: Guarantee that 2FA login challenges, palette quick actions, Bento grid tile sizing, and audio stream widgets function reliably.
+- **Why**: Guarantee that account data export downloads, palette quick actions, Bento grid tile sizing, and audio stream widgets function reliably.
 - **Implementation Blueprint**:
   - Playwright test suite in `tests/e2e/platform-features.test.ts` with fixed clock mocking.
 
@@ -556,8 +558,8 @@
 
 <a id="day-28"></a>
 #### Day 28 — Monday, Sep 28 | 🔧 Audit
-##### Weekly Sprint Audit & Zero-Trust Security Verification
-- **Why**: Conduct security audit across MFA enforcement, palette action guards, and CSV formula injection prevention.
+##### Weekly Sprint Audit & Security Verification
+- **Why**: Conduct security audit across data export sanitization, palette action guards, and CSV formula injection prevention.
 - **Implementation Blueprint**:
   - Pre-commit check, full TypeScript compiler run (`npx tsc --noEmit`), and vulnerability scan.
 
@@ -602,15 +604,15 @@
 | 🏎️ **Garage App (`/garage`)** | 7 | Vehicle Profiles & 6-mo Odometer, Checklist & Rules Engine, Service Log & Due Predictor, Tax & SIM Expiry, Fuel Economy & Auto-Sync, Cashflow/List Sync, Garage E2E |
 | 💰 **Cashflow App** | 7 | Subscription Matrix & "Safe-to-Spend" on `cashflow_recurring_rules`, Budget Rollover, Multi-Currency Converter, Zero-Signup Shared Expenses (`/split/[token]`), Report Generator, Cashflow E2E, Sprint Audit |
 | 📋 **List App** | 7 | Card Custom Colored Labels, Cloud Resource Bookmarks (Zero-Storage), Quick Filter Pills & WIP Limits, 1-Click Trello/Notion Importer, Board Data Exporter (MD/CSV), Public Wishlist Sharing, List E2E |
-| 🛡️ **Platform & Bio** | 7 | TOTP 2FA, Cmd+K Quick Actions, Keyboard Shortcuts (`?`), Bento Grid Canvas, Audio Stream Widget, Contact Inbox, Platform E2E |
-| 🔧 **Planning & Retrospective** | 2 | Zero-Trust Security Verification (Day 28), September Retrospective & Q4 Planning (Day 30) |
+| 🛡️ **Platform & Bio** | 7 | Data Vault & JSON Export, Cmd+K Quick Actions, Keyboard Shortcuts (`?`), Bento Grid Canvas, Audio Stream Widget, Contact Inbox, Platform E2E |
+| 🔧 **Planning & Retrospective** | 2 | Security Verification (Day 28), September Retrospective & Q4 Planning (Day 30) |
 
 ---
 
 ## 🔮 Curated Strategic Backlog (Future & Q4 2026+)
 
 > [!NOTE]
-> Items here are either deferred until scale demands them (Monetization, Bank Sync, i18n, Board Collaboration ACL) or reserved for Q4.
+> Items here are either deferred until scale demands them (2FA, Monetization, Bank Sync, i18n, Board Collaboration ACL) or reserved for Q4.
 
 ---
 
@@ -658,6 +660,7 @@
 ### 🏗️ Platform, Growth & Monetization (Backlog)
 | Idea | Description | Impact | Effort |
 | :--- | :--- | :---: | :---: |
+| **Two-Factor Authentication (`TOTP 2FA + Recovery Codes`)** | Supabase MFA, NIST-grade hashed recovery codes, and AAL2 verification when public user volume and account security demand it | 🔥🔥 | ~6h |
 | **Public Community Roadmap & Voting (`/roadmap`)** | User-facing feature voting board when active user volume warrants it | 🔥🔥 | ~4h |
 | **Multi-Language Framework (`next-intl`)** | Internationalization when non-English user adoption justifies it | 🔥🔥 | ~8h |
 | **Viral Referral Perks Engine** | "Invite 3 friends, unlock exclusive themes and pro badges" | 🔥🔥🔥 | ~5h |
@@ -666,4 +669,4 @@
 
 ---
 
-_Last Updated: September 3, 2026_
+_Last Updated: September 30, 2026_

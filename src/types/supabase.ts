@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      bio_contact_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          profile_id: string
+          sender_email: string
+          sender_name: string
+          status: 'unread' | 'read' | 'archived'
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          profile_id: string
+          sender_email: string
+          sender_name: string
+          status?: 'unread' | 'read' | 'archived'
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          profile_id?: string
+          sender_email?: string
+          sender_name?: string
+          status?: 'unread' | 'read' | 'archived'
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bio_contact_messages_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bio_subscribers: {
         Row: {
           created_at: string
@@ -843,6 +881,10 @@ export type Database = {
           title: string
           url: string
           user_id: string
+          grid_size?: string | null
+          stream_url?: string | null
+          audio_artist?: string | null
+          audio_cover_url?: string | null
         }
         Insert: {
           animation_type?: string | null
@@ -865,6 +907,10 @@ export type Database = {
           title: string
           url: string
           user_id: string
+          grid_size?: string | null
+          stream_url?: string | null
+          audio_artist?: string | null
+          audio_cover_url?: string | null
         }
         Update: {
           animation_type?: string | null
@@ -887,6 +933,10 @@ export type Database = {
           title?: string
           url?: string
           user_id?: string
+          grid_size?: string | null
+          stream_url?: string | null
+          audio_artist?: string | null
+          audio_cover_url?: string | null
         }
         Relationships: [
           {
@@ -1134,6 +1184,7 @@ export type Database = {
           description: string | null
           id: string
           is_public: boolean
+          slug: string | null
           title: string
           type: string
           updated_at: string
@@ -1144,6 +1195,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_public?: boolean
+          slug?: string | null
           title: string
           type: string
           updated_at?: string
@@ -1154,6 +1206,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_public?: boolean
+          slug?: string | null
           title?: string
           type?: string
           updated_at?: string
@@ -1877,6 +1930,10 @@ export type Database = {
       bump_support_ticket_urgency: {
         Args: { p_ticket_id: string }
         Returns: undefined
+      }
+      claim_wishlist_item: {
+        Args: { p_claim_data: Json; p_item_id: string }
+        Returns: Json
       }
       create_support_ticket: {
         Args: { p_category: string; p_message: string; p_subject: string }

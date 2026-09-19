@@ -2,12 +2,12 @@ import 'server-only';
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
-import { mapProfileToDTO, mapLinkToDTO, mapSubscriberToDTO, mapCustomDomainToDTO } from '@/lib/mappers';
+import { mapProfileToDTO, mapLinkToDTO, mapSubscriberToDTO, mapCustomDomainToDTO, mapBioContactMessageToDTO } from '@/lib/mappers';
 import { getProfileByUsername, getCachedPublicLinks } from '@/lib/data-cache';
 import { socialLinksSchema } from './schemas.server';
 import { customThemeDataSchema } from '@/lib/validation.schemas';
 import type { CustomThemeData } from '@/lib/theme';
-import type { ProfileDTO, LinkDTO, BioSubscriberDTO, CustomDomainDTO } from '@/types/dto';
+import type { ProfileDTO, LinkDTO, BioSubscriberDTO, CustomDomainDTO, BioContactMessageDTO } from '@/types/dto';
 
 export interface LinkClickTrend {
   thisWeek: number;
@@ -27,6 +27,9 @@ export interface BioDashboardData {
   initialLinks: LinkDTO[];
   initialSubscribers: BioSubscriberDTO[];
   totalSubscribers: number;
+  initialMessages: BioContactMessageDTO[];
+  totalMessages: number;
+  unreadMessagesCount: number;
   publicUrl: string;
   totalLinks: number;
   activeLinksCount: number;
@@ -83,6 +86,7 @@ export async function getBioDashboardData(
     viewsCountResult,
     clickTrendsResult,
     subscribersResult,
+    messagesResult,
     customDomainResult,
   ] = await Promise.all([
     supabase
@@ -116,6 +120,12 @@ export async function getBioDashboardData(
       .eq('profile_id', userId)
       .order('created_at', { ascending: false })
       .range(0, 49),
+    supabase
+      .from('bio_contact_messages')
+      .select('*', { count: 'exact' })
+      .eq('profile_id', userId)
+      .order('created_at', { ascending: false })
+      .range(0, 49),
     getCustomDomainForUser(supabase, userId),
   ]);
 
@@ -131,6 +141,11 @@ export async function getBioDashboardData(
   const rawSubscribers = subscribersResult.data || [];
   const totalSubscribers = subscribersResult.count || 0;
   const initialSubscribers: BioSubscriberDTO[] = rawSubscribers.map(mapSubscriberToDTO);
+
+  const rawMessages = messagesResult.data || [];
+  const totalMessages = messagesResult.count || 0;
+  const initialMessages: BioContactMessageDTO[] = rawMessages.map(mapBioContactMessageToDTO);
+  const unreadMessagesCount = initialMessages.filter((m) => m.status === 'unread').length;
 
   const clickTrends: Record<string, LinkClickTrend> = {};
   if (clickTrendsResult.data) {
@@ -179,6 +194,9 @@ export async function getBioDashboardData(
     initialLinks: mappedLinks,
     initialSubscribers,
     totalSubscribers,
+    initialMessages,
+    totalMessages,
+    unreadMessagesCount,
     publicUrl,
     totalLinks: globalTotalCount,
     activeLinksCount: globalActiveCount,

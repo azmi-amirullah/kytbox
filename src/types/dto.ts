@@ -38,6 +38,10 @@ export interface LinkDTO {
   is_local?: boolean
   is_pinned?: boolean
   is_sensitive?: boolean
+  grid_size?: '1x1' | '1x2' | '2x2' | 'full' | null
+  stream_url?: string | null
+  audio_artist?: string | null
+  audio_cover_url?: string | null
 }
 
 export interface BioSubscriberDTO {
@@ -45,6 +49,16 @@ export interface BioSubscriberDTO {
   profile_id: string
   email: string
   source_url: string | null
+  created_at: string
+}
+
+export interface BioContactMessageDTO {
+  id: string
+  profile_id: string
+  sender_name: string
+  sender_email: string
+  message: string
+  status: 'unread' | 'read' | 'archived'
   created_at: string
 }
 
@@ -214,6 +228,7 @@ export interface ListDTO {
   description: string | null
   type: ListType
   is_public: boolean
+  slug?: string | null
   user_id: string
   created_at: string | null
   updated_at: string | null
@@ -279,10 +294,18 @@ export interface ListItemDTO {
   resources?: ListItemResourceDTO[]
 }
 
+export interface WishlistClaimMeta {
+  claimed_by_name: string
+  claimed_at: string
+  claim_token?: string
+  note?: string | null
+}
+
 export interface WishlistItemMeta {
   price: number | null
   currency: string | null
   purchase_url: string | null
+  claim?: WishlistClaimMeta | null
 }
 
 export type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'other'

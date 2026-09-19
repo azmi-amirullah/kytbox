@@ -1,6 +1,6 @@
 import * as z from 'zod/mini';
 
-export const bioTabSchema = z.catch(z.enum(['links', 'appearance', 'subscribers']), 'links');
+export const bioTabSchema = z.catch(z.enum(['links', 'appearance', 'subscribers', 'messages']), 'links');
 export const linkTypeSchema = z.catch(z.enum(['link', 'folder']), 'link');
 export const linkAnimationSchema = z.catch(
   z.enum(['none', 'pulse', 'bounce', 'glow']),
@@ -25,6 +25,10 @@ export const linkDtoSchema = z.object({
   expires_at: z.catch(z.union([z.string(), z.null()]), null),
   is_pinned: z.catch(z.boolean(), false),
   is_sensitive: z.catch(z.boolean(), false),
+  grid_size: z.catch(z.enum(['1x1', '1x2', '2x2', 'full']), 'full'),
+  stream_url: z.catch(z.union([z.string(), z.null()]), null),
+  audio_artist: z.catch(z.union([z.string(), z.null()]), null),
+  audio_cover_url: z.catch(z.union([z.string(), z.null()]), null),
 });
 
 export const linkDtoListSchema = z.catch(z.array(linkDtoSchema), []);
@@ -40,3 +44,22 @@ export const linkActionResponseSchema = z.object({
 });
 
 export const socialLinksSchema = z.catch(z.record(z.string(), z.string()), {});
+
+export const contactMessageStatusClientSchema = z.catch(
+  z.union([
+    z.literal('unread'),
+    z.literal('read'),
+    z.literal('archived'),
+  ]),
+  'unread'
+);
+
+export const bioContactMessageDtoSchema = z.object({
+  id: z.string(),
+  profile_id: z.string(),
+  sender_name: z.catch(z.string(), ''),
+  sender_email: z.catch(z.string(), ''),
+  message: z.catch(z.string(), ''),
+  status: contactMessageStatusClientSchema,
+  created_at: z.catch(z.string(), ''),
+});

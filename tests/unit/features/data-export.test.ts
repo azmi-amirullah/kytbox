@@ -202,6 +202,7 @@ describe('GDPR Data Export Engine', () => {
           id: 'list-1',
           user_id: mockUserId,
           title: 'Project Roadmap',
+          slug: 'project-roadmap',
           type: 'kanban',
           description: 'Q3 deliverables',
           is_public: false,

@@ -22,6 +22,10 @@ import {
   LuLightbulb,
   LuSparkles,
   LuHistory,
+  LuCar,
+  LuFuel,
+  LuWrench,
+  LuShieldCheck,
 } from 'react-icons/lu'
 
 import {
@@ -304,11 +308,25 @@ export function CommandPalette() {
             <span>Invoices</span>
           </CommandItem>
           <CommandItem
+            value='Garage Dashboard vehicle service maintenance fuel odometer'
+            onSelect={() => runCommand(() => router.push('/garage'))}
+          >
+            <LuCar className='mr-2 h-4 w-4' />
+            <span>Garage</span>
+          </CommandItem>
+          <CommandItem
             value='Settings preferences config account security'
             onSelect={() => runCommand(() => router.push('/settings'))}
           >
             <LuSettings className='mr-2 h-4 w-4' />
             <span>Settings</span>
+          </CommandItem>
+          <CommandItem
+            value='Data Vault account sovereign backup export json zip settings'
+            onSelect={() => runCommand(() => router.push('/settings/data'))}
+          >
+            <LuShieldCheck className='mr-2 h-4 w-4' />
+            <span>Account Data Vault</span>
           </CommandItem>
           <CommandItem
             value='Support help tickets contact customer service'
@@ -348,11 +366,47 @@ export function CommandPalette() {
           <CommandItem
             value='Add Cashflow Entry transaction expense income cashflow money'
             onSelect={() =>
-              runCommand(() => router.push('/cashflow?action=add'))
+              runCommand(() => {
+                if (typeof window !== 'undefined' && window.location.pathname.startsWith('/cashflow')) {
+                  window.dispatchEvent(new CustomEvent('open-new-entry'))
+                } else {
+                  router.push('/cashflow?action=add')
+                }
+              })
             }
           >
             <LuPlus className='mr-2 h-4 w-4' />
             <span>Add Cashflow Entry</span>
+          </CommandItem>
+          <CommandItem
+            value='Log Vehicle Service garage maintenance repair oil mechanic'
+            onSelect={() =>
+              runCommand(() => {
+                if (typeof window !== 'undefined' && window.location.pathname.startsWith('/garage')) {
+                  window.dispatchEvent(new CustomEvent('open-log-service'))
+                } else {
+                  router.push('/garage?action=log-service')
+                }
+              })
+            }
+          >
+            <LuWrench className='mr-2 h-4 w-4' />
+            <span>Log Vehicle Service (Garage)</span>
+          </CommandItem>
+          <CommandItem
+            value='Log Fuel Fill-up garage gas bensin petrol odometer'
+            onSelect={() =>
+              runCommand(() => {
+                if (typeof window !== 'undefined' && window.location.pathname.startsWith('/garage')) {
+                  window.dispatchEvent(new CustomEvent('open-log-fuel'))
+                } else {
+                  router.push('/garage?action=log-fuel')
+                }
+              })
+            }
+          >
+            <LuFuel className='mr-2 h-4 w-4' />
+            <span>Log Fuel Fill-up (Garage)</span>
           </CommandItem>
           <CommandItem
             value='New Todo Board task create list kanban'
@@ -396,6 +450,13 @@ export function CommandPalette() {
           >
             <LuPlus className='mr-2 h-4 w-4' />
             <span>New Support Ticket</span>
+          </CommandItem>
+          <CommandItem
+            value='Export Account Data sovereign json backup data vault settings'
+            onSelect={() => runCommand(() => router.push('/settings/data'))}
+          >
+            <LuShieldCheck className='mr-2 h-4 w-4' />
+            <span>Export Account Data (JSON)</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

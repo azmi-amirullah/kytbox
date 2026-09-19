@@ -3,10 +3,11 @@
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LuLoader, LuType, LuGlobe, LuFolderOpen } from 'react-icons/lu'
+import { LuLoader, LuType, LuGlobe, LuFolderOpen, LuMusic } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import { addLink, updateLink, createFolder } from '../actions'
-import { getEmbedInfo } from '../embed'
+import { getEmbedInfo, isAudioUrl } from '../embed'
+import { cn } from '@/lib/utils'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import LinkThumbnailPicker from './LinkThumbnailPicker'
 import {
@@ -95,7 +96,13 @@ export default function LinkModal({
   const [iconUrl, setIconUrl] = useState<string | null>(link?.icon_url || null)
   const [isPinned, setIsPinned] = useState(link?.is_pinned ?? false)
   const [isSensitive, setIsSensitive] = useState(link?.is_sensitive ?? false)
+  const [gridSize, setGridSize] = useState<'1x1' | '2x2' | 'full'>(
+    link?.grid_size === '1x1' || link?.grid_size === '2x2' ? link.grid_size : 'full',
+  )
+  const [audioArtist, setAudioArtist] = useState(link?.audio_artist || '')
+  const [audioCoverUrl, setAudioCoverUrl] = useState(link?.audio_cover_url || '')
   const embedInfo = getEmbedInfo(url)
+  const isAudio = isAudioUrl(url) || (mode === 'edit' && !!link?.stream_url)
 
   // Determine if controlled or uncontrolled
   const isControlled = controlledOpen !== undefined
@@ -121,6 +128,13 @@ export default function LinkModal({
         setIconUrl(link?.icon_url || null)
         setIsPinned(link?.is_pinned ?? false)
         setIsSensitive(link?.is_sensitive ?? false)
+        const validGrid: '1x1' | '2x2' | 'full' =
+          link?.grid_size === '1x1' || link?.grid_size === '2x2'
+            ? link.grid_size
+            : 'full'
+        setGridSize(validGrid)
+        setAudioArtist(link?.audio_artist || '')
+        setAudioCoverUrl(link?.audio_cover_url || '')
         setError(null)
       })
     }
@@ -165,6 +179,10 @@ export default function LinkModal({
     formData.append('expires_at', isScheduledEnabled ? expiresAt || '' : '')
     formData.append('isPinned', isPinned ? 'true' : 'false')
     formData.append('isSensitive', isSensitive ? 'true' : 'false')
+    formData.append('grid_size', gridSize)
+    formData.append('stream_url', isAudio ? (isAudioUrl(url) ? url : (link?.stream_url || '')) : '')
+    formData.append('audio_artist', isAudio ? audioArtist : '')
+    formData.append('audio_cover_url', isAudio ? audioCoverUrl : '')
     if (parentId) formData.append('parentId', parentId)
 
     let result
@@ -330,6 +348,75 @@ export default function LinkModal({
                       value={iconUrl}
                       onChange={setIconUrl}
                     />
+
+                    {/* Bento Tile Size Selector */}
+                    <div className='grid gap-2 border-t pt-4 mt-2'>
+                      <Label className='font-medium text-foreground/80 text-xs'>
+                        Bento Grid Tile Size
+                      </Label>
+                      <div className='grid grid-cols-3 gap-2'>
+                        {[
+                          { size: '1x1' as const, label: '1x1 Square', symbol: '■' },
+                          { size: '2x2' as const, label: '2x2 Box', symbol: '⊞' },
+                          { size: 'full' as const, label: 'Full Row', symbol: '☰' },
+                        ].map((item) => (
+                          <Button
+                            key={item.size}
+                            type='button'
+                            variant='outline'
+                            onClick={() => setGridSize(item.size)}
+                            className={cn(
+                              'h-auto flex flex-col items-center justify-center p-2 rounded-lg text-xs font-medium transition-all',
+                              gridSize === item.size
+                                ? 'border-primary bg-primary/10 text-primary shadow-xs ring-1 ring-primary'
+                                : 'border-border/60 hover:bg-muted/40 text-muted-foreground',
+                            )}
+                          >
+                            <span className='text-sm mb-0.5 font-bold'>{item.symbol}</span>
+                            <span className='text-[10px]'>{item.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+                      <p className='text-[11px] text-muted-foreground'>
+                        Choose tile dimensions on the Bento Grid canvas. On small mobile viewports, 2x2 boxes automatically adapt.
+                      </p>
+                    </div>
+
+                    {/* Audio Stream Auto-Detection */}
+                    {isAudio && (
+                      <div className='grid gap-2 border-t pt-4 mt-2'>
+                        <div className='flex items-center gap-2 text-xs font-medium text-primary'>
+                          <LuMusic className='w-4 h-4 shrink-0' />
+                          <span>Direct audio file detected. Inline audio player will be enabled.</span>
+                        </div>
+                        <div className='grid grid-cols-2 gap-2 pt-1'>
+                          <div>
+                            <Label htmlFor='audio_artist' className='text-[11px] text-muted-foreground'>
+                              Artist / Host (Optional)
+                            </Label>
+                            <Input
+                              id='audio_artist'
+                              value={audioArtist}
+                              onChange={(e) => setAudioArtist(e.target.value)}
+                              placeholder='e.g. Alex Rivera'
+                              className='text-xs h-8 mt-1'
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor='audio_cover_url' className='text-[11px] text-muted-foreground'>
+                              Cover Art URL (Optional)
+                            </Label>
+                            <Input
+                              id='audio_cover_url'
+                              value={audioCoverUrl}
+                              onChange={(e) => setAudioCoverUrl(e.target.value)}
+                              placeholder='https://...'
+                              className='text-xs h-8 mt-1'
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {embedInfo && (
                       <div className='grid gap-2 border-t pt-4 mt-2'>

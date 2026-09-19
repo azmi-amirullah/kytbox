@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const bioTabSchema = z.enum(['links', 'appearance', 'subscribers']).catch('links');
+export const bioTabSchema = z.enum(['links', 'appearance', 'subscribers', 'messages']).catch('links');
 
 export const subscribeSchema = z.object({
   profileId: z.string().uuid({ message: 'Invalid profile ID' }),
@@ -32,6 +32,10 @@ export const addLinkSchema = z.object({
   expires_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
   isPinned: z.preprocess((val) => val === 'true', z.boolean()).optional(),
   isSensitive: z.preprocess((val) => val === 'true', z.boolean()).optional(),
+  grid_size: z.enum(['1x1', '1x2', '2x2', 'full']).optional().default('full'),
+  stream_url: z.string().trim().optional().nullable().or(z.literal('')),
+  audio_artist: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+  audio_cover_url: z.string().trim().optional().nullable().or(z.literal('')),
 }).refine(
   (data) => !data.scheduled_at || !data.expires_at || data.expires_at > data.scheduled_at,
   { message: 'Expiry must be after start date', path: ['expires_at'] }
@@ -65,6 +69,10 @@ export const updateLinkSchema = z.object({
   expires_at: z.preprocess((val) => val === '' ? null : val, z.coerce.date().nullable().optional()),
   isPinned: z.preprocess((val) => val === 'true', z.boolean()).optional(),
   isSensitive: z.preprocess((val) => val === 'true', z.boolean()).optional(),
+  grid_size: z.enum(['1x1', '1x2', '2x2', 'full']).optional().default('full'),
+  stream_url: z.string().trim().optional().nullable().or(z.literal('')),
+  audio_artist: z.string().trim().max(100).optional().nullable().or(z.literal('')),
+  audio_cover_url: z.string().trim().optional().nullable().or(z.literal('')),
 }).refine(
   (data) => !data.scheduled_at || !data.expires_at || data.expires_at > data.scheduled_at,
   { message: 'Expiry must be after start date', path: ['expires_at'] }
@@ -131,6 +139,37 @@ export const customDomainInputSchema = z
 
 export const addCustomDomainSchema = z.object({
   domain: customDomainInputSchema,
+});
+
+export const contactMessageSchema = z.object({
+  profileId: z.string().uuid({ message: 'Invalid profile ID' }),
+  senderName: z
+    .string()
+    .trim()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name too long'),
+  senderEmail: z
+    .string()
+    .trim()
+    .email({ message: 'Please enter a valid email address' }),
+  message: z
+    .string()
+    .trim()
+    .min(10, 'Message must be at least 10 characters')
+    .max(1000, 'Message too long (max 1,000 characters)')
+    .refine(
+      (val) => {
+        const urlMatches = val.match(/https?:\/\/[^\s]+/gi);
+        return !urlMatches || urlMatches.length <= 1;
+      },
+      { message: 'Message cannot contain more than 1 URL' }
+    ),
+  website: z.string().optional().or(z.literal('')), // Honeypot field
+});
+
+export const updateContactMessageStatusSchema = z.object({
+  messageId: z.string().uuid({ message: 'Invalid message ID' }),
+  status: z.enum(['unread', 'read', 'archived']),
 });
 
 

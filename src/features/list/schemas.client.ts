@@ -10,13 +10,27 @@ export const listItemMetadataClientSchema = z.catch(
   {}
 );
 
+export const wishlistClaimClientSchema = z.catch(
+  z.union([
+    z.object({
+      claimed_by_name: z.string(),
+      claimed_at: z.string(),
+      claim_token: z.optional(z.string()),
+      note: z.optional(z.union([z.string(), z.null()])),
+    }),
+    z.null(),
+  ]),
+  null
+);
+
 export const wishlistMetadataClientSchema = z.catch(
   z.object({
     price: z.catch(z.union([z.number(), z.null()]), null),
     currency: z.catch(z.union([z.string(), z.null()]), null),
     purchase_url: z.catch(z.union([z.string(), z.null()]), null),
+    claim: wishlistClaimClientSchema,
   }),
-  { price: null, currency: null, purchase_url: null }
+  { price: null, currency: null, purchase_url: null, claim: null }
 );
 
 export const listItemPriorityClientSchema = z.catch(

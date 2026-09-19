@@ -33,6 +33,9 @@ export default async function BioDashboardPage({
         initialLinks={data.initialLinks}
         initialSubscribers={data.initialSubscribers}
         totalSubscribers={data.totalSubscribers}
+        initialMessages={data.initialMessages}
+        totalMessages={data.totalMessages}
+        unreadMessagesCount={data.unreadMessagesCount}
         profile={data.profile}
         publicUrl={data.publicUrl}
         totalLinks={data.totalLinks}

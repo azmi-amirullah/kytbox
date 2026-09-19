@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { bioTabSchema, socialLinksSchema } from '../schemas.client'
-import { LuEye, LuLink, LuPalette, LuUsers, LuSettings } from 'react-icons/lu'
+import { LuEye, LuLink, LuPalette, LuUsers, LuSettings, LuMail } from 'react-icons/lu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav'
@@ -11,8 +11,9 @@ import LinksTabContent from './LinksTabContent'
 import PhonePreview from './PhonePreview'
 import AppearanceEditor from './AppearanceEditor'
 import SubscribersList from './SubscribersList'
+import { BioMessagesClient } from './BioMessagesClient'
 import CustomDomainModal from './CustomDomainModal'
-import type { ProfileDTO, LinkDTO, BioSubscriberDTO, CustomDomainDTO } from '@/types/dto'
+import type { ProfileDTO, LinkDTO, BioSubscriberDTO, CustomDomainDTO, BioContactMessageDTO } from '@/types/dto'
 import type { LinkClickTrend } from '../db'
 import type { CustomThemeData } from '@/lib/theme/theme.types'
 import { cn } from '@/lib/utils'
@@ -30,14 +31,22 @@ export type ProfileWithTheme = Omit<
   lead_capture_enabled?: boolean
 }
 
-export type BioTab = 'links' | 'appearance' | 'subscribers'
-export const VALID_TABS: BioTab[] = ['links', 'appearance', 'subscribers']
+export type BioTab = 'links' | 'appearance' | 'subscribers' | 'messages'
+export const VALID_TABS: BioTab[] = [
+  'links',
+  'appearance',
+  'subscribers',
+  'messages',
+]
 export const DEFAULT_TAB: BioTab = 'links'
 
 interface DashboardClientProps {
   initialLinks: LinkDTO[]
   initialSubscribers?: BioSubscriberDTO[]
   totalSubscribers?: number
+  initialMessages?: BioContactMessageDTO[]
+  totalMessages?: number
+  unreadMessagesCount?: number
   profile: Partial<ProfileWithTheme>
   publicUrl: string
   totalViews: number
@@ -60,6 +69,8 @@ export default function DashboardClient({
   initialLinks,
   initialSubscribers = [],
   totalSubscribers = 0,
+  initialMessages = [],
+  unreadMessagesCount = 0,
   profile,
   publicUrl,
   totalViews,
@@ -76,6 +87,11 @@ export default function DashboardClient({
   const urlTab = bioTabSchema.parse(searchParams.get('tab'))
   const resolvedTab = urlTab && VALID_TABS.includes(urlTab) ? urlTab : activeTab
   const [currentTab, setCurrentTab] = useState<BioTab>(resolvedTab)
+  const [unreadCount, setUnreadCount] = useState(unreadMessagesCount)
+
+  useEffect(() => {
+    setUnreadCount(unreadMessagesCount)
+  }, [unreadMessagesCount])
 
   const [links, setLinks] = useState<LinkDTO[]>(initialLinks)
   const [localTotalLinks, setLocalTotalLinks] = useState(totalLinks)
@@ -170,6 +186,15 @@ export default function DashboardClient({
               <LuUsers className='w-4 h-4' />
               <span>Subscribers</span>
             </TabsTrigger>
+            <TabsTrigger value='messages' className='gap-2'>
+              <LuMail className='w-4 h-4' />
+              <span>Messages</span>
+              {unreadCount > 0 && (
+                <span className='ml-1.5 inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 text-[10px] font-bold rounded-full bg-primary text-primary-foreground leading-none shrink-0 animate-in zoom-in-50'>
+                  {unreadCount}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -253,6 +278,22 @@ export default function DashboardClient({
               username={profile?.username}
               initialLeadCaptureEnabled={leadCaptureEnabled}
               onToggleLeadCapture={(enabled) => setLeadCaptureEnabled(enabled)}
+            />
+          </TabsContent>
+
+          <TabsContent
+            value='messages'
+            forceMount
+            className={cn(
+              'mt-4 md:mt-6',
+              currentTab !== 'messages' && 'hidden',
+            )}
+          >
+            <BioMessagesClient
+              initialMessages={initialMessages}
+              profileId={profile?.id || ''}
+              username={profile?.username}
+              onUnreadCountChange={setUnreadCount}
             />
           </TabsContent>
         </Tabs>

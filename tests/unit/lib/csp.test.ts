@@ -21,6 +21,7 @@ describe('buildCspHeader', () => {
     expect(scriptSrc).toBeDefined();
     expect(scriptSrc).not.toContain("'unsafe-inline'");
     expect(scriptSrc).not.toContain('blob:');
+    expect(csp).toContain("media-src 'self' blob: data: https:;");
     expect(csp).toContain("upgrade-insecure-requests");
   });
 

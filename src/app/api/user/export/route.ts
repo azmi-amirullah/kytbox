@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit, exportRateLimit } from '@/lib/upstash/redis';
-import { extractUserData, generateExportZip } from '@/features/settings/data-export';
+import { extractUserData, generateExportZip, generateExportJson } from '@/features/settings/data-export';
 
 export async function GET(request: NextRequest) {
   void request.headers;
@@ -26,9 +26,25 @@ export async function GET(request: NextRequest) {
     }
 
     const exportData = await extractUserData(user.id, supabase);
-    const zipBytes = await generateExportZip(exportData);
-
+    const format = request.nextUrl.searchParams.get('format') || 'zip';
     const dateStr = new Date().toISOString().split('T')[0];
+    const username = exportData.profile?.username || 'user';
+
+    if (format === 'json') {
+      const jsonContent = generateExportJson(exportData);
+      const filename = `kytbox-backup-${username}-${dateStr}.json`;
+      return new Response(jsonContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+        },
+      });
+    }
+
+    const zipBytes = await generateExportZip(exportData);
     const filename = `kytbox-export-${dateStr}.zip`;
 
     const stream = new ReadableStream({

@@ -12,6 +12,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateItem } from '../actions';
 import { toast } from 'react-toastify';
+import { LuGift, LuMessageSquare } from 'react-icons/lu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currency';
 import type { ListItemDTO } from '@/types/dto';
 import { wishlistMetadataClientSchema } from '../schemas.client';
 
@@ -20,6 +29,7 @@ interface EditWishlistItemModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onItemUpdated: (item: ListItemDTO) => void;
+  defaultCurrency?: string;
 }
 
 export default function EditWishlistItemModal({
@@ -27,16 +37,17 @@ export default function EditWishlistItemModal({
   open,
   onOpenChange,
   onItemUpdated,
+  defaultCurrency = DEFAULT_CURRENCY,
 }: EditWishlistItemModalProps) {
   const [isPending, startTransition] = useTransition();
 
-  const { price: initialPrice, currency: initialCurrency, purchase_url: initialUrl } = 
+  const { price: initialPrice, currency: initialCurrency, purchase_url: initialUrl, claim } = 
     wishlistMetadataClientSchema.parse(item.metadata);
 
   const [title, setTitle] = useState(item.title);
   const [description, setDescription] = useState(item.description || '');
   const [price, setPrice] = useState(initialPrice ? String(initialPrice) : '');
-  const [currency, setCurrency] = useState(initialCurrency || 'USD');
+  const [currency, setCurrency] = useState(initialCurrency || defaultCurrency);
   const [purchaseUrl, setPurchaseUrl] = useState(initialUrl || '');
 
   const [prevItemId, setPrevItemId] = useState(item.id);
@@ -49,7 +60,7 @@ export default function EditWishlistItemModal({
     setTitle(item.title);
     setDescription(item.description || '');
     setPrice(initialPrice ? String(initialPrice) : '');
-    setCurrency(initialCurrency || 'USD');
+    setCurrency(initialCurrency || defaultCurrency);
     setPurchaseUrl(initialUrl || '');
   }
 
@@ -76,6 +87,7 @@ export default function EditWishlistItemModal({
             price: price ? Number(price) : null,
             currency: currency || null,
             purchase_url: purchaseUrl || null,
+            claim: claim ?? null,
           },
         });
         toast.success('Wish updated');
@@ -94,6 +106,23 @@ export default function EditWishlistItemModal({
         />
 
         <form onSubmit={handleSubmit} className='space-y-4'>
+          {claim?.claimed_at && (
+            <div className='p-3 rounded-xl bg-muted/50 border border-border/70 space-y-1.5 text-xs'>
+              <div className='flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-semibold'>
+                <LuGift className='w-4 h-4' />
+                <span>Claimed by {claim.claimed_by_name || 'Guest'}</span>
+              </div>
+              {claim.note && (
+                <div className='flex items-start gap-1.5 text-muted-foreground pt-1 border-t border-border/40'>
+                  <LuMessageSquare className='w-3.5 h-3.5 text-primary shrink-0 mt-0.5' />
+                  <p className='italic text-foreground/90 wrap-break-word'>
+                    &ldquo;{claim.note}&rdquo;
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className='space-y-2'>
             <Label htmlFor='edit-wish-title'>What do you want?</Label>
             <Input
@@ -142,13 +171,26 @@ export default function EditWishlistItemModal({
             </div>
             <div className='space-y-2'>
               <Label htmlFor='edit-wish-currency'>Currency</Label>
-              <Input
-                id='edit-wish-currency'
-                placeholder='USD'
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                maxLength={3}
-              />
+              <Select value={currency} onValueChange={(val) => setCurrency(val)}>
+                <SelectTrigger id='edit-wish-currency'>
+                  <SelectValue placeholder='Select currency'>
+                    {(() => {
+                      const cur = CURRENCIES.find((c) => c.code === currency);
+                      return cur ? `${cur.code} (${cur.symbol})` : currency;
+                    })()}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {!CURRENCIES.some((c) => c.code === currency) && currency && (
+                    <SelectItem value={currency}>{currency}</SelectItem>
+                  )}
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code} ({c.symbol}) – {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

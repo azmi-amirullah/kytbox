@@ -1,16 +1,16 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { LuMail, LuCheck, LuLoader, LuArrowRight } from 'react-icons/lu';
-import { subscribeToBioAction } from '../actions';
-import { cn } from '@/lib/utils';
-import type { ThemeConfig } from '@/lib/theme/theme.types';
+import { useState } from 'react'
+import { LuMail, LuCheck, LuLoader, LuArrowRight } from 'react-icons/lu'
+import { subscribeToBioAction } from '../actions'
+import { cn } from '@/lib/utils'
+import type { ThemeConfig } from '@/lib/theme/theme.types'
 
 interface LeadCaptureWidgetProps {
-  profileId: string;
-  theme?: ThemeConfig;
-  className?: string;
-  isInteractive?: boolean;
+  profileId: string
+  theme?: ThemeConfig
+  className?: string
+  isInteractive?: boolean
 }
 
 export default function LeadCaptureWidget({
@@ -19,42 +19,43 @@ export default function LeadCaptureWidget({
   className,
   isInteractive = true,
 }: LeadCaptureWidgetProps) {
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [email, setEmail] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || isSubmitting || !isInteractive) return;
+    e.preventDefault()
+    if (!email.trim() || isSubmitting || !isInteractive) return
 
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
 
     try {
-      const sourceUrl = typeof window !== 'undefined' ? window.location.href : undefined;
-      const res = await subscribeToBioAction(profileId, email.trim(), sourceUrl);
+      const sourceUrl =
+        typeof window !== 'undefined' ? window.location.href : undefined
+      const res = await subscribeToBioAction(profileId, email.trim(), sourceUrl)
 
       if (res.success) {
-        setSuccessMessage(res.message || 'Successfully subscribed!');
-        setEmail('');
+        setSuccessMessage(res.message || 'Successfully subscribed!')
+        setEmail('')
       } else {
-        setErrorMessage(res.error || 'Failed to subscribe. Please try again.');
+        setErrorMessage(res.error || 'Failed to subscribe. Please try again.')
       }
     } catch {
-      setErrorMessage('An unexpected error occurred. Please try again.');
+      setErrorMessage('An unexpected error occurred. Please try again.')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const colors = theme?.colors;
+  const colors = theme?.colors
 
   return (
     <div
       className={cn(
-        'w-full my-6 p-5 sm:p-6 rounded-2xl backdrop-blur-md transition-all shadow-sm',
+        'w-full mt-6 p-5 sm:p-6 rounded-2xl backdrop-blur-md transition-all shadow-sm',
         className,
       )}
       style={
@@ -103,7 +104,10 @@ export default function LeadCaptureWidget({
           <span>{successMessage}</span>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className='flex flex-col sm:flex-row gap-2.5'>
+        <form
+          onSubmit={handleSubmit}
+          className='flex flex-col sm:flex-row gap-2.5'
+        >
           <div className='relative flex-1 min-w-0'>
             <input
               type='email'
@@ -159,5 +163,5 @@ export default function LeadCaptureWidget({
         </p>
       )}
     </div>
-  );
+  )
 }

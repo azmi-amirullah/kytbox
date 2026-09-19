@@ -64,6 +64,14 @@ export const exportRateLimit = new Ratelimit({
   prefix: '@kytbox/export-ratelimit',
 });
 
+// Rate limiter for bio contact relay inquiries (5 requests per hour per IP)
+export const contactRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '1h'),
+  analytics: true,
+  prefix: '@kytbox/contact-ratelimit',
+});
+
 /**
  * Helper to check rate limits while automatically bypassing during tests/E2E runs.
  */

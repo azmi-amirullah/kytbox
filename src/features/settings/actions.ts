@@ -222,3 +222,39 @@ export async function checkUsername(username: string) {
 
   return { available: !existingProfile };
 }
+
+export async function getDataVaultTelemetry() {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const [
+    vehiclesCountRes,
+    servicesCountRes,
+    fuelCountRes,
+    cashflowBooksCountRes,
+    cashflowEntriesCountRes,
+    listsCountRes,
+    linksCountRes,
+    invoicesCountRes,
+  ] = await Promise.all([
+    supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('vehicle_services').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('vehicle_fuel_logs').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('cashflows').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('cashflow_entries').select('id', { count: 'exact', head: true }),
+    supabase.from('lists').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('links').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+  ]);
+
+  return {
+    vehicles: vehiclesCountRes.count ?? 0,
+    services: servicesCountRes.count ?? 0,
+    fuelLogs: fuelCountRes.count ?? 0,
+    cashflowBooks: cashflowBooksCountRes.count ?? 0,
+    cashflowEntries: cashflowEntriesCountRes.count ?? 0,
+    lists: listsCountRes.count ?? 0,
+    links: linksCountRes.count ?? 0,
+    invoices: invoicesCountRes.count ?? 0,
+  };
+}
+

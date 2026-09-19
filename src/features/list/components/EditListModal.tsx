@@ -18,12 +18,14 @@ interface EditListModalProps {
   list: ListDTO;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onListUpdated?: (updated: { title: string; description: string | null }) => void;
 }
 
 export default function EditListModal({
   list,
   open,
   onOpenChange,
+  onListUpdated,
 }: EditListModalProps) {
   const [isPending, startTransition] = useTransition();
   const [prevListId, setPrevListId] = useState(list.id);
@@ -52,6 +54,10 @@ export default function EditListModal({
         toast.error(result.error);
       } else {
         toast.success('List updated');
+        onListUpdated?.({
+          title: title.trim(),
+          description: description.trim() || null,
+        });
         onOpenChange(false);
       }
     });

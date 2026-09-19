@@ -14,6 +14,7 @@ interface LinkButtonProps {
   className?: string;
   style?: React.CSSProperties;
   animationType?: string | null;
+  gridSize?: '1x1' | '1x2' | '2x2' | 'full' | null;
 }
 
 /**
@@ -29,6 +30,7 @@ export function LinkButton({
   className,
   style,
   animationType,
+  gridSize,
 }: LinkButtonProps) {
   const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
 
@@ -84,37 +86,89 @@ export function LinkButton({
     }
   }, [animationType]);
 
+  const is1x1 = gridSize === '1x1';
+  const is2x2 = gridSize === '2x2';
+
   return (
     <a
       href={finalHref}
       target='_blank'
       rel='noopener noreferrer'
-      className={cn(className, animationClass, 'block isolate overflow-hidden')}
+      className={cn(
+        className,
+        animationClass,
+        'block isolate overflow-hidden transition-all',
+        is1x1 && 'h-full min-h-27.5 flex items-center justify-center p-3',
+        is2x2 && 'h-full min-h-55 flex items-center justify-center p-5',
+      )}
       style={style}
     >
-      <div
-        className={cn('flex items-center justify-center gap-3 w-full h-full')}
-      >
-        {currentImgUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={currentImgUrl}
-            alt=''
-            className='w-5 h-5 object-cover rounded shrink-0'
-            onError={handleImageError}
-          />
-        ) : (
-          getSocialIcon(url, 'w-5 h-5 shrink-0')
-        )}
-        <div className='flex flex-col items-center justify-center overflow-hidden'>
-          <span className='truncate text-center'>{title}</span>
-          {subtitle && (
-            <span className='text-xs opacity-70 truncate text-center mt-0.5 leading-none flex items-center justify-center gap-1'>
-              {subtitle}
-            </span>
+      {is1x1 ? (
+        <div className='flex flex-col items-center justify-center gap-2 w-full h-full text-center'>
+          {currentImgUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={currentImgUrl}
+              alt=''
+              className='w-7 h-7 object-cover rounded-md shrink-0'
+              onError={handleImageError}
+            />
+          ) : (
+            getSocialIcon(url, 'w-6 h-6 shrink-0')
           )}
+          <span className='text-[11px] font-semibold leading-tight line-clamp-2'>
+            {title}
+          </span>
         </div>
-      </div>
+      ) : is2x2 ? (
+        <div className='flex flex-col items-center justify-center gap-3 w-full h-full text-center'>
+          {currentImgUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={currentImgUrl}
+              alt=''
+              className='w-12 h-12 object-cover rounded-xl shadow-xs shrink-0'
+              onError={handleImageError}
+            />
+          ) : (
+            getSocialIcon(url, 'w-10 h-10 shrink-0')
+          )}
+          <div className='space-y-1'>
+            <span className='text-sm font-bold block leading-snug line-clamp-2'>
+              {title}
+            </span>
+            {subtitle && (
+              <span className='text-xs opacity-75 block line-clamp-1'>
+                {subtitle}
+              </span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div
+          className={cn('flex items-center justify-center gap-3 w-full h-full')}
+        >
+          {currentImgUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={currentImgUrl}
+              alt=''
+              className='w-5 h-5 object-cover rounded shrink-0'
+              onError={handleImageError}
+            />
+          ) : (
+            getSocialIcon(url, 'w-5 h-5 shrink-0')
+          )}
+          <div className='flex flex-col items-center justify-center overflow-hidden'>
+            <span className='truncate text-center'>{title}</span>
+            {subtitle && (
+              <span className='text-xs opacity-70 truncate text-center mt-0.5 leading-none flex items-center justify-center gap-1'>
+                {subtitle}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </a>
   );
 }

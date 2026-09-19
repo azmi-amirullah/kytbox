@@ -25,6 +25,8 @@ export type SupportTicket =
   Database['public']['Tables']['support_tickets']['Row'];
 export type SupportMessage =
   Database['public']['Tables']['support_messages']['Row'];
+export type BioContactMessage =
+  Database['public']['Tables']['bio_contact_messages']['Row'];
 
 // UI / Domain Types
 export type CashflowWithSummary =

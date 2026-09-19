@@ -12,6 +12,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { addItem } from '../actions';
 import { toast } from 'react-toastify';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currency';
 import type { ListItemDTO } from '@/types/dto';
 
 interface AddWishlistItemModalProps {
@@ -19,6 +27,7 @@ interface AddWishlistItemModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onItemAdded: (item: ListItemDTO) => void;
+  defaultCurrency?: string;
 }
 
 export default function AddWishlistItemModal({
@@ -26,12 +35,13 @@ export default function AddWishlistItemModal({
   open,
   onOpenChange,
   onItemAdded,
+  defaultCurrency = DEFAULT_CURRENCY,
 }: AddWishlistItemModalProps) {
   const [isPending, startTransition] = useTransition();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState(defaultCurrency);
   const [purchaseUrl, setPurchaseUrl] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,7 +72,7 @@ export default function AddWishlistItemModal({
     setTitle('');
     setDescription('');
     setPrice('');
-    setCurrency('USD');
+    setCurrency(defaultCurrency);
     setPurchaseUrl('');
   };
 
@@ -124,13 +134,26 @@ export default function AddWishlistItemModal({
             </div>
             <div className='space-y-2'>
               <Label htmlFor='wish-currency'>Currency</Label>
-              <Input
-                id='wish-currency'
-                placeholder='USD'
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                maxLength={3}
-              />
+              <Select value={currency} onValueChange={(val) => setCurrency(val)}>
+                <SelectTrigger id='wish-currency'>
+                  <SelectValue placeholder='Select currency'>
+                    {(() => {
+                      const cur = CURRENCIES.find((c) => c.code === currency);
+                      return cur ? `${cur.code} (${cur.symbol})` : currency;
+                    })()}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {!CURRENCIES.some((c) => c.code === currency) && currency && (
+                    <SelectItem value={currency}>{currency}</SelectItem>
+                  )}
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code} ({c.symbol}) – {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

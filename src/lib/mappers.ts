@@ -14,6 +14,7 @@ import type {
   ListLabel,
   ListItemResource,
   ListWithSummary,
+  BioContactMessage,
 } from '@/types/database';
 import {
   dtoShareRoleSchema,
@@ -26,6 +27,7 @@ import type {
   ProfileDTO,
   LinkDTO,
   BioSubscriberDTO,
+  BioContactMessageDTO,
   CustomDomainDTO,
   CashflowDTO,
   CashflowEntryDTO,
@@ -84,7 +86,19 @@ export function mapLinkToDTO(row: {
   child_count?: number | null;
   is_pinned?: boolean | null;
   is_sensitive?: boolean | null;
+  grid_size?: string | null;
+  stream_url?: string | null;
+  audio_artist?: string | null;
+  audio_cover_url?: string | null;
 }): LinkDTO {
+  const validGridSize =
+    row.grid_size === '1x1' ||
+    row.grid_size === '1x2' ||
+    row.grid_size === '2x2' ||
+    row.grid_size === 'full'
+      ? row.grid_size
+      : 'full';
+
   return {
     id: row.id,
     url: row.url || '#',
@@ -103,6 +117,10 @@ export function mapLinkToDTO(row: {
     child_count: row.children?.[0]?.count ?? row.child_count ?? undefined,
     is_pinned: row.is_pinned ?? false,
     is_sensitive: row.is_sensitive ?? false,
+    grid_size: validGridSize,
+    stream_url: row.stream_url ?? null,
+    audio_artist: row.audio_artist ?? null,
+    audio_cover_url: row.audio_cover_url ?? null,
   };
 }
 
@@ -118,6 +136,23 @@ export function mapSubscriberToDTO(row: {
     profile_id: row.profile_id,
     email: row.email,
     source_url: row.source_url ?? null,
+    created_at: row.created_at,
+  };
+}
+
+export function mapBioContactMessageToDTO(
+  row: Omit<BioContactMessage, 'status'> & { status?: string | null }
+): BioContactMessageDTO {
+  const validStatus =
+    row.status === 'read' || row.status === 'archived' ? row.status : 'unread';
+
+  return {
+    id: row.id,
+    profile_id: row.profile_id,
+    sender_name: row.sender_name,
+    sender_email: row.sender_email,
+    message: row.message,
+    status: validStatus,
     created_at: row.created_at,
   };
 }
@@ -430,6 +465,7 @@ export function mapListToDTO(row: List): ListDTO {
     description: row.description,
     type: listTypeSchema.catch('todo').parse(row.type),
     is_public: row.is_public,
+    slug: row.slug ?? null,
     user_id: row.user_id,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -438,13 +474,14 @@ export function mapListToDTO(row: List): ListDTO {
   };
 }
 
-export function mapListWithSummaryToDTO(row: ListWithSummary): ListDTO {
+export function mapListWithSummaryToDTO(row: ListWithSummary & { slug?: string | null }): ListDTO {
   return {
     id: row.id!,
     title: row.title!,
     description: row.description,
     type: listTypeSchema.catch('todo').parse(row.type),
     is_public: !!row.is_public,
+    slug: row.slug ?? null,
     user_id: row.user_id!,
     created_at: row.created_at,
     updated_at: row.updated_at,

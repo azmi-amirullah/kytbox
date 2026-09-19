@@ -19,12 +19,14 @@ interface DeleteListDialogProps {
   list: ListDTO;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleted?: () => void;
 }
 
 export default function DeleteListDialog({
   list,
   open,
   onOpenChange,
+  onDeleted,
 }: DeleteListDialogProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -36,6 +38,7 @@ export default function DeleteListDialog({
       } else {
         toast.success('List deleted');
         onOpenChange(false);
+        onDeleted?.();
       }
     });
   };

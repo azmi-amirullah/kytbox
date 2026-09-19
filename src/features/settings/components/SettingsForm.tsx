@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
@@ -516,25 +517,39 @@ export default function SettingsForm({ profile, email }: SettingsFormProps) {
             </motion.div>
           )}
 
-          <Button
-            type='button'
-            variant='outline'
-            onClick={handleExportData}
-            disabled={isExporting}
-            className='w-full sm:w-auto flex items-center gap-2'
-          >
-            {isExporting ? (
-              <>
-                <LuLoader className='w-4 h-4 animate-spin' />
-                Packaging Data Archive...
-              </>
-            ) : (
-              <>
-                <LuDownload className='w-4 h-4' />
-                Export All Data (ZIP)
-              </>
-            )}
-          </Button>
+          <div className='flex flex-wrap items-center gap-3'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={handleExportData}
+              disabled={isExporting}
+              className='w-full sm:w-auto flex items-center gap-2'
+            >
+              {isExporting ? (
+                <>
+                  <LuLoader className='w-4 h-4 animate-spin' />
+                  Packaging Data Archive...
+                </>
+              ) : (
+                <>
+                  <LuDownload className='w-4 h-4' />
+                  Export All Data (ZIP)
+                </>
+              )}
+            </Button>
+
+            <Button
+              type='button'
+              variant='ghost'
+              asChild
+              className='w-full sm:w-auto text-muted-foreground hover:text-foreground'
+            >
+              <Link href='/settings/data' className='flex items-center gap-2'>
+                <LuShieldCheck className='w-4 h-4 text-primary' />
+                Manage Data Vault
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

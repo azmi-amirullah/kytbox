@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -53,6 +54,9 @@ import {
   deleteResourceSchema,
   setColumnWipLimitSchema,
   importBoardBatchSchema,
+  claimWishlistItemSchema,
+  unclaimWishlistItemSchema,
+  releaseWishlistItemClaimSchema,
 } from './schemas.server'
 import { formatDueDateLabel } from './lib/due-date'
 import {
@@ -73,6 +77,7 @@ import { resolveResourceMetadata } from './lib/resource-metadata'
 import { DEFAULT_SORT_GAP } from './lib/fractional-indexing'
 import type { ParsedImportCard } from './lib/board-importer'
 import { BOARD_TEMPLATES } from './templates'
+import { generateUniqueListSlug } from './lib/slug'
 
 /** Sentinel title for the per-user hidden "New Idea" list */
 const NEW_IDEA_LIST_TITLE = '__new_idea__'
@@ -267,6 +272,8 @@ export async function createList(formData: FormData) {
     return { error: parsed.error.issues[0]?.message || 'Invalid input' }
   }
 
+  const slug = await generateUniqueListSlug(supabase, user.id, parsed.data.title)
+
   const { data, error } = await supabase
     .from('lists')
     .insert({
@@ -275,6 +282,7 @@ export async function createList(formData: FormData) {
       type: parsed.data.type,
       description: parsed.data.description || null,
       is_public: false,
+      slug,
     })
     .select()
     .single()
@@ -289,6 +297,7 @@ export async function createList(formData: FormData) {
     description: data.description,
     type: listTypeSchema.catch('todo').parse(data.type),
     is_public: data.is_public,
+    slug: data.slug,
     user_id: data.user_id,
     created_at: data.created_at,
     updated_at: data.updated_at,
@@ -369,10 +378,22 @@ export async function toggleListPublic(listId: string, isPublic: boolean) {
   const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId)
   if (!ownedList) return { error: 'List not found' }
 
+  const { data: currentList } = await supabase
+    .from('lists')
+    .select('title, slug')
+    .eq('id', parsed.data.listId)
+    .single()
+
+  let listSlug = currentList?.slug
+  if (parsed.data.isPublic && !listSlug && currentList?.title) {
+    listSlug = await generateUniqueListSlug(supabase, user.id, currentList.title, parsed.data.listId)
+  }
+
   const { error } = await supabase
     .from('lists')
     .update({
       is_public: parsed.data.isPublic,
+      ...(listSlug ? { slug: listSlug } : {}),
     })
     .eq('id', parsed.data.listId)
     .eq('user_id', user.id)
@@ -382,7 +403,9 @@ export async function toggleListPublic(listId: string, isPublic: boolean) {
   }
 
   revalidatePath('/list')
-  return { success: true }
+  revalidatePath(`/list/wishlist/${parsed.data.listId}`)
+  revalidatePath('/list/wishlist')
+  return { success: true, isPublic: parsed.data.isPublic, slug: listSlug }
 }
 
 // ==========================================
@@ -541,7 +564,27 @@ export async function updateItem(itemId: string, formData: FormData) {
     }
     const metaParsed = wishlistMetadataSchema.safeParse(metaPayload)
     if (metaParsed.success) {
-      metadata = metaParsed.data
+      const { data: currentItem } = await supabase
+        .from('list_items')
+        .select('metadata')
+        .eq('id', parsed.data.itemId)
+        .maybeSingle()
+
+      const existingMeta: Record<string, unknown> = {}
+      if (
+        typeof currentItem?.metadata === 'object' &&
+        currentItem.metadata !== null &&
+        !Array.isArray(currentItem.metadata)
+      ) {
+        for (const [k, v] of Object.entries(currentItem.metadata)) {
+          existingMeta[k] = v
+        }
+      }
+
+      metadata = {
+        ...existingMeta,
+        ...metaParsed.data,
+      }
     }
   }
 
@@ -1922,3 +1965,346 @@ export async function importBoardBatch(
   revalidatePath(`/list/todo/${parsed.data.listId}`)
   return { success: true, importedCardsCount: cardsToInsert.length }
 }
+
+// ==========================================
+// PUBLIC LIST & WISHLIST CLAIM ACTIONS
+// ==========================================
+
+export async function getPublicListsByUsername(username: string) {
+  const adminClient = createAdminClient()
+
+  const { data: profile, error: profileErr } = await adminClient
+    .from('profiles')
+    .select('id, username, display_name, avatar_url, bio')
+    .ilike('username', username.trim().toLowerCase())
+    .maybeSingle()
+
+  if (profileErr || !profile) {
+    return { error: 'Profile not found', lists: [], profile: null }
+  }
+
+  const mappedProfile = {
+    id: profile.id,
+    username: profile.username,
+    full_name: profile.display_name,
+    avatar_url: profile.avatar_url,
+    bio: profile.bio,
+  }
+
+  const { data: lists, error: listsErr } = await adminClient
+    .from('list_summaries')
+    .select('*')
+    .eq('user_id', profile.id)
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+
+  if (listsErr) {
+    return { error: 'Failed to load public lists', lists: [], profile: mappedProfile }
+  }
+
+  const listDtos = (lists || []).map(mapListWithSummaryToDTO)
+
+  return {
+    success: true,
+    profile: mappedProfile,
+    lists: listDtos,
+  }
+}
+
+export async function getPublicListBySlug(username: string, slug: string) {
+  const adminClient = createAdminClient()
+
+  const { data: profile, error: profileErr } = await adminClient
+    .from('profiles')
+    .select('id, username, display_name, avatar_url, bio')
+    .ilike('username', username.trim().toLowerCase())
+    .maybeSingle()
+
+  if (profileErr || !profile) {
+    return { error: 'Profile not found', list: null, columns: [], items: [], profile: null }
+  }
+
+  const mappedProfile = {
+    id: profile.id,
+    username: profile.username,
+    full_name: profile.display_name,
+    avatar_url: profile.avatar_url,
+    bio: profile.bio,
+  }
+
+  const trimmedSlug = slug.trim()
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedSlug)
+
+  let query = adminClient
+    .from('lists')
+    .select('*')
+    .eq('user_id', profile.id)
+    .eq('is_public', true)
+
+  if (isUuid) {
+    query = query.or(`slug.eq.${trimmedSlug},id.eq.${trimmedSlug}`)
+  } else {
+    query = query.eq('slug', trimmedSlug)
+  }
+
+  const { data: list, error: listErr } = await query.maybeSingle()
+
+  if (listErr || !list) {
+    return { error: 'List not found or is private', list: null, columns: [], items: [], profile: mappedProfile }
+  }
+
+  const { data: columns } = await adminClient
+    .from('list_columns')
+    .select('*')
+    .eq('list_id', list.id)
+    .order('sort_order', { ascending: true })
+
+  const { data: items, error: itemsErr } = await adminClient
+    .from('list_items')
+    .select('*, list_subtasks(*), list_item_resources(*)')
+    .eq('list_id', list.id)
+    .order('sort_order', { ascending: true })
+
+  if (itemsErr) {
+    console.error('getPublicListBySlug items query error:', itemsErr)
+  }
+
+  const listDto = mapListToDTO(list)
+  listDto.item_count = items?.length ?? 0
+  listDto.completed_count = items?.filter((i) => i.is_completed).length ?? 0
+
+  const columnDtos = (columns || []).map(mapListColumnToDTO)
+  const itemDtos = (items || []).map(mapListItemToDTO)
+
+  return {
+    success: true,
+    profile: mappedProfile,
+    list: listDto,
+    columns: columnDtos,
+    items: itemDtos,
+  }
+}
+
+export async function claimWishlistItemAction(input: {
+  itemId: string
+  claimedByName: string
+  note?: string | null
+}) {
+  const parsed = claimWishlistItemSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const adminClient = createAdminClient()
+
+  // 1. Check item exists and list is public
+  const { data: item, error: itemErr } = await adminClient
+    .from('list_items')
+    .select('id, list_id, metadata, lists!inner(id, type, is_public)')
+    .eq('id', parsed.data.itemId)
+    .maybeSingle()
+
+  if (itemErr || !item) {
+    return { error: 'Item not found' }
+  }
+
+  const listData = item.lists
+  const isPublic =
+    typeof listData === 'object' &&
+    listData !== null &&
+    'is_public' in listData &&
+    Boolean(listData.is_public)
+
+  if (!isPublic) {
+    return { error: 'Item does not belong to a public list' }
+  }
+
+  const rawMeta = item.metadata
+  if (typeof rawMeta === 'object' && rawMeta !== null && !Array.isArray(rawMeta)) {
+    const claimVal = rawMeta.claim
+    if (typeof claimVal === 'object' && claimVal !== null && !Array.isArray(claimVal)) {
+      if ('claimed_at' in claimVal && claimVal.claimed_at) {
+        return { error: 'Someone just claimed this gift a moment ago' }
+      }
+    }
+  }
+
+  const claimToken = `claim_${crypto.randomUUID().replace(/-/g, '')}`
+  const claimData = {
+    claimed_by_name: parsed.data.claimedByName,
+    claimed_at: new Date().toISOString(),
+    claim_token: claimToken,
+    note: parsed.data.note || null,
+  }
+
+  // Atomic conditional claim execution via RPC
+  const { data: updatedItem, error: rpcErr } = await adminClient.rpc('claim_wishlist_item', {
+    p_item_id: parsed.data.itemId,
+    p_claim_data: claimData,
+  })
+
+  if (rpcErr || !updatedItem) {
+    return { error: 'Someone just claimed this gift a moment ago' }
+  }
+
+  // Store guest claim token in cookie for guest unclaim flow
+  try {
+    const cookieStore = await cookies()
+    const rawClaims = cookieStore.get('kytbox_guest_claims')?.value
+    let claimsList: { itemId: string; claimToken: string }[] = []
+    if (rawClaims) {
+      try {
+        const parsedList = JSON.parse(rawClaims)
+        if (Array.isArray(parsedList)) {
+          claimsList = parsedList
+        }
+      } catch {
+        claimsList = []
+      }
+    }
+    claimsList = [
+      ...claimsList.filter((c) => c.itemId !== parsed.data.itemId),
+      { itemId: parsed.data.itemId, claimToken },
+    ]
+    cookieStore.set('kytbox_guest_claims', JSON.stringify(claimsList), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    })
+  } catch {
+    // Non-blocking in headless environments
+  }
+
+  return { success: true, claimToken }
+}
+
+export async function unclaimWishlistItemAction(input: {
+  itemId: string
+  claimToken: string
+}) {
+  const parsed = unclaimWishlistItemSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const adminClient = createAdminClient()
+
+  const { data: item, error: itemErr } = await adminClient
+    .from('list_items')
+    .select('id, metadata')
+    .eq('id', parsed.data.itemId)
+    .maybeSingle()
+
+  if (itemErr || !item) {
+    return { error: 'Item not found' }
+  }
+
+  const rawMeta = item.metadata
+  if (typeof rawMeta !== 'object' || rawMeta === null || Array.isArray(rawMeta)) {
+    return { error: 'Item has not been claimed' }
+  }
+
+  const claimVal = rawMeta.claim
+  if (typeof claimVal !== 'object' || claimVal === null || Array.isArray(claimVal)) {
+    return { error: 'Item has not been claimed' }
+  }
+
+  const existingToken = 'claim_token' in claimVal ? String(claimVal.claim_token) : null
+  if (existingToken !== parsed.data.claimToken) {
+    return { error: 'Unauthorized to unclaim this gift' }
+  }
+
+  const updatedMeta: { [key: string]: Database['public']['Tables']['list_items']['Row']['metadata'] } = {}
+  for (const [key, val] of Object.entries(rawMeta)) {
+    if (key !== 'claim' && val !== undefined) {
+      updatedMeta[key] = val
+    }
+  }
+
+  const { error: updateErr } = await adminClient
+    .from('list_items')
+    .update({ metadata: updatedMeta })
+    .eq('id', parsed.data.itemId)
+
+  if (updateErr) {
+    return { error: 'Failed to unclaim gift' }
+  }
+
+  try {
+    const cookieStore = await cookies()
+    const rawClaims = cookieStore.get('kytbox_guest_claims')?.value
+    if (rawClaims) {
+      try {
+        const parsedList = JSON.parse(rawClaims)
+        if (Array.isArray(parsedList)) {
+          const filtered = parsedList.filter((c) => c.itemId !== parsed.data.itemId)
+          cookieStore.set('kytbox_guest_claims', JSON.stringify(filtered), {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 365,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+          })
+        }
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return { success: true }
+}
+
+export async function releaseWishlistItemClaimAction(input: {
+  itemId: string
+  listId: string
+}) {
+  const parsed = releaseWishlistItemClaimSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
+  }
+
+  const { supabase, user } = await getAuthenticatedUserWithRateLimit()
+  const ownedList = await getOwnedList(supabase, user.id, parsed.data.listId)
+  if (!ownedList) {
+    return { error: 'List not found or unauthorized' }
+  }
+
+  const { data: item, error: itemErr } = await supabase
+    .from('list_items')
+    .select('id, metadata')
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', parsed.data.listId)
+    .maybeSingle()
+
+  if (itemErr || !item) {
+    return { error: 'Item not found' }
+  }
+
+  const rawMeta = item.metadata
+  const updatedMeta: { [key: string]: Database['public']['Tables']['list_items']['Row']['metadata'] } = {}
+  if (typeof rawMeta === 'object' && rawMeta !== null && !Array.isArray(rawMeta)) {
+    for (const [key, val] of Object.entries(rawMeta)) {
+      if (key !== 'claim' && val !== undefined) {
+        updatedMeta[key] = val
+      }
+    }
+  }
+
+  const { error: updateErr } = await supabase
+    .from('list_items')
+    .update({ metadata: updatedMeta })
+    .eq('id', parsed.data.itemId)
+    .eq('list_id', parsed.data.listId)
+
+  if (updateErr) {
+    return { error: 'Failed to release claim' }
+  }
+
+  revalidatePath(`/list/${parsed.data.listId}`)
+  revalidatePath(`/list/wishlist/${parsed.data.listId}`)
+  return { success: true }
+}
+

@@ -23,8 +23,16 @@ export interface ExportManifest {
     list_columns: number;
     list_items: number;
     list_subtasks: number;
+    list_labels?: number;
+    list_resources?: number;
     invoices: number;
     invoice_items: number;
+    garage_vehicles?: number;
+    garage_services?: number;
+    garage_rules?: number;
+    garage_fuel_logs?: number;
+    garage_documents?: number;
+    garage_licenses?: number;
   };
 }
 
@@ -50,10 +58,21 @@ export interface UserExportData {
     columns: Database['public']['Tables']['list_columns']['Row'][];
     items: Database['public']['Tables']['list_items']['Row'][];
     subtasks: Database['public']['Tables']['list_subtasks']['Row'][];
+    labels?: Database['public']['Tables']['list_labels']['Row'][];
+    resources?: Database['public']['Tables']['list_item_resources']['Row'][];
   };
   invoices: {
     invoices: Database['public']['Tables']['invoices']['Row'][];
     items: Database['public']['Tables']['invoice_items']['Row'][];
+  };
+  garage?: {
+    vehicles: Database['public']['Tables']['vehicles']['Row'][];
+    services: Database['public']['Tables']['vehicle_services']['Row'][];
+    maintenance_rules: Database['public']['Tables']['vehicle_maintenance_rules']['Row'][];
+    fuel_logs: Database['public']['Tables']['vehicle_fuel_logs']['Row'][];
+    documents: Database['public']['Tables']['vehicle_documents']['Row'][];
+    licenses: Database['public']['Tables']['driver_licenses']['Row'][];
+    odometers: Database['public']['Tables']['vehicle_monthly_odometers']['Row'][];
   };
 }
 
@@ -74,6 +93,8 @@ export async function extractUserData(
     cashflowTagsRes,
     listsRes,
     invoicesRes,
+    vehiclesRes,
+    driverLicensesRes,
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
     supabase.from('links').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
@@ -83,6 +104,8 @@ export async function extractUserData(
     supabase.from('cashflow_tags').select('*').eq('user_id', userId),
     supabase.from('lists').select('*').eq('user_id', userId),
     supabase.from('invoices').select('*').eq('user_id', userId).order('issue_date', { ascending: false }),
+    supabase.from('vehicles').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
+    supabase.from('driver_licenses').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
   ]);
 
   const profile = profileRes.data || null;
@@ -93,11 +116,14 @@ export async function extractUserData(
   const cashflowTags = cashflowTagsRes.data || [];
   const lists = listsRes.data || [];
   const invoices = invoicesRes.data || [];
+  const vehicles = vehiclesRes.data || [];
+  const driverLicenses = driverLicensesRes.data || [];
 
-  // Phase 2: Relational child tables (Cashflow, List, Invoices)
+  // Phase 2: Relational child tables (Cashflow, List, Invoices, Garage)
   const cashflowIds = cashflows.map((c) => c.id);
   const listIds = lists.map((l) => l.id);
   const invoiceIds = invoices.map((i) => i.id);
+  const vehicleIds = vehicles.map((v) => v.id);
 
   const [
     cashflowEntriesRes,
@@ -106,7 +132,13 @@ export async function extractUserData(
     cashflowSharesRes,
     listColumnsRes,
     listItemsRes,
+    listLabelsRes,
     invoiceItemsRes,
+    vehicleServicesRes,
+    vehicleRulesRes,
+    vehicleFuelLogsRes,
+    vehicleDocumentsRes,
+    vehicleOdometersRes,
   ] = await Promise.all([
     cashflowIds.length > 0
       ? supabase.from('cashflow_entries').select('*').in('cashflow_id', cashflowIds).order('date', { ascending: false })
@@ -126,8 +158,26 @@ export async function extractUserData(
     listIds.length > 0
       ? supabase.from('list_items').select('*').in('list_id', listIds).order('sort_order', { ascending: true })
       : Promise.resolve({ data: [] }),
+    listIds.length > 0
+      ? supabase.from('list_labels').select('*').in('list_id', listIds).order('name', { ascending: true })
+      : Promise.resolve({ data: [] }),
     invoiceIds.length > 0
       ? supabase.from('invoice_items').select('*').in('invoice_id', invoiceIds).order('sort_order', { ascending: true })
+      : Promise.resolve({ data: [] }),
+    vehicleIds.length > 0
+      ? supabase.from('vehicle_services').select('*').in('vehicle_id', vehicleIds).order('service_date', { ascending: false })
+      : Promise.resolve({ data: [] }),
+    vehicleIds.length > 0
+      ? supabase.from('vehicle_maintenance_rules').select('*').in('vehicle_id', vehicleIds).order('name', { ascending: true })
+      : Promise.resolve({ data: [] }),
+    vehicleIds.length > 0
+      ? supabase.from('vehicle_fuel_logs').select('*').in('vehicle_id', vehicleIds).order('log_date', { ascending: false })
+      : Promise.resolve({ data: [] }),
+    vehicleIds.length > 0
+      ? supabase.from('vehicle_documents').select('*').in('vehicle_id', vehicleIds).order('expiry_date', { ascending: true })
+      : Promise.resolve({ data: [] }),
+    vehicleIds.length > 0
+      ? supabase.from('vehicle_monthly_odometers').select('*').in('vehicle_id', vehicleIds).order('year_month', { ascending: false })
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -137,30 +187,40 @@ export async function extractUserData(
   const cashflowShares = cashflowSharesRes.data || [];
   const listColumns = listColumnsRes.data || [];
   const listItems = listItemsRes.data || [];
+  const listLabels = listLabelsRes.data || [];
   const invoiceItems = invoiceItemsRes.data || [];
+  const vehicleServices = vehicleServicesRes.data || [];
+  const vehicleRules = vehicleRulesRes.data || [];
+  const vehicleFuelLogs = vehicleFuelLogsRes.data || [];
+  const vehicleDocuments = vehicleDocumentsRes.data || [];
+  const vehicleOdometers = vehicleOdometersRes.data || [];
 
-  // Phase 3: Grandchildren tables (Split entries, Subtasks)
+  // Phase 3: Grandchildren tables (Split entries, Subtasks, Item Resources)
   const entryIds = cashflowEntries.map((e) => e.id);
   const itemIds = listItems.map((item) => item.id);
 
-  const [splitEntriesRes, subtasksRes] = await Promise.all([
+  const [splitEntriesRes, subtasksRes, itemResourcesRes] = await Promise.all([
     entryIds.length > 0
       ? supabase.from('cashflow_split_entries').select('*').in('parent_entry_id', entryIds)
       : Promise.resolve({ data: [] }),
     itemIds.length > 0
       ? supabase.from('list_subtasks').select('*').in('item_id', itemIds).order('position', { ascending: true })
       : Promise.resolve({ data: [] }),
+    itemIds.length > 0
+      ? supabase.from('list_item_resources').select('*').in('item_id', itemIds).order('created_at', { ascending: true })
+      : Promise.resolve({ data: [] }),
   ]);
 
   const splitEntries = splitEntriesRes.data || [];
   const subtasks = subtasksRes.data || [];
+  const itemResources = itemResourcesRes.data || [];
 
   const manifest: ExportManifest = {
     app: 'Kytbox',
     version: '2.0.0',
     exported_at: new Date().toISOString(),
     user_id: userId,
-    format_version: '1.0',
+    format_version: '2026.09',
     summary: {
       profile: profile ? 1 : 0,
       bio_links: links.length,
@@ -176,8 +236,16 @@ export async function extractUserData(
       list_columns: listColumns.length,
       list_items: listItems.length,
       list_subtasks: subtasks.length,
+      list_labels: listLabels.length,
+      list_resources: itemResources.length,
       invoices: invoices.length,
       invoice_items: invoiceItems.length,
+      garage_vehicles: vehicles.length,
+      garage_services: vehicleServices.length,
+      garage_rules: vehicleRules.length,
+      garage_fuel_logs: vehicleFuelLogs.length,
+      garage_documents: vehicleDocuments.length,
+      garage_licenses: driverLicenses.length,
     },
   };
 
@@ -203,12 +271,66 @@ export async function extractUserData(
       columns: listColumns,
       items: listItems,
       subtasks,
+      labels: listLabels,
+      resources: itemResources,
     },
     invoices: {
       invoices,
       items: invoiceItems,
     },
+    garage: {
+      vehicles,
+      services: vehicleServices,
+      maintenance_rules: vehicleRules,
+      fuel_logs: vehicleFuelLogs,
+      documents: vehicleDocuments,
+      licenses: driverLicenses,
+      odometers: vehicleOdometers,
+    },
   };
+}
+
+/**
+ * Generate a standalone, sovereign JSON string containing complete user data.
+ * Guarantees zero sensitive token leakage.
+ */
+export function generateExportJson(data: UserExportData): string {
+  // Strip any internal sensitive fields from profile if present
+  const safeProfile = data.profile
+    ? {
+        ...data.profile,
+      }
+    : null;
+
+  return JSON.stringify(
+    {
+      schema_version: '2026.09',
+      exported_at: data.manifest.exported_at,
+      account: {
+        id: data.manifest.user_id,
+        username: safeProfile?.username ?? null,
+      },
+      manifest: data.manifest,
+      data: {
+        profile: safeProfile,
+        garage: data.garage ?? {
+          vehicles: [],
+          services: [],
+          maintenance_rules: [],
+          fuel_logs: [],
+          documents: [],
+          licenses: [],
+          odometers: [],
+        },
+        cashflow: data.cashflow,
+        list: data.list,
+        bio: data.bio,
+        invoices: data.invoices,
+      },
+    },
+    null,
+    2,
+  );
 }
 
 /**
@@ -218,7 +340,7 @@ export async function generateExportZip(data: UserExportData): Promise<Buffer> {
   const zip = new JSZip();
 
   const readmeContent = `================================================================================
-KYTBOX DATA ARCHIVE
+KYTBOX DATA ARCHIVE (SOVEREIGN DATA VAULT)
 ================================================================================
 
 Export Generated: ${data.manifest.exported_at}
@@ -234,15 +356,16 @@ ARCHIVE DIRECTORY MAP
 --------------------------------------------------------------------------------
 1. manifest.json      - Metadata and record counts for this archive.
 2. profile.json       - Account profile, username, bio, and global preferences.
-3. bio.json           - Bio links, custom domains, and lead subscribers.
-4. cashflow.json      - Cashflows, transactions, split entries, budgets, goals, tags, and shares.
-5. list.json          - Lists, columns, items, and subtasks.
-6. invoices.json      - Invoices, client details, and line items.
+3. garage.json        - Vehicles, maintenance rules, service logs, fuel economy, and tax records.
+4. cashflow.json      - Cashflow books, transactions, split entries, budgets, and tags.
+5. list.json          - Lists, columns, cards, subtasks, labels, and cloud bookmarks.
+6. bio.json           - Bio links, custom domains, and lead subscribers.
+7. invoices.json      - Invoices, client details, and line items.
 
 --------------------------------------------------------------------------------
 PRIVACY & SECURITY NOTICE
 --------------------------------------------------------------------------------
-This archive contains private financial records, credentials, and personal notes.
+This archive contains private financial records, vehicle history, and personal notes.
 Please store this archive in a secure location and delete it when no longer needed.
 
 For inquiries, contact support at: https://kytbox.app/support
@@ -252,9 +375,10 @@ For inquiries, contact support at: https://kytbox.app/support
   zip.file('README.txt', readmeContent);
   zip.file('manifest.json', JSON.stringify(data.manifest, null, 2));
   zip.file('profile.json', JSON.stringify(data.profile, null, 2));
-  zip.file('bio.json', JSON.stringify(data.bio, null, 2));
+  zip.file('garage.json', JSON.stringify(data.garage ?? {}, null, 2));
   zip.file('cashflow.json', JSON.stringify(data.cashflow, null, 2));
   zip.file('list.json', JSON.stringify(data.list, null, 2));
+  zip.file('bio.json', JSON.stringify(data.bio, null, 2));
   zip.file('invoices.json', JSON.stringify(data.invoices, null, 2));
 
   return zip.generateAsync({

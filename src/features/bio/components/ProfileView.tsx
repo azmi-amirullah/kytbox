@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import {
   getTheme,
   getButtonClasses,
@@ -7,47 +7,48 @@ import {
   validateButtonShape,
   getContainerClasses,
   normalizeHex,
-} from '@/lib/theme';
-import type { CustomThemeData } from '@/lib/theme/theme.types';
-import { socialLinksSchema } from '../schemas.client';
-import SocialGrid from './SocialGrid';
-import ProfileHeader from './ProfileHeader';
-import ProfileLinks from './ProfileLinks';
-import LeadCaptureWidget from './LeadCaptureWidget';
+} from '@/lib/theme'
+import type { CustomThemeData } from '@/lib/theme/theme.types'
+import { socialLinksSchema } from '../schemas.client'
+import SocialGrid from './SocialGrid'
+import ProfileHeader from './ProfileHeader'
+import ProfileLinks from './ProfileLinks'
+import LeadCaptureWidget from './LeadCaptureWidget'
+import BioContactModal from './BioContactModal'
 
 interface ProfileViewProps {
   profile: {
-    id: string;
-    username: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    bio: string | null;
-    theme_name?: string | null;
-    custom_theme?: CustomThemeData | null;
-    button_style?: string | null;
-    button_shape?: string | null;
-    social_links?: Record<string, string> | null;
-    lead_capture_enabled?: boolean;
-  };
+    id: string
+    username: string
+    display_name: string | null
+    avatar_url: string | null
+    bio: string | null
+    theme_name?: string | null
+    custom_theme?: CustomThemeData | null
+    button_style?: string | null
+    button_shape?: string | null
+    social_links?: Record<string, string> | null
+    lead_capture_enabled?: boolean
+  }
   links: {
-    id: string;
-    title: string;
-    url: string;
-    is_active: boolean;
-    short_id?: string | number | null;
-    is_folder?: boolean;
-    is_header?: boolean;
-    parent_id?: string | null;
-    child_count?: number;
-    animation_type?: string | null;
-    display_mode?: string | null;
-    icon_url?: string | null;
-    scheduled_at?: string | null;
-    expires_at?: string | null;
-  }[];
-  totalLinks?: number;
-  isLoading?: boolean;
-  isInteractive?: boolean;
+    id: string
+    title: string
+    url: string
+    is_active: boolean
+    short_id?: string | number | null
+    is_folder?: boolean
+    is_header?: boolean
+    parent_id?: string | null
+    child_count?: number
+    animation_type?: string | null
+    display_mode?: string | null
+    icon_url?: string | null
+    scheduled_at?: string | null
+    expires_at?: string | null
+  }[]
+  totalLinks?: number
+  isLoading?: boolean
+  isInteractive?: boolean
 }
 
 export default function ProfileView({
@@ -57,14 +58,14 @@ export default function ProfileView({
   isLoading,
   isInteractive = true,
 }: ProfileViewProps) {
-  const theme = getTheme(profile?.theme_name, profile?.custom_theme);
-  const buttonStyle = validateButtonStyle(profile?.button_style);
-  const buttonShape = validateButtonShape(profile?.button_shape);
+  const theme = getTheme(profile?.theme_name, profile?.custom_theme)
+  const buttonStyle = validateButtonStyle(profile?.button_style)
+  const buttonShape = validateButtonShape(profile?.button_shape)
 
-  const { colors } = theme;
-  const buttonClasses = getButtonClasses(theme, buttonStyle, buttonShape);
+  const { colors } = theme
+  const buttonClasses = getButtonClasses(theme, buttonStyle, buttonShape)
 
-  const validSocialLinks = socialLinksSchema.parse(profile.social_links);
+  const validSocialLinks = socialLinksSchema.parse(profile.social_links)
 
   const customStyles:
     | (React.CSSProperties & Record<string, string>)
@@ -96,7 +97,7 @@ export default function ProfileView({
           ),
           '--custom-footer-text': normalizeHex(profile.custom_theme.footerText),
         }
-      : undefined;
+      : undefined
 
   return (
     <div
@@ -108,11 +109,7 @@ export default function ProfileView({
     >
       <div className='flex flex-col items-center min-h-full w-full max-w-170 mx-auto px-8 pt-16 pb-12 '>
         {/* Header (Avatar, Name, Bio) */}
-        <ProfileHeader
-          profile={profile}
-          theme={theme}
-          isLoading={isLoading}
-        />
+        <ProfileHeader profile={profile} theme={theme} isLoading={isLoading} />
 
         {/* Social Grid */}
         <div className='flex justify-center w-full mb-12'>
@@ -146,6 +143,18 @@ export default function ProfileView({
           />
         )}
 
+        {/* Contact Relay Inquiry Modal */}
+        {!isLoading && (
+          <BioContactModal
+            profileId={profile.id}
+            username={profile.username}
+            theme={theme}
+            buttonShape={profile.button_shape}
+            buttonStyle={profile.button_style}
+            isInteractive={isInteractive}
+          />
+        )}
+
         {/* Branding Footer */}
         <div className='mt-auto flex flex-col items-center pt-16'>
           <Link
@@ -170,5 +179,5 @@ export default function ProfileView({
         </div>
       </div>
     </div>
-  );
+  )
 }

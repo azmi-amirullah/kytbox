@@ -8,4 +8,8 @@ export * from './actions';
 export * as schemasClient from './schemas.client';
 export * as schemasServer from './schemas.server';
 export * from './embed';
+export { AudioProvider, useAudio } from './context/AudioContext';
+export { BioAudioPlayer } from './components/BioAudioPlayer';
+export { default as BioContactModal } from './components/BioContactModal';
+export { BioMessagesClient } from './components/BioMessagesClient';
 

@@ -31,3 +31,18 @@ export function getEmbedInfo(url: string | null | undefined): EmbedInfo | null {
 
   return null;
 }
+
+const AUDIO_EXTENSION_REGEX = /\.(mp3|m4a|ogg|wav|aac|flac|opus)(?:$|[?#])/i;
+
+/**
+ * Detects if a URL points directly to an audio file (.mp3, .m4a, .ogg, .wav, etc.)
+ */
+export function isAudioUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return AUDIO_EXTENSION_REGEX.test(parsed.pathname);
+  } catch {
+    return AUDIO_EXTENSION_REGEX.test(url);
+  }
+}

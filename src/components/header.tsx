@@ -5,6 +5,7 @@ import { UserNav } from '@/components/user-nav'
 import { NotificationCenter } from '@/features/notifications'
 import { Button } from '@/components/ui/button'
 import { SearchTrigger } from '@/components/search-trigger'
+import { KeyboardShortcutsTrigger } from '@/components/keyboard-shortcuts-trigger'
 import { siteConfig } from '@/config/site'
 import { LuExternalLink } from 'react-icons/lu'
 
@@ -74,7 +75,12 @@ export function Header({ variant, user, publicUrl }: HeaderProps) {
         )}
 
         <div className='ml-auto flex items-center gap-2 sm:gap-3'>
-          {isDashboard && <SearchTrigger />}
+          {isDashboard && (
+            <>
+              <KeyboardShortcutsTrigger />
+              <SearchTrigger />
+            </>
+          )}
 
           {!isLanding && !isAuth && user && publicUrl && (
             <a

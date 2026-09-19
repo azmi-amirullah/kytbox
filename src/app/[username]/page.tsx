@@ -43,6 +43,10 @@ async function ProfileLinksStream({
       child_count: link.children?.[0]?.count ?? 0,
       is_pinned: !!link.is_pinned,
       is_sensitive: !!link.is_sensitive,
+      grid_size: link.grid_size || 'full',
+      stream_url: link.stream_url ?? null,
+      audio_artist: link.audio_artist ?? null,
+      audio_cover_url: link.audio_cover_url ?? null,
     }));
 
   const totalLinks = links.length + (rawRootLinks.length >= 50 ? 1 : 0);

@@ -69,7 +69,7 @@ export const updateProfileSchema = z.object({
 // BIO SCHEMAS
 // ==========================================
 
-export const bioTabSchema = z.enum(['links', 'appearance']).catch('links');
+export const bioTabSchema = z.enum(['links', 'appearance', 'subscribers', 'messages']).catch('links');
 
 export const addLinkSchema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
