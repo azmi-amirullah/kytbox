@@ -45,19 +45,34 @@ export interface CashflowDetailResult {
 export async function getCashflowDashboardData(
   supabase: SupabaseClient<Database>,
   userId: string,
-  email: string
+  email?: string | null,
+  defaultCurrency?: string | null,
 ): Promise<CashflowSummariesResult> {
+  const normalizedEmail = email?.trim().toLowerCase();
+
+  // If defaultCurrency is provided from cached profile (e.g. from getAuthenticatedUserAndProfile),
+  // bypass redundant profiles DB query completely.
+  const shouldFetchProfile = defaultCurrency === undefined;
+
+  const profilePromise = shouldFetchProfile
+    ? supabase
+        .from('profiles')
+        .select('default_currency')
+        .eq('id', userId)
+        .maybeSingle()
+    : Promise.resolve({ data: { default_currency: defaultCurrency }, error: null });
+
+  const sharesPromise = normalizedEmail
+    ? supabase
+        .from('cashflow_shares')
+        .select('cashflow_id, is_included_in_totals, is_pinned')
+        .eq('email', normalizedEmail)
+    : Promise.resolve({ data: [], error: null });
+
   // Parallelize profile and shares queries
   const [profileResult, sharesResult] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('default_currency')
-      .eq('id', userId)
-      .maybeSingle(),
-    supabase
-      .from('cashflow_shares')
-      .select('cashflow_id, is_included_in_totals, is_pinned')
-      .eq('email', email.trim().toLowerCase()),
+    profilePromise,
+    sharesPromise,
   ]);
 
   let profile = profileResult.data;
@@ -98,22 +113,22 @@ export async function getCashflowDashboardData(
 
   // Shares lookup resilience:
   // If sharesResult.error is present, retry once
-  if (sharesResult.error) {
+  if (sharesResult.error && normalizedEmail) {
     console.warn('cashflow_dashboard_shares_lookup_retrying', {
       error: sharesResult.error,
-      email,
+      email: normalizedEmail,
     });
     const retryShares = await supabase
       .from('cashflow_shares')
       .select('cashflow_id, is_included_in_totals, is_pinned')
-      .eq('email', email.trim().toLowerCase());
+      .eq('email', normalizedEmail);
 
     if (!retryShares.error) {
       shares = retryShares.data;
     } else {
       console.error('cashflow_dashboard_shares_lookup_failed_after_retry', {
         error: retryShares.error,
-        email,
+        email: normalizedEmail,
       });
       // Fallback safely to empty shares so user can at least view personal cashflows
       shares = [];

@@ -372,4 +372,77 @@ describe('getCashflowDashboardData Resilience & Fault Tolerance', () => {
     expect(result.aggregates).toEqual([]);
     expect(result.cashflows).toHaveLength(1);
   });
+
+  it('bypasses profiles table lookup when defaultCurrency is provided', async () => {
+    const fromSpy = vi.fn((table: string) => {
+      if (table === 'cashflow_shares') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      }
+      if (table === 'cashflow_summaries') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockResolvedValue({
+            data: [mockSummaryRow],
+            error: null,
+          }),
+        };
+      }
+      throw new Error(`Unexpected table query: ${table}`);
+    });
+
+    const mockSupabase = {
+      from: fromSpy,
+      rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+    } as unknown as SupabaseClient<Database>;
+
+    const result = await getCashflowDashboardData(
+      mockSupabase,
+      userId,
+      email,
+      'EUR',
+    );
+
+    expect(result.defaultCurrency).toBe('EUR');
+    expect(result.cashflows).toHaveLength(1);
+    // Crucial check: profiles table must NEVER be called
+    expect(fromSpy).not.toHaveBeenCalledWith('profiles');
+  });
+
+  it('safely handles undefined or null email without crashing or querying shares', async () => {
+    const fromSpy = vi.fn((table: string) => {
+      if (table === 'cashflow_summaries') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockResolvedValue({
+            data: [mockSummaryRow],
+            error: null,
+          }),
+        };
+      }
+      throw new Error(`Unexpected table query: ${table}`);
+    });
+
+    const mockSupabase = {
+      from: fromSpy,
+      rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+    } as unknown as SupabaseClient<Database>;
+
+    const result = await getCashflowDashboardData(
+      mockSupabase,
+      userId,
+      undefined,
+      'USD',
+    );
+
+    expect(result.defaultCurrency).toBe('USD');
+    expect(result.cashflows).toHaveLength(1);
+    expect(fromSpy).not.toHaveBeenCalledWith('cashflow_shares');
+    expect(fromSpy).not.toHaveBeenCalledWith('profiles');
+  });
 });
+

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getAuthenticatedUserAndProfile } from '@/lib/auth';
 import { getCashflowDashboardData, CashflowList } from '@/features/cashflow';
 import { redirect } from 'next/navigation';
 
@@ -9,21 +9,18 @@ export const metadata: Metadata = {
 };
 
 export default async function CashflowPage() {
-  const { user, supabase } = await getAuthenticatedUser();
+  const { user, profile, supabase } = await getAuthenticatedUserAndProfile();
 
-  let dashboardData;
-  try {
-    dashboardData = await getCashflowDashboardData(
-      supabase,
-      user.id,
-      user.email!
-    );
-  } catch (error) {
-    if (error instanceof Error && error.message === 'PROFILE_NOT_FOUND') {
-      redirect('/onboarding');
-    }
-    throw error;
+  if (!profile) {
+    redirect('/onboarding');
   }
+
+  const dashboardData = await getCashflowDashboardData(
+    supabase,
+    user.id,
+    user.email,
+    profile.default_currency,
+  );
 
   return (
     <div className='max-w-7xl mx-auto px-4 py-8 md:py-8 w-full'>
