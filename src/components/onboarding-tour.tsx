@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LuChevronLeft, LuChevronRight, LuX } from 'react-icons/lu';
-import { completeOnboardingAction } from '@/app/(platform)/app/actions';
+import { completeOnboardingAction } from '@/features/platform';
 import { useCommandShortcut } from '@/lib/keyboard-shortcut';
 
 interface TourStep {

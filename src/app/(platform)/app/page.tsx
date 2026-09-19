@@ -34,14 +34,47 @@ const COMING_SOON_APPS = KYTBOX_APPS.filter(
 
 async function AsyncQuickStats({
   userId,
+  userEmail,
   defaultCurrency,
 }: {
   userId: string
+  userEmail: string | undefined
   defaultCurrency: string | null
 }) {
   const supabase = await createClient()
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+  let sharedCashflowIds: string[] = []
+  if (userEmail) {
+    const { data: shares, error: sharesError } = await supabase
+      .from('cashflow_shares')
+      .select('cashflow_id')
+      .eq('email', userEmail.trim().toLowerCase())
+      .eq('is_included_in_totals', true)
+
+    if (sharesError) {
+      console.error('AsyncQuickStats shares error:', sharesError.message)
+    } else if (shares) {
+      sharedCashflowIds = shares
+        .map((s) => s.cashflow_id)
+        .filter((id): id is string => Boolean(id))
+    }
+  }
+
+  let cashflowQuery = supabase
+    .from('cashflow_summaries')
+    .select('balance')
+
+  if (sharedCashflowIds.length > 0) {
+    cashflowQuery = cashflowQuery.or(
+      `and(user_id.eq.${userId},is_archived.eq.false),id.in.(${sharedCashflowIds.join(',')})`,
+    )
+  } else {
+    cashflowQuery = cashflowQuery
+      .eq('user_id', userId)
+      .eq('is_archived', false)
+  }
 
   const [clicksRes, cashflowsRes, tasksRes] = await Promise.all([
     supabase
@@ -49,13 +82,23 @@ async function AsyncQuickStats({
       .select('id, links!inner(user_id)', { count: 'exact', head: true })
       .eq('links.user_id', userId)
       .gte('created_at', sevenDaysAgo.toISOString()),
-    supabase.from('cashflow_summaries').select('balance').eq('user_id', userId),
+    cashflowQuery,
     supabase
       .from('list_items')
       .select('id, lists!inner(user_id)', { count: 'exact', head: true })
       .eq('is_completed', false)
       .eq('lists.user_id', userId),
   ])
+
+  if (clicksRes.error) {
+    console.error('AsyncQuickStats clicks error:', clicksRes.error.message)
+  }
+  if (cashflowsRes.error) {
+    console.error('AsyncQuickStats cashflows error:', cashflowsRes.error.message)
+  }
+  if (tasksRes.error) {
+    console.error('AsyncQuickStats tasks error:', tasksRes.error.message)
+  }
 
   const clicksCount = clicksRes.count || 0
   const cashflowBalance = (cashflowsRes.data || []).reduce(
@@ -126,7 +169,7 @@ export default async function AppHomePage() {
           Workspace overview
         </p>
         <h1 className='mt-2 text-2xl font-semibold tracking-[-0.04em] sm:mt-3 sm:text-3xl md:text-4xl'>
-          Welcome back, {profile?.display_name || profile?.username}.
+          Welcome back, {profile?.display_name || profile?.username || 'there'}.
         </h1>
         <p className='mt-1 text-xs leading-5 text-muted-foreground sm:mt-2 sm:text-sm sm:leading-6'>
           A clear view of your active workspace.
@@ -144,6 +187,7 @@ export default async function AppHomePage() {
       >
         <AsyncQuickStats
           userId={user.id}
+          userEmail={user.email}
           defaultCurrency={profile?.default_currency || null}
         />
       </Suspense>
