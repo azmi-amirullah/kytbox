@@ -37,6 +37,7 @@ import {
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { mapBudgetToDTO, mapGoalToDTO, mapCashflowEntryToDTO, mapCashflowRecurringRuleToDTO } from '@/lib/mappers';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
@@ -3091,4 +3092,34 @@ export async function reconcileCashflowBalance(cashflowId: string, actualBalance
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
   return { success: true, adjustedAmount: adjAmount, type: adjType };
+}
+
+/**
+ * Fetch total entry count for a cashflow without returning row data.
+ * Used for non-blocking background check when entries hit the 1000 limit.
+ */
+export async function getCashflowTotalEntryCount(
+  cashflowId: string,
+): Promise<{ count: number | null }> {
+  if (!cashflowId || typeof cashflowId !== 'string') {
+    return { count: null };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+      .from('cashflow_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('cashflow_id', cashflowId);
+
+    if (error) {
+      console.warn('get_cashflow_total_entry_count_failed', error);
+      return { count: null };
+    }
+
+    return { count: count ?? null };
+  } catch (err) {
+    console.warn('get_cashflow_total_entry_count_error', err);
+    return { count: null };
+  }
 }

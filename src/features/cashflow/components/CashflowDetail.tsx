@@ -2,8 +2,13 @@
 
 import { useState, useTransition, useMemo, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { format } from 'date-fns'
-import { formatAppDate } from '@/lib/date-only'
+import {
+  formatAppDate,
+  parseDateOnly,
+  toLocalDateOnlyString,
+} from '@/lib/date-only'
 import { Button } from '@/components/ui/button'
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav'
 import {
@@ -58,6 +63,7 @@ import {
   LuRotateCcw,
   LuCalendar,
   LuGlobe,
+  LuTriangleAlert,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -78,6 +84,7 @@ import {
   bulkDeleteEntries,
   bulkUpdateCategory,
   bulkAddTags,
+  getCashflowTotalEntryCount,
 } from '../actions'
 import dynamic from 'next/dynamic'
 import CashflowModal from './CashflowModal'
@@ -119,7 +126,11 @@ const CreateSplitGroupModal = dynamic(
 )
 
 import { ProjectionsView } from './ProjectionsView'
-import { subscribeToPublicCashflow, removeShare, reconcileCashflowBalance } from '../actions'
+import {
+  subscribeToPublicCashflow,
+  removeShare,
+  reconcileCashflowBalance,
+} from '../actions'
 import BudgetManager from './BudgetManager'
 import ReceiptLightbox from './ReceiptLightbox'
 import { BulkActionsToolbar } from './BulkActionsToolbar'
@@ -162,6 +173,8 @@ interface CashflowDetailProps {
   initialShareId?: string | null
   initialHasShare?: boolean
 }
+
+const ENTRY_LIMIT_THRESHOLD = 1000
 
 export default function CashflowDetail({
   cashflow,
@@ -230,11 +243,11 @@ export default function CashflowDetail({
     null,
   )
 
-
   // ── Synchronized local entries state (updated instantly on API response) ───
   const [localEntries, setLocalEntries] = useState<CashflowEntryDTO[]>(entries)
   const [prevEntriesProp, setPrevEntriesProp] = useState(entries)
-  const [localRecurringRules, setLocalRecurringRules] = useState<CashflowRecurringRuleDTO[]>(recurringRules)
+  const [localRecurringRules, setLocalRecurringRules] =
+    useState<CashflowRecurringRuleDTO[]>(recurringRules)
   const [prevRulesProp, setPrevRulesProp] = useState(recurringRules)
   const [localTags, setLocalTags] = useState<CashflowTagDTO[]>(tags)
   const [prevTagsProp, setPrevTagsProp] = useState(tags)
@@ -312,6 +325,29 @@ export default function CashflowDetail({
       .catch(() => {})
   }, [])
 
+  // Non-blocking background check for entry limit warning (>1000 entries)
+  const [totalDbCount, setTotalDbCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    // Only perform check if initial dataset hit the 1000 limit
+    if (entries.length < ENTRY_LIMIT_THRESHOLD) return
+
+    let isMounted = true
+    getCashflowTotalEntryCount(cashflow.id).then((res) => {
+      if (
+        isMounted &&
+        res.count !== null &&
+        res.count > ENTRY_LIMIT_THRESHOLD
+      ) {
+        setTotalDbCount(res.count)
+      }
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [cashflow.id, entries.length])
+
   // ── Type / Category filters ────────────────────────────────────────────────
   const [selectedType, setSelectedType] = useState<
     'all' | 'income' | 'expense'
@@ -352,7 +388,9 @@ export default function CashflowDetail({
 
     // If localTags metadata exists, sort by color_index for consistent styling
     if (localTags && localTags.length > 0) {
-      const activeTags = localTags.filter((t) => usedTagMap.has(t.name.toLowerCase()))
+      const activeTags = localTags.filter((t) =>
+        usedTagMap.has(t.name.toLowerCase()),
+      )
       const sortedActive = [...activeTags].sort((a, b) => {
         const slotA =
           ((a.color_index % TAG_COLORS.length) + TAG_COLORS.length) %
@@ -366,7 +404,9 @@ export default function CashflowDetail({
         return a.name.localeCompare(b.name)
       })
 
-      const registeredLower = new Set(sortedActive.map((t) => t.name.toLowerCase()))
+      const registeredLower = new Set(
+        sortedActive.map((t) => t.name.toLowerCase()),
+      )
       const unlistedNames: string[] = []
       for (const [lower, original] of usedTagMap.entries()) {
         if (!registeredLower.has(lower)) {
@@ -421,6 +461,52 @@ export default function CashflowDetail({
     () => getDateFilterPresetMonthLabel(filterState),
     [filterState],
   )
+
+  const dateSpanLabel = useMemo(() => {
+    if (filterState.preset !== 'all-time') {
+      const range = resolveFilterRange(filterState)
+      if (range.from && range.to) {
+        return `${formatAppDate(range.from)} – ${formatAppDate(range.to)}`
+      }
+      if (range.from) {
+        return `${formatAppDate(range.from)} – Present`
+      }
+      if (range.to) {
+        return `Until ${formatAppDate(range.to)}`
+      }
+    }
+
+    if (localEntries.length === 0) {
+      return null
+    }
+
+    let min: string | null = null
+    let max: string | null = null
+    for (let i = 0; i < localEntries.length; i++) {
+      const d = localEntries[i].date
+      if (!d) continue
+      if (!min || d < min) min = d
+      if (!max || d > max) max = d
+    }
+
+    if (!min || !max) return null
+
+    const now = new Date()
+    const nowIso = toLocalDateOnlyString(now)
+    const maxDateObj = parseDateOnly(max)
+    const diffDays = Math.floor(
+      (now.getTime() - maxDateObj.getTime()) / (1000 * 60 * 60 * 24),
+    )
+    const isRecent = diffDays <= 30 || max >= nowIso
+
+    const formattedMin = formatAppDate(min)
+    if (isRecent) {
+      return `${formattedMin} – Present`
+    }
+
+    const formattedMax = formatAppDate(max)
+    return min === max ? formattedMin : `${formattedMin} – ${formattedMax}`
+  }, [filterState, localEntries])
 
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
 
@@ -526,7 +612,9 @@ export default function CashflowDetail({
     return filteredEntries.slice(start, start + pageSize)
   }, [filteredEntries, currentPage, pageSize])
 
-  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(new Set())
+  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(
+    new Set(),
+  )
   const [activeBulkAction, setActiveBulkAction] = useState<
     'category' | 'tag' | 'delete' | null
   >(null)
@@ -536,15 +624,16 @@ export default function CashflowDetail({
     [localEntries, selectedEntryIds],
   )
 
-  const selectionType: 'income' | 'expense' | 'mixed' | undefined = useMemo(() => {
-    if (selectedEntries.length === 0) return undefined
-    const hasIncome = selectedEntries.some((e) => e.type === 'income')
-    const hasExpense = selectedEntries.some((e) => e.type === 'expense')
-    if (hasIncome && hasExpense) return 'mixed'
-    if (hasIncome) return 'income'
-    if (hasExpense) return 'expense'
-    return undefined
-  }, [selectedEntries])
+  const selectionType: 'income' | 'expense' | 'mixed' | undefined =
+    useMemo(() => {
+      if (selectedEntries.length === 0) return undefined
+      const hasIncome = selectedEntries.some((e) => e.type === 'income')
+      const hasExpense = selectedEntries.some((e) => e.type === 'expense')
+      if (hasIncome && hasExpense) return 'mixed'
+      if (hasIncome) return 'income'
+      if (hasExpense) return 'expense'
+      return undefined
+    }, [selectedEntries])
 
   const paginatedIds = useMemo(
     () => paginatedEntries.map((e) => e.id),
@@ -554,7 +643,8 @@ export default function CashflowDetail({
     paginatedIds.length > 0 &&
     paginatedIds.every((id) => selectedEntryIds.has(id))
   const someCurrentPageSelected =
-    paginatedIds.some((id) => selectedEntryIds.has(id)) && !allCurrentPageSelected
+    paginatedIds.some((id) => selectedEntryIds.has(id)) &&
+    !allCurrentPageSelected
   const masterChecked: boolean | 'indeterminate' = allCurrentPageSelected
     ? true
     : someCurrentPageSelected
@@ -681,15 +771,12 @@ export default function CashflowDetail({
           }),
         )
         setSelectedEntryIds(new Set())
-        toast.success(
-          `Added tags to ${res.count || ids.length} transactions`,
-        )
+        toast.success(`Added tags to ${res.count || ids.length} transactions`)
       }
     } finally {
       setActiveBulkAction(null)
     }
   }
-
 
   // Stable 7-slot pagination: ALWAYS render exactly 7 <Button> elements (for
   // totalPages > 7). Using the slot INDEX as the React key means React never
@@ -791,14 +878,19 @@ export default function CashflowDetail({
         existingThisMonth.map((e) => e.recurring_rule_id).filter(Boolean),
       )
       const existingNamesThisMonth = new Set(
-        existingThisMonth.map((e) => `${e.description.trim().toLowerCase()}|${e.type}`),
+        existingThisMonth.map(
+          (e) => `${e.description.trim().toLowerCase()}|${e.type}`,
+        ),
       )
 
       const pastExistingRuleSet = new Set(
         localEntries
           .filter((e) => {
             const [year, month] = e.date.split('-').map(Number)
-            return year < currentYear || (year === currentYear && month - 1 < currentMonth)
+            return (
+              year < currentYear ||
+              (year === currentYear && month - 1 < currentMonth)
+            )
           })
           .map((e) => {
             const [year, month] = e.date.split('-').map(Number)
@@ -814,7 +906,9 @@ export default function CashflowDetail({
       const pastMonthsSet = new Set<string>()
 
       for (const rule of activeRules) {
-        const [startYear, startMonthNumber] = rule.start_date.split('-').map(Number)
+        const [startYear, startMonthNumber] = rule.start_date
+          .split('-')
+          .map(Number)
         const ruleDay = rule.day_of_month || 1
 
         // 1. Check current month status (due now vs upcoming)
@@ -829,7 +923,9 @@ export default function CashflowDetail({
         if (startedInOrBeforeCurrentMonth && isAnniversaryMonth) {
           const isSettled =
             existingRuleIdsThisMonth.has(rule.id) ||
-            existingNamesThisMonth.has(`${rule.description.trim().toLowerCase()}|${rule.type}`)
+            existingNamesThisMonth.has(
+              `${rule.description.trim().toLowerCase()}|${rule.type}`,
+            )
 
           if (!isSettled) {
             const lastDayOfCurrentMonth = new Date(
@@ -864,7 +960,10 @@ export default function CashflowDetail({
 
           const keyWithId = `${y}|${m}|${rule.id}`
           const keyWithName = `${y}|${m}|${rule.description.trim().toLowerCase()}|${rule.type}`
-          if (!pastExistingRuleSet.has(keyWithId) && !pastExistingRuleSet.has(keyWithName)) {
+          if (
+            !pastExistingRuleSet.has(keyWithId) &&
+            !pastExistingRuleSet.has(keyWithName)
+          ) {
             pastMissingCount++
             const monthName = tempDate.toLocaleDateString('en-US', {
               month: 'long',
@@ -1185,7 +1284,9 @@ export default function CashflowDetail({
     if (mutation.type === 'delete') {
       const targetLower = mutation.oldTag.toLowerCase()
       // 1. Remove from localTags in memory immediately
-      setLocalTags((prev) => prev.filter((t) => t.name.toLowerCase() !== targetLower))
+      setLocalTags((prev) =>
+        prev.filter((t) => t.name.toLowerCase() !== targetLower),
+      )
       // 2. Remove from localEntries in memory immediately
       setLocalEntries((prev) =>
         prev.map((e) => {
@@ -1197,13 +1298,17 @@ export default function CashflowDetail({
         }),
       )
       // 3. Remove from active filter selections if selected
-      setSelectedTags((prev) => prev.filter((t) => t.toLowerCase() !== targetLower))
+      setSelectedTags((prev) =>
+        prev.filter((t) => t.toLowerCase() !== targetLower),
+      )
     } else if (mutation.type === 'rename') {
       const targetLower = mutation.oldTag.toLowerCase()
       const newName = mutation.newTag
       // 1. Update in localTags in memory immediately
       setLocalTags((prev) =>
-        prev.map((t) => (t.name.toLowerCase() === targetLower ? { ...t, name: newName } : t)),
+        prev.map((t) =>
+          t.name.toLowerCase() === targetLower ? { ...t, name: newName } : t,
+        ),
       )
       // 2. Update in localEntries in memory immediately
       setLocalEntries((prev) =>
@@ -1211,7 +1316,9 @@ export default function CashflowDetail({
           if (!e.tags || e.tags.length === 0) return e
           return {
             ...e,
-            tags: e.tags.map((t) => (t.toLowerCase() === targetLower ? newName : t)),
+            tags: e.tags.map((t) =>
+              t.toLowerCase() === targetLower ? newName : t,
+            ),
           }
         }),
       )
@@ -1407,10 +1514,41 @@ export default function CashflowDetail({
               )}
             </div>
             <div className='flex items-center gap-2 mt-0.5 flex-wrap'>
-              <p className='text-muted-foreground text-sm'>
-                {filterState.preset !== 'all-time'
-                  ? `${filteredEntries.length} of ${entries.length} entries`
-                  : `${entries.length} entries`}
+              <p className='text-muted-foreground text-sm flex items-center gap-2 flex-wrap'>
+                <span>
+                  {filterState.preset !== 'all-time'
+                    ? `${filteredEntries.length} of ${localEntries.length} entries`
+                    : `${localEntries.length} entries`}
+                </span>
+                {dateSpanLabel && (
+                  <>
+                    <span className='text-muted-foreground/40 select-none'>
+                      •
+                    </span>
+                    <span>{dateSpanLabel}</span>
+                  </>
+                )}
+                {totalDbCount !== null &&
+                  totalDbCount > ENTRY_LIMIT_THRESHOLD && (
+                    <>
+                      <span className='text-muted-foreground/40 select-none'>
+                        •
+                      </span>
+                      <Link
+                        href='/support'
+                        className='inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer'
+                        title={`Showing latest ${ENTRY_LIMIT_THRESHOLD.toLocaleString()} of ${totalDbCount.toLocaleString()} total entries. Older transactions are not loaded. Click to contact support for full history access.`}
+                        aria-label={`Showing latest ${ENTRY_LIMIT_THRESHOLD.toLocaleString()} of ${totalDbCount.toLocaleString()} total entries. Older transactions are not loaded. Click to contact support for full history access.`}
+                      >
+                        <LuTriangleAlert className='w-3 h-3 shrink-0' />
+                        <span>
+                          Showing latest{' '}
+                          {ENTRY_LIMIT_THRESHOLD.toLocaleString()} of{' '}
+                          {totalDbCount.toLocaleString()}
+                        </span>
+                      </Link>
+                    </>
+                  )}
               </p>
               {!isOwner && (
                 <span className='text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full shrink-0'>
@@ -2401,7 +2539,9 @@ export default function CashflowDetail({
         entries={localEntries}
         recurringRules={localRecurringRules}
         currency={currency}
-        onManageRules={canEdit ? () => setIsRecurringModalOpen(true) : undefined}
+        onManageRules={
+          canEdit ? () => setIsRecurringModalOpen(true) : undefined
+        }
       />
 
       {/* Safe-to-Spend Forward Looking Engine */}
@@ -2412,7 +2552,10 @@ export default function CashflowDetail({
         onReconcileBalance={
           canEdit
             ? async (actualBalance) => {
-                const res = await reconcileCashflowBalance(cashflow.id, actualBalance)
+                const res = await reconcileCashflowBalance(
+                  cashflow.id,
+                  actualBalance,
+                )
                 if (res?.error) {
                   toast.error(res.error)
                 } else {
