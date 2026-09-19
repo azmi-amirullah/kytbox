@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { z } from 'zod';
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getOptionalUserAndProfile } from '@/lib/auth';
 import { getCashflowDetailData, CashflowDetail, schemasServer } from '@/features/cashflow';
 import { connection } from 'next/server';
 
@@ -45,12 +46,10 @@ export default async function CashflowDetailPage({
     notFound();
   }
   await connection();
-  const supabase = await createClient();
 
-  // 1. Get User
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // 1. Get User and Profile from cached fast-path helper
+  const { user, profile, supabase: authSupabase } = await getOptionalUserAndProfile();
+  const supabase = authSupabase ?? (await createClient());
 
   // 2. Fetch data via features DB layer
   let data;
@@ -60,6 +59,8 @@ export default async function CashflowDetailPage({
       id,
       user?.id,
       user?.email,
+      undefined,
+      profile?.default_currency,
     );
   } catch (error) {
     if (error instanceof Error) {
@@ -71,7 +72,7 @@ export default async function CashflowDetailPage({
     throw error;
   }
 
-  const { cashflow, entries, recurringRules, budgets, tags, goals, profile, share } = data;
+  const { cashflow, entries, recurringRules, budgets, tags, goals, share } = data;
   const isOwner = Boolean(user && cashflow.user_id === user.id);
 
   // 3. Access Control

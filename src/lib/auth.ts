@@ -33,7 +33,7 @@ export const getOptionalUserAndProfile = cache(async () => {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, avatar_url, display_name, role')
+    .select('username, avatar_url, display_name, role, default_currency')
     .eq('id', user.id)
     .single();
 

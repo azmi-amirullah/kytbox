@@ -239,7 +239,8 @@ export async function getCashflowDetailData(
   cashflowId: string,
   userId: string | undefined,
   userEmail: string | undefined,
-  isOwner?: boolean
+  isOwner?: boolean,
+  cachedDefaultCurrency?: string | null,
 ): Promise<CashflowDetailResult & {
   profile: {
     username: string;
@@ -249,7 +250,6 @@ export async function getCashflowDetailData(
     default_currency: string | null;
   } | null;
   share: { id: string; role: string; is_pinned: boolean | null } | null;
-  budgetsResultData: Database['public']['Tables']['cashflow_budgets']['Row'][] | null;
 }> {
   // 1. Immediately launch non-dependent queries and access resolution in parallel
   const accessiblePromise = userId
@@ -257,11 +257,22 @@ export async function getCashflowDetailData(
     : Promise.resolve<{ id: string; title: string }[]>([]);
 
   const profilePromise = userId
-    ? supabase
-        .from('profiles')
-        .select('username, avatar_url, display_name, role, default_currency')
-        .eq('id', userId)
-        .maybeSingle()
+    ? (cachedDefaultCurrency !== undefined
+        ? Promise.resolve({
+            data: {
+              username: '',
+              avatar_url: null,
+              display_name: null,
+              role: null,
+              default_currency: cachedDefaultCurrency,
+            },
+            error: null,
+          })
+        : supabase
+            .from('profiles')
+            .select('username, avatar_url, display_name, role, default_currency')
+            .eq('id', userId)
+            .maybeSingle())
     : Promise.resolve({ data: null, error: null });
 
   const cashflowPromise = supabase.from('cashflows').select('*').eq('id', cashflowId).single();
@@ -304,26 +315,30 @@ export async function getCashflowDetailData(
     .order('color_index', { ascending: true })
     .order('created_at', { ascending: true });
 
-  // 2. When access resolves, dispatch goals queries
-  const accessibleCashflows = await accessiblePromise;
-  const cashflowTitles = new Map<string, string>();
-  for (const accessibleCashflow of accessibleCashflows) {
-    cashflowTitles.set(accessibleCashflow.id, accessibleCashflow.title);
-  }
-  const queryIds = Array.from(
-    new Set([cashflowId, ...accessibleCashflows.map((c) => c.id)]),
-  );
+  // 2. Concurrently chain goals queries as soon as access resolves without blocking initial dispatch
+  const goalsWithProgressPromise = accessiblePromise.then(async (accessibleCashflows) => {
+    const cashflowTitles = new Map<string, string>();
+    for (const accessibleCashflow of accessibleCashflows) {
+      cashflowTitles.set(accessibleCashflow.id, accessibleCashflow.title);
+    }
+    const queryIds = Array.from(
+      new Set([cashflowId, ...accessibleCashflows.map((c) => c.id)]),
+    );
 
-  const goalsPromise = supabase
-    .from('cashflow_goals')
-    .select('*')
-    .in('cashflow_id', queryIds)
-    .order('created_at', { ascending: true });
+    const [goalsResult, goalProgressResult] = await Promise.all([
+      supabase
+        .from('cashflow_goals')
+        .select('*')
+        .in('cashflow_id', queryIds)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('cashflow_goal_progress')
+        .select('cashflow_id, goal_id, saved_amount, contribution_count')
+        .in('cashflow_id', queryIds),
+    ]);
 
-  const goalProgressPromise = supabase
-    .from('cashflow_goal_progress')
-    .select('cashflow_id, goal_id, saved_amount, contribution_count')
-    .in('cashflow_id', queryIds);
+    return { cashflowTitles, goalsResult, goalProgressResult };
+  });
 
   const [
     profileResult,
@@ -333,8 +348,7 @@ export async function getCashflowDetailData(
     shareResult,
     budgetsResult,
     tagsResult,
-    goalsResult,
-    goalProgressResult,
+    goalsData,
   ] = await Promise.all([
     profilePromise,
     cashflowPromise,
@@ -343,9 +357,10 @@ export async function getCashflowDetailData(
     sharePromise,
     budgetsPromise,
     tagsPromise,
-    goalsPromise,
-    goalProgressPromise,
+    goalsWithProgressPromise,
   ]);
+
+  const { cashflowTitles, goalsResult, goalProgressResult } = goalsData;
 
   if (cashflowResult.error) {
     if (cashflowResult.error.code === 'PGRST116') {
@@ -445,7 +460,6 @@ export async function getCashflowDetailData(
     goals,
     profile: profileResult.data,
     share: shareResult.data,
-    budgetsResultData: budgetsResult?.data,
   };
 }
 

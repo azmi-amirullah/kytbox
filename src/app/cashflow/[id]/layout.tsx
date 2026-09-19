@@ -2,7 +2,7 @@ import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { BackgroundBlobs } from '@/components/background-blobs'
 import { PlatformOverlays } from '@/components/platform-overlays'
-import { createClient } from '@/lib/supabase/server'
+import { getOptionalUserAndProfile } from '@/lib/auth'
 import { siteConfig } from '@/config/site'
 
 export default async function CashflowDetailLayout({
@@ -10,20 +10,7 @@ export default async function CashflowDetailLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  let profile = null
-  if (user) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('username, avatar_url, display_name, role')
-      .eq('id', user.id)
-      .maybeSingle()
-    profile = data
-  }
+  const { user, profile } = await getOptionalUserAndProfile()
 
   const publicUrl = profile ? `${siteConfig.url}/${profile.username}` : undefined
 

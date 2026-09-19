@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-import { getCashflowDashboardData } from '@/features/cashflow/db';
+import { getCashflowDashboardData, getCashflowDetailData } from '@/features/cashflow/db';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import { DEFAULT_CURRENCY } from '@/lib/currency';
@@ -442,6 +442,106 @@ describe('getCashflowDashboardData Resilience & Fault Tolerance', () => {
     expect(result.defaultCurrency).toBe('USD');
     expect(result.cashflows).toHaveLength(1);
     expect(fromSpy).not.toHaveBeenCalledWith('cashflow_shares');
+    expect(fromSpy).not.toHaveBeenCalledWith('profiles');
+  });
+});
+
+describe('getCashflowDetailData Performance & Optimization', () => {
+  const userId = 'user-123';
+  const cashflowId = 'cf-detail-1';
+  const email = 'user@example.com';
+
+  const mockCashflow = {
+    id: cashflowId,
+    user_id: userId,
+    title: 'Main Budget',
+    created_at: '2026-09-01T00:00:00Z',
+    updated_at: '2026-09-02T00:00:00Z',
+    is_public: false,
+    is_pinned: false,
+    is_archived: false,
+  };
+
+  it('bypasses profiles table lookup when cachedDefaultCurrency is provided', async () => {
+    // Mock chaining for cashflow_tags (which chains order twice)
+    const mockTags = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+
+    const fromSpy = vi.fn((table: string) => {
+      if (table === 'cashflow_tags') return mockTags;
+      if (table === 'cashflows') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({ data: [{ id: cashflowId, title: 'Main Budget' }], error: null }),
+          single: vi.fn().mockResolvedValue({ data: mockCashflow, error: null }),
+        };
+      }
+      if (table === 'cashflow_entries') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+            }),
+          }),
+        };
+      }
+      if (table === 'cashflow_recurring_rules') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      }
+      if (table === 'cashflow_shares') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      }
+      if (table === 'cashflow_budgets') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      }
+      if (table === 'cashflow_goals' || table === 'cashflow_goal_progress') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        };
+      }
+      throw new Error(`Unexpected table query: ${table}`);
+    });
+
+    const mockSupabase = {
+      from: fromSpy,
+    } as unknown as SupabaseClient<Database>;
+
+    const result = await getCashflowDetailData(
+      mockSupabase,
+      cashflowId,
+      userId,
+      email,
+      true,
+      'JPY',
+    );
+
+    expect(result.cashflow.title).toBe('Main Budget');
+    expect(result.profile?.default_currency).toBe('JPY');
+    // Ensure raw DB row leak is removed
+    expect('budgetsResultData' in result).toBe(false);
+    // Crucial check: profiles table must NEVER be called
     expect(fromSpy).not.toHaveBeenCalledWith('profiles');
   });
 });

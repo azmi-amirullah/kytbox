@@ -82,11 +82,11 @@ import {
 import dynamic from 'next/dynamic'
 import CashflowModal from './CashflowModal'
 import EntryModal from './EntryModal'
-import ShareModal from './ShareModal'
 import GoalCard from './GoalCard'
 import { CashflowSummaryStats } from './CashflowSummaryStats'
 import { SafeToSpendCard } from './SafeToSpendCard'
 import { Loader } from '@/components/ui/loader'
+
 const CashflowCharts = dynamic(
   () => import('./CashflowCharts').then((mod) => mod.CashflowCharts),
   {
@@ -99,11 +99,28 @@ const CashflowCharts = dynamic(
     ),
   },
 )
+
+const ShareModal = dynamic(() => import('./ShareModal'), { ssr: false })
+const RecurringManagerModal = dynamic(() => import('./RecurringManagerModal'), {
+  ssr: false,
+})
+const ImportCsvModal = dynamic(() => import('./ImportCsvModal'), { ssr: false })
+const FinancialReportModal = dynamic(
+  () =>
+    import('./FinancialReportModal').then((mod) => mod.FinancialReportModal),
+  { ssr: false },
+)
+const CreateSplitGroupModal = dynamic(
+  () =>
+    import('./split/CreateSplitGroupModal').then(
+      (mod) => mod.CreateSplitGroupModal,
+    ),
+  { ssr: false },
+)
+
 import { ProjectionsView } from './ProjectionsView'
-import RecurringManagerModal from './RecurringManagerModal'
 import { subscribeToPublicCashflow, removeShare, reconcileCashflowBalance } from '../actions'
 import BudgetManager from './BudgetManager'
-import ImportCsvModal from './ImportCsvModal'
 import ReceiptLightbox from './ReceiptLightbox'
 import { BulkActionsToolbar } from './BulkActionsToolbar'
 import { DateFilter, DateFilterCustomRange } from './DateFilter'
@@ -131,8 +148,6 @@ import { cn } from '@/lib/utils'
 import { EntryTypeBadge, EntryMetadataBadges } from './EntryBadges'
 import { resolveTagColor, TAG_COLORS } from '../lib/tag-colors'
 import { ManageTagModal, type TagMutationAction } from './ManageTagModal'
-import { FinancialReportModal } from './FinancialReportModal'
-import { CreateSplitGroupModal } from './split/CreateSplitGroupModal'
 
 interface CashflowDetailProps {
   cashflow: CashflowDTO
