@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, ModalHeader } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,13 +39,16 @@ interface ShareModalProps {
   cashflow: CashflowDTO
   open: boolean
   onOpenChange: (open: boolean) => void
+  onPublicChange?: (isPublic: boolean) => void
 }
 
 export default function ShareModal({
   cashflow,
   open,
   onOpenChange,
+  onPublicChange,
 }: ShareModalProps) {
+  const router = useRouter()
   const [isPublic, setIsPublic] = useState(cashflow.is_public)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<'read' | 'edit'>('read')
@@ -74,14 +78,17 @@ export default function ShareModal({
 
   async function handleTogglePublic(checked: boolean) {
     setIsPublic(checked)
+    onPublicChange?.(checked)
     const result = await togglePublic(cashflow.id, checked)
     if (result.error) {
       toast.error(result.error || 'Failed to update public status')
       setIsPublic(!checked)
+      onPublicChange?.(!checked)
     } else {
       toast.success(
         checked ? 'Cashflow is now public' : 'Cashflow is now private',
       )
+      router.refresh()
     }
   }
 

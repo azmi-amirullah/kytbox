@@ -113,3 +113,30 @@ export function getSafeOrigin(origin: string | null): string {
 
   return siteUrl.replace(/\/$/, '');
 }
+
+/**
+ * Gets the canonical public apex origin (e.g., https://kytbox.com or http://localhost:3000).
+ * Strips any 'app.' or 'www.' prefix from the current origin or configured site URL.
+ */
+export function getPublicApexOrigin(currentOrigin?: string): string {
+  if (currentOrigin) {
+    try {
+      const url = new URL(currentOrigin);
+      const cleanHost = url.hostname.replace(/^(?:app\.|www\.)/, '');
+      const port = url.port ? `:${url.port}` : '';
+      return `${url.protocol}//${cleanHost}${port}`;
+    } catch {
+      // Fallback below
+    }
+  }
+
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL || 'https://kytbox.com';
+  try {
+    const url = new URL(siteUrl);
+    const cleanHost = url.hostname.replace(/^(?:app\.|www\.)/, '');
+    const port = url.port ? `:${url.port}` : '';
+    return `${url.protocol}//${cleanHost}${port}`;
+  } catch {
+    return 'https://kytbox.com';
+  }
+}

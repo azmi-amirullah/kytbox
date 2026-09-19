@@ -57,6 +57,7 @@ import {
   LuFileText,
   LuRotateCcw,
   LuCalendar,
+  LuGlobe,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -193,6 +194,13 @@ export default function CashflowDetail({
   const [prevTagsProp, setPrevTagsProp] = useState(tags)
   const [localGoals, setLocalGoals] = useState<CashflowGoalDTO[]>(goals)
   const [prevGoalsProp, setPrevGoalsProp] = useState(goals)
+  const [isPublic, setIsPublic] = useState(cashflow.is_public)
+  const [prevCashflowProp, setPrevCashflowProp] = useState(cashflow)
+
+  if (cashflow !== prevCashflowProp) {
+    setPrevCashflowProp(cashflow)
+    setIsPublic(cashflow.is_public)
+  }
 
   if (entries !== prevEntriesProp) {
     setPrevEntriesProp(entries)
@@ -1347,6 +1355,13 @@ export default function CashflowDetail({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {isPublic && (
+                <span className='inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 self-center'>
+                  <LuGlobe className='w-3 h-3' />
+                  Public
+                </span>
+              )}
             </div>
             <div className='flex items-center gap-2 mt-0.5 flex-wrap'>
               <p className='text-muted-foreground text-sm'>
@@ -2400,6 +2415,7 @@ export default function CashflowDetail({
         cashflow={cashflow}
         open={isShareModalOpen}
         onOpenChange={setIsShareModalOpen}
+        onPublicChange={setIsPublic}
       />
 
       {/* Entry Modal */}

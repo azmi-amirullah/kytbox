@@ -30,6 +30,7 @@ import {
   LuLoader,
   LuShare2,
   LuCopy,
+  LuGlobe,
 } from 'react-icons/lu';
 import {
   DropdownMenu,
@@ -169,8 +170,16 @@ export default function CashflowCard({
     <div className='bg-card border rounded-xl overflow-hidden'>
       {/* Card Header */}
       <div className='flex items-center justify-between p-4 border-b bg-muted/30'>
-        <div className='flex-1'>
-          <h2 className='font-semibold text-lg'>{cashflow.title}</h2>
+        <div className='flex-1 min-w-0'>
+          <div className='flex items-center gap-2 flex-wrap'>
+            <h2 className='font-semibold text-lg'>{cashflow.title}</h2>
+            {cashflow.is_public && (
+              <span className='inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'>
+                <LuGlobe className='w-3 h-3' />
+                Public
+              </span>
+            )}
+          </div>
           <div className='flex gap-4 mt-1 text-sm'>
             <span className='text-green-600'>+{income.toLocaleString()}</span>
             <span className='text-red-600'>-{expense.toLocaleString()}</span>

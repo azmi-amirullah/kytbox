@@ -1,4 +1,9 @@
-import { isAllowedOrigin, getSafeOrigin, getCookieDomain } from '@/lib/origin';
+import {
+  isAllowedOrigin,
+  getSafeOrigin,
+  getCookieDomain,
+  getPublicApexOrigin,
+} from '@/lib/origin';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 let mockSiteUrl = 'https://kytbox.com';
@@ -157,5 +162,36 @@ describe('getCookieDomain', () => {
 
     mockSiteUrl = 'http://127.0.0.1:3000';
     expect(getCookieDomain()).toBeUndefined();
+  });
+});
+
+describe('getPublicApexOrigin', () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs();
+    mockSiteUrl = 'https://kytbox.com';
+  });
+
+  it('strips app. and www. prefixes from current origin', () => {
+    expect(getPublicApexOrigin('https://app.kytbox.com')).toBe('https://kytbox.com');
+    expect(getPublicApexOrigin('https://www.kytbox.com')).toBe('https://kytbox.com');
+    expect(getPublicApexOrigin('https://kytbox.com')).toBe('https://kytbox.com');
+  });
+
+  it('preserves port and strips app prefix for localhost in development', () => {
+    expect(getPublicApexOrigin('http://app.localhost:3000')).toBe('http://localhost:3000');
+    expect(getPublicApexOrigin('http://localhost:3000')).toBe('http://localhost:3000');
+  });
+
+  it('falls back to site URL when currentOrigin is not provided', () => {
+    mockSiteUrl = 'https://app.kytbox.com';
+    expect(getPublicApexOrigin()).toBe('https://kytbox.com');
+
+    mockSiteUrl = 'https://kytbox.com';
+    expect(getPublicApexOrigin()).toBe('https://kytbox.com');
+  });
+
+  it('handles invalid currentOrigin by falling back to site URL', () => {
+    mockSiteUrl = 'https://kytbox.com';
+    expect(getPublicApexOrigin('invalid-url')).toBe('https://kytbox.com');
   });
 });

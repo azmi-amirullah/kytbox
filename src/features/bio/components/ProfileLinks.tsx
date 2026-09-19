@@ -505,8 +505,8 @@ export default function ProfileLinks({
                         </div>
                         <div className='space-y-1.5 mt-4'>
                           <div className='flex items-center gap-1.5 text-[11px] text-primary font-medium tracking-wide uppercase'>
-                            <span className={cn('w-2 h-2 rounded-full', isAudioLoading ? 'bg-amber-500 animate-pulse' : isAudioPlaying ? 'bg-emerald-500 animate-pulse' : 'bg-primary/50')} />
-                            <span>{isAudioLoading ? 'Loading Audio...' : isAudioPlaying ? 'Now Playing' : 'Audio Stream'}</span>
+                            <span className={cn('w-2 h-2 rounded-full', isAudioPlaying ? 'bg-emerald-500 animate-pulse' : 'bg-primary/50')} />
+                            <span>{isAudioPlaying ? 'Now Playing' : 'Audio Stream'}</span>
                           </div>
                           <h3 className='text-base font-bold line-clamp-2 leading-snug'>{link.title}</h3>
                           {link.audio_artist && (
@@ -546,11 +546,6 @@ export default function ProfileLinks({
                                 <span className='flex h-2 w-2 relative shrink-0'>
                                   <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75' />
                                   <span className='relative inline-flex rounded-full h-2 w-2 bg-emerald-500' />
-                                </span>
-                              )}
-                              {isAudioLoading && (
-                                <span className='text-[10px] text-amber-500 font-medium animate-pulse shrink-0'>
-                                  Loading...
                                 </span>
                               )}
                             </div>

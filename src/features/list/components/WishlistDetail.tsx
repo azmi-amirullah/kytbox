@@ -28,6 +28,7 @@ import AddWishlistItemModal from './AddWishlistItemModal';
 import EditListModal from './EditListModal';
 import DeleteListDialog from './DeleteListDialog';
 import { wishlistMetadataClientSchema } from '../schemas.client';
+import { getPublicApexOrigin } from '@/lib/origin';
 import {
   DndContext,
   closestCenter,
@@ -135,7 +136,7 @@ export default function WishlistDetail({
   const handleCopyPublicLink = async () => {
     const slug = currentList.slug || currentList.id;
     const path = `/${username}/list/${slug}`;
-    const url = `${window.location.origin}${path}`;
+    const url = `${getPublicApexOrigin(window.location.origin)}${path}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success('Public link copied to clipboard');
@@ -217,12 +218,12 @@ export default function WishlistDetail({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className='cursor-pointer'
-                        onClick={() =>
-                          window.open(
-                            `/${username}/list/${currentList.slug || currentList.id}`,
-                            '_blank',
-                          )
-                        }
+                        onClick={() => {
+                          const slug = currentList.slug || currentList.id;
+                          const path = `/${username}/list/${slug}`;
+                          const url = `${getPublicApexOrigin(window.location.origin)}${path}`;
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                        }}
                       >
                         <LuExternalLink className='w-4 h-4 mr-2' />
                         View Public Page

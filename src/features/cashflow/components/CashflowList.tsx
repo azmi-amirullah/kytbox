@@ -21,6 +21,7 @@ import {
   LuPinOff,
   LuArchive,
   LuArchiveRestore,
+  LuGlobe,
 } from 'react-icons/lu'
 import {
   DropdownMenu,
@@ -462,6 +463,14 @@ export default function CashflowList({
                       {cashflow.title}
                     </Link>
                   </h2>
+
+                  {/* Public Badge */}
+                  {cashflow.is_public && (
+                    <span className='inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0'>
+                      <LuGlobe className='w-3 h-3' />
+                      Public
+                    </span>
+                  )}
 
                   {/* Pinned Badge on Owned Books */}
                   {isOwned && isItemPinned && !isArchived && (

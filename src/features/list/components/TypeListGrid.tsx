@@ -13,6 +13,7 @@ import { LuPlus, LuLayoutGrid, LuHeart, LuLightbulb } from 'react-icons/lu';
 interface TypeListGridProps {
   lists: ListDTO[];
   type: ListType;
+  username?: string;
 }
 
 const TYPE_META: Record<
@@ -44,7 +45,7 @@ const TYPE_META: Record<
   },
 };
 
-export default function TypeListGrid({ lists, type }: TypeListGridProps) {
+export default function TypeListGrid({ lists, type, username }: TypeListGridProps) {
   const searchParams = useSearchParams();
   const action = searchParams.get('action');
 
@@ -143,7 +144,7 @@ export default function TypeListGrid({ lists, type }: TypeListGridProps) {
       ) : (
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
           {lists.map((list) => (
-            <ListCard key={list.id} list={list} />
+            <ListCard key={list.id} list={list} username={username} />
           ))}
         </div>
       )}

@@ -116,6 +116,24 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Platform routes AND auth routes (must be on app subdomain)
+  const platformRoutes = [
+    '/app',
+    '/bio',
+    '/garage',
+    '/list',
+    '/onboarding',
+    '/settings',
+    '/support',
+    '/support-admin',
+    '/admin',
+    '/update-password',
+    '/cashflow',
+    '/login',
+    '/signup',
+  ];
+  const isPlatformRoute = platformRoutes.some(matchesRoute);
+
   // 1. If on app subdomain (app.kytbox.com or app.localhost):
   if (isAppSubdomain) {
     if (pathname === '/') {
@@ -123,27 +141,30 @@ export async function proxy(request: NextRequest) {
       url.pathname = '/app';
       return applyCorsHeaders(NextResponse.redirect(url));
     }
+
+    // Public routes (like /[username], /[username]/list, /[username]/list/[slug], /[username]/[linkId])
+    // should NOT be served on app.kytbox.com. Redirect them to the apex domain.
+    const isAppSpecificPath =
+      isPlatformRoute ||
+      pathname.startsWith('/auth') ||
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/monitoring');
+
+    if (!isAppSpecificPath) {
+      const port = request.nextUrl.port ? `:${request.nextUrl.port}` : '';
+      const baseHost = hostname
+        .replace(`:${request.nextUrl.port}`, '')
+        .replace(/^app\./, '');
+      const targetHost = `${baseHost}${port}`;
+
+      const apexUrl = new URL(request.nextUrl.toString());
+      apexUrl.host = targetHost;
+      return applyCorsHeaders(NextResponse.redirect(apexUrl, 308));
+    }
   } else {
     // 2. If on root apex domain (kytbox.com or localhost):
     // Redirect platform routes AND auth routes to app subdomain so login is saved on app subdomain
-    const platformRoutes = [
-      '/app',
-      '/bio',
-      '/garage',
-      '/list',
-      '/onboarding',
-      '/settings',
-      '/support',
-      '/support-admin',
-      '/admin',
-      '/update-password',
-      '/cashflow/goal',
-      '/login',
-      '/signup',
-    ];
-    const isPlatformRoute =
-      platformRoutes.some(matchesRoute) || pathname === '/cashflow';
-
     if (isPlatformRoute) {
       // Determine app subdomain host
       const port = request.nextUrl.port ? `:${request.nextUrl.port}` : '';

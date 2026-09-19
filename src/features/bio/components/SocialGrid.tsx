@@ -11,6 +11,48 @@ interface SocialGridProps {
   isLoading?: boolean;
 }
 
+const SOCIAL_PLATFORM_ORDER: readonly string[] = [
+  'instagram',
+  'tiktok',
+  'twitter',
+  'x',
+  'x.com',
+  'youtube',
+  'linkedin',
+  'whatsapp',
+  'facebook',
+  'github',
+  'spotify',
+  'twitch',
+  'discord',
+  'telegram',
+  'snapchat',
+  'pinterest',
+  'medium',
+  'reddit',
+  'behance',
+  'dribbble',
+];
+
+function getPlatformOrder(key: string, url: string): number {
+  const normalizedKey = key.toLowerCase();
+  const directIndex = SOCIAL_PLATFORM_ORDER.indexOf(normalizedKey);
+  if (directIndex !== -1) {
+    return directIndex;
+  }
+
+  const detected = detectSocialPlatform(url);
+  if (detected) {
+    const detectedName = detected.name.toLowerCase();
+    const detectedIndex = SOCIAL_PLATFORM_ORDER.indexOf(detectedName);
+    if (detectedIndex !== -1) {
+      return detectedIndex;
+    }
+  }
+
+  return 999;
+}
+
 export default function SocialGrid({
   socialLinks,
   theme,
@@ -41,7 +83,16 @@ export default function SocialGrid({
     );
   }
 
-  const links = Object.entries(socialLinks).filter(([, url]) => !!url);
+  const links = Object.entries(socialLinks)
+    .filter(([, url]) => Boolean(url))
+    .sort(([keyA, urlA], [keyB, urlB]) => {
+      const orderA = getPlatformOrder(keyA, urlA);
+      const orderB = getPlatformOrder(keyB, urlB);
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return keyA.localeCompare(keyB);
+    });
 
   if (links.length === 0) return null;
 

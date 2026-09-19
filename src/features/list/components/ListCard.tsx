@@ -12,6 +12,8 @@ import {
   LuTrash2,
   LuGlobe,
   LuLock,
+  LuCopy,
+  LuExternalLink,
 } from 'react-icons/lu';
 import {
   DropdownMenu,
@@ -25,6 +27,7 @@ import EditListModal from './EditListModal';
 import DeleteListDialog from './DeleteListDialog';
 import { toggleListPublic } from '../actions';
 import { toast } from 'react-toastify';
+import { getPublicApexOrigin } from '@/lib/origin';
 
 const TYPE_CONFIG: Record<
   ListType,
@@ -52,9 +55,10 @@ const TYPE_CONFIG: Record<
 
 interface ListCardProps {
   list: ListDTO;
+  username?: string;
 }
 
-export default function ListCard({ list }: ListCardProps) {
+export default function ListCard({ list, username }: ListCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const config = TYPE_CONFIG[list.type];
@@ -122,6 +126,39 @@ export default function ListCard({ list }: ListCardProps) {
                       </>
                     )}
                   </DropdownMenuItem>
+                  {list.is_public && Boolean(username) && (
+                    <>
+                      <DropdownMenuItem
+                        className='cursor-pointer'
+                        onClick={async () => {
+                          const slug = list.slug || list.id;
+                          const path = `/${username}/list/${slug}`;
+                          const url = `${getPublicApexOrigin(window.location.origin)}${path}`;
+                          try {
+                            await navigator.clipboard.writeText(url);
+                            toast.success('Public link copied to clipboard');
+                          } catch {
+                            toast.error('Failed to copy link');
+                          }
+                        }}
+                      >
+                        <LuCopy className='w-4 h-4 mr-2' />
+                        Copy Public Link
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className='cursor-pointer'
+                        onClick={() => {
+                          const slug = list.slug || list.id;
+                          const path = `/${username}/list/${slug}`;
+                          const url = `${getPublicApexOrigin(window.location.origin)}${path}`;
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                        }}
+                      >
+                        <LuExternalLink className='w-4 h-4 mr-2' />
+                        View Public Page
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem
                     onClick={() => setIsDeleteOpen(true)}
                     className='text-destructive focus:text-destructive'
