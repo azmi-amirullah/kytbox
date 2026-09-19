@@ -432,110 +432,13 @@
 
 ---
 
-## 🔮 Future Ideas Backlog (Next 30 Days+)
+## 🔮 Future Ideas Backlog
 
 > [!NOTE]
-> Ideas that didn't make this sprint but are **worth building**. Organized by app. Impact rated 🔥🔥🔥 (high) to 🔥 (nice-to-have). Pull from this list when planning the next sprint.
-
----
-
-### 🔗 Bio App
-
-| Idea | Description | Impact | Effort |
-| --- | --- | --- | --- |
-| **Link A/B Testing** | Show 2 versions of a link (different titles/positions), track which gets more clicks | 🔥🔥 | ~5h |
-| **Link Expiry Countdown** | Display a visible countdown timer on expiring links ("Expires in 2h 30m") | 🔥🔥 | ~2h |
-| **Testimonials Widget** | Display customer reviews/testimonials on bio page | 🔥🔥 | ~3h |
-| **Bio Page Password Protection** | Password-protect entire bio page or specific folders | 🔥 | ~3h |
-| **Custom CSS Editor** | Power users write their own CSS for full customization beyond themes | 🔥 | ~3h |
-| **Bio Music Player** | Persistent audio player widget (not embed). Auto-play a track on land | 🔥 | ~4h |
-| **Link Click Heatmap** | Visual heatmap showing which links get clicked most by position on page | 🔥🔥 | ~4h |
-| **Contact Form Widget** | Embeddable contact form on bio page. Messages go to support inbox | 🔥🔥 | ~3h |
-| **Bio Page Views Counter** | Display "X,XXX profile views" publicly on bio page | 🔥 | ~1h |
-| **Animated Link Previews** | Hover/tap shows a mini preview of the destination URL | 🔥 | ~4h |
-| **Multi-page Bio** | Multiple bio pages per user (personal, business, portfolio) | 🔥🔥 | ~6h |
-
----
-
-### 💰 Cashflow App
-
-| Idea | Description | Impact | Effort |
-| --- | --- | --- | --- |
-| **Bulk Edit/Delete** | Select multiple entries → change category, delete, or shift dates | 🔥🔥 | ~3h |
-| **Expense Splitting** | Splitwise-style shared expenses ("Alice owes Bob $20 for dinner") | 🔥🔥 | ~6h |
-| **Net Worth Tracker** | Track total assets + liabilities across all cashflow books | 🔥🔥 | ~4h |
-| **Currency Conversion** | Multi-currency cashflows with auto-conversion rates | 🔥 | ~5h |
-| **Cashflow Templates** | Pre-built templates ("Freelancer Monthly", "Household Budget") | 🔥🔥 | ~2h |
-| **Financial Insights** | AI-generated insights ("Your food spending is 30% higher than last month") | 🔥🔥🔥 | ~4h |
-| **Debt Snowball/Avalanche Tracker** | Track multiple debts with payoff strategies | 🔥🔥 | ~5h |
-
----
-
-### 📋 List App
-
-| Idea | Description | Impact | Effort |
-| --- | --- | --- | --- |
-| **Assign to Collaborators** | Assign cards to specific people when sharing is active | 🔥🔥 | ~4h |
-| **Wishlist Price Alerts** | Auto-scrape price from `purchase_url`, notify when price drops | 🔥🔥🔥 | ~6h |
-| **Import from Trello/Notion** | JSON/CSV import for users migrating from competitor tools | 🔥🔥 | ~4h |
-| **Card Comments** | Comment thread on each card for discussions | 🔥 | ~3h |
-| **Card Attachments** | Attach files and images directly to cards with Supabase Storage | 🔥 | ~4h |
-| **Archiving** | Archive completed boards instead of deleting | 🔥 | ~2h |
-| **Wishlist Price Comparison** | Compare prices across multiple stores for the same item | 🔥 | ~3h |
-| **Public List / Wishlist Sharing (`/{username}/list`)** | Share public read-only lists/boards linked to public bio profile | 🔥🔥🔥 | ~5h |
-| **List Sharing with ACL** | Share lists with read/edit permissions | 🔥🔥🔥 | ~5h |
-| **Kanban WIP Limits** | Set maximum cards per column ("In Progress: max 3") | 🔥 | ~2h |
-| **Task Date Ranges & Timeline View** | Support `start_date` + multi-day spanning Gantt bars across calendar & timeline | 🔥🔥 | ~5h |
-
----
-
-### 🏗️ Platform-Level
-
-| Idea | Description | Impact | Effort |
-| --- | --- | --- | --- |
-| **Two-Factor Auth (TOTP 2FA)** | Authenticator app 2FA (QR code setup + recovery codes) for enterprise security | 🔥🔥 | ~6h |
-| **Multi-language Support (`next-intl`)** | Full internationalization framework (EN, ID, ES) with locale switcher | 🔥🔥 | ~8h |
-| **Session Management Dashboard** | View active sessions (device, browser, IP) and remote revocation | 🔥 | ~6h |
-| **Browser Extension** | Quick-add links to Bio from any webpage | 🔥🔥 | ~6h |
-| **Telegram/Discord Bot** | Add cashflow entries or check bio stats from chat | 🔥🔥 | ~5h |
-| **API Access + Webhooks** | Public developer API for integrations and webhooks | 🔥🔥 | ~6h |
-| **Mobile App (Capacitor)** | Wrap PWA as native iOS/Android app via Capacitor | 🔥🔥🔥 | ~8h |
-| **Team Workspaces** | Multiple users, one workspace with role-based access control | 🔥🔥🔥 | ~10h |
-| **Keyboard Shortcuts Guide** | `?` key opens full shortcut reference overlay | 🔥 | ~1h |
-| **Public Roadmap** | `/roadmap` — voteable public roadmap | 🔥🔥 | ~4h |
-| **Referral System** | "Invite friends, get perks." Viral growth loop | 🔥🔥🔥 | ~5h |
-| **Dark/Light per App** | Dashboard in dark mode, bio page in custom theme | 🔥 | ~2h |
-| **Email Notifications** | Opt-in email digests: weekly analytics summary, budget alerts | 🔥🔥 | ~4h |
-| **OAuth: Apple + GitHub** | Additional OAuth providers beyond Google | 🔥🔥 | ~3h |
-
----
-
-### 💵 Monetization (When Ready)
-
-| Idea | Description | Impact | Effort |
-| --- | --- | --- | --- |
-| **`canAccess()` Feature Gate** | Utility function to check user tier before showing Pro features | 🔥🔥🔥 | ~1h |
-| **Lemon Squeezy Integration** | Payment processing via MoR. Subscriptions table, webhooks | 🔥🔥🔥 | ~8h |
-| **Upgrade UI + Paywalls** | "Upgrade to Pro" buttons, feature comparison modal | 🔥🔥🔥 | ~4h |
-| **Usage Analytics Dashboard** | Admin page showing MRR, churn rate, conversion rate | 🔥🔥 | ~4h |
-| **Trial Period** | 14-day free trial of Pro features with auto-downgrade | 🔥🔥 | ~3h |
-| **Pricing Page** | `/pricing` — public pricing comparison page | 🔥🔥🔥 | ~3h |
-
----
-
-### 📊 Infrastructure (When Scale Demands)
-
-| Idea | Description | Impact | Effort |
-| --- | --- | --- | --- |
-| **Load/Stress Testing** | k6 or Artillery — simulate 1000 concurrent users on public profiles | 🔥🔥 | ~3h |
-| **Domain-Driven Feature Folders Refactor** | Move to vertical slice feature folders for better code organization at scale | 🔥🔥 | ~10h+ |
-| **Visual Regression CI** | Auto-compare Playwright screenshots on every PR | 🔥🔥 | ~3h |
-| **Staging Environment** | Separate Supabase project + Vercel preview branch | 🔥🔥🔥 | ~4h |
-| **Database Read Replicas** | Read from replica, write to primary when query load justifies it | 🔥 | ~4h |
-| **Edge Functions** | Move heavy/frequent queries to Supabase Edge Functions | 🔥 | ~4h |
-| **Rate Limit Dashboard** | Admin view of rate limit hits | 🔥 | ~2h |
-| **Automated DB Backups** | Scheduled Supabase backups with point-in-time recovery testing | 🔥🔥🔥 | ~2h |
+> All strategic backlog items across all apps have been consolidated and curated into the centralized single-source-of-truth: [`backlog.md`](file:///c:/Users/Azmi/Documents/Azmi/Project/kytbox/backlog.md).
+> Completed, obsolete, and low-impact ideas have been removed.
 
 ---
 
 _Last Updated: August 31, 2026_
+

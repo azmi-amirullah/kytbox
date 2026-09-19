@@ -609,64 +609,13 @@
 
 ---
 
-## 🔮 Curated Strategic Backlog (Future & Q4 2026+)
+## 🔮 Curated Strategic Backlog
 
 > [!NOTE]
-> Items here are either deferred until scale demands them (2FA, Monetization, Bank Sync, i18n, Board Collaboration ACL) or reserved for Q4.
-
----
-
-### 🏎️ Garage App (Backlog)
-| Idea | Description | Impact | Effort |
-| :--- | :--- | :---: | :---: |
-| **Tire Tread & Brake Wear Depth Tracker** | Track millimeter wear depth over time for performance vehicles | 🔥🔥 | ~3h |
-| **OBD-II Diagnostic Trouble Code (DTC) Lookup** | Search engine for check engine light fault codes (P0300, etc.) | 🔥🔥🔥 | ~4h |
-| **Vehicle Resale Value & Depreciation Estimator** | Mileage-based valuation graph based on market depreciation curves | 🔥🔥 | ~4h |
-| **Service Invoice Photo Attachment** | Compressed WebP invoice capture tied to service records | 🔥🔥 | ~3h |
-
----
-
-### 🔗 Bio App (Backlog)
-| Idea | Description | Impact | Effort |
-| :--- | :--- | :---: | :---: |
-| **Multi-Page Profile Switcher (`alex/design`, `alex/gaming`)** | Multiple bio pages under one account | 🔥🔥 | ~5h |
-| **Custom Rich Content Blocks (`FAQ Accordion, Quotes`)** | Formatted markdown and FAQ accordions on bio profile | 🔥🔥 | ~4h |
-| **Link Click Visual Heatmap** | Spatial click-density visual overlay showing hotspots on Bento tiles | 🔥🔥🔥 | ~5h |
-| **Creator Tip Jar / Donation Widget** | Direct Buy-Me-A-Coffee / tip tile integrated on bio profiles | 🔥🔥🔥 | ~4h |
-| **Expiring Story Bubble Header** | 24-hour temporary visual story/update circle on creator avatar | 🔥🔥 | ~4h |
-
----
-
-### 💰 Cashflow App (Backlog)
-| Idea | Description | Impact | Effort |
-| :--- | :--- | :---: | :---: |
-| **Open Banking Auto-Sync (Plaid / Salt Edge)** | Live read-only bank transaction feeds for automated bookkeeping | 🔥🔥🔥 | ~8h |
-| **Net Worth Tracker (with Bank Sync)** | Automatic asset/liability ledger once bank connections are active | 🔥🔥🔥 | ~5h |
-| **AI Voice / Natural Language Expense Capture** | "Spent $14 on lunch at Chipotle" voice-to-entry transcription | 🔥🔥🔥 | ~5h |
-| **Debt Snowball & Avalanche Payoff Planner** | Mathematical debt payoff scheduler comparing interest savings | 🔥🔥 | ~4h |
-
----
-
-### 📋 List App (Backlog)
-| Idea | Description | Impact | Effort |
-| :--- | :--- | :---: | :---: |
-| **Board Collaboration & ACL Permissions (`Viewer | Editor`)** | Real-time multi-user board sharing when team users join | 🔥🔥🔥 | ~6h |
-| **Card Comments & Real-Time Activity Stream** | Asynchronous card discussion threads | 🔥🔥 | ~4h |
-| **Two-Way Google / Apple Calendar Sync** | Push card deadlines and reminders directly to external calendar apps | 🔥🔥🔥 | ~5h |
-| **Visual Timeline / Gantt View** | Multi-day spanning milestone bars across a zoomable timeline | 🔥🔥 | ~6h |
-
----
-
-### 🏗️ Platform, Growth & Monetization (Backlog)
-| Idea | Description | Impact | Effort |
-| :--- | :--- | :---: | :---: |
-| **Two-Factor Authentication (`TOTP 2FA + Recovery Codes`)** | Supabase MFA, NIST-grade hashed recovery codes, and AAL2 verification when public user volume and account security demand it | 🔥🔥 | ~6h |
-| **Public Community Roadmap & Voting (`/roadmap`)** | User-facing feature voting board when active user volume warrants it | 🔥🔥 | ~4h |
-| **Multi-Language Framework (`next-intl`)** | Internationalization when non-English user adoption justifies it | 🔥🔥 | ~8h |
-| **Viral Referral Perks Engine** | "Invite 3 friends, unlock exclusive themes and pro badges" | 🔥🔥🔥 | ~5h |
-| **Lemon Squeezy MoR Billing & `/pricing`** | Pro subscription checkout ($2/mo or $10/year) when organic scale warrants it | 🔥🔥🔥 | ~8h |
-| **Native Mobile PWA Shell (Capacitor)** | Direct deployment to Apple App Store and Google Play Store | 🔥🔥🔥 | ~8h |
+> All strategic backlog items across all apps have been consolidated and curated into the centralized single-source-of-truth: [`backlog.md`](file:///c:/Users/Azmi/Documents/Azmi/Project/kytbox/backlog.md).
+> Speculative, deprecated, and low-impact ideas have been discarded.
 
 ---
 
 _Last Updated: September 30, 2026_
+
