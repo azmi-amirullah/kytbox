@@ -10,6 +10,14 @@ export async function proxy(request: NextRequest) {
   const matchesRoute = (route: string) =>
     pathname === route || pathname.startsWith(`${route}/`);
 
+  const isStaticAsset =
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js' ||
+    pathname.startsWith('/tesseract/') ||
+    pathname.startsWith('/icons/') ||
+    pathname.startsWith('/screenshots/') ||
+    /\.(?:svg|png|jpg|jpeg|gif|webp|ico|json|wasm|gz|js|css)$/.test(pathname);
+
   const origin = request.headers.get('origin') || '';
   const isAllowedCors = origin && isAllowedOrigin(origin);
 
@@ -142,10 +150,9 @@ export async function proxy(request: NextRequest) {
       return applyCorsHeaders(NextResponse.redirect(url));
     }
 
-    // Public routes (like /[username], /[username]/list, /[username]/list/[slug], /[username]/[linkId])
-    // should NOT be served on app.kytbox.com. Redirect them to the apex domain.
     const isAppSpecificPath =
       isPlatformRoute ||
+      isStaticAsset ||
       pathname.startsWith('/auth') ||
       pathname.startsWith('/api') ||
       pathname.startsWith('/_next') ||
@@ -208,7 +215,7 @@ export async function proxy(request: NextRequest) {
     .some((c) => c.name.includes('-auth-token'));
   const isMixedRoute = pathname.startsWith('/cashflow/');
 
-  if (!isProtectedRoute && !isAuthRoute && !hasAuthCookies && !isMixedRoute) {
+  if (isStaticAsset || (!isProtectedRoute && !isAuthRoute && !hasAuthCookies && !isMixedRoute)) {
     const response = NextResponse.next({
       request: { headers: requestHeaders },
     });
@@ -305,6 +312,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Match all routes except static files and API routes
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|tesseract/|icons/|screenshots/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json|wasm|gz|ico)$).*)',
   ],
 };

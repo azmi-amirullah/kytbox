@@ -84,6 +84,62 @@ describe('Client-Side Zero-Storage Receipt Extractor (parseReceiptText)', () => 
     expect(result.date).toBe('2026-09-10');
   });
 
+  it('accurately parses mobile e-commerce screenshots with status bars and order lists (e.g. Shopee)', () => {
+    const rawText = `
+      2:52 al 4G @
+      & Pesanan Saya @ 4
+      Semua  BelumBayar Dikemas Dikirim Selesai Pen
+      AEROSTREET Official Shop Dikemas
+      Aerostreet 37-41 Ortiz Natural Natural Krem...
+      Natural Krem,37 a
+      Rp299.800Rp189.900
+      Total 1 produk: Rp141.298
+      Estimasi Tiba: 23 Ags - 25 Ags
+      Hubungi Penjual
+       KORMESIC Beauty Dikemas
+      BPOM] CLABEAU Clarity Beauty Brightenin...
+      v Rp120.000 Rp60.199
+      Total 1 produk: Rp60.801
+      Estimasi Tiba: 21 Ags - 24 Ags
+      Hubungi Penjual
+      ———— Kamu Mungkin Juga Suka ———
+    `;
+
+    const result = parseReceiptText(rawText);
+    expect(result.merchant).toBe('Clothing & Apparel');
+    expect(result.category).toBe('shopping');
+    expect(result.suggestedTags).toContain('fashion');
+    expect(result.amount).toBe(141298);
+  });
+
+  it('accurately parses thermal supermarket receipts with multiline totals and logo artifacts (e.g. Top 100)', () => {
+    const rawText = `
+      i = i
+      |
+      \\
+      ? TOP 100, Po
+      ae Plaza Top 100 Regency #A1
+      Terminal : T0211   17/08/2026 05:52:01 PM
+      Cashier : 0211
+      MULTI MP-08 SOFT 1KG @ 28,500
+      8992931025000   2 PCS = 57,000
+      WIPOL RF 1400G CEMARA @ 23,500
+      899999595968   1 PCS = 23,500
+      INDOMIE SOTO MEDAN 70G @ 2,900
+      089686010312   6 PCS = 17,400
+      Total Rp.:
+      610,815
+      Debit Card 610,815
+    `;
+
+    const result = parseReceiptText(rawText);
+    expect(result.merchant).toBe('Top 100');
+    expect(result.category).toBe('food');
+    expect(result.amount).toBe(610815);
+    expect(result.date).toBe('2026-08-17');
+    expect(result.suggestedTags).toContain('groceries');
+  });
+
   it('returns null fields and zero confidence for blank or unparseable input', () => {
     const emptyResult = parseReceiptText('');
     expect(emptyResult.merchant).toBeNull();

@@ -28,16 +28,21 @@ export async function preprocessReceiptImage(file: File): Promise<Blob> {
     img.onload = () => {
       URL.revokeObjectURL(objectUrl);
 
-      const maxDim = 1500;
       let { width, height } = img;
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
+      // Adaptive scaling: Upscale small photos to ensure text height meets Tesseract's minimum LSTM threshold (~20px x-height).
+      // Downscale ultra-high-res photos to 2200px max edge to optimize OCR speed and memory.
+      const minLongEdge = 1600;
+      const maxLongEdge = 2200;
+      const currentLongEdge = Math.max(width, height);
+
+      if (currentLongEdge < minLongEdge) {
+        const scale = minLongEdge / currentLongEdge;
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      } else if (currentLongEdge > maxLongEdge) {
+        const scale = maxLongEdge / currentLongEdge;
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
       }
 
       const canvas = document.createElement('canvas');
@@ -93,6 +98,109 @@ export async function preprocessReceiptImage(file: File): Promise<Blob> {
 }
 
 /**
+ * Helper to identify and filter out phone status bar, app navigation, action buttons, and receipt noise.
+ */
+function isNoiseLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (trimmed.length < 2) return true;
+
+  // 0. Symbols, single characters, or repetitive noise like "i = i", "|", "\", "?", "== Ty a"
+  if (/^[\s|/\\=~_\-+*#?.,:;a-z]{1,4}$/i.test(trimmed) && !/^[a-z]{3,}$/i.test(trimmed)) {
+    return true;
+  }
+  if (/^[=~_\-+*|\\/]+\s*[a-z0-9]?\s*[=~_\-+*|\\/]*$/i.test(trimmed)) {
+    return true;
+  }
+  if (/^[a-z]\s*=\s*[a-z]$/i.test(trimmed)) {
+    return true;
+  }
+
+  // 1. Mobile phone status bar (e.g. "2:52 al 4G @", "14:30 5G", "9:41 AM 100%")
+  if (/\b\d{1,2}[:.]\d{2}\b/.test(trimmed) && /\b(?:4g|5g|lte|volte|wifi|al|am|pm|\d{1,3}%|kb\/s|mb\/s)\b/i.test(trimmed)) {
+    return true;
+  }
+  if (/^\s*\d{1,2}[:.]\d{2}(?:\s*[ap]m)?\s*$/i.test(trimmed)) {
+    return true;
+  }
+  if (/^(?:4g|5g|lte|wifi|volte|\d{1,3}%|[\s\d:./%@|&~—_#*+<>-])+$/i.test(trimmed) && trimmed.length < 20) {
+    return true;
+  }
+
+  // 2. Mobile app navigation / screen headers (e.g. "Pesanan Saya", "Rincian Pesanan", "Detail Transaksi")
+  if (
+    /\b(pesanan saya|my orders?|rincian pesanan|detail pesanan|order details?|riwayat transaksi|detail transaksi|bukti transfer|status transaksi|status pesanan|daftar pesanan|keranjang saya|checkout)\b/i.test(
+      trimmed,
+    )
+  ) {
+    return true;
+  }
+
+  // 3. Navigation tabs (e.g. "Semua Belum Bayar Dikemas Dikirim Selesai")
+  if (
+    /(?:semua\s+belum\s*bayar|dikemas\s+dikirim|dikirim\s+selesai|belum\s*bayar|dibatalkan\s+pengembalian)/i.test(
+      trimmed,
+    )
+  ) {
+    return true;
+  }
+
+  // 4. Action buttons & recommendations (e.g. "Hubungi Penjual", "Beli Lagi", "Lacak", "Kamu Mungkin Juga Suka")
+  if (
+    /^(?:hubungi penjual|chat penjual|beli lagi|lacak|batalkan pesanan|ajukan pengembalian|rincian|lihat detail|kembali|beranda)\b/i.test(
+      trimmed,
+    )
+  ) {
+    return true;
+  }
+  if (/^[-—_\s]*(?:kamu mungkin juga suka|rekomendasi|you may also like)[-—_\s]*$/i.test(trimmed)) {
+    return true;
+  }
+
+  // 5. Delivery estimates & shipping metadata
+  if (/\b(?:estimasi tiba|perkiraan tiba|delivery estimate|ongkos kirim|ongkir)\b/i.test(trimmed)) {
+    return true;
+  }
+
+  // 6. Common receipt metadata / tax / phone / cashier noise
+  if (
+    /^(?:npwp|tax|telp|phone|date|tanggal|receipt|bill|invoice|table|meja|guest|order|kasir|cashier|antrian|queue|no\.)/i.test(
+      trimmed,
+    )
+  ) {
+    return true;
+  }
+
+  // 7. Pure digits / barcodes
+  if (/^\d+$/.test(trimmed.replace(/[\s\-_.:/]/g, ''))) {
+    return true;
+  }
+
+  // 8. Currency/price line without merchant
+  if (/^(?:rp|idr|\$|€|£)\s*[0-9.,]+$/i.test(trimmed)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Strips e-commerce platform badges, logo noise, and status tags from store name lines.
+ * E.g. "AEROSTREET Official Shop Dikemas" -> "AEROSTREET"
+ * E.g. "YF Top 100 | 2" -> "Top 100"
+ */
+function cleanMerchantLine(line: string): string {
+  return line
+    .replace(/^(?:mall\s*ori|mall|star\+|star|official\s*store|official\s*shop)\s+/i, '')
+    .replace(/\s+(?:dikemas|dikirim|selesai|dibatalkan|menunggu pembayaran|pesanan dibuat)$/i, '')
+    .replace(/\s+(?:official\s*shop|official\s*store|flagship\s*store)\b/i, '')
+    .replace(/^[^\w\s]+|[^\w\s]+$/g, '')
+    .replace(/^[a-z]{1,2}\s+(?=[a-z0-9])/i, '') // strip leading 1-2 char OCR artifacts like "YF ", "ae ", "? "
+    .replace(/\s*\|\s*\d+.*$/i, '') // strip trailing "| 2" or "| 1"
+    .replace(/\s*\|\s*$/i, '')
+    .trim();
+}
+
+/**
  * Intelligent regex and keyword extraction for raw receipt OCR text.
  * Extracts merchant name, total monetary amount, transaction date, and predicted category.
  */
@@ -116,43 +224,43 @@ export function parseReceiptText(rawText: string): ExtractedReceiptData {
   let merchant: string | null = null;
   let category: string | null = null;
   let suggestedTags: string[] | undefined = undefined;
+  let merchantLineIndex = -1;
 
-  // 1. Merchant Detection: Check header lines (first 6 lines)
-  const headerLines = lines.slice(0, 6);
-  for (const line of headerLines) {
-    // Ignore lines that look like tax IDs, dates, or pure numbers
-    if (/^(npwp|tax|telp|phone|date|tanggal|receipt|bill|invoice|no\.)/i.test(line)) {
-      continue;
-    }
-    if (/^\d+$/.test(line.replace(/[\s\-_.:/]/g, ''))) {
-      continue;
-    }
+  // 1. Merchant Detection: Scan non-noise lines (up to top 15 lines to accommodate mobile status bar and tabs)
+  const candidateLines = lines.slice(0, 15);
+  for (let idx = 0; idx < candidateLines.length; idx++) {
+    const line = candidateLines[idx];
+    if (isNoiseLine(line)) continue;
 
-    const match = resolveMerchantCategory(line);
+    const cleaned = cleanMerchantLine(line);
+    if (cleaned.length < 3) continue;
+
+    const match = resolveMerchantCategory(cleaned);
     if (match) {
-      merchant = match.merchantName || line;
+      merchant = match.merchantName || cleaned;
       category = match.category;
       suggestedTags = match.suggestedTags;
+      merchantLineIndex = idx;
       break;
     }
   }
 
-  // Fallback merchant: first prominent non-noise line from the top
-  if (!merchant && headerLines.length > 0) {
-    const candidate = headerLines.find(
-      (l) =>
-        l.length >= 3 &&
-        !/^(npwp|tax|telp|phone|date|tanggal|receipt|bill|invoice|table|meja|guest|order)/i.test(
-          l,
-        ) &&
-        !/^\d+$/.test(l.replace(/[\s\-_.:/]/g, '')),
-    );
-    if (candidate) {
-      merchant = candidate;
-      const match = resolveMerchantCategory(candidate);
-      if (match) {
-        category = match.category;
-        suggestedTags = match.suggestedTags;
+  // Fallback merchant: first prominent non-noise line from top
+  if (!merchant) {
+    for (let idx = 0; idx < candidateLines.length; idx++) {
+      const line = candidateLines[idx];
+      if (isNoiseLine(line)) continue;
+
+      const cleaned = cleanMerchantLine(line);
+      if (cleaned.length >= 3) {
+        merchant = cleaned;
+        merchantLineIndex = idx;
+        const match = resolveMerchantCategory(cleaned);
+        if (match) {
+          category = match.category;
+          suggestedTags = match.suggestedTags;
+        }
+        break;
       }
     }
   }
@@ -215,25 +323,54 @@ export function parseReceiptText(rawText: string): ExtractedReceiptData {
 
   // 3. Amount Detection
   let amount: number | null = null;
-  const totalKeywords =
-    /(total|grand total|jumlah|subtotal|amount due|tagihan|bayar|net amount|total bayar)/i;
 
-  // Search in reverse (totals are usually at the bottom)
-  for (let i = lines.length - 1; i >= 0; i--) {
+  // Pattern A: E-Commerce Order Cards (e.g. "Total 1 produk: Rp141.298", "Total Pesanan: Rp...")
+  // Search from the detected merchant line downwards to capture the matching order's total
+  const ecommerceTotalRegex =
+    /(?:total\s+\d+\s+produk|total\s+pesanan|total\s+belanja|total\s+pembayaran)\s*:\s*(?:rp|idr|\$|€|£)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?|[0-9]+)/i;
+
+  const searchStartIndex = merchantLineIndex >= 0 ? merchantLineIndex : 0;
+  for (let i = searchStartIndex; i < lines.length; i++) {
     const line = lines[i];
-    if (totalKeywords.test(line)) {
-      // Extract numbers with possible commas/dots
-      const numMatches = line.match(/(?:rp|idr|\$|€|£)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?|[0-9]+)/gi);
-      if (numMatches && numMatches.length > 0) {
-        // Take the last number on the total line
-        const lastNumStr = numMatches[numMatches.length - 1]
-          .replace(/(?:rp|idr|\$|€|£)\s*/gi, '')
-          .trim();
-        const parsedAmt = parseMonetaryString(lastNumStr);
-        if (parsedAmt !== null && parsedAmt > 0) {
-          amount = parsedAmt;
-          break;
+    const match = line.match(ecommerceTotalRegex);
+    if (match && match[1]) {
+      const parsedAmt = parseMonetaryString(match[1]);
+      if (parsedAmt !== null && parsedAmt > 0) {
+        amount = parsedAmt;
+        break;
+      }
+    }
+  }
+
+  // Pattern B: Traditional Receipt Pattern (search in reverse from bottom)
+  if (amount === null) {
+    const totalKeywords =
+      /(total|grand total|jumlah|subtotal|amount due|tagihan|bayar|net amount|total bayar)/i;
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (totalKeywords.test(line)) {
+        // Check current line first, then next line for two-column thermal receipts (e.g. "Total Rp.:" on line i, "610,815" on line i+1)
+        const candidateLines = [line];
+        if (i + 1 < lines.length && !totalKeywords.test(lines[i + 1])) {
+          candidateLines.push(lines[i + 1]);
         }
+        for (const cand of candidateLines) {
+          const numMatches = cand.match(
+            /(?:rp|idr|\$|€|£)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?|[0-9]+)/gi,
+          );
+          if (numMatches && numMatches.length > 0) {
+            const lastNumStr = numMatches[numMatches.length - 1]
+              .replace(/(?:rp|idr|\$|€|£)\s*/gi, '')
+              .trim();
+            const parsedAmt = parseMonetaryString(lastNumStr);
+            if (parsedAmt !== null && parsedAmt > 0) {
+              amount = parsedAmt;
+              break;
+            }
+          }
+        }
+        if (amount !== null) break;
       }
     }
   }
@@ -246,6 +383,9 @@ export function parseReceiptText(rawText: string): ExtractedReceiptData {
       const nums = line.match(/\b([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?|[0-9]{2,})\b/g);
       if (nums) {
         for (const n of nums) {
+          // Ignore raw barcodes (e.g. 8991001780140, 089686010312, 12931025000)
+          if (n.length >= 7 && !/[.,]/.test(n)) continue;
+
           const val = parseMonetaryString(n);
           if (val !== null && val > maxVal && val < 100000000) {
             maxVal = val;
@@ -336,7 +476,11 @@ export async function extractReceiptData(
   onProgress?.(30, 'Initializing OCR engine...');
   const { createWorker } = await import('tesseract.js');
 
-  const worker = await createWorker('eng', 1, {
+  const worker = await createWorker(['eng', 'ind'], 1, {
+    workerPath: '/tesseract/worker.min.js',
+    corePath: '/tesseract',
+    langPath: '/tesseract',
+    workerBlobURL: false,
     logger: (m) => {
       if (m.status === 'recognizing text' && typeof m.progress === 'number') {
         onProgress?.(30 + Math.round(m.progress * 60), 'Recognizing receipt text...');

@@ -1156,6 +1156,9 @@ export default function EntryModal({
                     <p className='text-[10px] text-muted-foreground mt-0.5'>
                       Drag & drop or click to browse (PNG, JPG, WebP)
                     </p>
+                    <p className='text-[10px] text-primary/80 mt-1 font-medium'>
+                      💡 Tip: Crop receipt or fill the frame for best OCR accuracy
+                    </p>
                   </div>
                 )}
 

@@ -58,6 +58,13 @@ export const BUILT_IN_MERCHANT_RULES: readonly BuiltInMerchantRule[] = [
 
   // --- Groceries & Supermarkets ---
   {
+    pattern: /\b(top\s*100|plaza\s*top\s*100)\b/i,
+    merchantName: 'Top 100',
+    category: 'food',
+    type: 'expense',
+    defaultTags: ['groceries'],
+  },
+  {
     pattern:
       /\b(indomaret|alfamart|alfamidi|superindo|hypermart|transmart|carrefour|hero|ranch market|farmers market|grand lucky|lottemart|giant|grocery|groceries|supermarket|trader joe|whole foods|costco|walmart|target)\b/i,
     merchantName: 'Groceries',
@@ -99,11 +106,31 @@ export const BUILT_IN_MERCHANT_RULES: readonly BuiltInMerchantRule[] = [
   // --- Shopping & Retail ---
   {
     pattern:
-      /\b(tokopedia|shopee|lazada|blibli|tiktok shop|amazon|zalora|uniqlo|zara|h&m|pull&bear|bershka|sephora|sociolla|decathlon|ikea|ace hardware|mr diy|gramedia|apple store|ibox|digimap|erafone|mall|retail|shopping)\b/i,
+      /\b(tokopedia|shopee|lazada|blibli|tiktok shop|amazon|zalora|decathlon|ikea|ace hardware|mr diy|gramedia|apple store|ibox|digimap|erafone|mall|retail|shopping)\b/i,
     merchantName: 'Shopping & Retail',
     category: 'shopping',
     type: 'expense',
     defaultTags: ['shopping'],
+  },
+
+  // --- Fashion, Clothing & Footwear ---
+  {
+    pattern:
+      /\b(aerostreet|erigo|roughneck|compass|ventela|geoff max|eiger|bodypack|exsport|elizabeth|cotton on|h&m|zara|uniqlo|pull&bear|stradivarius|bershka|pedro|charles & keith|bata|nevada|shoes|sneakers|baju|celana|kaos|jaket|sepatu|apparel|footwear)\b/i,
+    merchantName: 'Clothing & Apparel',
+    category: 'shopping',
+    type: 'expense',
+    defaultTags: ['fashion'],
+  },
+
+  // --- Beauty, Cosmetics & Personal Care ---
+  {
+    pattern:
+      /\b(somethinc|skintific|wardah|avoskin|scarlett|whitelab|kormesic|cosrx|the originote|kahf|make over|emina|hanasui|implora|dazzle me|focallure|otwoo|maybelline|loreal|sephora|sociolla|skincare|serum|sunscreen|beauty|kosmetik)\b/i,
+    merchantName: 'Beauty & Skincare',
+    category: 'shopping',
+    type: 'expense',
+    defaultTags: ['beauty'],
   },
 
   // --- Health, Pharmacy & Wellness ---

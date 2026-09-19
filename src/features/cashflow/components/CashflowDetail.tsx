@@ -66,6 +66,7 @@ import {
   LuGlobe,
   LuTriangleAlert,
   LuZap,
+  LuPaperclip,
 } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import type {
@@ -156,6 +157,7 @@ import {
   getDateFilterPresetMonthLabel,
   sortEntries,
   filterEntriesByTags,
+  filterEntriesByAttachment,
   isCashflowSortOption,
   formatCategoryName,
   type DateFilterState,
@@ -308,14 +310,24 @@ export default function CashflowDetail({
   const [isManageTagOpen, setIsManageTagOpen] = useState(false)
   const [managingTag, setManagingTag] = useState<string | null>(null)
 
-  // ── Search query ─────────────────────────────────────────────────────────────
+  // ── Search query & Attachment filter ────────────────────────────────────────
   const initialQuery = searchParams.get('q') || searchParams.get('search') || ''
   const [searchQuery, setSearchQuery] = useState(initialQuery)
+  const initialHasAttachment =
+    searchParams.get('has_attachment') === 'true' ||
+    searchParams.get('attachment') === 'true'
+  const [hasAttachmentOnly, setHasAttachmentOnly] =
+    useState(initialHasAttachment)
 
   useEffect(() => {
     const q = searchParams.get('q') || searchParams.get('search')
     if (q !== null) {
       setSearchQuery(q)
+    }
+    const attach =
+      searchParams.get('has_attachment') || searchParams.get('attachment')
+    if (attach !== null) {
+      setHasAttachmentOnly(attach === 'true')
     }
   }, [searchParams])
 
@@ -376,6 +388,14 @@ export default function CashflowDetail({
     return Array.from(set).sort((a, b) =>
       formatCategoryName(a).localeCompare(formatCategoryName(b)),
     )
+  }, [localEntries])
+
+  const totalAttachmentCount = useMemo(() => {
+    let count = 0
+    for (const e of localEntries) {
+      if (e.receipt_url && e.receipt_url.trim()) count++
+    }
+    return count
   }, [localEntries])
 
   const allUniqueTags = useMemo(() => {
@@ -453,7 +473,8 @@ export default function CashflowDetail({
     selectedCategory !== 'all' ||
     searchQuery.trim() !== '' ||
     sortBy !== 'date-desc' ||
-    selectedTags.length > 0
+    selectedTags.length > 0 ||
+    hasAttachmentOnly
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -461,9 +482,17 @@ export default function CashflowDetail({
     if (selectedType !== 'all') count++
     if (selectedCategory !== 'all') count++
     if (sortBy !== 'date-desc') count++
+    if (hasAttachmentOnly) count++
     if (selectedTags.length > 0) count += selectedTags.length
     return count
-  }, [filterState, selectedType, selectedCategory, sortBy, selectedTags])
+  }, [
+    filterState,
+    selectedType,
+    selectedCategory,
+    sortBy,
+    selectedTags,
+    hasAttachmentOnly,
+  ])
 
   const monthLabel = useMemo(
     () => getDateFilterPresetMonthLabel(filterState),
@@ -525,6 +554,7 @@ export default function CashflowDetail({
     setSearchQuery('')
     setSortBy('date-desc')
     setSelectedTags([])
+    setHasAttachmentOnly(false)
   }
 
   const filteredEntries = useMemo(() => {
@@ -537,6 +567,7 @@ export default function CashflowDetail({
     if (selectedCategory !== 'all') {
       filtered = filtered.filter((e) => e.category === selectedCategory)
     }
+    filtered = filterEntriesByAttachment(filtered, hasAttachmentOnly)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
       filtered = filtered.filter((e) =>
@@ -550,6 +581,7 @@ export default function CashflowDetail({
     filterState,
     selectedType,
     selectedCategory,
+    hasAttachmentOnly,
     searchQuery,
     sortBy,
     selectedTags,
@@ -570,6 +602,7 @@ export default function CashflowDetail({
     forType: string
     forCategory: string
     forSort: CashflowSortOption
+    forAttachment: boolean
   }>({
     page: 1,
     pageSize: 10,
@@ -578,6 +611,7 @@ export default function CashflowDetail({
     forType: selectedType,
     forCategory: selectedCategory,
     forSort: sortBy,
+    forAttachment: hasAttachmentOnly,
   })
 
   const currentPage =
@@ -585,7 +619,8 @@ export default function CashflowDetail({
     pageInfo.forSearch === searchQuery &&
     pageInfo.forType === selectedType &&
     pageInfo.forCategory === selectedCategory &&
-    pageInfo.forSort === sortBy
+    pageInfo.forSort === sortBy &&
+    pageInfo.forAttachment === hasAttachmentOnly
       ? pageInfo.page
       : 1
   const pageSize = pageInfo.pageSize
@@ -599,6 +634,7 @@ export default function CashflowDetail({
       forType: selectedType,
       forCategory: selectedCategory,
       forSort: sortBy,
+      forAttachment: hasAttachmentOnly,
     }))
   }
 
@@ -611,6 +647,7 @@ export default function CashflowDetail({
       forType: selectedType,
       forCategory: selectedCategory,
       forSort: sortBy,
+      forAttachment: hasAttachmentOnly,
     })
   }
 
@@ -2077,87 +2114,142 @@ export default function CashflowDetail({
               )}
             </div>
 
-            {/* Row 2: Tag Filter Strip */}
-            {allUniqueTags.length > 0 && (
-              <div className='flex flex-wrap items-center gap-1.5 px-3 sm:px-4 py-2.5 border-t border-border/40 bg-muted/10'>
-                <span className='text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1 shrink-0'>
-                  <LuTag className='w-3.5 h-3.5' /> Tags:
-                </span>
-                {allUniqueTags.map((tag) => {
-                  const isActive = selectedTags.includes(tag)
-                  const tagColor = resolveTagColor(tag, localTags)
-                  return (
-                    <div
-                      key={tag}
-                      className={cn(
-                        'group inline-flex items-center min-h-7 sm:min-h-6 rounded-md text-xs border leading-none transition-all duration-200 select-none',
-                        isActive
-                          ? cn(
-                              tagColor.activeBg,
-                              tagColor.activeText,
-                              tagColor.activeBorder,
-                              'shadow-xs ring-1 ring-black/10 dark:ring-white/20 scale-[1.02]',
-                            )
-                          : cn(
-                              tagColor.bg,
-                              tagColor.text,
-                              tagColor.border,
-                              'shadow-2xs font-medium hover:opacity-85',
-                            ),
-                      )}
-                    >
-                      <button
-                        type='button'
-                        aria-pressed={isActive}
-                        onClick={() => {
-                          setSelectedTags((prev) =>
+            {/* Row 2: Secondary Filter Strip (Tags & Attachment) */}
+            {(allUniqueTags.length > 0 ||
+              totalAttachmentCount > 0 ||
+              hasAttachmentOnly) && (
+              <div className='flex flex-wrap items-center gap-1.5 px-3 sm:px-4 py-2 border-t border-border/40 bg-muted/10'>
+                {/* Tags Section */}
+                {allUniqueTags.length > 0 && (
+                  <>
+                    <span className='text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1 shrink-0'>
+                      <LuTag className='w-3.5 h-3.5' /> Tags:
+                    </span>
+                    {allUniqueTags.map((tag) => {
+                      const isActive = selectedTags.includes(tag)
+                      const tagColor = resolveTagColor(tag, localTags)
+                      return (
+                        <div
+                          key={tag}
+                          className={cn(
+                            'group inline-flex items-center min-h-7 sm:min-h-6 rounded-md text-xs border leading-none transition-all duration-200 select-none',
                             isActive
-                              ? prev.filter((t) => t !== tag)
-                              : [...prev, tag],
-                          )
-                        }}
-                        className='inline-flex items-center px-2.5 py-1 cursor-pointer focus-visible:outline-none'
-                      >
-                        {isActive && (
-                          <LuCheck className='w-3 h-3 mr-1 shrink-0 animate-in fade-in zoom-in-75 duration-150' />
-                        )}
-                        <span className='shrink-0'>#{tag}</span>
-                      </button>
-                      {canEdit && (
-                        <span className='inline-flex items-center max-w-0 opacity-0 overflow-hidden group-hover:max-w-6 group-hover:opacity-100 group-hover:pr-1.5 group-focus-within:max-w-6 group-focus-within:opacity-100 group-focus-within:pr-1.5 transition-all duration-150 shrink-0'>
+                              ? cn(
+                                  tagColor.activeBg,
+                                  tagColor.activeText,
+                                  tagColor.activeBorder,
+                                  'shadow-xs ring-1 ring-black/10 dark:ring-white/20 scale-[1.02]',
+                                )
+                              : cn(
+                                  tagColor.bg,
+                                  tagColor.text,
+                                  tagColor.border,
+                                  'shadow-2xs font-medium hover:opacity-85',
+                                ),
+                          )}
+                        >
                           <button
                             type='button'
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              setManagingTag(tag)
-                              setIsManageTagOpen(true)
+                            aria-pressed={isActive}
+                            onClick={() => {
+                              setSelectedTags((prev) =>
+                                isActive
+                                  ? prev.filter((t) => t !== tag)
+                                  : [...prev, tag],
+                              )
                             }}
-                            aria-label={`Manage tag ${tag}`}
-                            className={cn(
-                              'p-0.5 focus-visible:outline-none rounded-xs cursor-pointer inline-flex items-center justify-center hover:scale-110 transition-transform',
-                              isActive
-                                ? 'text-inherit opacity-85 hover:opacity-100'
-                                : 'opacity-70 hover:opacity-100',
-                            )}
-                            title='Rename or delete tag'
+                            className='inline-flex items-center px-2.5 py-1 cursor-pointer focus-visible:outline-none'
                           >
-                            <LuPencil className='w-3 h-3' />
+                            {isActive && (
+                              <LuCheck className='w-3 h-3 mr-1 shrink-0 animate-in fade-in zoom-in-75 duration-150' />
+                            )}
+                            <span className='shrink-0'>#{tag}</span>
                           </button>
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
-                {selectedTags.length > 0 && (
+                          {canEdit && (
+                            <span className='inline-flex items-center max-w-0 opacity-0 overflow-hidden group-hover:max-w-6 group-hover:opacity-100 group-hover:pr-1.5 group-focus-within:max-w-6 group-focus-within:opacity-100 group-focus-within:pr-1.5 transition-all duration-150 shrink-0'>
+                              <button
+                                type='button'
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setManagingTag(tag)
+                                  setIsManageTagOpen(true)
+                                }}
+                                aria-label={`Manage tag ${tag}`}
+                                className={cn(
+                                  'p-0.5 focus-visible:outline-none rounded-xs cursor-pointer inline-flex items-center justify-center hover:scale-110 transition-transform',
+                                  isActive
+                                    ? 'text-inherit opacity-85 hover:opacity-100'
+                                    : 'opacity-70 hover:opacity-100',
+                                )}
+                                title='Rename or delete tag'
+                              >
+                                <LuPencil className='w-3 h-3' />
+                              </button>
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {selectedTags.length > 0 && (
+                      <button
+                        type='button'
+                        onClick={() => setSelectedTags([])}
+                        className='text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1.5 py-1 cursor-pointer'
+                      >
+                        Reset tags
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {/* Divider between tags and attachment filter */}
+                {allUniqueTags.length > 0 && (
+                  <div className='h-3.5 w-px bg-border/60 mx-1 hidden sm:block shrink-0' />
+                )}
+
+                {/* Receipt Filter Chip (after all tags on their right side) */}
+                <div
+                  className={cn(
+                    'group inline-flex items-center min-h-7 sm:min-h-6 rounded-md text-xs border leading-none transition-all duration-200 select-none',
+                    hasAttachmentOnly
+                      ? 'bg-amber-500/25 text-amber-900 dark:text-amber-100 border-amber-500 dark:border-amber-400 shadow-xs ring-1.5 ring-amber-500/50 scale-[1.02] font-semibold'
+                      : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-400/60 dark:border-amber-400/50 hover:bg-amber-500/20 shadow-2xs font-medium',
+                  )}
+                >
                   <button
                     type='button'
-                    onClick={() => setSelectedTags([])}
-                    className='text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 ml-1.5 py-1 cursor-pointer'
+                    aria-pressed={hasAttachmentOnly}
+                    onClick={() => setHasAttachmentOnly((prev) => !prev)}
+                    className='inline-flex items-center px-2.5 py-1 cursor-pointer focus-visible:outline-none'
+                    title={
+                      hasAttachmentOnly
+                        ? 'Show all entries'
+                        : totalAttachmentCount > 0
+                          ? `Filter ${totalAttachmentCount} ${totalAttachmentCount === 1 ? 'entry' : 'entries'} with receipt`
+                          : 'Filter entries with receipt'
+                    }
                   >
-                    Reset tags
+                    {hasAttachmentOnly ? (
+                      <LuCheck className='w-3 h-3 mr-1 shrink-0 animate-in fade-in zoom-in-75 duration-150 text-amber-800 dark:text-amber-200' />
+                    ) : (
+                      <LuPaperclip className='w-3 h-3 mr-1 shrink-0 text-amber-700 dark:text-amber-300' />
+                    )}
+                    <span>Receipt</span>
+                    {totalAttachmentCount > 0 && (
+                      <span
+                        className={cn(
+                          'text-[10px] px-1.5 py-0.2 rounded-full font-semibold leading-none ml-1',
+                          hasAttachmentOnly
+                            ? 'bg-amber-500/30 text-amber-950 dark:text-amber-50'
+                            : 'bg-amber-500/20 text-amber-800 dark:text-amber-200',
+                        )}
+                      >
+                        {totalAttachmentCount}
+                      </span>
+                    )}
                   </button>
-                )}
+                </div>
               </div>
             )}
           </div>

@@ -6,6 +6,8 @@ import {
 } from '@/features/cashflow/schemas.server'
 import { mapCashflowEntryToDTO } from '@/lib/mappers'
 import type { CashflowEntry } from '@/types/database'
+import type { CashflowEntryDTO } from '@/types/dto'
+import { filterEntriesByAttachment } from '@/features/cashflow/math'
 
 describe('Cashflow Receipt Schemas & Logic', () => {
   describe('cashflowEntrySchema receiptAction', () => {
@@ -160,6 +162,56 @@ describe('Cashflow Receipt Schemas & Logic', () => {
       expect(isSupportedImageFile(webpFile)).toBe(true)
       expect(isSupportedImageFile(txtFile)).toBe(false)
       expect(isSupportedImageFile(pdfFile)).toBe(false)
+    })
+  })
+
+  describe('filterEntriesByAttachment', () => {
+    function createMockEntry(
+      id: string,
+      receipt_url?: string | null,
+    ): CashflowEntryDTO {
+      return {
+        id,
+        cashflow_id: 'cf-test',
+        description: `Entry ${id}`,
+        amount: 100,
+        type: 'expense',
+        category: 'General',
+        date: '2026-08-18',
+        created_at: '2026-08-18T10:00:00Z',
+        is_recurring: false,
+        recurrence_interval: null,
+        yearly_calculation: null,
+        goal_id: null,
+        tags: [],
+        receipt_url,
+      }
+    }
+
+    it('returns all entries when hasAttachmentOnly is false', () => {
+      const mockEntries = [
+        createMockEntry('1', 'receipt-1.jpg'),
+        createMockEntry('2', null),
+        createMockEntry('3', undefined),
+      ]
+
+      const result = filterEntriesByAttachment(mockEntries, false)
+      expect(result).toHaveLength(3)
+    })
+
+    it('filters only entries with valid receipt_url when hasAttachmentOnly is true', () => {
+      const mockEntries = [
+        createMockEntry('1', 'receipt-1.jpg'),
+        createMockEntry('2', null),
+        createMockEntry('3', undefined),
+        createMockEntry('4', ''),
+        createMockEntry('5', '   '),
+        createMockEntry('6', 'receipt-6.webp'),
+      ]
+
+      const result = filterEntriesByAttachment(mockEntries, true)
+      expect(result).toHaveLength(2)
+      expect(result.map((e) => e.id)).toEqual(['1', '6'])
     })
   })
 })

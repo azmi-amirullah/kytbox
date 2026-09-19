@@ -970,6 +970,20 @@ export function filterEntriesByTags(
 }
 
 /**
+ * Filters cashflow entries by attachment presence.
+ *
+ * @param entries - List of cashflow entries
+ * @param hasAttachmentOnly - Whether to only include entries with an attachment
+ */
+export function filterEntriesByAttachment(
+  entries: CashflowEntryDTO[],
+  hasAttachmentOnly: boolean,
+): CashflowEntryDTO[] {
+  if (!hasAttachmentOnly) return entries;
+  return entries.filter((entry) => Boolean(entry.receipt_url && entry.receipt_url.trim()));
+}
+
+/**
  * Category breakdown item for financial reports.
  */
 export interface CategorySummaryItem {
