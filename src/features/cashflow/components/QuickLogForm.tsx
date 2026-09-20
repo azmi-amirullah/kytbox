@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   LuLoader,
   LuFileText,
   LuUsers,
+  LuPaperclip,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { addEntry } from '../actions';
@@ -32,10 +34,14 @@ import {
 } from '../constants';
 import { resolveMerchantCategory } from '../lib/merchant-rules';
 import { extractReceiptData } from '../lib/receipt-extractor';
-import { isSupportedImageFile } from '../lib/image-compression';
+import {
+  compressImageToWebP,
+  isSupportedImageFile,
+} from '../lib/image-compression';
 import { getCurrencySymbol } from '@/lib/currency';
 import { getTodayDateOnlyString } from '@/lib/date-only';
 import { cn } from '@/lib/utils';
+import { TagPicker } from './TagPicker';
 import type { AccessibleCashflow } from '../access';
 import type { CashflowEntryDTO } from '@/types/dto';
 
@@ -45,6 +51,7 @@ interface QuickLogFormProps {
   urlBookId?: string;
   defaultCurrency?: string;
   recentEntries?: CashflowEntryDTO[];
+  availableTags?: string[];
 }
 
 export default function QuickLogForm({
@@ -53,6 +60,7 @@ export default function QuickLogForm({
   urlBookId,
   defaultCurrency = 'USD',
   recentEntries = [],
+  availableTags = [],
 }: QuickLogFormProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -64,6 +72,7 @@ export default function QuickLogForm({
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<string | null>('food');
+  const [tags, setTags] = useState<string[]>([]);
   const [lastLoggedInfo, setLastLoggedInfo] = useState<{
     message: string;
     bookId: string;
@@ -73,8 +82,11 @@ export default function QuickLogForm({
   // OCR state
   const [isScanningReceipt, setIsScanningReceipt] = useState(false);
   const [ocrStatus, setOcrStatus] = useState<string | null>(null);
+  const [scannedReceiptFile, setScannedReceiptFile] = useState<File | null>(null);
+  const [attachReceipt, setAttachReceipt] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const isAiScanRef = useRef(false);
 
   // Auto-focus amount on mount
   useEffect(() => {
@@ -88,6 +100,10 @@ export default function QuickLogForm({
 
   // Auto-select category when merchant is recognized and user hasn't typed an amount yet or changed category
   useEffect(() => {
+    if (isAiScanRef.current) {
+      isAiScanRef.current = false;
+      return;
+    }
     if (merchantMatch && merchantMatch.category) {
       setCategory(merchantMatch.category);
     }
@@ -117,14 +133,21 @@ export default function QuickLogForm({
         setOcrStatus(status);
       });
 
+      setScannedReceiptFile(file);
+      setAttachReceipt(false); // Default OFF per user request
+
       if (extracted.amount !== null) {
         setAmount(extracted.amount.toString());
       }
       if (extracted.merchant) {
+        isAiScanRef.current = true;
         setDescription(extracted.merchant);
       }
       if (extracted.category) {
         setCategory(extracted.category);
+      }
+      if (extracted.suggestedTags && extracted.suggestedTags.length > 0) {
+        setTags(extracted.suggestedTags);
       }
 
       toast.success(
@@ -169,6 +192,24 @@ export default function QuickLogForm({
       if (category) {
         formData.append('category', category);
       }
+      if (tags.length > 0) {
+        formData.append('tagsJson', JSON.stringify(tags));
+      }
+
+      // Attach receipt image if user enabled the switch
+      if (attachReceipt && scannedReceiptFile) {
+        try {
+          const compressedBlob = await compressImageToWebP(scannedReceiptFile, {
+            maxDimension: 1600,
+            quality: 0.8,
+          });
+          const ext = compressedBlob.type === 'image/webp' ? 'webp' : 'jpg';
+          formData.append('receipt_file', compressedBlob, `receipt.${ext}`);
+        } catch (err) {
+          console.warn('Client compression failed, sending original file:', err);
+          formData.append('receipt_file', scannedReceiptFile);
+        }
+      }
 
       const result = await addEntry(formData);
       if (result.error) {
@@ -194,12 +235,27 @@ export default function QuickLogForm({
       // Reset for next entry
       setAmount('');
       setDescription('');
+      setTags([]);
+      setScannedReceiptFile(null);
+      setAttachReceipt(false);
       amountInputRef.current?.focus();
     });
   };
 
   const activeCategories =
     type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+
+  // Derived available tags for autocomplete
+  const derivedAvailableTags = useMemo(() => {
+    if (availableTags && availableTags.length > 0) return availableTags;
+    const set = new Set<string>();
+    for (const e of recentEntries) {
+      if (e.tags) {
+        for (const t of e.tags) set.add(t);
+      }
+    }
+    return Array.from(set);
+  }, [availableTags, recentEntries]);
 
   // Navigation rule:
   // 1. If user entered at least once -> redirect to that book's detail page
@@ -209,6 +265,10 @@ export default function QuickLogForm({
   const targetBook = useMemo(
     () => (targetBookId ? books.find((b) => b.id === targetBookId) : undefined),
     [books, targetBookId],
+  );
+  const selectedBook = useMemo(
+    () => books.find((b) => b.id === selectedBookId),
+    [books, selectedBookId],
   );
 
   const backHref = targetBookId ? `/cashflow/${targetBookId}` : '/cashflow';
@@ -239,7 +299,7 @@ export default function QuickLogForm({
       <div className='bg-card border border-border/80 rounded-2xl shadow-xl overflow-hidden'>
         {/* Book Selector & Type Toggle Bar */}
         <div className='p-4 border-b border-border/60 bg-muted/20 space-y-3'>
-          <div className='flex items-center justify-between gap-3'>
+          <div className='flex items-end justify-between gap-3'>
             <div className='flex-1 min-w-0'>
               <Label className='text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1'>
                 Target Book
@@ -248,9 +308,22 @@ export default function QuickLogForm({
                 <Select
                   value={selectedBookId}
                   onValueChange={setSelectedBookId}
+                  disabled={isScanningReceipt || isPending}
                 >
-                  <SelectTrigger className='h-8 text-xs font-semibold bg-background border-border/70'>
-                    <SelectValue />
+                  <SelectTrigger className='w-full text-xs font-medium'>
+                    <SelectValue placeholder='Select book'>
+                      {selectedBook && (
+                        <div className='flex items-center gap-1.5 min-w-0'>
+                          <span className='truncate'>{selectedBook.title}</span>
+                          {selectedBook.isShared && (
+                            <span className='text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium flex items-center gap-1 shrink-0'>
+                              <LuUsers className='w-3 h-3' />
+                              Shared
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {books.map((b) => (
@@ -269,7 +342,7 @@ export default function QuickLogForm({
                   </SelectContent>
                 </Select>
               ) : (
-                <div className='flex items-center gap-1.5 truncate'>
+                <div className='flex items-center gap-1.5 truncate h-9'>
                   <p className='text-xs font-semibold text-foreground truncate'>
                     {books[0]?.title || 'Default Book'}
                   </p>
@@ -284,20 +357,19 @@ export default function QuickLogForm({
             </div>
 
             {/* Zero-Storage Scan Receipt Trigger */}
-            <div className='pt-3'>
+            <div className='shrink-0'>
               <Button
                 type='button'
                 variant='outline'
-                size='sm'
                 disabled={isScanningReceipt || isPending}
                 onClick={() => fileInputRef.current?.click()}
-                className='h-8 text-xs px-2.5 gap-1.5 border-primary/40 hover:bg-primary/10 text-primary cursor-pointer'
+                className='h-9 text-xs px-3 gap-1.5 border-primary/40 hover:bg-primary/10 text-primary cursor-pointer'
                 title='Extract receipt data instantly without uploading to storage'
               >
                 {isScanningReceipt ? (
                   <>
-                    <LuLoader className='w-3.5 h-3.5 animate-spin' />
-                    <span className='truncate max-w-25'>
+                    <LuLoader className='w-3.5 h-3.5 animate-spin shrink-0' />
+                    <span className='truncate max-w-28'>
                       {ocrStatus || 'Scanning...'}
                     </span>
                   </>
@@ -326,9 +398,10 @@ export default function QuickLogForm({
           <div className='grid grid-cols-2 p-1 bg-muted/60 rounded-lg'>
             <button
               type='button'
+              disabled={isScanningReceipt || isPending}
               onClick={() => handleTypeChange('expense')}
               className={cn(
-                'py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer',
+                'py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60',
                 type === 'expense'
                   ? 'bg-destructive text-destructive-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground',
@@ -338,9 +411,10 @@ export default function QuickLogForm({
             </button>
             <button
               type='button'
+              disabled={isScanningReceipt || isPending}
               onClick={() => handleTypeChange('income')}
               className={cn(
-                'py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer',
+                'py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60',
                 type === 'income'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground',
@@ -372,6 +446,7 @@ export default function QuickLogForm({
                 inputMode='decimal'
                 autoComplete='off'
                 value={amount}
+                disabled={isScanningReceipt || isPending}
                 onChange={(e) => {
                   // Allow numbers and decimal separators only
                   const val = e.target.value.replace(/[^0-9.]/g, '');
@@ -392,6 +467,7 @@ export default function QuickLogForm({
                 id='quick-desc'
                 type='text'
                 value={description}
+                disabled={isScanningReceipt || isPending}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={
                   type === 'expense'
@@ -434,9 +510,10 @@ export default function QuickLogForm({
                   <button
                     key={c.value}
                     type='button'
+                    disabled={isScanningReceipt || isPending}
                     onClick={() => setCategory(c.value)}
                     className={cn(
-                      'flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium border transition-all cursor-pointer text-left',
+                      'flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium border transition-all cursor-pointer text-left disabled:cursor-not-allowed disabled:opacity-60',
                       isSelected
                         ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/30 font-semibold'
                         : 'border-border/60 bg-muted/20 text-foreground/80 hover:bg-muted/40 hover:text-foreground',
@@ -451,6 +528,55 @@ export default function QuickLogForm({
               })}
             </div>
           </div>
+
+          {/* Optional Tags */}
+          <div className='space-y-1.5'>
+            <div className='flex items-center justify-between'>
+              <Label className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wider'>
+                Tags <span className='text-[10px] font-normal lowercase text-muted-foreground/70'>(optional)</span>
+              </Label>
+              {tags.length > 0 && (
+                <span className='text-[10px] text-muted-foreground font-mono'>
+                  {tags.length}/10
+                </span>
+              )}
+            </div>
+            <TagPicker
+              tags={tags}
+              onChange={setTags}
+              availableTags={derivedAvailableTags}
+              disabled={isPending || isScanningReceipt}
+              placeholder='Add tags (optional)...'
+            />
+          </div>
+
+          {/* Scanned Receipt Attachment Option (defaults to OFF) */}
+          {scannedReceiptFile && (
+            <div className='flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/70 text-xs transition-colors'>
+              <div className='flex items-center gap-2 min-w-0'>
+                <div className='w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0'>
+                  <LuPaperclip className='w-3.5 h-3.5' />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-xs font-medium text-foreground truncate'>
+                    Attach Scanned Receipt
+                  </p>
+                  <p className='text-[10px] text-muted-foreground truncate'>
+                    {scannedReceiptFile.name} ({(scannedReceiptFile.size / 1024).toFixed(0)} KB)
+                  </p>
+                </div>
+              </div>
+              <div className='flex items-center gap-2 shrink-0'>
+                <Switch
+                  id='attach-scanned-receipt'
+                  checked={attachReceipt}
+                  onCheckedChange={setAttachReceipt}
+                  disabled={isPending || isScanningReceipt}
+                  aria-label='Attach scanned receipt to entry'
+                />
+              </div>
+            </div>
+          )}
 
           {/* Big Action Submit Button */}
           <Button

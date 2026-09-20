@@ -28,6 +28,6 @@ describe('buildCspHeader', () => {
   it('includes additional allowed origins in connect-src', () => {
     const allowed = ['https://app.example.com', 'https://example.com'];
     const csp = buildCspHeader('nonce', allowed);
-    expect(csp).toContain("connect-src 'self' data: blob: https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://app.example.com https://example.com;");
+    expect(csp).toContain("connect-src 'self' data: https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://app.example.com https://example.com;");
   });
 });

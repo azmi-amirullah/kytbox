@@ -25,4 +25,4 @@ export * from './split-actions';
 export { default as QuickLogForm } from './components/QuickLogForm';
 export * from './lib/merchant-rules';
 export * from './lib/receipt-extractor';
-
+export * from './ai-actions';

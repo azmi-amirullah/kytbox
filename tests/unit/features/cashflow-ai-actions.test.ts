@@ -1,0 +1,126 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// Mock dependencies before importing ai-actions
+vi.mock('@/lib/auth-with-rate-limit', () => ({
+  getAuthenticatedUserWithRateLimit: vi.fn().mockResolvedValue({
+    user: { id: 'test-user-id', email: 'test@example.com' },
+  }),
+}));
+
+vi.mock('@sentry/nextjs', () => ({
+  captureException: vi.fn(),
+}));
+
+const mockEnv = {
+  GEMINI_API_KEY: 'test-api-key',
+};
+
+vi.mock('@/env', () => ({
+  env: mockEnv,
+}));
+
+describe('parseReceiptImageWithAI Server Action', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockEnv.GEMINI_API_KEY = 'test-api-key';
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  describe('parseReceiptImageWithAI (Multimodal Vision)', () => {
+    it('rejects invalid or empty base64 input', async () => {
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: '',
+        mimeType: 'image/webp',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('Invalid receipt image input');
+      }
+    });
+
+    it('fails gracefully when GEMINI_API_KEY is not configured', async () => {
+      mockEnv.GEMINI_API_KEY = '';
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: 'validbase64contenthere1234567890',
+        mimeType: 'image/webp',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('GEMINI_API_KEY is not configured');
+      }
+    });
+
+    it('successfully extracts structured receipt data from multimodal image', async () => {
+      const mockGeminiOutput = {
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    merchant: 'Indomaret Point',
+                    amount: 16650,
+                    date: '2026-09-19',
+                    category: 'food',
+                    suggestedTags: ['groceries', 'snacks'],
+                    confidence: 0.98,
+                  }),
+                },
+              ],
+            },
+          },
+        ],
+      };
+
+      global.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(mockGeminiOutput), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: 'samplevalidbase64imagedata1234567890',
+        mimeType: 'image/webp',
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.merchant).toBe('Indomaret Point');
+        expect(result.data.amount).toBe(16650);
+        expect(result.data.date).toBe('2026-09-19');
+        expect(result.data.category).toBe('food');
+        expect(result.data.suggestedTags).toEqual(['groceries', 'snacks']);
+        expect(result.data.confidence).toBe(0.98);
+      }
+    });
+
+    it('handles Gemini 429 rate limit error gracefully', async () => {
+      global.fetch = vi.fn().mockResolvedValue(
+        new Response('Rate limit exceeded', {
+          status: 429,
+          statusText: 'Too Many Requests',
+        }),
+      );
+
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: 'samplevalidbase64imagedata1234567890',
+        mimeType: 'image/webp',
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('429');
+      }
+    });
+  });
+});

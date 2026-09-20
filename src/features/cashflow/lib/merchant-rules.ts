@@ -90,7 +90,7 @@ export const BUILT_IN_MERCHANT_RULES: readonly BuiltInMerchantRule[] = [
     merchantName: 'Utilities & Bills',
     category: 'utilities',
     type: 'expense',
-    defaultTags: ['bills'],
+    defaultTags: ['bill'],
   },
 
   // --- Entertainment & Subscriptions ---

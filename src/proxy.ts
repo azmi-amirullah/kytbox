@@ -13,7 +13,6 @@ export async function proxy(request: NextRequest) {
   const isStaticAsset =
     pathname === '/manifest.json' ||
     pathname === '/sw.js' ||
-    pathname.startsWith('/tesseract/') ||
     pathname.startsWith('/icons/') ||
     pathname.startsWith('/screenshots/') ||
     /\.(?:svg|png|jpg|jpeg|gif|webp|ico|json|wasm|gz|js|css)$/.test(pathname);
@@ -312,6 +311,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Match all routes except static files and API routes
-    '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|tesseract/|icons/|screenshots/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json|wasm|gz|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|icons/|screenshots/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json|wasm|gz|ico)$).*)',
   ],
 };

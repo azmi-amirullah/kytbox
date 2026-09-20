@@ -12,6 +12,7 @@ export const env = createEnv({
       .string()
       .min(1, 'UPSTASH_REDIS_REST_TOKEN is required'),
     CRON_SECRET: z.string().optional(),
+    GEMINI_API_KEY: z.string().optional(),
     SENTRY_DSN: z.url().optional(),
     SENTRY_ORG: z.string().optional(),
     SENTRY_PROJECT: z.string().optional(),
@@ -31,6 +32,7 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     CRON_SECRET: process.env.CRON_SECRET,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY:
