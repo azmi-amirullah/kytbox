@@ -399,12 +399,12 @@ export async function getCashflowDetailData(
   }
   cashflowTitles.set(cashflow.id, cashflow.title);
 
-  const goalMetaById = new Map<string, { title: string; type: 'savings' | 'debt' }>(
+  const goalMetaById = new Map<string, { title: string; type: 'savings' | 'debt' | 'lent' }>(
     (goalsResult.data ?? []).map((goal) => [
       goal.id,
       {
         title: goal.title,
-        type: goal.type === 'debt' ? 'debt' : 'savings',
+        type: goal.type === 'debt' ? 'debt' : goal.type === 'lent' ? 'lent' : 'savings',
       },
     ]),
   );

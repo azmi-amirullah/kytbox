@@ -229,13 +229,13 @@ export function mapCashflowEntryToDTO(
     cashflow_split_entries?: CashflowSplitEntry[];
   },
   goalTitle?: string | null,
-  goalType?: 'savings' | 'debt' | null,
+  goalType?: 'savings' | 'debt' | 'lent' | null,
 ): CashflowEntryDTO {
   const category = row.goal_id
     ? goalTitle
-      ? `${goalType === 'debt' ? 'Debt:' : 'Goal:'} ${goalTitle}`
+      ? `${goalType === 'debt' ? 'Debt:' : goalType === 'lent' ? 'Lent:' : 'Goal:'} ${goalTitle}`
       : null
-    : row.category?.startsWith('Goal:') || row.category?.startsWith('Debt:')
+    : row.category?.startsWith('Goal:') || row.category?.startsWith('Debt:') || row.category?.startsWith('Lent:')
       ? null
       : row.category;
 
@@ -294,13 +294,13 @@ export function mapCashflowRecurringRuleToDTO(
     updated_at?: string | null;
   },
   goalTitle?: string | null,
-  goalType?: 'savings' | 'debt' | null,
+  goalType?: 'savings' | 'debt' | 'lent' | null,
 ): CashflowRecurringRuleDTO {
   const category = row.goal_id
     ? goalTitle
-      ? `${goalType === 'debt' ? 'Debt:' : 'Goal:'} ${goalTitle}`
+      ? `${goalType === 'debt' ? 'Debt:' : goalType === 'lent' ? 'Lent:' : 'Goal:'} ${goalTitle}`
       : null
-    : row.category?.startsWith('Goal:') || row.category?.startsWith('Debt:')
+    : row.category?.startsWith('Goal:') || row.category?.startsWith('Debt:') || row.category?.startsWith('Lent:')
       ? null
       : row.category;
 
@@ -491,7 +491,7 @@ export function mapGoalToDTO(
     deadline: row.deadline ?? null,
     created_at: row.created_at,
     is_archived: Boolean(row.is_deleted),
-    type: row.type === 'debt' ? 'debt' : 'savings',
+    type: row.type === 'debt' ? 'debt' : row.type === 'lent' ? 'lent' : 'savings',
     image_url: row.image_url ?? null,
   };
 }

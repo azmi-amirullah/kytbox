@@ -44,14 +44,15 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
   const [selectedMonth, setSelectedMonth] = useState('all')
 
   const isDebt = goal.type === 'debt'
+  const isLent = goal.type === 'lent'
   const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null)
   const [isLoadingThumbnail, setIsLoadingThumbnail] = useState(
-    () => Boolean(isDebt && goal.image_url && goal.cashflow_id),
+    () => Boolean((isDebt || isLent) && goal.image_url && goal.cashflow_id),
   )
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
 
   useEffect(() => {
-    if (!isDebt || !goal.image_url || !goal.cashflow_id) return
+    if ((!isDebt && !isLent) || !goal.image_url || !goal.cashflow_id) return
     let isMounted = true
     getGoalImageSignedUrl(goal.cashflow_id, goal.id)
       .then((res) => {
@@ -66,7 +67,7 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
     return () => {
       isMounted = false
     }
-  }, [isDebt, goal.image_url, goal.cashflow_id, goal.id])
+  }, [isDebt, isLent, goal.image_url, goal.cashflow_id, goal.id])
 
   useEffect(() => {
     const q = searchParams.get('q') || searchParams.get('search')
@@ -176,13 +177,21 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
                   Debt Paydown
                 </Badge>
               )}
+              {isLent && (
+                <Badge
+                  variant='outline'
+                  className='text-xs font-semibold text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10'
+                >
+                  Lent
+                </Badge>
+              )}
               <Badge variant={statusVariant} className='gap-1 text-xs'>
                 {statusIcon}
                 {statusLabel}
               </Badge>
             </div>
             <p className='text-sm text-muted-foreground mt-0.5'>
-              {isDebt ? 'Total Debt: ' : 'Target: '}
+              {isLent ? 'Total Lent: ' : isDebt ? 'Total Debt: ' : 'Target: '}
               {formatCurrency(goal.target_amount, currency)}
               {goal.cashflow_title && (
                 <span className='ml-2'>
@@ -191,7 +200,11 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
               )}
               {deadline && (
                 <span className='ml-2'>
-                  {isDebt ? ' · Payoff target ' : ' · Due '}
+                  {isLent
+                    ? ' · Expected repayment '
+                    : isDebt
+                      ? ' · Payoff target '
+                      : ' · Due '}
                   {formatAppDate(deadline)}
                 </span>
               )}
@@ -204,9 +217,11 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
         <div className='flex items-center gap-2.5 rounded-xl border border-border/80 bg-muted/40 p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground backdrop-blur-xs'>
           <FiArchive className='h-4 w-4 shrink-0 text-muted-foreground' />
           <span>
-            {isDebt
-              ? 'This debt target is archived. Historical payment records are preserved, but active payments and recurring deductions are paused.'
-              : 'This savings goal is archived. Historical contribution records are preserved, but active contributions and recurring deductions are paused.'}
+            {isLent
+              ? 'This lent target is archived. Historical repayment records are preserved, but active repayments and recurring collections are paused.'
+              : isDebt
+                ? 'This debt target is archived. Historical payment records are preserved, but active payments and recurring deductions are paused.'
+                : 'This savings goal is archived. Historical contribution records are preserved, but active contributions and recurring deductions are paused.'}
           </span>
         </div>
       )}
@@ -217,7 +232,31 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
         animate={{ opacity: 1, y: 0 }}
         className='bg-card border rounded-2xl p-6 space-y-4'
       >
-        {isDebt ? (
+        {isLent ? (
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+            <div className='space-y-1'>
+              <p className='text-xs text-muted-foreground uppercase tracking-wider font-semibold'>Left to Collect</p>
+              <p className='text-2xl font-bold text-amber-600 dark:text-amber-400'>
+                {formatCurrency(remaining, currency)}
+              </p>
+            </div>
+            <div className='space-y-1'>
+              <p className='text-xs text-muted-foreground uppercase tracking-wider'>Total Lent</p>
+              <p className='text-2xl font-bold'>{formatCurrency(goal.target_amount, currency)}</p>
+            </div>
+            <div className='space-y-1'>
+              <p className='text-xs text-muted-foreground uppercase tracking-wider'>Total Collected</p>
+              <p className='text-2xl font-bold text-muted-foreground'>
+                {formatCurrency(totalSaved, currency)}
+              </p>
+              {goal.initial_amount > 0 && (
+                <p className='text-[11px] text-muted-foreground'>
+                  (incl. {formatCurrency(goal.initial_amount, currency)} starting)
+                </p>
+              )}
+            </div>
+          </div>
+        ) : isDebt ? (
           <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
             <div className='space-y-1'>
               <p className='text-xs text-muted-foreground uppercase tracking-wider font-semibold'>Left to Pay</p>
@@ -269,17 +308,20 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
         <div className='space-y-1.5'>
           <div className='flex justify-between text-sm'>
             <span className='text-muted-foreground'>
-              {goal.contribution_count} {isDebt ? 'payments in Kytbox' : 'contributions in Kytbox'}
+              {goal.contribution_count} {isLent ? 'repayments in Kytbox' : isDebt ? 'payments in Kytbox' : 'contributions in Kytbox'}
               {goal.initial_amount > 0 ? ` · +${formatCurrency(goal.initial_amount, currency)} starting` : ''}
             </span>
-            <span className='font-semibold'>{progress.toFixed(1)}%{isDebt ? ' paid' : ''}</span>
+            <span className='font-semibold'>{progress.toFixed(1)}%{isLent ? ' collected' : isDebt ? ' paid' : ''}</span>
           </div>
           <div className='h-3 bg-muted rounded-full overflow-hidden'>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: progress + '%' }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className={cn('h-full rounded-full', isDebt ? 'bg-indigo-500' : 'bg-emerald-500')}
+              className={cn(
+                'h-full rounded-full',
+                isLent ? 'bg-amber-500' : isDebt ? 'bg-indigo-500' : 'bg-emerald-500',
+              )}
             />
           </div>
         </div>
@@ -293,8 +335,8 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
         )}
       </motion.div>
 
-      {/* Attached Document Card (Debt only) */}
-      {isDebt && goal.image_url && (
+      {/* Attached Document Card (Debt and Lent) */}
+      {(isDebt || isLent) && goal.image_url && (
         <div className='flex items-center justify-between p-3.5 bg-card border rounded-xl gap-3'>
           <div
             role='button'
@@ -317,7 +359,7 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={signedImageUrl}
-                  alt='Debt document thumbnail'
+                  alt={isLent ? 'Lending document thumbnail' : 'Debt document thumbnail'}
                   className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-200'
                 />
               ) : (
@@ -326,7 +368,7 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
             </div>
             <div className='min-w-0'>
               <p className='text-sm font-semibold truncate group-hover:text-primary transition-colors'>
-                Attached Statement / Document
+                {isLent ? 'Attached Lending Agreement / Note' : 'Attached Statement / Document'}
               </p>
               <p className='text-xs text-muted-foreground'>
                 Click to preview in full screen
@@ -428,7 +470,16 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
                     <td className='px-4 py-3 text-muted-foreground hidden sm:table-cell max-w-xs truncate'>
                       {entry.description ?? '—'}
                     </td>
-                    <td className={cn('px-4 py-3 text-right font-semibold tabular-nums', isDebt ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-500')}>
+                    <td
+                      className={cn(
+                        'px-4 py-3 text-right font-semibold tabular-nums',
+                        isLent
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : isDebt
+                            ? 'text-indigo-600 dark:text-indigo-400'
+                            : 'text-emerald-500',
+                      )}
+                    >
                       +{formatCurrency(Number(entry.amount), currency)}
                     </td>
                   </tr>
@@ -439,7 +490,7 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
         )}
       </div>
 
-      {isDebt && goal.image_url && (
+      {(isDebt || isLent) && goal.image_url && (
         <ReceiptLightbox
           open={isLightboxOpen}
           onOpenChange={setIsLightboxOpen}

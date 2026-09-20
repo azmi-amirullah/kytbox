@@ -3,6 +3,8 @@ import {
   cashflowEntrySchema,
   cashflowBudgetSchema,
   cashflowGoalSchema,
+  deleteCashflowGoalSchema,
+  archiveCashflowGoalSchema,
   getGoalImageSignedUrlSchema,
   generateRecurringSchema,
   getGoalEntryValidationError,
@@ -143,6 +145,21 @@ describe('Cashflow Server Schemas', () => {
       }
     });
 
+    it('validates a lent target with initialAmount', () => {
+      const result = cashflowGoalSchema.safeParse({
+        cashflowId: 'a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab',
+        title: 'Money Lent to Bob',
+        targetAmount: 500,
+        initialAmount: 100,
+        type: 'lent',
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.type).toBe('lent');
+        expect(result.data.initialAmount).toBe(100);
+      }
+    });
+
     it('rejects negative initialAmount', () => {
       const result = cashflowGoalSchema.safeParse({
         cashflowId: 'a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab',
@@ -259,6 +276,18 @@ describe('Cashflow Server Schemas', () => {
         'A debt target must have a name',
       );
     });
+
+    it('validates and rejects lent categories correctly', () => {
+      expect(
+        getGoalEntryValidationError('income', 'Lent: Bob Dinner'),
+      ).toBeNull();
+      expect(
+        getGoalEntryValidationError('expense', 'Lent: Bob Dinner'),
+      ).toBe('Lent repayments must be income entries');
+      expect(getGoalEntryValidationError('income', 'Lent: ')).toBe(
+        'A lent target must have a name',
+      );
+    });
   });
 
   describe('archived goal edits', () => {
@@ -289,7 +318,7 @@ describe('Cashflow Server Schemas', () => {
           category: null,
           type: 'income',
         }),
-      ).toBe(false);
+      ).toBe(true);
     });
   });
 
@@ -343,6 +372,32 @@ describe('Cashflow Server Schemas', () => {
       expect(debtGoal.initial_amount).toBe(500);
       expect(debtGoal.saved_amount).toBe(1000);
       expect(debtGoal.target_amount - debtGoal.saved_amount).toBe(2000);
+    });
+
+    it('maps type lent and initial_amount correctly in DTO', () => {
+      const lentGoal = mapGoalToDTO(
+        {
+          id: 'goal-id-lent',
+          cashflow_id: 'cashflow-id',
+          title: 'Concert Tickets for Friends',
+          target_amount: 600,
+          initial_amount: 150,
+          deadline: null,
+          is_deleted: false,
+          created_at: '2026-09-01T00:00:00.000Z',
+          type: 'lent',
+          image_url: null,
+        },
+        'Personal Budget',
+        300,
+        2,
+      );
+
+      expect(lentGoal.type).toBe('lent');
+      expect(lentGoal.target_amount).toBe(600);
+      expect(lentGoal.initial_amount).toBe(150);
+      expect(lentGoal.saved_amount).toBe(300);
+      expect(lentGoal.target_amount - lentGoal.saved_amount).toBe(300);
     });
 
     it('defaults saved_amount to initial_amount when no savedAmount is passed', () => {
@@ -466,6 +521,24 @@ describe('Cashflow Server Schemas', () => {
       expect(entry.category).toBe('Goal: Vacation');
     });
 
+    it('maps lent entry category to Lent: {title}', () => {
+      const entry = mapCashflowEntryToDTO(
+        {
+          id: 'entry-lent-1',
+          cashflow_id: 'cashflow-1',
+          goal_id: 'lent-1',
+          description: 'Repayment from Bob',
+          amount: 100,
+          type: 'income',
+          date: '2026-09-13',
+          created_at: '2026-09-13T08:00:00Z',
+        },
+        'Bob Lunch',
+        'lent',
+      );
+      expect(entry.category).toBe('Lent: Bob Lunch');
+    });
+
     it('sanitizes unlinked entries with orphaned Goal: or Debt: categories', () => {
       const entryGoal = mapCashflowEntryToDTO({
         id: 'entry-3',
@@ -560,6 +633,20 @@ describe('Cashflow Server Schemas', () => {
         goalId: null,
         finalCategory: null,
       });
+    });
+  });
+
+  describe('deleteCashflowGoalSchema & archiveCashflowGoalSchema', () => {
+    it('accepts valid UUID goalId', () => {
+      const valid = { goalId: 'a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab' };
+      expect(deleteCashflowGoalSchema.safeParse(valid).success).toBe(true);
+      expect(archiveCashflowGoalSchema.safeParse(valid).success).toBe(true);
+    });
+
+    it('rejects invalid UUID goalId', () => {
+      const invalid = { goalId: 'not-a-uuid' };
+      expect(deleteCashflowGoalSchema.safeParse(invalid).success).toBe(false);
+      expect(archiveCashflowGoalSchema.safeParse(invalid).success).toBe(false);
     });
   });
 });

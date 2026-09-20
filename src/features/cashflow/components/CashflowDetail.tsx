@@ -301,6 +301,10 @@ export default function CashflowDetail({
     })
   }
 
+  function handleGoalDelete(goalId: string) {
+    setLocalGoals((prev) => prev.filter((g) => g.id !== goalId))
+  }
+
   // Initialize state from server props
   const [hasShare, setHasShare] = useState(initialHasShare)
   const [shareId, setShareId] = useState<string | null>(initialShareId)
@@ -2713,7 +2717,9 @@ export default function CashflowDetail({
         goals={localGoals.filter((goal) => goal.cashflow_id === cashflow.id)}
         currency={currency}
         isOwner={isOwner}
+        canEdit={canEdit}
         onGoalChange={handleGoalChange}
+        onGoalDelete={handleGoalDelete}
       />
 
       {/* Edit Cashflow Modal */}

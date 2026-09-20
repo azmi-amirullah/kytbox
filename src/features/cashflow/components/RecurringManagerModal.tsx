@@ -445,7 +445,10 @@ export default function RecurringManagerModal({
                 <Label htmlFor='rule-type'>Type</Label>
                 <Select
                   value={formType}
-                  onValueChange={(val: 'income' | 'expense') => setFormType(val)}
+                  onValueChange={(val: 'income' | 'expense') => {
+                    setFormType(val)
+                    setFormGoalId('none')
+                  }}
                 >
                   <SelectTrigger id='rule-type'>
                     <SelectValue />
@@ -542,24 +545,39 @@ export default function RecurringManagerModal({
               />
             </div>
 
-            {formType === 'expense' && goals.length > 0 && (
-              <div className='space-y-1.5'>
-                <Label htmlFor='rule-goal'>Link to Goal or Debt (Optional)</Label>
-                <Select value={formGoalId} onValueChange={setFormGoalId}>
-                  <SelectTrigger id='rule-goal'>
-                    <SelectValue placeholder='None' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='none'>None</SelectItem>
-                    {goals.map((g) => (
-                      <SelectItem key={g.id} value={g.id}>
-                        {g.type === 'debt' ? `Debt: ${g.title}` : `Goal: ${g.title}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {(() => {
+              const matchingGoals = goals.filter((g) =>
+                formType === 'income' ? g.type === 'lent' : g.type !== 'lent',
+              )
+              if (matchingGoals.length === 0) return null
+
+              return (
+                <div className='space-y-1.5'>
+                  <Label htmlFor='rule-goal'>
+                    {formType === 'income'
+                      ? 'Link to Lent Repayment (Optional)'
+                      : 'Link to Goal or Debt (Optional)'}
+                  </Label>
+                  <Select value={formGoalId} onValueChange={setFormGoalId}>
+                    <SelectTrigger id='rule-goal'>
+                      <SelectValue placeholder='None' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='none'>None</SelectItem>
+                      {matchingGoals.map((g) => (
+                        <SelectItem key={g.id} value={g.id}>
+                          {g.type === 'debt'
+                            ? `Debt: ${g.title}`
+                            : g.type === 'lent'
+                              ? `Lent: ${g.title}`
+                              : `Goal: ${g.title}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            })()}
 
             <div className='flex items-center justify-end gap-2 pt-3 border-t'>
               <Button

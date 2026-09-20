@@ -141,7 +141,7 @@ export const cashflowGoalSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(100, 'Title too long'),
   targetAmount: z.coerce.number().positive('Target amount must be positive'),
   initialAmount: z.coerce.number().min(0, 'Initial amount must be non-negative').optional().default(0),
-  type: z.enum(['savings', 'debt']).optional().default('savings'),
+  type: z.enum(['savings', 'debt', 'lent']).optional().default('savings'),
   deadline: dateOnlySchema
     .nullable()
     .optional(),
@@ -165,13 +165,19 @@ export function getGoalEntryValidationError(
   if (!category) return null;
   const isGoal = category.startsWith('Goal:');
   const isDebt = category.startsWith('Debt:');
-  if (!isGoal && !isDebt) return null;
+  const isLent = category.startsWith('Lent:');
+  if (!isGoal && !isDebt && !isLent) return null;
 
-  const prefix = isGoal ? 'Goal:' : 'Debt:';
+  const prefix = isGoal ? 'Goal:' : isDebt ? 'Debt:' : 'Lent:';
   if (category.slice(prefix.length).trim().length === 0) {
+    if (isLent) return 'A lent target must have a name';
     return isDebt ? 'A debt target must have a name' : 'A savings goal must have a name';
   }
-  if (type !== 'expense') {
+  if (isLent) {
+    if (type !== 'income') {
+      return 'Lent repayments must be income entries';
+    }
+  } else if (type !== 'expense') {
     return isDebt ? 'Debt payments must be expenses' : 'Savings goal entries must be expenses';
   }
   return null;
@@ -184,7 +190,7 @@ export function shouldPreserveExistingGoalRelation(input: {
   type: 'income' | 'expense';
 }): boolean {
   return (
-    input.type === 'expense' &&
+    (input.type === 'expense' || input.type === 'income') &&
     input.category == null &&
     input.existingGoalId != null &&
     input.requestedGoalId === input.existingGoalId

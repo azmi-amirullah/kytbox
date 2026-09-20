@@ -18,6 +18,7 @@ import {
   generateRecurringSchema,
   cashflowGoalSchema,
   updateCashflowGoalSchema,
+  deleteCashflowGoalSchema,
   archiveCashflowGoalSchema,
   unarchiveCashflowGoalSchema,
   getGoalEntryValidationError,
@@ -461,14 +462,19 @@ async function resolveGoalId(
       return { goalId: null, category: null, error: 'Target not found' };
     }
 
-    const expectedPrefix = goal.type === 'debt' ? 'Debt:' : 'Goal:';
+    const expectedPrefix =
+      goal.type === 'debt' ? 'Debt:' : goal.type === 'lent' ? 'Lent:' : 'Goal:';
     if (
       category &&
-      (category.startsWith('Goal:') || category.startsWith('Debt:'))
+      (category.startsWith('Goal:') ||
+        category.startsWith('Debt:') ||
+        category.startsWith('Lent:'))
     ) {
       const parsedTitle = category.startsWith('Debt:')
         ? category.slice('Debt:'.length).trim()
-        : category.slice('Goal:'.length).trim();
+        : category.startsWith('Lent:')
+          ? category.slice('Lent:'.length).trim()
+          : category.slice('Goal:'.length).trim();
 
       if (parsedTitle !== goal.title) {
         return {
@@ -484,17 +490,22 @@ async function resolveGoalId(
 
   const isGoal = category?.startsWith('Goal:');
   const isDebt = category?.startsWith('Debt:');
-  if (!isGoal && !isDebt) {
+  const isLent = category?.startsWith('Lent:');
+  if (!isGoal && !isDebt && !isLent) {
     return { goalId: null, category: category ?? null };
   }
 
-  const prefix = isGoal ? 'Goal:' : 'Debt:';
+  const prefix = isGoal ? 'Goal:' : isDebt ? 'Debt:' : 'Lent:';
   const title = category!.slice(prefix.length).trim();
   if (!title) {
     return {
       goalId: null,
       category: null,
-      error: isDebt ? 'A debt target must have a name' : 'A savings goal must have a name',
+      error: isLent
+        ? 'A lent target must have a name'
+        : isDebt
+          ? 'A debt target must have a name'
+          : 'A savings goal must have a name',
     };
   }
 
@@ -514,7 +525,15 @@ async function resolveGoalId(
   }
 
   if (!matchingGoals || matchingGoals.length === 0) {
-    return { goalId: null, category: null, error: isDebt ? 'Debt target not found' : 'Savings goal not found' };
+    return {
+      goalId: null,
+      category: null,
+      error: isLent
+        ? 'Lent target not found'
+        : isDebt
+          ? 'Debt target not found'
+          : 'Savings goal not found',
+    };
   }
 
   if (matchingGoals.length > 1) {
@@ -526,7 +545,8 @@ async function resolveGoalId(
   }
 
   const match = matchingGoals[0];
-  const expectedPrefix = match.type === 'debt' ? 'Debt:' : 'Goal:';
+  const expectedPrefix =
+    match.type === 'debt' ? 'Debt:' : match.type === 'lent' ? 'Lent:' : 'Goal:';
   return {
     goalId: match.id,
     category: `${expectedPrefix} ${match.title}`,
@@ -1920,7 +1940,7 @@ export async function generateRecurringEntries(
 
   const recurringGoalMeta = new Map<
     string,
-    { title: string; type: 'savings' | 'debt' }
+    { title: string; type: 'savings' | 'debt' | 'lent' }
   >();
   const recurringGoalIds = Array.from(
     new Set(
@@ -1944,7 +1964,12 @@ export async function generateRecurringEntries(
     for (const goal of recurringGoals ?? []) {
       recurringGoalMeta.set(goal.id, {
         title: goal.title,
-        type: goal.type === 'debt' ? 'debt' : 'savings',
+        type:
+          goal.type === 'debt'
+            ? 'debt'
+            : goal.type === 'lent'
+              ? 'lent'
+              : 'savings',
       });
     }
   }
@@ -1966,11 +1991,12 @@ export async function generateRecurringEntries(
     if (rule.goal_id) {
       const meta = recurringGoalMeta.get(rule.goal_id);
       if (!meta) return null;
-      return `${meta.type === 'debt' ? 'Debt:' : 'Goal:'} ${meta.title}`;
+      return `${meta.type === 'debt' ? 'Debt:' : meta.type === 'lent' ? 'Lent:' : 'Goal:'} ${meta.title}`;
     }
     if (
       rule.category?.startsWith('Goal:') ||
-      rule.category?.startsWith('Debt:')
+      rule.category?.startsWith('Debt:') ||
+      rule.category?.startsWith('Lent:')
     ) {
       return null;
     }
@@ -2216,14 +2242,20 @@ export async function addGoal(formData: FormData) {
 
   const { cashflowId, title, targetAmount, initialAmount, deadline, type, imageAction } = parsed.data;
 
-  if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
-    return { error: 'Only the cashflow owner can manage goals or debt targets' };
+  const permission = await checkEditPermission(supabase, cashflowId, user);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Only the cashflow owner or editors can manage targets' };
   }
 
   let imageUrl: string | null = null;
   const imageFile = formData.get('image_file') || formData.get('receipt_file');
 
-  if (type === 'debt' && imageAction === 'upload' && imageFile instanceof File && imageFile.size > 0) {
+  if (
+    (type === 'debt' || type === 'lent') &&
+    imageAction === 'upload' &&
+    imageFile instanceof File &&
+    imageFile.size > 0
+  ) {
     if (imageFile.size > 2 * 1024 * 1024) {
       return { error: 'Image file exceeds 2MB limit. Please upload a compressed or smaller image.' };
     }
@@ -2231,7 +2263,8 @@ export async function addGoal(formData: FormData) {
       return { error: 'Invalid file type. Image only.' };
     }
     const { buffer, contentType, ext } = await optimizeReceiptToWebP(imageFile);
-    const filePath = `${user.id}/${cashflowId}/debt/${crypto.randomUUID()}.${ext}`;
+    const folder = type === 'lent' ? 'lent' : 'debt';
+    const filePath = `${user.id}/${cashflowId}/${folder}/${crypto.randomUUID()}.${ext}`;
     const { error: uploadError } = await supabase.storage
       .from(RECEIPT_BUCKET)
       .upload(filePath, buffer, {
@@ -2240,8 +2273,8 @@ export async function addGoal(formData: FormData) {
       });
 
     if (uploadError) {
-      console.error('Failed to upload debt image:', uploadError);
-      return { error: 'Failed to upload debt image' };
+      console.error('Failed to upload attachment image:', uploadError);
+      return { error: 'Failed to upload attachment image' };
     }
     imageUrl = filePath;
   }
@@ -2294,8 +2327,9 @@ export async function updateGoal(formData: FormData) {
 
   const { goalId, cashflowId, title, targetAmount, initialAmount, deadline, type, imageAction } = parsed.data;
 
-  if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
-    return { error: 'Only the cashflow owner can manage goals or debt targets' };
+  const permission = await checkEditPermission(supabase, cashflowId, user);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Only the cashflow owner or editors can manage targets' };
   }
 
   const { data: existingGoal, error: existingGoalError } = await supabase
@@ -2313,7 +2347,7 @@ export async function updateGoal(formData: FormData) {
   let nextImageUrl: string | null = existingGoal.image_url ?? null;
   let newlyUploadedFilePath: string | null = null;
 
-  if (type === 'debt') {
+  if (type === 'debt' || type === 'lent') {
     if (imageAction === 'remove') {
       nextImageUrl = null;
     } else if (imageAction === 'upload') {
@@ -2326,7 +2360,8 @@ export async function updateGoal(formData: FormData) {
           return { error: 'Invalid file type. Image only.' };
         }
         const { buffer, contentType, ext } = await optimizeReceiptToWebP(imageFile);
-        const filePath = `${user.id}/${cashflowId}/debt/${crypto.randomUUID()}.${ext}`;
+        const folder = type === 'lent' ? 'lent' : 'debt';
+        const filePath = `${user.id}/${cashflowId}/${folder}/${crypto.randomUUID()}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from(RECEIPT_BUCKET)
           .upload(filePath, buffer, {
@@ -2335,8 +2370,8 @@ export async function updateGoal(formData: FormData) {
           });
 
         if (uploadError) {
-          console.error('Failed to upload replacement debt image:', uploadError);
-          return { error: 'Failed to upload debt image' };
+          console.error('Failed to upload replacement attachment image:', uploadError);
+          return { error: 'Failed to upload attachment image' };
         }
         newlyUploadedFilePath = filePath;
         nextImageUrl = filePath;
@@ -2409,8 +2444,9 @@ export async function archiveGoal(goalId: string, cashflowId: string) {
     return { error: 'Invalid goal ID or cashflow ID' };
   }
 
-  if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
-    return { error: 'Only the cashflow owner can manage goals or debt targets' };
+  const permission = await checkEditPermission(supabase, cashflowId, user);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Only the cashflow owner or editors can manage targets' };
   }
 
   const { data: goal, error: goalLookupError } = await supabase
@@ -2458,8 +2494,9 @@ export async function unarchiveGoal(goalId: string, cashflowId: string) {
     return { error: 'Invalid goal ID or cashflow ID' };
   }
 
-  if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
-    return { error: 'Only the cashflow owner can manage goals or debt targets' };
+  const permission = await checkEditPermission(supabase, cashflowId, user);
+  if (!permission.canEdit) {
+    return { error: permission.error || 'Only the cashflow owner or editors can manage targets' };
   }
 
   const { data: goal, error: goalLookupError } = await supabase
@@ -2497,7 +2534,67 @@ export async function unarchiveGoal(goalId: string, cashflowId: string) {
   return { success: true };
 }
 
-export const deleteGoal = archiveGoal;
+export async function deleteGoal(goalId: string, cashflowId: string) {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const parsed = deleteCashflowGoalSchema.safeParse({ goalId });
+  const parsedCashflowId = z.uuid().safeParse(cashflowId);
+
+  if (!parsed.success || !parsedCashflowId.success) {
+    return { error: 'Invalid goal ID or cashflow ID' };
+  }
+
+  const isOwner = await isCashflowOwner(supabase, cashflowId, user.id);
+  if (!isOwner) {
+    return { error: 'Only the cashflow owner can permanently delete targets' };
+  }
+
+  const { data: goal, error: goalLookupError } = await supabase
+    .from('cashflow_goals')
+    .select('id, image_url, is_deleted')
+    .eq('id', goalId)
+    .eq('cashflow_id', cashflowId)
+    .maybeSingle();
+
+  if (goalLookupError) {
+    console.error('Failed to find goal to delete:', goalLookupError);
+    return { error: 'Failed to delete target' };
+  }
+
+  if (!goal) {
+    return { error: 'Target not found' };
+  }
+
+  if (!goal.is_deleted) {
+    return { error: 'Active targets cannot be permanently deleted. Please archive the target first.' };
+  }
+
+  const { error: deleteError } = await supabase
+    .from('cashflow_goals')
+    .delete()
+    .eq('id', goalId)
+    .eq('cashflow_id', cashflowId)
+    .eq('is_deleted', true);
+
+  if (deleteError) {
+    console.error('Failed to permanently delete target:', deleteError);
+    return { error: 'Failed to delete target' };
+  }
+
+  if (goal.image_url) {
+    try {
+      const adminSupabase = createAdminClient();
+      await adminSupabase.storage.from(RECEIPT_BUCKET).remove([goal.image_url]);
+    } catch (cleanupErr) {
+      console.warn('Failed to clean up target attachment after deletion:', cleanupErr);
+    }
+  }
+
+  revalidatePath('/cashflow');
+  revalidatePath(`/cashflow/${cashflowId}`);
+  revalidatePath(`/cashflow/goal/${goalId}`);
+  return { success: true };
+}
 
 export async function duplicateCashflow(cashflowId: string) {
   const { user, supabase } = await getAuthenticatedUser();
@@ -2598,7 +2695,9 @@ export async function duplicateCashflow(cashflowId: string) {
       const targetGoalId = e.goal_id ? goalIdMap.get(e.goal_id) || null : null;
       const targetCategory =
         !targetGoalId &&
-        (e.category?.startsWith('Goal:') || e.category?.startsWith('Debt:'))
+        (e.category?.startsWith('Goal:') ||
+          e.category?.startsWith('Debt:') ||
+          e.category?.startsWith('Lent:'))
           ? null
           : e.category;
 
@@ -2654,11 +2753,19 @@ export async function importCashflowEntries(
     .eq('cashflow_id', cashflowId)
     .eq('is_deleted', false);
 
-  const goalsByTitle = new Map<string, { id: string; type: 'savings' | 'debt'; title: string }>();
+  const goalsByTitle = new Map<
+    string,
+    { id: string; type: 'savings' | 'debt' | 'lent'; title: string }
+  >();
   for (const g of activeGoals || []) {
     goalsByTitle.set(g.title.trim().toLowerCase(), {
       id: g.id,
-      type: g.type === 'debt' ? 'debt' : 'savings',
+      type:
+        g.type === 'debt'
+          ? 'debt'
+          : g.type === 'lent'
+            ? 'lent'
+            : 'savings',
       title: g.title.trim(),
     });
   }
@@ -2671,15 +2778,25 @@ export async function importCashflowEntries(
     if (rawCat) {
       const isGoal = rawCat.startsWith('Goal:');
       const isDebt = rawCat.startsWith('Debt:');
-      if (isGoal || isDebt) {
-        const prefix = isGoal ? 'Goal:' : 'Debt:';
+      const isLent = rawCat.startsWith('Lent:');
+      if (isGoal || isDebt || isLent) {
+        const prefix = isGoal ? 'Goal:' : isDebt ? 'Debt:' : 'Lent:';
         const targetTitle = rawCat.slice(prefix.length).trim();
         const matched = goalsByTitle.get(targetTitle.toLowerCase());
-        if (matched && entry.type === 'expense') {
+        const isValidType = isLent
+          ? entry.type === 'income'
+          : entry.type === 'expense';
+        if (matched && isValidType) {
           goalId = matched.id;
-          finalCategory = `${matched.type === 'debt' ? 'Debt:' : 'Goal:'} ${matched.title}`;
+          const targetPrefix =
+            matched.type === 'debt'
+              ? 'Debt:'
+              : matched.type === 'lent'
+                ? 'Lent:'
+                : 'Goal:';
+          finalCategory = `${targetPrefix} ${matched.title}`;
         } else {
-          // Unlinked or income cannot use reserved Goal:/Debt: category prefix without violating database trigger
+          // Unlinked or invalid type cannot use reserved Goal:/Debt:/Lent: category prefix without violating database trigger
           finalCategory = targetTitle || null;
         }
       }

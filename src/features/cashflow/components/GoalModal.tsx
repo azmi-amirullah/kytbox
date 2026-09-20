@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FiTarget, FiCreditCard } from 'react-icons/fi';
+import { FiTarget, FiCreditCard, FiArrowUpRight } from 'react-icons/fi';
 import { LuLoader, LuFileText } from 'react-icons/lu';
 import ImageAttachmentInput from './ImageAttachmentInput';
 import { toast } from 'react-toastify';
@@ -65,14 +65,14 @@ function GoalForm({
   const isEdit = !!goal;
   const isBusy = isLoading;
 
-  const [type, setType] = useState<'savings' | 'debt'>(goal?.type ?? 'savings');
+  const [type, setType] = useState<'savings' | 'debt' | 'lent'>(goal?.type ?? 'savings');
   const [title, setTitle] = useState(goal?.title ?? '');
   const [targetAmount, setTargetAmount] = useState(goal?.target_amount?.toString() ?? '');
   const [initialAmount, setInitialAmount] = useState(goal?.initial_amount ? goal.initial_amount.toString() : '0');
   const [deadline, setDeadline] = useState(goal?.deadline ?? '');
   const [selectedCashflowId, setSelectedCashflowId] = useState(goal?.cashflow_id ?? cashflowId);
 
-  // ── Image Attachment State (Debt only) ──────────────────────────────
+  // ── Image Attachment State (Debt and Lent) ──────────────────────────
   const [imageAction, setImageAction] = useState<'keep' | 'remove' | 'upload'>('keep');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -84,6 +84,8 @@ function GoalForm({
   const [isDownloadingDocument, setIsDownloadingDocument] = useState(false);
 
   const isDebt = type === 'debt';
+  const isLent = type === 'lent';
+  const hasAttachment = isDebt || isLent;
 
   // Load signed URL for existing debt image
   useEffect(() => {
@@ -150,15 +152,14 @@ function GoalForm({
       const response = await fetch(res.signedUrl);
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      const sanitizedTitle = (title || 'debt-document')
-        .trim()
+      const sanitizedTitle = (title || (isLent ? 'lent-document' : 'debt-document'))
         .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-');
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const ext = existingSignedUrl?.includes('.webp') ? 'webp' : 'jpg';
+      const link = document.createElement('a');
       link.href = blobUrl;
-      const ext =
-        blob.type === 'image/jpeg' || blob.type === 'image/jpg' ? 'jpg' : 'webp';
-      link.download = `debt-${sanitizedTitle || 'document'}.${ext}`;
+      link.download = `${isLent ? 'lent' : 'debt'}-${sanitizedTitle || 'document'}.${ext}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -189,17 +190,17 @@ function GoalForm({
       formData.append('goalId', goal.id);
     }
 
-    // Handle debt image upload & compression
-    formData.append('imageAction', isDebt ? imageAction : 'keep');
+    // Handle attachment image upload & compression
+    formData.append('imageAction', hasAttachment ? imageAction : 'keep');
 
-    if (isDebt && imageAction === 'upload' && imageFile) {
+    if (hasAttachment && imageAction === 'upload' && imageFile) {
       try {
         const compressedBlob = await compressImageToWebP(imageFile, {
           maxDimension: 1600,
           quality: 0.8,
         });
         const ext = compressedBlob.type === 'image/webp' ? 'webp' : 'jpg';
-        formData.append('image_file', compressedBlob, `debt_image.${ext}`);
+        formData.append('image_file', compressedBlob, `${isLent ? 'lent' : 'debt'}_image.${ext}`);
       } catch (err) {
         console.error('Client compression failed:', err);
         if (imageFile.size <= 1024 * 1024) {
@@ -218,7 +219,13 @@ function GoalForm({
 
     if (result?.error) {
       setError(result.error);
-      toast.error(isDebt ? 'Failed to save debt payoff' : 'Failed to save savings goal');
+      toast.error(
+        isLent
+          ? 'Failed to save lent record'
+          : isDebt
+            ? 'Failed to save debt payoff'
+            : 'Failed to save savings goal',
+      );
       setIsLoading(false);
     } else {
       if (result?.goal) {
@@ -226,8 +233,16 @@ function GoalForm({
       }
       toast.success(
         isEdit
-          ? isDebt ? 'Debt payoff updated!' : 'Savings goal updated!'
-          : isDebt ? 'Debt payoff created!' : 'Savings goal created!'
+          ? isLent
+            ? 'Lent record updated!'
+            : isDebt
+              ? 'Debt payoff updated!'
+              : 'Savings goal updated!'
+          : isLent
+            ? 'Lent record created!'
+            : isDebt
+              ? 'Debt payoff created!'
+              : 'Savings goal created!',
       );
       setIsLoading(false);
       onClose();
@@ -239,17 +254,29 @@ function GoalForm({
       <ModalHeader
         title={
           isEdit
-            ? isDebt ? 'Edit Debt Payoff' : 'Edit Savings Goal'
-            : isDebt ? 'New Debt Payoff' : 'New Savings Goal'
+            ? isLent
+              ? 'Edit Lent Record'
+              : isDebt
+                ? 'Edit Debt Payoff'
+                : 'Edit Savings Goal'
+            : isLent
+              ? 'New Lent Record'
+              : isDebt
+                ? 'New Debt Payoff'
+                : 'New Savings Goal'
         }
         description={
           isEdit
-            ? isDebt
-              ? 'Update your total debt amount and payoff deadline.'
-              : 'Update your target savings amount and deadline.'
-            : isDebt
-              ? 'Track how much you owe and see how much you have left as you pay.'
-              : 'Set a target savings goal to track contributions from your cashflows.'
+            ? isLent
+              ? 'Update amount lent and expected repayment date.'
+              : isDebt
+                ? 'Update your total debt amount and payoff deadline.'
+                : 'Update your target savings amount and deadline.'
+            : isLent
+              ? 'Track money you lent to others and monitor repayments.'
+              : isDebt
+                ? 'Track how much you owe and see how much you have left as you pay.'
+                : 'Set a target savings goal to track contributions from your cashflows.'
         }
         onClose={onClose}
       />
@@ -258,7 +285,7 @@ function GoalForm({
         <div className="grid gap-4">
           {/* Target Type Selector */}
           {!isEdit && (
-            <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 rounded-lg border border-border/40">
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/60 rounded-lg border border-border/40">
               <button
                 type="button"
                 onClick={() => setType('savings')}
@@ -270,7 +297,7 @@ function GoalForm({
                 )}
               >
                 <FiTarget className="h-3.5 w-3.5 text-emerald-500" />
-                <span>Savings Goal</span>
+                <span>Savings</span>
               </button>
               <button
                 type="button"
@@ -283,7 +310,20 @@ function GoalForm({
                 )}
               >
                 <FiCreditCard className="h-3.5 w-3.5 text-indigo-500" />
-                <span>Debt Paydown</span>
+                <span>Debt</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setType('lent')}
+                className={cn(
+                  'flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer',
+                  type === 'lent'
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <FiArrowUpRight className="h-3.5 w-3.5 text-amber-500" />
+                <span>Lent</span>
               </button>
             </div>
           )}
@@ -315,7 +355,7 @@ function GoalForm({
           {/* Title */}
           <div className="grid gap-2">
             <Label htmlFor="goal-title" className="font-medium text-foreground/80">
-              {isDebt ? 'Debt Name' : 'Goal Title'}<span className="text-destructive">*</span>
+              {isLent ? 'Borrower / Description' : isDebt ? 'Debt Name' : 'Goal Title'}<span className="text-destructive">*</span>
             </Label>
             <Input
               id="goal-title"
@@ -324,9 +364,11 @@ function GoalForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={
-                isDebt
-                  ? 'e.g. Credit Card, Car Loan, Student Loan, Loan from Friend'
-                  : 'e.g. Vacation Fund, New Laptop, Emergency Fund'
+                isLent
+                  ? 'e.g. Dinner with Bob, Concert Ticket for Alex'
+                  : isDebt
+                    ? 'e.g. Credit Card, Car Loan, Student Loan, Loan from Friend'
+                    : 'e.g. Vacation Fund, New Laptop, Emergency Fund'
               }
               required
               maxLength={100}
@@ -336,7 +378,7 @@ function GoalForm({
           {/* Target Amount */}
           <div className="grid gap-2">
             <Label htmlFor="goal-target-amount" className="font-medium text-foreground/80">
-              {isDebt ? 'Total Debt Owed' : 'Target Amount'}<span className="text-destructive">*</span>
+              {isLent ? 'Total Amount Lent' : isDebt ? 'Total Debt Owed' : 'Target Amount'}<span className="text-destructive">*</span>
             </Label>
             <div className="relative">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center font-medium text-muted-foreground text-sm select-none">
@@ -361,11 +403,15 @@ function GoalForm({
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="goal-initial-amount" className="font-medium text-foreground/80">
-                {isDebt ? 'Already Paid' : 'Starting Saved Balance'}{' '}
+                {isLent ? 'Already Repaid' : isDebt ? 'Already Paid' : 'Starting Saved Balance'}{' '}
                 <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
               </Label>
               <span className="text-[11px] text-muted-foreground">
-                {isDebt ? 'Opening balance paid before Kytbox' : 'Existing funds saved elsewhere'}
+                {isLent
+                  ? 'Repayments collected before Kytbox'
+                  : isDebt
+                    ? 'Opening balance paid before Kytbox'
+                    : 'Existing funds saved elsewhere'}
               </span>
             </div>
             <div className="relative">
@@ -389,26 +435,32 @@ function GoalForm({
           {/* Deadline */}
           <div className="grid gap-2">
             <Label htmlFor="goal-deadline" className="font-medium text-foreground/80">
-              {isDebt ? 'Target Payoff Date' : 'Target Deadline'} <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+              {isLent ? 'Expected Repayment Date' : isDebt ? 'Target Payoff Date' : 'Target Deadline'} <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
             </Label>
             <DatePicker
               id="goal-deadline"
               value={deadline}
               onChange={setDeadline}
-              placeholder={isDebt ? 'Select target payoff date' : 'Select target deadline'}
+              placeholder={
+                isLent
+                  ? 'Select expected repayment date'
+                  : isDebt
+                    ? 'Select target payoff date'
+                    : 'Select target deadline'
+              }
             />
           </div>
 
-          {/* Debt Document / Attachment Upload */}
-          {isDebt && (
+          {/* Document / Attachment Upload */}
+          {hasAttachment && (
             <ImageAttachmentInput
-              label="Proof of Debt or Statement"
+              label={isLent ? 'Proof of Lending or Agreement' : 'Proof of Debt or Statement'}
               optional
               icon={<LuFileText className="w-3.5 h-3.5" />}
               existingUrl={goal?.image_url}
               existingSignedUrl={existingSignedUrl}
               isLoadingExistingThumbnail={isLoadingExistingThumbnail}
-              existingTitle="Debt statement attachment"
+              existingTitle={isLent ? 'Lending agreement attachment' : 'Debt statement attachment'}
               onDownloadExisting={handleDownloadExistingDocument}
               isDownloadingExisting={isDownloadingDocument}
               action={imageAction}
@@ -428,9 +480,17 @@ function GoalForm({
                 setImagePreviewUrl(null);
               }}
               onPreviewClick={() => setIsLightboxOpen(true)}
-              dropzoneTitle="Upload statement or document"
+              dropzoneTitle={
+                isLent
+                  ? 'Upload agreement, chat screenshot, or receipt'
+                  : 'Upload statement or document'
+              }
               dropzoneSubtitle="Drag & drop or click to browse (PNG, JPG, WebP, AVIF)"
-              tipText="💡 Clear statements or contracts help keep records dispute-proof"
+              tipText={
+                isLent
+                  ? '💡 Chat screenshots or transfer receipts keep lending clear and dispute-proof'
+                  : '💡 Clear statements or contracts help keep records dispute-proof'
+              }
             />
           )}
 
@@ -459,23 +519,31 @@ function GoalForm({
                   Saving...
                 </>
               ) : isEdit ? (
-                isDebt ? 'Save Debt Payoff' : 'Save Goal'
+                isLent
+                  ? 'Save Lent Record'
+                  : isDebt
+                    ? 'Save Debt Payoff'
+                    : 'Save Goal'
               ) : (
-                isDebt ? 'Create Debt Payoff' : 'Create Goal'
+                isLent
+                  ? 'Create Lent Record'
+                  : isDebt
+                    ? 'Create Debt Payoff'
+                    : 'Create Goal'
               )}
             </Button>
           </div>
         </DialogFooter>
       </form>
 
-      {isDebt && (
+      {hasAttachment && (
         <ReceiptLightbox
           open={isLightboxOpen}
           onOpenChange={setIsLightboxOpen}
           cashflowId={goal?.cashflow_id || selectedCashflowId}
           goalId={goal?.id}
           previewUrl={imageAction === 'upload' ? imagePreviewUrl : existingSignedUrl}
-          description={title || 'Debt Document'}
+          description={title || (isLent ? 'Lending Document' : 'Debt Document')}
         />
       )}
     </>

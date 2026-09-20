@@ -205,7 +205,7 @@ export interface CashflowGoalDTO {
   deadline: string | null
   created_at: string | null
   is_archived?: boolean
-  type?: 'savings' | 'debt'
+  type?: 'savings' | 'debt' | 'lent'
   image_url?: string | null
 }
 

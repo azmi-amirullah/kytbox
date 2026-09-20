@@ -124,7 +124,7 @@ export default function EntryModal({
     ? goals.find((goal) => goal.id === entry.goal_id)
     : undefined
   const entryCategory = entryGoal
-    ? `${entryGoal.type === 'debt' ? 'Debt:' : 'Goal:'} ${entryGoal.title}`
+    ? `${entryGoal.type === 'debt' ? 'Debt:' : entryGoal.type === 'lent' ? 'Lent:' : 'Goal:'} ${entryGoal.title}`
     : entryCategorySchema.parse(entry?.category)
 
   const [prevOpen, setPrevOpen] = useState(open)
@@ -927,11 +927,15 @@ export default function EntryModal({
                     (g) => `goal-${g.id}` === v,
                   )
                   if (selectedGoal) {
-                    setType('expense')
+                    setType(selectedGoal.type === 'lent' ? 'income' : 'expense')
                     setGoalId(selectedGoal.id)
-                    setCategory(
-                      `${selectedGoal.type === 'debt' ? 'Debt:' : 'Goal:'} ${selectedGoal.title}`,
-                    )
+                    const targetPrefix =
+                      selectedGoal.type === 'debt'
+                        ? 'Debt:'
+                        : selectedGoal.type === 'lent'
+                          ? 'Lent:'
+                          : 'Goal:'
+                    setCategory(`${targetPrefix} ${selectedGoal.title}`)
                     return
                   }
                   setGoalId(null)
@@ -962,50 +966,82 @@ export default function EntryModal({
                       </span>
                     </SelectItem>
                   )}
-                  {activeGoals.filter((g) => g.type !== 'debt').length > 0 && (
-                    <>
-                      <div className='h-px bg-border my-1.5' />
-                      <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
-                        Savings Goals
-                      </div>
-                      {activeGoals
-                        .filter((g) => g.type !== 'debt')
-                        .map((g) => (
-                          <SelectItem key={g.id} value={`goal-${g.id}`}>
-                            <span className='flex flex-col items-start'>
-                              <span>Goal: {g.title}</span>
-                              {g.cashflow_title && (
-                                <span className='text-[10px] text-muted-foreground'>
-                                  Cashflow: {g.cashflow_title}
-                                </span>
-                              )}
-                            </span>
-                          </SelectItem>
-                        ))}
-                    </>
+                  {type === 'income' && isArchivedGoal && (
+                    <SelectItem value='archived-goal' disabled>
+                      <span className='text-muted-foreground'>
+                        Archived lent target (history preserved)
+                      </span>
+                    </SelectItem>
                   )}
-                  {activeGoals.filter((g) => g.type === 'debt').length > 0 && (
-                    <>
-                      <div className='h-px bg-border my-1.5' />
-                      <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
-                        Debt Paydowns
-                      </div>
-                      {activeGoals
-                        .filter((g) => g.type === 'debt')
-                        .map((g) => (
-                          <SelectItem key={g.id} value={`goal-${g.id}`}>
-                            <span className='flex flex-col items-start'>
-                              <span>Debt: {g.title}</span>
-                              {g.cashflow_title && (
-                                <span className='text-[10px] text-muted-foreground'>
-                                  Cashflow: {g.cashflow_title}
-                                </span>
-                              )}
-                            </span>
-                          </SelectItem>
-                        ))}
-                    </>
-                  )}
+                  {type === 'expense' &&
+                    activeGoals.filter((g) => g.type !== 'debt' && g.type !== 'lent').length > 0 && (
+                      <>
+                        <div className='h-px bg-border my-1.5' />
+                        <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                          Savings Goals
+                        </div>
+                        {activeGoals
+                          .filter((g) => g.type !== 'debt' && g.type !== 'lent')
+                          .map((g) => (
+                            <SelectItem key={g.id} value={`goal-${g.id}`}>
+                              <span className='flex flex-col items-start'>
+                                <span>Goal: {g.title}</span>
+                                {g.cashflow_title && (
+                                  <span className='text-[10px] text-muted-foreground'>
+                                    Cashflow: {g.cashflow_title}
+                                  </span>
+                                )}
+                              </span>
+                            </SelectItem>
+                          ))}
+                      </>
+                    )}
+                  {type === 'expense' &&
+                    activeGoals.filter((g) => g.type === 'debt').length > 0 && (
+                      <>
+                        <div className='h-px bg-border my-1.5' />
+                        <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                          Debt Paydowns
+                        </div>
+                        {activeGoals
+                          .filter((g) => g.type === 'debt')
+                          .map((g) => (
+                            <SelectItem key={g.id} value={`goal-${g.id}`}>
+                              <span className='flex flex-col items-start'>
+                                <span>Debt: {g.title}</span>
+                                {g.cashflow_title && (
+                                  <span className='text-[10px] text-muted-foreground'>
+                                    Cashflow: {g.cashflow_title}
+                                  </span>
+                                )}
+                              </span>
+                            </SelectItem>
+                          ))}
+                      </>
+                    )}
+                  {type === 'income' &&
+                    activeGoals.filter((g) => g.type === 'lent').length > 0 && (
+                      <>
+                        <div className='h-px bg-border my-1.5' />
+                        <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                          Lent Repayments
+                        </div>
+                        {activeGoals
+                          .filter((g) => g.type === 'lent')
+                          .map((g) => (
+                            <SelectItem key={g.id} value={`goal-${g.id}`}>
+                              <span className='flex flex-col items-start'>
+                                <span>Lent: {g.title}</span>
+                                {g.cashflow_title && (
+                                  <span className='text-[10px] text-muted-foreground'>
+                                    Cashflow: {g.cashflow_title}
+                                  </span>
+                                )}
+                              </span>
+                            </SelectItem>
+                          ))}
+                      </>
+                    )}
                 </SelectContent>
               </Select>
             </div>

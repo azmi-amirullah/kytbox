@@ -61,7 +61,7 @@ export async function getGoalDetailData(
       .from('cashflow_entries')
       .select('*')
       .eq('goal_id', goal.id)
-      .eq('type', 'expense')
+      .eq('type', goal.type === 'lent' ? 'income' : 'expense')
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(1000),
@@ -80,7 +80,7 @@ export async function getGoalDetailData(
     mapCashflowEntryToDTO(
       entry,
       goal.title,
-      goal.type === 'debt' ? 'debt' : 'savings',
+      goal.type === 'debt' ? 'debt' : goal.type === 'lent' ? 'lent' : 'savings',
     ),
   )
 
