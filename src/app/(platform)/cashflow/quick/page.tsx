@@ -58,7 +58,7 @@ export default async function QuickLogPage({
     )
     .eq('cashflow_id', activeBookId)
     .order('date', { ascending: false })
-    .limit(100);
+    .limit(1000);
 
   const recentEntries = rawEntries
     ? rawEntries.map((row) => mapCashflowEntryToDTO(row))

@@ -71,10 +71,10 @@ describe('PinnedCashflowsSection', () => {
     expect(dailySpendingLink.getAttribute('href')).toBe('/cashflow/cashflow-1')
     expect(emergencyFundLink.getAttribute('href')).toBe('/cashflow/cashflow-2')
 
-    // Check fast entry action button link
-    const addEntryLinks = screen.getAllByRole('link', { name: /Record entry in /i })
-    expect(addEntryLinks).toHaveLength(2)
-    expect(addEntryLinks[0].getAttribute('href')).toBe('/cashflow/cashflow-1?action=add')
-    expect(addEntryLinks[1].getAttribute('href')).toBe('/cashflow/cashflow-2?action=add')
+    // Check fast entry action button
+    const quickLogButtons = screen.getAllByRole('button', { name: /Quick log entry in /i })
+    expect(quickLogButtons).toHaveLength(2)
+    expect(quickLogButtons[0].getAttribute('aria-label')).toBe('Quick log entry in Daily Spending')
+    expect(quickLogButtons[1].getAttribute('aria-label')).toBe('Quick log entry in Emergency Fund')
   })
 })

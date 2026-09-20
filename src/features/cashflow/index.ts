@@ -23,6 +23,8 @@ export * from './lib/runway';
 export * from './audit';
 export * from './split-actions';
 export { default as QuickLogForm } from './components/QuickLogForm';
+export { default as QuickLogModal } from './components/QuickLogModal';
+export { QuickLogModalTrigger } from './components/QuickLogModalTrigger';
 export * from './lib/merchant-rules';
 export * from './lib/receipt-extractor';
 export * from './ai-actions';

@@ -24,15 +24,19 @@ import {
   LuFileText,
   LuUsers,
   LuPaperclip,
+  LuX,
 } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import { addEntry } from '../actions';
+import { addEntry, getRecentEntriesForQuickLog } from '../actions';
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   formatCategoryName,
 } from '../constants';
-import { resolveMerchantCategory } from '../lib/merchant-rules';
+import {
+  resolveMerchantCategory,
+  learnMerchantRulesFromEntries,
+} from '../lib/merchant-rules';
 import { extractReceiptData } from '../lib/receipt-extractor';
 import {
   compressImageToWebP,
@@ -52,6 +56,9 @@ interface QuickLogFormProps {
   defaultCurrency?: string;
   recentEntries?: CashflowEntryDTO[];
   availableTags?: string[];
+  isModal?: boolean;
+  onSuccessCallback?: () => void;
+  onClose?: () => void;
 }
 
 export default function QuickLogForm({
@@ -61,6 +68,9 @@ export default function QuickLogForm({
   defaultCurrency = 'USD',
   recentEntries = [],
   availableTags = [],
+  isModal = false,
+  onSuccessCallback,
+  onClose,
 }: QuickLogFormProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -93,12 +103,41 @@ export default function QuickLogForm({
     amountInputRef.current?.focus();
   }, []);
 
+  // Entries used for merchant learning: start with prop, or lazy-fetch up to 1000 entries
+  const [entriesToUse, setEntriesToUse] = useState<CashflowEntryDTO[]>(recentEntries);
+  const hasInitialEntries = recentEntries.length > 0;
+
+  useEffect(() => {
+    if (!selectedBookId) return;
+
+    // If initial entries were provided via props for the default book, they are already in state
+    if (hasInitialEntries && selectedBookId === defaultBookId) {
+      return;
+    }
+
+    let isMounted = true;
+    getRecentEntriesForQuickLog(selectedBookId).then((res) => {
+      if (isMounted && res.entries && res.entries.length > 0) {
+        setEntriesToUse(res.entries);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedBookId, defaultBookId, hasInitialEntries]);
+
+  // Build learned merchant index once per entries update to prevent per-keystroke re-indexing
+  const learnedIndex = useMemo(() => {
+    return learnMerchantRulesFromEntries(entriesToUse);
+  }, [entriesToUse]);
+
   // Real-time merchant matching from description
   const merchantMatch = useMemo(() => {
-    return resolveMerchantCategory(description, type, recentEntries);
-  }, [description, type, recentEntries]);
+    return resolveMerchantCategory(description, type, learnedIndex);
+  }, [description, type, learnedIndex]);
 
-  // Auto-select category when merchant is recognized and user hasn't typed an amount yet or changed category
+  // Auto-select category and apply suggested tags when merchant is recognized
   useEffect(() => {
     if (isAiScanRef.current) {
       isAiScanRef.current = false;
@@ -106,6 +145,13 @@ export default function QuickLogForm({
     }
     if (merchantMatch && merchantMatch.category) {
       setCategory(merchantMatch.category);
+    }
+    if (merchantMatch && merchantMatch.suggestedTags && merchantMatch.suggestedTags.length > 0) {
+      setTags((prev) => {
+        const set = new Set(prev);
+        merchantMatch.suggestedTags?.forEach((t) => set.add(t));
+        return Array.from(set);
+      });
     }
   }, [merchantMatch]);
 
@@ -239,6 +285,8 @@ export default function QuickLogForm({
       setScannedReceiptFile(null);
       setAttachReceipt(false);
       amountInputRef.current?.focus();
+
+      onSuccessCallback?.();
     });
   };
 
@@ -249,13 +297,13 @@ export default function QuickLogForm({
   const derivedAvailableTags = useMemo(() => {
     if (availableTags && availableTags.length > 0) return availableTags;
     const set = new Set<string>();
-    for (const e of recentEntries) {
+    for (const e of entriesToUse) {
       if (e.tags) {
         for (const t of e.tags) set.add(t);
       }
     }
     return Array.from(set);
-  }, [availableTags, recentEntries]);
+  }, [availableTags, entriesToUse]);
 
   // Navigation rule:
   // 1. If user entered at least once -> redirect to that book's detail page
@@ -277,26 +325,35 @@ export default function QuickLogForm({
     : 'Back to Cashflow';
 
   return (
-    <div className='w-full max-w-md mx-auto px-4 py-6 md:py-8'>
-      {/* Top Navigation */}
-      <div className='flex items-center justify-between mb-6'>
-        <Link
-          href={backHref}
-          className='inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors p-1.5 -ml-1.5 rounded-md hover:bg-muted/50 cursor-pointer'
-          title={backLabel}
-        >
-          <LuArrowLeft className='w-4 h-4' />
-          <span className='truncate max-w-45 sm:max-w-60'>
-            {backLabel}
-          </span>
-        </Link>
-        <div className='flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary'>
-          <LuZap className='w-3.5 h-3.5' />
-          <span>2-Second Fast Log</span>
+    <div className={cn(isModal ? 'w-full' : 'w-full max-w-md mx-auto px-4 py-6 md:py-8')}>
+      {/* Top Navigation - only rendered on standalone page */}
+      {!isModal && (
+        <div className='flex items-center justify-between mb-6'>
+          <Link
+            href={backHref}
+            className='inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors p-1.5 -ml-1.5 rounded-md hover:bg-muted/50 cursor-pointer'
+            title={backLabel}
+          >
+            <LuArrowLeft className='w-4 h-4' />
+            <span className='truncate max-w-45 sm:max-w-60'>
+              {backLabel}
+            </span>
+          </Link>
+          <div className='flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary'>
+            <LuZap className='w-3.5 h-3.5' />
+            <span>2-Second Fast Log</span>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className='bg-card border border-border/80 rounded-2xl shadow-xl overflow-hidden'>
+      <div
+        className={cn(
+          'overflow-hidden',
+          isModal
+            ? 'border-0 bg-transparent shadow-none'
+            : 'bg-card border border-border/80 rounded-2xl shadow-xl',
+        )}
+      >
         {/* Book Selector & Type Toggle Bar */}
         <div className='p-4 border-b border-border/60 bg-muted/20 space-y-3'>
           <div className='flex items-end justify-between gap-3'>
@@ -342,10 +399,8 @@ export default function QuickLogForm({
                   </SelectContent>
                 </Select>
               ) : (
-                <div className='flex items-center gap-1.5 truncate h-9'>
-                  <p className='text-xs font-semibold text-foreground truncate'>
-                    {books[0]?.title || 'Default Book'}
-                  </p>
+                <div className='flex items-center justify-between w-full h-9 px-3 rounded-md border border-input bg-card text-xs font-medium shadow-xs'>
+                  <span className='truncate text-foreground'>{books[0]?.title || 'Default Book'}</span>
                   {books[0]?.isShared && (
                     <span className='text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium flex items-center gap-1 shrink-0'>
                       <LuUsers className='w-3 h-3' />
@@ -356,8 +411,8 @@ export default function QuickLogForm({
               )}
             </div>
 
-            {/* Zero-Storage Scan Receipt Trigger */}
-            <div className='shrink-0'>
+            {/* Zero-Storage Scan Receipt Trigger & Optional Modal Close */}
+            <div className='shrink-0 flex items-center gap-2'>
               <Button
                 type='button'
                 variant='outline'
@@ -391,6 +446,18 @@ export default function QuickLogForm({
                   e.target.value = '';
                 }}
               />
+
+              {isModal && onClose && (
+                <button
+                  type='button'
+                  onClick={onClose}
+                  className='flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer'
+                  aria-label='Close quick log modal'
+                  title='Close'
+                >
+                  <LuX className='size-4' />
+                </button>
+              )}
             </div>
           </div>
 
@@ -623,6 +690,18 @@ export default function QuickLogForm({
               </button>
             </div>
           )}
+
+          {/* Full Entry Form Link for advanced options */}
+          <div className='pt-1 text-center border-t border-border/40 mt-3'>
+            <Link
+              href={`/cashflow/${selectedBookId}?action=add`}
+              onClick={() => onClose?.()}
+              className='inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer group font-medium py-1'
+            >
+              <span>Need splits, recurring rules, or multi-currency? Open full editor</span>
+              <LuArrowRight className='w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 shrink-0' />
+            </Link>
+          </div>
         </form>
       </div>
     </div>

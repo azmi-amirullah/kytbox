@@ -2,13 +2,13 @@ import Link from 'next/link'
 import {
   LuWallet,
   LuPin,
-  LuPlus,
   LuArrowUpRight,
   LuArrowDownRight,
 } from 'react-icons/lu'
 import { formatCurrencyCompact } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import type { CashflowWithSummaryDTO } from '@/types/dto'
+import { QuickLogModalTrigger } from './QuickLogModalTrigger'
 
 interface PinnedCashflowsSectionProps {
   pinnedCashflows: CashflowWithSummaryDTO[]
@@ -87,15 +87,12 @@ export function PinnedCashflowsSection({
                   </div>
                 </div>
 
-                {/* Quick Add Entry Button */}
-                <Link
-                  href={`/cashflow/${cashflow.id}?action=add`}
-                  className='relative z-20 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-secondary/60 text-secondary-foreground transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                  title={`Record an entry in ${cashflow.title}`}
-                  aria-label={`Record entry in ${cashflow.title}`}
-                >
-                  <LuPlus className='size-4' aria-hidden='true' />
-                </Link>
+                {/* Fast Quick Log Shortcut */}
+                <QuickLogModalTrigger
+                  cashflow={cashflow}
+                  allBooks={pinnedCashflows}
+                  defaultCurrency={defaultCurrency}
+                />
               </div>
 
               {/* Card Bottom: Balance Display with Trend Indicator */}

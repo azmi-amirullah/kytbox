@@ -39,6 +39,7 @@ import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { mapBudgetToDTO, mapGoalToDTO, mapCashflowEntryToDTO, mapCashflowRecurringRuleToDTO } from '@/lib/mappers';
+import type { CashflowEntryDTO } from '@/types/dto';
 import { createNotification } from '@/features/notifications';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
@@ -698,6 +699,7 @@ export async function addEntry(formData: FormData) {
 
   await ensureCashflowTags(supabase, cashflowId, user.id, tags ?? []);
 
+  revalidatePath('/app');
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
 
@@ -3191,3 +3193,45 @@ export async function getCashflowTotalEntryCount(
     return { count: null };
   }
 }
+
+/**
+ * Fetch recent entries for merchant learning and tag suggestions in Quick Log.
+ * Strictly checks permissions and returns up to 1000 entries.
+ */
+export async function getRecentEntriesForQuickLog(
+  cashflowId: string,
+): Promise<{ entries: CashflowEntryDTO[]; error?: string }> {
+  if (!cashflowId || typeof cashflowId !== 'string') {
+    return { entries: [] };
+  }
+
+  try {
+    const { user, supabase } = await getAuthenticatedUserOnly();
+
+    const permission = await checkEditPermission(supabase, cashflowId, user);
+    if (!permission.canEdit) {
+      return { entries: [], error: 'Access denied' };
+    }
+
+    const { data: rawEntries, error } = await supabase
+      .from('cashflow_entries')
+      .select(
+        'id, cashflow_id, goal_id, description, amount, type, category, date, is_recurring, recurrence_interval, yearly_calculation, tags, receipt_url, original_currency, original_amount, exchange_rate, recurring_rule_id, created_at',
+      )
+      .eq('cashflow_id', cashflowId)
+      .order('date', { ascending: false })
+      .limit(1000);
+
+    if (error) {
+      console.warn('get_recent_entries_for_quick_log_failed', error);
+      return { entries: [], error: error.message };
+    }
+
+    const entries = (rawEntries || []).map((row) => mapCashflowEntryToDTO(row));
+    return { entries };
+  } catch (err) {
+    console.warn('get_recent_entries_for_quick_log_error', err);
+    return { entries: [], error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}
+
