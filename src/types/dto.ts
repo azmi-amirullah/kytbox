@@ -206,6 +206,7 @@ export interface CashflowGoalDTO {
   created_at: string | null
   is_archived?: boolean
   type?: 'savings' | 'debt'
+  image_url?: string | null
 }
 
 export interface CashflowChartAggregateDTO {

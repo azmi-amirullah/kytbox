@@ -3,6 +3,7 @@ import {
   cashflowEntrySchema,
   cashflowBudgetSchema,
   cashflowGoalSchema,
+  getGoalImageSignedUrlSchema,
   generateRecurringSchema,
   getGoalEntryValidationError,
   shouldPreserveExistingGoalRelation,
@@ -162,6 +163,70 @@ describe('Cashflow Server Schemas', () => {
       });
       expect(result.success).toBe(false);
     });
+
+    it('validates imageAction with default keep and custom actions', () => {
+      const defaultAction = cashflowGoalSchema.safeParse({
+        cashflowId: 'a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab',
+        title: 'Debt Payoff',
+        targetAmount: 5000,
+        type: 'debt',
+      });
+      expect(defaultAction.success).toBe(true);
+      if (defaultAction.success) {
+        expect(defaultAction.data.imageAction).toBe('keep');
+      }
+
+      const uploadAction = cashflowGoalSchema.safeParse({
+        cashflowId: 'a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab',
+        title: 'Debt Payoff',
+        targetAmount: 5000,
+        type: 'debt',
+        imageAction: 'upload',
+      });
+      expect(uploadAction.success).toBe(true);
+      if (uploadAction.success) {
+        expect(uploadAction.data.imageAction).toBe('upload');
+      }
+
+      const removeAction = cashflowGoalSchema.safeParse({
+        cashflowId: 'a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab',
+        title: 'Debt Payoff',
+        targetAmount: 5000,
+        type: 'debt',
+        imageAction: 'remove',
+      });
+      expect(removeAction.success).toBe(true);
+      if (removeAction.success) {
+        expect(removeAction.data.imageAction).toBe('remove');
+      }
+
+      const invalidAction = cashflowGoalSchema.safeParse({
+        cashflowId: 'a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab',
+        title: 'Debt Payoff',
+        targetAmount: 5000,
+        type: 'debt',
+        imageAction: 'destroy',
+      });
+      expect(invalidAction.success).toBe(false);
+    });
+  });
+
+  describe('getGoalImageSignedUrlSchema', () => {
+    it('validates correct cashflowId and goalId', () => {
+      const result = getGoalImageSignedUrlSchema.safeParse({
+        cashflowId: 'a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab',
+        goalId: 'b2c3d4e5-f6a7-4b8c-9d0e-123456789abc',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects invalid UUIDs', () => {
+      const result = getGoalImageSignedUrlSchema.safeParse({
+        cashflowId: 'not-a-uuid',
+        goalId: 'b2c3d4e5-f6a7-4b8c-9d0e-123456789abc',
+      });
+      expect(result.success).toBe(false);
+    });
   });
 
   describe('goal and debt entry categories', () => {
@@ -241,6 +306,7 @@ describe('Cashflow Server Schemas', () => {
           created_at: '2026-07-27T00:00:00.000Z',
           type: 'savings',
           initial_amount: 0,
+          image_url: null,
         },
         'Personal Budget',
       );
@@ -265,6 +331,7 @@ describe('Cashflow Server Schemas', () => {
           is_deleted: false,
           created_at: '2026-09-01T00:00:00.000Z',
           type: 'debt',
+          image_url: null,
         },
         'Personal Budget',
         1000,
@@ -289,6 +356,7 @@ describe('Cashflow Server Schemas', () => {
         is_deleted: false,
         created_at: '2026-09-01T00:00:00.000Z',
         type: 'debt',
+        image_url: null,
       });
 
       expect(debtGoal.initial_amount).toBe(250000000);
@@ -307,9 +375,40 @@ describe('Cashflow Server Schemas', () => {
         created_at: '2026-01-01T00:00:00.000Z',
         type: 'savings',
         initial_amount: 0,
+        image_url: null,
       });
 
       expect(archivedGoal.is_archived).toBe(true);
+    });
+
+    it('maps image_url correctly when present and null', () => {
+      const goalWithImage = mapGoalToDTO({
+        id: 'goal-id-img',
+        cashflow_id: 'cashflow-id',
+        title: 'Car Loan',
+        target_amount: 15000,
+        initial_amount: 1000,
+        deadline: null,
+        is_deleted: false,
+        created_at: '2026-09-01T00:00:00.000Z',
+        type: 'debt',
+        image_url: 'user-id/cashflow-id/debt/image.webp',
+      });
+      expect(goalWithImage.image_url).toBe('user-id/cashflow-id/debt/image.webp');
+
+      const goalWithoutImage = mapGoalToDTO({
+        id: 'goal-id-no-img',
+        cashflow_id: 'cashflow-id',
+        title: 'Vacation',
+        target_amount: 5000,
+        initial_amount: 0,
+        deadline: null,
+        is_deleted: false,
+        created_at: '2026-09-01T00:00:00.000Z',
+        type: 'savings',
+        image_url: null,
+      });
+      expect(goalWithoutImage.image_url).toBeNull();
     });
   });
 

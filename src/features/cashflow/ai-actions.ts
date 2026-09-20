@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { env } from '@/env';
 import { getAuthenticatedUserWithRateLimit } from '@/lib/auth-with-rate-limit';
 import * as Sentry from '@sentry/nextjs';
-import { EXPENSE_CATEGORIES } from './constants';
+import { EXPENSE_CATEGORIES, isTagDuplicateOfCategory } from './constants';
 import type { ExtractedReceiptData } from './lib/receipt-extractor';
 
 const parseReceiptImageInputSchema = z.object({
@@ -72,7 +72,7 @@ const geminiGenerationConfig = {
       suggestedTags: {
         type: 'ARRAY',
         items: { type: 'STRING' },
-        description: '1 to 3 relevant tags',
+        description: '1 to 3 relevant tags with the first character uppercase (e.g. ["Coffee", "Cafe"], ["Groceries", "Supermarket"]). Must NOT duplicate the chosen category.',
       },
       confidence: {
         type: 'NUMBER',
@@ -103,7 +103,7 @@ Rules:
    - If year is 2 digits (e.g., '26), convert to 20XX.
    - If date cannot be determined, return null.
 4. category: Choose the single best category slug from the valid categories list above based on the items or merchant type. If unsure, use "other".
-5. suggestedTags: Provide 1 to 3 short lowercase keyword tags (e.g. ["coffee", "cafe"], ["groceries", "supermarket"]).
+5. suggestedTags: Provide 1 to 3 short keyword tags where the first character of each tag is uppercase (e.g. ["Coffee", "Cafe"], ["Groceries", "Supermarket"]). Never suggest a tag that duplicates the chosen category (e.g. if category is transport, do not include "Transport"; if food, do not include "Food").
 6. confidence: A number between 0.0 and 1.0 reflecting extraction certainty.`;
 
 /**
@@ -193,6 +193,17 @@ ${RECEIPT_EXTRACTION_INSTRUCTIONS}`;
 
     const { merchant, amount, date, category, suggestedTags, confidence } = parsedData.data;
 
+    const formattedTags = (suggestedTags ?? [])
+      .map((tag) => {
+        const cleaned = tag.trim().replace(/^#/, '');
+        if (!cleaned) return '';
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      })
+      .filter(
+        (t): t is string =>
+          Boolean(t) && !isTagDuplicateOfCategory(t, category),
+      );
+
     return {
       success: true,
       data: {
@@ -200,7 +211,7 @@ ${RECEIPT_EXTRACTION_INSTRUCTIONS}`;
         amount,
         date,
         category,
-        suggestedTags,
+        suggestedTags: formattedTags,
         confidence,
       },
     };

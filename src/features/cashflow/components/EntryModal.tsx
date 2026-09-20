@@ -25,13 +25,10 @@ import {
   LuRepeat,
   LuListPlus,
   LuPaperclip,
-  LuReceipt,
-  LuTrash2,
-  LuUpload,
-  LuDownload,
   LuSparkles,
   LuScanLine,
 } from 'react-icons/lu'
+import ImageAttachmentInput from './ImageAttachmentInput'
 import { toast } from 'react-toastify'
 import { addEntry, updateEntry, getReceiptSignedUrl } from '../actions'
 import type {
@@ -51,6 +48,7 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   formatCategoryName,
+  isTagDuplicateOfCategory,
 } from '../constants'
 import { resolveMerchantCategory } from '../lib/merchant-rules'
 import { extractReceiptData } from '../lib/receipt-extractor'
@@ -69,21 +67,25 @@ import { getTodayDateOnlyString } from '@/lib/date-only'
 function mergeTagsWithoutPluralDuplicates(
   existing: string[],
   incoming: string[],
+  category?: string | null,
 ): string[] {
   const result = [...existing]
   for (const tag of incoming) {
-    const trimmed = tag.trim().toLowerCase()
+    const trimmed = tag.trim().replace(/^#/, '')
     if (!trimmed) continue
+    if (category && isTagDuplicateOfCategory(trimmed, category)) continue
+    const formatted = trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
+    const lower = formatted.toLowerCase()
     const isDuplicate = result.some((curr) => {
       const currLower = curr.toLowerCase()
       return (
-        currLower === trimmed ||
-        currLower === `${trimmed}s` ||
-        `${currLower}s` === trimmed
+        currLower === lower ||
+        currLower === `${lower}s` ||
+        `${currLower}s` === lower
       )
     })
     if (!isDuplicate) {
-      result.push(trimmed)
+      result.push(formatted)
     }
   }
   return result
@@ -168,7 +170,6 @@ export default function EntryModal({
   const [isLoadingExistingThumbnail, setIsLoadingExistingThumbnail] =
     useState(false)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
-  const receiptInputRef = useRef<HTMLInputElement>(null)
   const [isExtractingReceipt, setIsExtractingReceipt] = useState(false)
   const [ocrStatus, setOcrStatus] = useState<string | null>(null)
   const [lastScannedFile, setLastScannedFile] = useState<File | null>(null)
@@ -201,7 +202,11 @@ export default function EntryModal({
     setCategory(merchantMatch.category)
     if (merchantMatch.suggestedTags && merchantMatch.suggestedTags.length > 0) {
       setTags((prev) =>
-        mergeTagsWithoutPluralDuplicates(prev, merchantMatch.suggestedTags!),
+        mergeTagsWithoutPluralDuplicates(
+          prev,
+          merchantMatch.suggestedTags!,
+          merchantMatch.category,
+        ),
       )
     }
   }, [merchantMatch, goalId, isEdit, description])
@@ -381,12 +386,17 @@ export default function EntryModal({
       if (extracted.date) {
         setDate(extracted.date)
       }
+      const targetCat = extracted.category || category
       if (extracted.category && !goalId) {
         setCategory(extracted.category)
       }
       if (extracted.suggestedTags && extracted.suggestedTags.length > 0) {
         setTags((prev) =>
-          mergeTagsWithoutPluralDuplicates(prev, extracted.suggestedTags!),
+          mergeTagsWithoutPluralDuplicates(
+            prev,
+            extracted.suggestedTags!,
+            targetCat,
+          ),
         )
       }
       toast.success(
@@ -1017,231 +1027,52 @@ export default function EntryModal({
 
             {/* Receipt / Attachment Upload */}
             <div className='grid gap-2 w-full min-w-0'>
-              <div className='flex flex-wrap items-center justify-between gap-1.5'>
-                <Label className='font-medium text-foreground/80 flex items-center gap-1.5'>
-                  <LuPaperclip className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
-                  <span>Receipt / Attachment</span>
-                </Label>
-                {lastScannedFile && receiptAction !== 'upload' && (
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='sm'
-                    onClick={() => handleFileSelect(lastScannedFile)}
-                    className='h-7 text-xs px-2.5 gap-1.5 border-primary/40 hover:bg-primary/10 text-primary cursor-pointer'
-                  >
-                    <LuPaperclip className='w-3 h-3' />
-                    <span>Attach Scanned Receipt</span>
-                  </Button>
-                )}
-              </div>
-
-              {/* Case 1: Existing receipt attached and not removed */}
-              {existingReceiptUrl && receiptAction === 'keep' && (
-                <div className='flex flex-col @xs:flex-row items-stretch @xs:items-center justify-between p-3 rounded-lg border border-border bg-muted/20 gap-2.5'>
-                  <div
-                    role='button'
-                    tabIndex={0}
-                    onClick={() =>
-                      existingSignedUrl ? setIsLightboxOpen(true) : null
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        if (existingSignedUrl) setIsLightboxOpen(true)
-                      }
-                    }}
-                    className='flex items-center gap-2.5 min-w-0 cursor-pointer group/thumb flex-1 pr-2'
-                    title={
-                      existingSignedUrl
-                        ? 'Click to preview receipt in full screen'
-                        : undefined
-                    }
-                  >
-                    {existingSignedUrl ? (
-                      <div className='relative w-10 h-10 rounded border border-border bg-card overflow-hidden shrink-0 group-hover/thumb:ring-2 group-hover/thumb:ring-primary/50 transition-all'>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={existingSignedUrl}
-                          alt='Receipt thumbnail'
-                          className='w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-200'
-                        />
-                      </div>
-                    ) : isLoadingExistingThumbnail ? (
-                      <div className='w-10 h-10 rounded border border-border bg-muted/40 flex items-center justify-center shrink-0 animate-pulse'>
-                        <LuLoader className='w-4 h-4 animate-spin text-muted-foreground' />
-                      </div>
-                    ) : (
-                      <div className='w-10 h-10 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0'>
-                        <LuReceipt className='w-4 h-4' />
-                      </div>
-                    )}
-                    <div className='min-w-0 flex-1'>
-                      <p className='text-xs font-medium truncate group-hover/thumb:text-primary transition-colors'>
-                        Attached Receipt
-                      </p>
-                      <p className='text-[10px] text-muted-foreground'>
-                        {existingSignedUrl
-                          ? 'Click image to preview'
-                          : 'Saved securely'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className='flex items-center gap-1.5 shrink-0 justify-end'>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      className='h-7 w-7 text-muted-foreground hover:text-foreground'
-                      onClick={handleDownloadExistingReceipt}
-                      disabled={isDownloadingReceipt}
-                      title='Download receipt'
-                      aria-label='Download receipt'
-                    >
-                      {isDownloadingReceipt ? (
-                        <LuLoader className='w-3.5 h-3.5 animate-spin' />
-                      ) : (
-                        <LuDownload className='w-3.5 h-3.5' />
-                      )}
-                    </Button>
+              <ImageAttachmentInput
+                label='Receipt / Attachment'
+                optional
+                icon={<LuPaperclip className='w-3.5 h-3.5 text-muted-foreground shrink-0' />}
+                headerAction={
+                  lastScannedFile && receiptAction !== 'upload' ? (
                     <Button
                       type='button'
                       variant='outline'
                       size='sm'
-                      className='h-7 text-xs px-2'
-                      onClick={() => receiptInputRef.current?.click()}
+                      onClick={() => handleFileSelect(lastScannedFile)}
+                      className='h-7 text-xs px-2.5 gap-1.5 border-primary/40 hover:bg-primary/10 text-primary cursor-pointer'
                     >
-                      Replace
+                      <LuPaperclip className='w-3 h-3' />
+                      <span>Attach Scanned Receipt</span>
                     </Button>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      className='h-7 w-7 text-destructive hover:bg-destructive/10'
-                      onClick={() => {
-                        setReceiptAction('remove')
-                        setReceiptFile(null)
-                        if (receiptPreviewUrl)
-                          URL.revokeObjectURL(receiptPreviewUrl)
-                        setReceiptPreviewUrl(null)
-                      }}
-                      title='Remove receipt'
-                    >
-                      <LuTrash2 className='w-3.5 h-3.5' />
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Case 2: Newly selected file preview */}
-              {receiptAction === 'upload' && receiptPreviewUrl && (
-                <div className='flex items-center justify-between p-2.5 rounded-lg border border-primary/30 bg-primary/5'>
-                  <div
-                    role='button'
-                    tabIndex={0}
-                    onClick={() => setIsLightboxOpen(true)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        setIsLightboxOpen(true)
-                      }
-                    }}
-                    className='flex items-center gap-2.5 min-w-0 flex-1 pr-2 cursor-pointer group/newthumb'
-                    title='Click to preview in full screen'
-                  >
-                    <div className='relative w-10 h-10 rounded border border-primary/30 bg-card overflow-hidden shrink-0 group-hover/newthumb:ring-2 group-hover/newthumb:ring-primary/50 transition-all flex items-center justify-center'>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={receiptPreviewUrl}
-                        alt='Receipt preview'
-                        className='w-full h-full object-cover group-hover/newthumb:scale-110 transition-transform duration-200'
-                      />
-                    </div>
-                    <div className='min-w-0'>
-                      <p className='text-xs font-medium truncate group-hover/newthumb:text-primary transition-colors'>
-                        {receiptFile?.name || 'receipt.webp'}
-                      </p>
-                      <p className='text-[10px] text-muted-foreground'>
-                        {receiptFile
-                          ? receiptFile.size < 1024 * 1024
-                            ? `${(receiptFile.size / 1024).toFixed(1)} KB • Click to preview`
-                            : `${(receiptFile.size / (1024 * 1024)).toFixed(1)} MB • Click to preview`
-                          : 'Click to preview'}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    className='h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0'
-                    onClick={() => {
-                      setReceiptAction(existingReceiptUrl ? 'keep' : 'keep')
-                      setReceiptFile(null)
-                      if (receiptPreviewUrl)
-                        URL.revokeObjectURL(receiptPreviewUrl)
-                      setReceiptPreviewUrl(null)
-                    }}
-                    title='Cancel upload'
-                  >
-                    <LuTrash2 className='w-3.5 h-3.5' />
-                  </Button>
-                </div>
-              )}
-
-              {/* Case 3: No receipt or replaced/removed */}
-              {(!existingReceiptUrl || receiptAction === 'remove') &&
-                !receiptPreviewUrl && (
-                  <div
-                    role='button'
-                    tabIndex={0}
-                    onClick={() => receiptInputRef.current?.click()}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        receiptInputRef.current?.click()
-                      }
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      const droppedFile = e.dataTransfer.files?.[0]
-                      if (droppedFile && isSupportedImageFile(droppedFile)) {
-                        handleFileSelect(droppedFile)
-                      } else if (droppedFile) {
-                        toast.error(
-                          'Only standard image files (JPG, PNG, WebP) are supported',
-                        )
-                      }
-                    }}
-                    className='flex flex-col items-center justify-center p-4 border border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/30 rounded-lg cursor-pointer transition-colors text-center group'
-                  >
-                    <LuUpload className='w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-1.5' />
-                    <p className='text-xs font-medium text-foreground/90'>
-                      Upload receipt or photo
-                    </p>
-                    <p className='text-[10px] text-muted-foreground mt-0.5'>
-                      Drag & drop or click to browse (PNG, JPG, WebP)
-                    </p>
-                    <p className='text-[10px] text-primary/80 mt-1 font-medium'>
-                      💡 Tip: Crop receipt or fill the frame for best OCR
-                      accuracy
-                    </p>
-                  </div>
-                )}
-
-              <input
-                ref={receiptInputRef}
-                type='file'
-                accept='image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.jfif,.avif'
-                className='hidden'
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    handleFileSelect(file)
-                  }
-                  e.target.value = ''
+                  ) : undefined
+                }
+                existingUrl={existingReceiptUrl}
+                existingSignedUrl={existingSignedUrl}
+                isLoadingExistingThumbnail={isLoadingExistingThumbnail}
+                existingTitle='Attached Receipt'
+                onDownloadExisting={handleDownloadExistingReceipt}
+                isDownloadingExisting={isDownloadingReceipt}
+                action={receiptAction}
+                file={receiptFile}
+                previewUrl={receiptPreviewUrl}
+                onFileSelect={handleFileSelect}
+                onRemoveExisting={() => {
+                  setReceiptAction('remove')
+                  setReceiptFile(null)
+                  if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+                  setReceiptPreviewUrl(null)
                 }}
+                onCancelUpload={() => {
+                  setReceiptAction(existingReceiptUrl ? 'keep' : 'keep')
+                  setReceiptFile(null)
+                  if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+                  setReceiptPreviewUrl(null)
+                }}
+                onPreviewClick={() => {
+                  if (receiptPreviewUrl || existingSignedUrl) setIsLightboxOpen(true)
+                }}
+                dropzoneTitle='Upload receipt or photo'
+                dropzoneSubtitle='Drag & drop or click to browse (PNG, JPG, WebP)'
+                tipText='💡 Tip: Crop receipt or fill the frame for best OCR accuracy'
               />
             </div>
 

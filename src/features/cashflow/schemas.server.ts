@@ -110,6 +110,11 @@ export const getReceiptSignedUrlSchema = z.object({
   entryId: z.uuid({ message: 'Invalid entry ID' }),
 });
 
+export const getGoalImageSignedUrlSchema = z.object({
+  cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
+  goalId: z.uuid({ message: 'Invalid goal ID' }),
+});
+
 export const cashflowBudgetSchema = z.object({
   cashflowId: z.uuid({ message: 'Invalid cashflow ID' }),
   category: z.string().min(1, 'Category is required'),
@@ -140,6 +145,7 @@ export const cashflowGoalSchema = z.object({
   deadline: dateOnlySchema
     .nullable()
     .optional(),
+  imageAction: z.enum(['keep', 'remove', 'upload']).optional().default('keep'),
 });
 
 export const updateCashflowGoalSchema = cashflowGoalSchema.extend({

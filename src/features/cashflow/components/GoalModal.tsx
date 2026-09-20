@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,12 +19,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FiTarget, FiCreditCard } from 'react-icons/fi';
-import { LuLoader } from 'react-icons/lu';
+import { LuLoader, LuFileText } from 'react-icons/lu';
+import ImageAttachmentInput from './ImageAttachmentInput';
 import { toast } from 'react-toastify';
-import { addGoal, updateGoal } from '../actions';
+import { addGoal, updateGoal, getGoalImageSignedUrl } from '../actions';
 import type { CashflowGoalDTO } from '@/types/dto';
 import { getCurrencySymbol } from '@/lib/currency';
 import { cn } from '@/lib/utils';
+import {
+  compressImageToWebP,
+  isSupportedImageFile,
+} from '../lib/image-compression';
+import ReceiptLightbox from './ReceiptLightbox';
 
 interface GoalModalProps {
   cashflowId: string;
@@ -66,7 +72,103 @@ function GoalForm({
   const [deadline, setDeadline] = useState(goal?.deadline ?? '');
   const [selectedCashflowId, setSelectedCashflowId] = useState(goal?.cashflow_id ?? cashflowId);
 
+  // ── Image Attachment State (Debt only) ──────────────────────────────
+  const [imageAction, setImageAction] = useState<'keep' | 'remove' | 'upload'>('keep');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [existingSignedUrl, setExistingSignedUrl] = useState<string | null>(null);
+  const [isLoadingExistingThumbnail, setIsLoadingExistingThumbnail] = useState(
+    () => Boolean(goal?.id && goal?.image_url),
+  );
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isDownloadingDocument, setIsDownloadingDocument] = useState(false);
+
   const isDebt = type === 'debt';
+
+  // Load signed URL for existing debt image
+  useEffect(() => {
+    if (!goal?.id || !goal.image_url) {
+      return;
+    }
+
+    let isMounted = true;
+    getGoalImageSignedUrl(goal.cashflow_id || cashflowId, goal.id)
+      .then((res) => {
+        if (isMounted && res.signedUrl) {
+          setExistingSignedUrl(res.signedUrl);
+        }
+      })
+      .catch(() => {
+        // Silently fall back
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingExistingThumbnail(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [goal?.id, goal?.image_url, goal?.cashflow_id, cashflowId]);
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  const handleFileSelect = (file: File) => {
+    if (!isSupportedImageFile(file)) {
+      toast.error('Only image files (JPG, PNG, WebP) are supported');
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('Image is too large (max 25MB before compression)');
+      return;
+    }
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+
+    setImageFile(file);
+    setImageAction('upload');
+    const preview = URL.createObjectURL(file);
+    setImagePreviewUrl(preview);
+  };
+
+  const handleDownloadExistingDocument = async () => {
+    if (!goal?.id) return;
+    setIsDownloadingDocument(true);
+    try {
+      const res = await getGoalImageSignedUrl(goal.cashflow_id || cashflowId, goal.id);
+      if (res.error || !res.signedUrl) {
+        toast.error(res.error || 'Failed to access statement document');
+        return;
+      }
+      const response = await fetch(res.signedUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const sanitizedTitle = (title || 'debt-document')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-');
+      link.href = blobUrl;
+      const ext =
+        blob.type === 'image/jpeg' || blob.type === 'image/jpg' ? 'jpg' : 'webp';
+      link.download = `debt-${sanitizedTitle || 'document'}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      toast.error('Failed to download document');
+    } finally {
+      setIsDownloadingDocument(false);
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -85,6 +187,31 @@ function GoalForm({
 
     if (isEdit && goal) {
       formData.append('goalId', goal.id);
+    }
+
+    // Handle debt image upload & compression
+    formData.append('imageAction', isDebt ? imageAction : 'keep');
+
+    if (isDebt && imageAction === 'upload' && imageFile) {
+      try {
+        const compressedBlob = await compressImageToWebP(imageFile, {
+          maxDimension: 1600,
+          quality: 0.8,
+        });
+        const ext = compressedBlob.type === 'image/webp' ? 'webp' : 'jpg';
+        formData.append('image_file', compressedBlob, `debt_image.${ext}`);
+      } catch (err) {
+        console.error('Client compression failed:', err);
+        if (imageFile.size <= 1024 * 1024) {
+          formData.append('image_file', imageFile);
+        } else {
+          const msg = 'Could not compress image. Please choose a photo under 1MB.';
+          setError(msg);
+          toast.error(msg);
+          setIsLoading(false);
+          return;
+        }
+      }
     }
 
     const result = isEdit ? await updateGoal(formData) : await addGoal(formData);
@@ -272,6 +399,41 @@ function GoalForm({
             />
           </div>
 
+          {/* Debt Document / Attachment Upload */}
+          {isDebt && (
+            <ImageAttachmentInput
+              label="Proof of Debt or Statement"
+              optional
+              icon={<LuFileText className="w-3.5 h-3.5" />}
+              existingUrl={goal?.image_url}
+              existingSignedUrl={existingSignedUrl}
+              isLoadingExistingThumbnail={isLoadingExistingThumbnail}
+              existingTitle="Debt statement attachment"
+              onDownloadExisting={handleDownloadExistingDocument}
+              isDownloadingExisting={isDownloadingDocument}
+              action={imageAction}
+              file={imageFile}
+              previewUrl={imagePreviewUrl}
+              onFileSelect={handleFileSelect}
+              onRemoveExisting={() => {
+                setImageAction('remove');
+                setImageFile(null);
+                if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+                setImagePreviewUrl(null);
+              }}
+              onCancelUpload={() => {
+                setImageAction(goal?.image_url ? 'keep' : 'keep');
+                setImageFile(null);
+                if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+                setImagePreviewUrl(null);
+              }}
+              onPreviewClick={() => setIsLightboxOpen(true)}
+              dropzoneTitle="Upload statement or document"
+              dropzoneSubtitle="Drag & drop or click to browse (PNG, JPG, WebP, AVIF)"
+              tipText="💡 Clear statements or contracts help keep records dispute-proof"
+            />
+          )}
+
           {error && (
             <p className="text-sm text-destructive text-center bg-destructive/10 p-2.5 rounded-md font-medium">
               {error}
@@ -304,7 +466,18 @@ function GoalForm({
             </Button>
           </div>
         </DialogFooter>
-        </form>
+      </form>
+
+      {isDebt && (
+        <ReceiptLightbox
+          open={isLightboxOpen}
+          onOpenChange={setIsLightboxOpen}
+          cashflowId={goal?.cashflow_id || selectedCashflowId}
+          goalId={goal?.id}
+          previewUrl={imageAction === 'upload' ? imagePreviewUrl : existingSignedUrl}
+          description={title || 'Debt Document'}
+        />
+      )}
     </>
   );
 }

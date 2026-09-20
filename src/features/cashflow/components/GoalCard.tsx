@@ -25,10 +25,11 @@ import {
   FiAlertTriangle,
   FiClock,
 } from 'react-icons/fi'
-import { LuLoader } from 'react-icons/lu'
+import { LuLoader, LuPaperclip } from 'react-icons/lu'
 import { toast } from 'react-toastify'
 import { archiveGoal, unarchiveGoal } from '../actions'
 import GoalModal from './GoalModal'
+import ReceiptLightbox from './ReceiptLightbox'
 import type { CashflowGoalDTO } from '@/types/dto'
 import { formatCurrency } from '@/lib/currency'
 import { parseDateOnly, formatAppDate } from '@/lib/date-only'
@@ -56,6 +57,8 @@ export default function GoalCard({
   const [tab, setTab] = useState<'active' | 'archived'>('active')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<CashflowGoalDTO | null>(null)
+  const [viewingAttachmentGoal, setViewingAttachmentGoal] =
+    useState<CashflowGoalDTO | null>(null)
   const [archiveDialogGoal, setArchiveDialogGoal] =
     useState<CashflowGoalDTO | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -407,6 +410,22 @@ export default function GoalCard({
                             Debt
                           </span>
                         )}
+                        {isDebt && goal.image_url && (
+                          <button
+                            type='button'
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setViewingAttachmentGoal(goal)
+                            }}
+                            className='inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-400/60 dark:border-amber-400/50 hover:bg-amber-500/20 transition-colors cursor-pointer'
+                            title='Click to preview statement/document attachment'
+                            aria-label={`View attachment for ${goal.title}`}
+                          >
+                            <LuPaperclip className='w-2.5 h-2.5' />
+                            <span>Attachment</span>
+                          </button>
+                        )}
                       </div>
                       <p className='text-xs text-muted-foreground mt-0.5'>
                         {isDebt ? 'Total Debt: ' : 'Target: '}
@@ -599,6 +618,16 @@ export default function GoalCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ReceiptLightbox
+        open={Boolean(viewingAttachmentGoal)}
+        onOpenChange={(open) => {
+          if (!open) setViewingAttachmentGoal(null)
+        }}
+        cashflowId={viewingAttachmentGoal?.cashflow_id || cashflowId}
+        goalId={viewingAttachmentGoal?.id}
+        description={viewingAttachmentGoal?.title || 'Debt Document'}
+      />
     </>
   )
 }

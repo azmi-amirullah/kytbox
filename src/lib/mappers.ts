@@ -492,6 +492,7 @@ export function mapGoalToDTO(
     created_at: row.created_at,
     is_archived: Boolean(row.is_deleted),
     type: row.type === 'debt' ? 'debt' : 'savings',
+    image_url: row.image_url ?? null,
   };
 }
 

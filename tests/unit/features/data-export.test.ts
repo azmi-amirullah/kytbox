@@ -78,6 +78,10 @@ describe('GDPR Data Export Engine', () => {
           parent_id: null,
           scheduled_at: null,
           short_id: 1,
+          audio_artist: null,
+          audio_cover_url: null,
+          grid_size: null,
+          stream_url: null,
         },
       ],
       subscribers: [
@@ -170,6 +174,7 @@ describe('GDPR Data Export Engine', () => {
           created_at: '2026-08-01T00:00:00Z',
           type: 'savings',
           initial_amount: 0,
+          image_url: null,
         },
       ],
       tags: [

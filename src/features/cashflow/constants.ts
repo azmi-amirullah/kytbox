@@ -64,3 +64,55 @@ export function formatCategoryName(category: string | null | undefined): string 
   if (slug === 'uncategorized') return 'Uncategorized';
   return CATEGORY_LABEL_MAP[slug] || (category.charAt(0).toUpperCase() + category.slice(1));
 }
+
+/**
+ * Checks if a tag duplicates the category (exact match, singular/plural, or label words).
+ * e.g., if category is "transport", tags like "Transport", "transports", "transport" return true.
+ * e.g., if category is "utilities", tags like "Utilities", "Utility", "Bills", "Bill" return true.
+ */
+export function isTagDuplicateOfCategory(
+  tag: string,
+  category: string | null | undefined,
+): boolean {
+  if (!tag || !category) return false;
+  const tagClean = tag.trim().replace(/^#/, '').toLowerCase();
+  if (!tagClean) return false;
+
+  const catSlug = category.trim().toLowerCase();
+  if (!catSlug) return false;
+
+  // Direct slug match (e.g. "transport" === "transport")
+  if (tagClean === catSlug) return true;
+
+  // Plural/singular checks (e.g. "transports" <-> "transport", "utilities" <-> "utility")
+  if (
+    tagClean === `${catSlug}s` ||
+    `${tagClean}s` === catSlug ||
+    (catSlug.endsWith('ies') && tagClean === catSlug.slice(0, -3) + 'y') ||
+    (tagClean.endsWith('ies') && catSlug === tagClean.slice(0, -3) + 'y')
+  ) {
+    return true;
+  }
+
+  // Check against category display label words (e.g. "Utilities & Bills" -> "utilities", "bills", "bill")
+  const label = formatCategoryName(category).toLowerCase();
+  const labelWords = label
+    .split(/[\s&,/]+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length >= 3);
+
+  for (const word of labelWords) {
+    if (
+      tagClean === word ||
+      tagClean === `${word}s` ||
+      `${tagClean}s` === word ||
+      (word.endsWith('ies') && tagClean === word.slice(0, -3) + 'y') ||
+      (tagClean.endsWith('ies') && word === tagClean.slice(0, -3) + 'y')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+

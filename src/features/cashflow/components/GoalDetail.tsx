@@ -13,12 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LuTarget, LuSearch, LuTrendingUp, LuCalendar } from 'react-icons/lu'
+import { Button } from '@/components/ui/button'
+import {
+  LuTarget,
+  LuSearch,
+  LuTrendingUp,
+  LuCalendar,
+  LuFileText,
+  LuEye,
+  LuLoader,
+} from 'react-icons/lu'
 import { FiCheckCircle, FiClock, FiAlertTriangle, FiArchive } from 'react-icons/fi'
 import { formatCurrency } from '@/lib/currency'
 import { parseDateOnly, formatAppDate } from '@/lib/date-only'
 import { cn } from '@/lib/utils'
 import type { CashflowGoalDTO, CashflowEntryDTO } from '@/types/dto'
+import { getGoalImageSignedUrl } from '../actions'
+import ReceiptLightbox from './ReceiptLightbox'
 
 interface GoalDetailProps {
   goal: CashflowGoalDTO
@@ -32,6 +43,31 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [selectedMonth, setSelectedMonth] = useState('all')
 
+  const isDebt = goal.type === 'debt'
+  const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null)
+  const [isLoadingThumbnail, setIsLoadingThumbnail] = useState(
+    () => Boolean(isDebt && goal.image_url && goal.cashflow_id),
+  )
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+
+  useEffect(() => {
+    if (!isDebt || !goal.image_url || !goal.cashflow_id) return
+    let isMounted = true
+    getGoalImageSignedUrl(goal.cashflow_id, goal.id)
+      .then((res) => {
+        if (isMounted && res.signedUrl) {
+          setSignedImageUrl(res.signedUrl)
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setIsLoadingThumbnail(false)
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [isDebt, goal.image_url, goal.cashflow_id, goal.id])
+
   useEffect(() => {
     const q = searchParams.get('q') || searchParams.get('search')
     if (q !== null) {
@@ -39,7 +75,6 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
     }
   }, [searchParams])
 
-  const isDebt = goal.type === 'debt'
   const totalSaved = goal.saved_amount
   const progress = Math.min(100, Math.max(0, (totalSaved / goal.target_amount) * 100))
   const remaining = Math.max(0, goal.target_amount - totalSaved)
@@ -258,6 +293,59 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
         )}
       </motion.div>
 
+      {/* Attached Document Card (Debt only) */}
+      {isDebt && goal.image_url && (
+        <div className='flex items-center justify-between p-3.5 bg-card border rounded-xl gap-3'>
+          <div
+            role='button'
+            tabIndex={0}
+            onClick={() => setIsLightboxOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setIsLightboxOpen(true)
+              }
+            }}
+            className='flex items-center gap-3 min-w-0 flex-1 cursor-pointer group'
+            title='Click to view statement in full screen'
+          >
+            <div className='relative w-12 h-12 rounded-lg border border-border/70 bg-muted/40 overflow-hidden shrink-0 group-hover:ring-2 group-hover:ring-primary/50 transition-all flex items-center justify-center'>
+              {isLoadingThumbnail ? (
+                <LuLoader className='w-5 h-5 animate-spin text-muted-foreground' />
+              ) : signedImageUrl ? (
+                /* Senior justification: Native <img> is required because signedImageUrl is a short-lived Supabase Storage signed URL */
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={signedImageUrl}
+                  alt='Debt document thumbnail'
+                  className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-200'
+                />
+              ) : (
+                <LuFileText className='w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors' />
+              )}
+            </div>
+            <div className='min-w-0'>
+              <p className='text-sm font-semibold truncate group-hover:text-primary transition-colors'>
+                Attached Statement / Document
+              </p>
+              <p className='text-xs text-muted-foreground'>
+                Click to preview in full screen
+              </p>
+            </div>
+          </div>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={() => setIsLightboxOpen(true)}
+            className='gap-1.5 text-xs shrink-0 cursor-pointer'
+          >
+            <LuEye className='w-3.5 h-3.5' />
+            <span>View Attachment</span>
+          </Button>
+        </div>
+      )}
+
       {goal.contribution_count > entries.length && (
         <p className='text-xs text-muted-foreground'>
           Showing the 1,000 most recent contributions.
@@ -350,6 +438,17 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
           </div>
         )}
       </div>
+
+      {isDebt && goal.image_url && (
+        <ReceiptLightbox
+          open={isLightboxOpen}
+          onOpenChange={setIsLightboxOpen}
+          cashflowId={goal.cashflow_id}
+          goalId={goal.id}
+          previewUrl={signedImageUrl}
+          description={goal.title}
+        />
+      )}
     </div>
   )
 }

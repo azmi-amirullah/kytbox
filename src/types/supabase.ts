@@ -22,7 +22,7 @@ export type Database = {
           profile_id: string
           sender_email: string
           sender_name: string
-          status: 'unread' | 'read' | 'archived'
+          status: string
         }
         Insert: {
           created_at?: string
@@ -31,7 +31,7 @@ export type Database = {
           profile_id: string
           sender_email: string
           sender_name: string
-          status?: 'unread' | 'read' | 'archived'
+          status?: string
         }
         Update: {
           created_at?: string
@@ -40,7 +40,7 @@ export type Database = {
           profile_id?: string
           sender_email?: string
           sender_name?: string
-          status?: 'unread' | 'read' | 'archived'
+          status?: string
         }
         Relationships: [
           {
@@ -294,17 +294,19 @@ export type Database = {
           created_at: string | null
           deadline: string | null
           id: string
+          image_url: string | null
           initial_amount: number
           is_deleted: boolean
           target_amount: number
           title: string
-          type?: string | null
+          type: string
         }
         Insert: {
           cashflow_id: string
           created_at?: string | null
           deadline?: string | null
           id?: string
+          image_url?: string | null
           initial_amount?: number
           is_deleted?: boolean
           target_amount: number
@@ -316,6 +318,7 @@ export type Database = {
           created_at?: string | null
           deadline?: string | null
           id?: string
+          image_url?: string | null
           initial_amount?: number
           is_deleted?: boolean
           target_amount?: number
@@ -502,47 +505,6 @@ export type Database = {
           },
         ]
       }
-      cashflow_split_groups: {
-        Row: {
-          created_at: string | null
-          creator_id: string | null
-          currency: string
-          id: string
-          pin_hash: string | null
-          title: string
-          token: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          creator_id?: string | null
-          currency?: string
-          id?: string
-          pin_hash?: string | null
-          title: string
-          token: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          creator_id?: string | null
-          currency?: string
-          id?: string
-          pin_hash?: string | null
-          title?: string
-          token?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cashflow_split_groups_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       cashflow_split_group_expenses: {
         Row: {
           amount: number
@@ -589,6 +551,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cashflow_split_groups: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          currency: string
+          id: string
+          pin_hash: string | null
+          title: string
+          token: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          currency?: string
+          id?: string
+          pin_hash?: string | null
+          title: string
+          token: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          currency?: string
+          id?: string
+          pin_hash?: string | null
+          title?: string
+          token?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       cashflow_tags: {
         Row: {
@@ -919,10 +914,13 @@ export type Database = {
       links: {
         Row: {
           animation_type: string | null
+          audio_artist: string | null
+          audio_cover_url: string | null
           clicks: number | null
           created_at: string
           display_mode: string | null
           expires_at: string | null
+          grid_size: string | null
           icon_url: string | null
           id: string
           is_active: boolean | null
@@ -935,20 +933,20 @@ export type Database = {
           scheduled_at: string | null
           short_id: number | null
           sort_order: number | null
+          stream_url: string | null
           title: string
           url: string
           user_id: string
-          grid_size?: string | null
-          stream_url?: string | null
-          audio_artist?: string | null
-          audio_cover_url?: string | null
         }
         Insert: {
           animation_type?: string | null
+          audio_artist?: string | null
+          audio_cover_url?: string | null
           clicks?: number | null
           created_at?: string
           display_mode?: string | null
           expires_at?: string | null
+          grid_size?: string | null
           icon_url?: string | null
           id?: string
           is_active?: boolean | null
@@ -961,20 +959,20 @@ export type Database = {
           scheduled_at?: string | null
           short_id?: number | null
           sort_order?: number | null
+          stream_url?: string | null
           title: string
           url: string
           user_id: string
-          grid_size?: string | null
-          stream_url?: string | null
-          audio_artist?: string | null
-          audio_cover_url?: string | null
         }
         Update: {
           animation_type?: string | null
+          audio_artist?: string | null
+          audio_cover_url?: string | null
           clicks?: number | null
           created_at?: string
           display_mode?: string | null
           expires_at?: string | null
+          grid_size?: string | null
           icon_url?: string | null
           id?: string
           is_active?: boolean | null
@@ -987,13 +985,10 @@ export type Database = {
           scheduled_at?: string | null
           short_id?: number | null
           sort_order?: number | null
+          stream_url?: string | null
           title?: string
           url?: string
           user_id?: string
-          grid_size?: string | null
-          stream_url?: string | null
-          audio_artist?: string | null
-          audio_cover_url?: string | null
         }
         Relationships: [
           {
@@ -1059,7 +1054,7 @@ export type Database = {
       }
       list_item_resources: {
         Row: {
-          created_at: string
+          created_at: string | null
           domain: string | null
           icon_url: string | null
           id: string
@@ -1068,7 +1063,7 @@ export type Database = {
           url: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           domain?: string | null
           icon_url?: string | null
           id?: string
@@ -1077,7 +1072,7 @@ export type Database = {
           url: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           domain?: string | null
           icon_url?: string | null
           id?: string
@@ -1171,26 +1166,33 @@ export type Database = {
       list_labels: {
         Row: {
           color_index: number
-          created_at: string
+          created_at: string | null
           id: string
           list_id: string
           name: string
         }
         Insert: {
           color_index?: number
-          created_at?: string
+          created_at?: string | null
           id?: string
           list_id: string
           name: string
         }
         Update: {
           color_index?: number
-          created_at?: string
+          created_at?: string | null
           id?: string
           list_id?: string
           name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "list_labels_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "list_summaries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "list_labels_list_id_fkey"
             columns: ["list_id"]
@@ -1612,8 +1614,8 @@ export type Database = {
           created_at: string | null
           fuel_amount: number
           id: string
-          is_full_tank: boolean
-          is_missed_previous: boolean
+          is_full_tank: boolean | null
+          is_missed_previous: boolean | null
           log_date: string
           notes: string | null
           odometer: number
@@ -1630,8 +1632,8 @@ export type Database = {
           created_at?: string | null
           fuel_amount: number
           id?: string
-          is_full_tank?: boolean
-          is_missed_previous?: boolean
+          is_full_tank?: boolean | null
+          is_missed_previous?: boolean | null
           log_date: string
           notes?: string | null
           odometer: number
@@ -1648,8 +1650,8 @@ export type Database = {
           created_at?: string | null
           fuel_amount?: number
           id?: string
-          is_full_tank?: boolean
-          is_missed_previous?: boolean
+          is_full_tank?: boolean | null
+          is_missed_previous?: boolean | null
           log_date?: string
           notes?: string | null
           odometer?: number
@@ -1967,6 +1969,7 @@ export type Database = {
           id: string | null
           is_public: boolean | null
           item_count: number | null
+          slug: string | null
           title: string | null
           type: string | null
           updated_at: string | null
@@ -2062,9 +2065,12 @@ export type Database = {
           created_at: string | null
           date: string
           description: string
+          exchange_rate: number
           goal_id: string | null
           id: string
           is_recurring: boolean | null
+          original_amount: number | null
+          original_currency: string | null
           receipt_url: string | null
           recurrence_interval: string | null
           recurring_rule_id: string | null

@@ -32,6 +32,7 @@ import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   formatCategoryName,
+  isTagDuplicateOfCategory,
 } from '../constants';
 import {
   resolveMerchantCategory,
@@ -143,13 +144,20 @@ export default function QuickLogForm({
       isAiScanRef.current = false;
       return;
     }
-    if (merchantMatch && merchantMatch.category) {
+    if (!merchantMatch) return;
+
+    if (merchantMatch.category) {
       setCategory(merchantMatch.category);
     }
-    if (merchantMatch && merchantMatch.suggestedTags && merchantMatch.suggestedTags.length > 0) {
+    if (merchantMatch.suggestedTags && merchantMatch.suggestedTags.length > 0) {
       setTags((prev) => {
         const set = new Set(prev);
-        merchantMatch.suggestedTags?.forEach((t) => set.add(t));
+        merchantMatch.suggestedTags?.forEach((t) => {
+          const cleaned = t.trim().replace(/^#/, '');
+          if (cleaned && !isTagDuplicateOfCategory(cleaned, merchantMatch.category)) {
+            set.add(cleaned.charAt(0).toUpperCase() + cleaned.slice(1));
+          }
+        });
         return Array.from(set);
       });
     }
@@ -189,11 +197,21 @@ export default function QuickLogForm({
         isAiScanRef.current = true;
         setDescription(extracted.merchant);
       }
+      const targetCategory = extracted.category || category;
       if (extracted.category) {
         setCategory(extracted.category);
       }
       if (extracted.suggestedTags && extracted.suggestedTags.length > 0) {
-        setTags(extracted.suggestedTags);
+        const formattedAiTags = extracted.suggestedTags
+          .map((tag) => {
+            const cleaned = tag.trim().replace(/^#/, '');
+            return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : '';
+          })
+          .filter(
+            (t): t is string =>
+              Boolean(t) && !isTagDuplicateOfCategory(t, targetCategory),
+          );
+        setTags(formattedAiTags);
       }
 
       toast.success(

@@ -98,8 +98,50 @@ describe('parseReceiptImageWithAI Server Action', () => {
         expect(result.data.amount).toBe(16650);
         expect(result.data.date).toBe('2026-09-19');
         expect(result.data.category).toBe('food');
-        expect(result.data.suggestedTags).toEqual(['groceries', 'snacks']);
+        expect(result.data.suggestedTags).toEqual(['Groceries', 'Snacks']);
         expect(result.data.confidence).toBe(0.98);
+      }
+    });
+
+    it('filters out suggested tags that duplicate the category', async () => {
+      const mockGeminiOutput = {
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    merchant: 'Bluebird Taxi',
+                    amount: 50000,
+                    date: '2026-09-19',
+                    category: 'transport',
+                    suggestedTags: ['transport', 'Taxi', 'Transports'],
+                    confidence: 0.95,
+                  }),
+                },
+              ],
+            },
+          },
+        ],
+      };
+
+      global.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(mockGeminiOutput), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: 'samplevalidbase64imagedata1234567890',
+        mimeType: 'image/webp',
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.category).toBe('transport');
+        expect(result.data.suggestedTags).toEqual(['Taxi']);
       }
     });
 

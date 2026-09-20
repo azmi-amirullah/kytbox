@@ -78,6 +78,10 @@ const baseLink: Link = {
   is_pinned: false,
   is_sensitive: false,
   created_at: '2026-01-01T00:00:00Z',
+  audio_artist: null,
+  audio_cover_url: null,
+  grid_size: null,
+  stream_url: null,
 };
 
 const baseCashflow: Cashflow = {
@@ -491,6 +495,7 @@ const baseListSummary: ListWithSummary = {
   updated_at: '2026-01-01T00:00:00Z',
   item_count: 5,
   completed_count: 2,
+  slug: 'my-list',
 };
 
 const baseListColumn: ListColumn = {
@@ -576,6 +581,7 @@ describe('mapListWithSummaryToDTO', () => {
       updated_at: null,
       item_count: null,
       completed_count: null,
+      slug: null,
     };
     const dto = mapListWithSummaryToDTO(nullableSummary);
     expect(dto.description).toBeNull();

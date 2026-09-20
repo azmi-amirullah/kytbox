@@ -227,4 +227,42 @@ describe('Merchant Alias & Auto-Categorization Rule Engine', () => {
       expect(match?.suggestedTags).toContain('business');
     });
   });
+
+  describe('isTagDuplicateOfCategory & category duplicate prevention', () => {
+    it('accurately identifies tags that duplicate category slugs or labels', async () => {
+      const { isTagDuplicateOfCategory } = await import('@/features/cashflow/constants');
+
+      // Exact matches
+      expect(isTagDuplicateOfCategory('transport', 'transport')).toBe(true);
+      expect(isTagDuplicateOfCategory('Transport', 'transport')).toBe(true);
+      expect(isTagDuplicateOfCategory('#transport', 'transport')).toBe(true);
+      expect(isTagDuplicateOfCategory('Food', 'food')).toBe(true);
+      expect(isTagDuplicateOfCategory('Shopping', 'shopping')).toBe(true);
+
+      // Plural / singular variations
+      expect(isTagDuplicateOfCategory('transports', 'transport')).toBe(true);
+      expect(isTagDuplicateOfCategory('Utilities', 'utilities')).toBe(true);
+      expect(isTagDuplicateOfCategory('Utility', 'utilities')).toBe(true);
+      expect(isTagDuplicateOfCategory('Bills', 'utilities')).toBe(true);
+      expect(isTagDuplicateOfCategory('Bill', 'utilities')).toBe(true);
+
+      // Non-duplicates
+      expect(isTagDuplicateOfCategory('Groceries', 'food')).toBe(false);
+      expect(isTagDuplicateOfCategory('Taxi', 'transport')).toBe(false);
+      expect(isTagDuplicateOfCategory('Fuel', 'transport')).toBe(false);
+      expect(isTagDuplicateOfCategory('Fashion', 'shopping')).toBe(false);
+    });
+
+    it('does not suggest tags that duplicate the category in resolveMerchantCategory', () => {
+      // Transport rule should NOT suggest 'transport'
+      const matchGrab = resolveMerchantCategory('Grab Ride to Airport');
+      expect(matchGrab?.category).toBe('transport');
+      expect(matchGrab?.suggestedTags).toBeUndefined();
+
+      // Food rule with non-duplicate tag (Indomaret -> groceries) should still be suggested
+      const matchIndomaret = resolveMerchantCategory('Indomaret Kebayoran');
+      expect(matchIndomaret?.category).toBe('food');
+      expect(matchIndomaret?.suggestedTags).toContain('groceries');
+    });
+  });
 });

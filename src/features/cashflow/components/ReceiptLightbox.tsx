@@ -19,7 +19,7 @@ import {
   LuTriangleAlert,
   LuX,
 } from 'react-icons/lu'
-import { getReceiptSignedUrl } from '../actions'
+import { getReceiptSignedUrl, getGoalImageSignedUrl } from '../actions'
 import { formatCurrencyCompact } from '@/lib/currency'
 import { formatAppDate } from '@/lib/date-only'
 
@@ -28,6 +28,7 @@ interface ReceiptLightboxProps {
   onOpenChange: (open: boolean) => void
   cashflowId?: string
   entryId?: string | null
+  goalId?: string | null
   previewUrl?: string | null
   description?: string
   date?: string
@@ -40,6 +41,7 @@ export default function ReceiptLightbox({
   onOpenChange,
   cashflowId,
   entryId,
+  goalId,
   previewUrl,
   description = 'Receipt',
   date,
@@ -48,31 +50,37 @@ export default function ReceiptLightbox({
 }: ReceiptLightboxProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(previewUrl ?? null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isImgLoading, setIsImgLoading] = useState(Boolean(previewUrl || (cashflowId && entryId)))
+  const [isImgLoading, setIsImgLoading] = useState(Boolean(previewUrl || (cashflowId && (entryId || goalId))))
   const [error, setError] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
 
   const [prevOpen, setPrevOpen] = useState(open)
   const [prevEntryId, setPrevEntryId] = useState(entryId)
+  const [prevGoalId, setPrevGoalId] = useState(goalId)
   const [prevPreviewUrl, setPrevPreviewUrl] = useState(previewUrl)
 
-  if (open !== prevOpen || entryId !== prevEntryId || previewUrl !== prevPreviewUrl) {
+  if (open !== prevOpen || entryId !== prevEntryId || goalId !== prevGoalId || previewUrl !== prevPreviewUrl) {
     setPrevOpen(open)
     setPrevEntryId(entryId)
+    setPrevGoalId(goalId)
     setPrevPreviewUrl(previewUrl)
     setSignedUrl(previewUrl ?? null)
     setError(null)
     setZoom(1)
-    setIsLoading(Boolean(open && !previewUrl && cashflowId && entryId))
-    setIsImgLoading(Boolean(open && (previewUrl || (cashflowId && entryId))))
+    setIsLoading(Boolean(open && !previewUrl && cashflowId && (entryId || goalId)))
+    setIsImgLoading(Boolean(open && (previewUrl || (cashflowId && (entryId || goalId)))))
   }
 
   useEffect(() => {
-    if (!open || previewUrl || !cashflowId || !entryId) return
+    if (!open || previewUrl || !cashflowId || (!entryId && !goalId)) return
 
     let isMounted = true
 
-    getReceiptSignedUrl(cashflowId, entryId)
+    const fetchSignedUrl = goalId
+      ? getGoalImageSignedUrl(cashflowId, goalId)
+      : getReceiptSignedUrl(cashflowId, entryId!)
+
+    fetchSignedUrl
       .then((res) => {
         if (!isMounted) return
         if (res.error || !res.signedUrl) {
@@ -95,7 +103,7 @@ export default function ReceiptLightbox({
     return () => {
       isMounted = false
     }
-  }, [open, entryId, cashflowId, previewUrl])
+  }, [open, entryId, goalId, cashflowId, previewUrl])
 
   const handleZoomIn = () => {
     setZoom((prev) => Math.min(3, prev + 0.5))

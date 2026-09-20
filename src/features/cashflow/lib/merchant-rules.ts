@@ -1,4 +1,5 @@
 import type { CashflowEntryDTO } from '@/types/dto';
+import { isTagDuplicateOfCategory } from '../constants';
 
 export interface MerchantMatchResult {
   category: string;
@@ -298,11 +299,14 @@ export function resolveMerchantCategory(
     // Check full normalized string first
     const fullMatch = learnedIndex.get(normalized);
     if (fullMatch && (!typePreference || fullMatch.type === typePreference)) {
+      const cleanTags = fullMatch.tags.filter(
+        (t) => !isTagDuplicateOfCategory(t, fullMatch.category),
+      );
       return {
         category: fullMatch.category,
         confidence: 'learned',
         suggestedType: fullMatch.type,
-        suggestedTags: fullMatch.tags.length > 0 ? fullMatch.tags : undefined,
+        suggestedTags: cleanTags.length > 0 ? cleanTags : undefined,
         merchantName: description.trim(),
       };
     }
@@ -316,12 +320,14 @@ export function resolveMerchantCategory(
         tokenMatch.count >= 2 &&
         (!typePreference || tokenMatch.type === typePreference)
       ) {
+        const cleanTags = tokenMatch.tags.filter(
+          (t) => !isTagDuplicateOfCategory(t, tokenMatch.category),
+        );
         return {
           category: tokenMatch.category,
           confidence: 'learned',
           suggestedType: tokenMatch.type,
-          suggestedTags:
-            tokenMatch.tags.length > 0 ? tokenMatch.tags : undefined,
+          suggestedTags: cleanTags.length > 0 ? cleanTags : undefined,
           merchantName: description.trim(),
         };
       }
@@ -332,11 +338,14 @@ export function resolveMerchantCategory(
   for (const rule of BUILT_IN_MERCHANT_RULES) {
     if (typePreference && rule.type !== typePreference) continue;
     if (rule.pattern.test(normalized)) {
+      const cleanTags = (rule.defaultTags ?? []).filter(
+        (t) => !isTagDuplicateOfCategory(t, rule.category),
+      );
       return {
         category: rule.category,
         confidence: 'rule',
         suggestedType: rule.type,
-        suggestedTags: rule.defaultTags,
+        suggestedTags: cleanTags.length > 0 ? cleanTags : undefined,
         merchantName: rule.merchantName,
       };
     }

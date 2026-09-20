@@ -27,6 +27,7 @@ import {
   renameCashflowTagSchema,
   deleteCashflowTagSchema,
   getReceiptSignedUrlSchema,
+  getGoalImageSignedUrlSchema,
   toggleCashflowPinSchema,
   archiveCashflowSchema,
   restoreCashflowSchema,
@@ -300,17 +301,28 @@ export async function updateCashflow(cashflowId: string, formData: FormData) {
 export async function deleteCashflow(cashflowId: string) {
   const { user, supabase } = await getAuthenticatedUser();
 
-  // Retrieve any attached receipts before cascade delete removes the entries
-  const { data: entries } = await supabase
-    .from('cashflow_entries')
-    .select('receipt_url')
-    .eq('cashflow_id', cashflowId)
-    .not('receipt_url', 'is', null);
+  // Retrieve any attached receipts and goal images before cascade delete removes them
+  const [{ data: entries }, { data: goals }] = await Promise.all([
+    supabase
+      .from('cashflow_entries')
+      .select('receipt_url')
+      .eq('cashflow_id', cashflowId)
+      .not('receipt_url', 'is', null),
+    supabase
+      .from('cashflow_goals')
+      .select('image_url')
+      .eq('cashflow_id', cashflowId)
+      .not('image_url', 'is', null),
+  ]);
 
-  const receiptPaths =
-    entries?.flatMap((e) =>
+  const receiptPaths = [
+    ...(entries?.flatMap((e) =>
       typeof e.receipt_url === 'string' ? [e.receipt_url] : [],
-    ) ?? [];
+    ) ?? []),
+    ...(goals?.flatMap((g) =>
+      typeof g.image_url === 'string' ? [g.image_url] : [],
+    ) ?? []),
+  ];
 
   const { error } = await supabase
     .from('cashflows')
@@ -1142,6 +1154,64 @@ export async function getReceiptSignedUrl(cashflowId: string, entryId: string) {
   if (signError || !signedData?.signedUrl) {
     console.error('Failed to create signed URL:', signError);
     return { error: 'Failed to generate secure receipt link' };
+  }
+
+  return { success: true, signedUrl: signedData.signedUrl };
+}
+
+export async function getGoalImageSignedUrl(cashflowId: string, goalId: string) {
+  const parsed = getGoalImageSignedUrlSchema.safeParse({ cashflowId, goalId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const { user, supabase } = await getAuthenticatedUserOnly();
+
+  // Verify view access to the cashflow book
+  const { data: cashflow } = await supabase
+    .from('cashflows')
+    .select('id, user_id, is_public')
+    .eq('id', cashflowId)
+    .single();
+
+  if (!cashflow) {
+    return { error: 'Cashflow book not found' };
+  }
+
+  let hasAccess = cashflow.user_id === user.id || cashflow.is_public;
+  if (!hasAccess && user.email) {
+    const { data: share } = await supabase
+      .from('cashflow_shares')
+      .select('id')
+      .eq('cashflow_id', cashflowId)
+      .eq('email', user.email.toLowerCase().trim())
+      .maybeSingle();
+    hasAccess = !!share;
+  }
+
+  if (!hasAccess) {
+    return { error: 'Access denied' };
+  }
+
+  const { data: goal } = await supabase
+    .from('cashflow_goals')
+    .select('image_url')
+    .eq('id', goalId)
+    .eq('cashflow_id', cashflowId)
+    .single();
+
+  if (!goal?.image_url) {
+    return { error: 'Debt image attachment not found' };
+  }
+
+  const adminSupabase = createAdminClient();
+  const { data: signedData, error: signError } = await adminSupabase.storage
+    .from(RECEIPT_BUCKET)
+    .createSignedUrl(goal.image_url, 3600);
+
+  if (signError || !signedData?.signedUrl) {
+    console.error('Failed to create signed URL for debt image:', signError);
+    return { error: 'Failed to generate secure image link' };
   }
 
   return { success: true, signedUrl: signedData.signedUrl };
@@ -2144,10 +2214,36 @@ export async function addGoal(formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { cashflowId, title, targetAmount, initialAmount, deadline, type } = parsed.data;
+  const { cashflowId, title, targetAmount, initialAmount, deadline, type, imageAction } = parsed.data;
 
   if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
     return { error: 'Only the cashflow owner can manage goals or debt targets' };
+  }
+
+  let imageUrl: string | null = null;
+  const imageFile = formData.get('image_file') || formData.get('receipt_file');
+
+  if (type === 'debt' && imageAction === 'upload' && imageFile instanceof File && imageFile.size > 0) {
+    if (imageFile.size > 2 * 1024 * 1024) {
+      return { error: 'Image file exceeds 2MB limit. Please upload a compressed or smaller image.' };
+    }
+    if (!imageFile.type.startsWith('image/')) {
+      return { error: 'Invalid file type. Image only.' };
+    }
+    const { buffer, contentType, ext } = await optimizeReceiptToWebP(imageFile);
+    const filePath = `${user.id}/${cashflowId}/debt/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from(RECEIPT_BUCKET)
+      .upload(filePath, buffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Failed to upload debt image:', uploadError);
+      return { error: 'Failed to upload debt image' };
+    }
+    imageUrl = filePath;
   }
 
   const { data: goal, error } = await supabase
@@ -2159,12 +2255,17 @@ export async function addGoal(formData: FormData) {
       initial_amount: initialAmount ?? 0,
       type: type || 'savings',
       deadline: deadline || null,
+      image_url: imageUrl,
       is_deleted: false,
     })
     .select()
     .single();
 
   if (error || !goal) {
+    if (imageUrl) {
+      const adminSupabase = createAdminClient();
+      await adminSupabase.storage.from(RECEIPT_BUCKET).remove([imageUrl]);
+    }
     console.error('Failed to create goal:', error);
     return { error: 'Failed to create goal' };
   }
@@ -2191,10 +2292,56 @@ export async function updateGoal(formData: FormData) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { goalId, cashflowId, title, targetAmount, initialAmount, deadline, type } = parsed.data;
+  const { goalId, cashflowId, title, targetAmount, initialAmount, deadline, type, imageAction } = parsed.data;
 
   if (!(await isCashflowOwner(supabase, cashflowId, user.id))) {
     return { error: 'Only the cashflow owner can manage goals or debt targets' };
+  }
+
+  const { data: existingGoal, error: existingGoalError } = await supabase
+    .from('cashflow_goals')
+    .select('id, image_url, type')
+    .eq('id', goalId)
+    .eq('cashflow_id', cashflowId)
+    .eq('is_deleted', false)
+    .maybeSingle();
+
+  if (existingGoalError || !existingGoal) {
+    return { error: 'Target not found' };
+  }
+
+  let nextImageUrl: string | null = existingGoal.image_url ?? null;
+  let newlyUploadedFilePath: string | null = null;
+
+  if (type === 'debt') {
+    if (imageAction === 'remove') {
+      nextImageUrl = null;
+    } else if (imageAction === 'upload') {
+      const imageFile = formData.get('image_file') || formData.get('receipt_file');
+      if (imageFile instanceof File && imageFile.size > 0) {
+        if (imageFile.size > 2 * 1024 * 1024) {
+          return { error: 'Image file exceeds 2MB limit. Please upload a compressed or smaller image.' };
+        }
+        if (!imageFile.type.startsWith('image/')) {
+          return { error: 'Invalid file type. Image only.' };
+        }
+        const { buffer, contentType, ext } = await optimizeReceiptToWebP(imageFile);
+        const filePath = `${user.id}/${cashflowId}/debt/${crypto.randomUUID()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from(RECEIPT_BUCKET)
+          .upload(filePath, buffer, {
+            contentType,
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error('Failed to upload replacement debt image:', uploadError);
+          return { error: 'Failed to upload debt image' };
+        }
+        newlyUploadedFilePath = filePath;
+        nextImageUrl = filePath;
+      }
+    }
   }
 
   const { data: goal, error } = await supabase
@@ -2205,6 +2352,7 @@ export async function updateGoal(formData: FormData) {
       initial_amount: initialAmount ?? 0,
       type: type || 'savings',
       deadline: deadline || null,
+      image_url: nextImageUrl,
     })
     .eq('id', goalId)
     .eq('cashflow_id', cashflowId)
@@ -2213,8 +2361,21 @@ export async function updateGoal(formData: FormData) {
     .single();
 
   if (error || !goal) {
+    if (newlyUploadedFilePath) {
+      const adminSupabase = createAdminClient();
+      await adminSupabase.storage.from(RECEIPT_BUCKET).remove([newlyUploadedFilePath]);
+    }
     console.error('Failed to update goal:', error);
     return { error: 'Failed to update goal' };
+  }
+
+  // Clean up old image file only after DB update succeeds
+  if (
+    existingGoal.image_url &&
+    (imageAction === 'remove' || (newlyUploadedFilePath && existingGoal.image_url !== newlyUploadedFilePath))
+  ) {
+    const adminSupabase = createAdminClient();
+    await adminSupabase.storage.from(RECEIPT_BUCKET).remove([existingGoal.image_url]);
   }
 
   const { data: progress } = await supabase
