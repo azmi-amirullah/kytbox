@@ -619,7 +619,7 @@ export default function EntryModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-xl max-h-[90vh] p-0 overflow-hidden flex flex-col'>
-        <div className='p-6 pb-0 shrink-0'>
+        <div className='p-4 sm:p-6 pb-0 sm:pb-0 shrink-0'>
           <ModalHeader
             title={isEdit ? 'Edit Entry' : 'Add Entry'}
             description={
@@ -633,23 +633,23 @@ export default function EntryModal({
 
         <form
           onSubmit={handleSubmit}
-          className='p-6 pt-4 space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar'
+          className='@container w-full min-w-0 max-w-full p-4 sm:p-6 pt-3 sm:pt-4 space-y-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar'
         >
-          <div className='grid gap-4'>
+          <div className='grid gap-4 w-full min-w-0 max-w-full'>
             {/* Quick-Extract from Receipt Banner */}
-            <div className='p-3 rounded-xl border border-primary/25 bg-linear-to-r from-primary/5 via-primary/2 to-transparent flex items-center justify-between gap-3 transition-colors'>
-              <div className='flex items-center gap-2.5 min-w-0'>
+            <div className='p-3 rounded-xl border border-primary/25 bg-linear-to-r from-primary/5 via-primary/2 to-transparent flex flex-col @sm:flex-row items-stretch @sm:items-center justify-between gap-3 transition-colors w-full min-w-0'>
+              <div className='flex items-center gap-2.5 min-w-0 flex-1'>
                 <div className='w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0'>
                   <LuScanLine className='w-4 h-4' />
                 </div>
-                <div className='min-w-0'>
-                  <p className='text-xs font-semibold text-foreground flex items-center gap-1.5'>
+                <div className='min-w-0 flex-1'>
+                  <p className='text-xs font-semibold text-foreground flex items-center gap-1.5 flex-wrap'>
                     <span>Quick-Extract with AI</span>
-                    <span className='text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold'>
+                    <span className='text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold shrink-0'>
                       Auto-Fill
                     </span>
                   </p>
-                  <p className='text-[11px] text-muted-foreground truncate'>
+                  <p className='text-[11px] text-muted-foreground leading-snug'>
                     Scan receipt to fill amount, merchant, date, category & tags
                   </p>
                 </div>
@@ -661,7 +661,7 @@ export default function EntryModal({
                 size='sm'
                 disabled={isExtractingReceipt}
                 onClick={() => receiptQuickScanRef.current?.click()}
-                className='h-8 text-xs px-3 gap-1.5 border-primary/30 hover:bg-primary/10 text-primary font-medium shrink-0 cursor-pointer shadow-xs'
+                className='h-8 text-xs px-3 gap-1.5 border-primary/30 hover:bg-primary/10 text-primary font-medium shrink-0 cursor-pointer shadow-xs w-full @sm:w-auto justify-center'
               >
                 {isExtractingReceipt ? (
                   <>
@@ -693,14 +693,14 @@ export default function EntryModal({
             </div>
 
             {/* Description */}
-            <div className='grid gap-2'>
+            <div className='grid gap-2 w-full min-w-0'>
               <Label
                 htmlFor='description'
                 className='font-medium text-foreground/80 gap-0.5'
               >
                 Description<span className='text-destructive'>*</span>
               </Label>
-              <div className='relative'>
+              <div className='relative w-full min-w-0'>
                 <LuFileText className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
                 <Input
                   id='description'
@@ -709,11 +709,11 @@ export default function EntryModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder='e.g., Groceries, Salary'
                   required
-                  className='pl-9'
+                  className='pl-9 w-full'
                 />
               </div>
               {merchantMatch && !goalId && (
-                <div className='flex items-center justify-between text-[11px] px-1 text-primary'>
+                <div className='flex items-center justify-between text-[11px] px-1 text-primary flex-wrap gap-1'>
                   <span className='inline-flex items-center gap-1 font-medium'>
                     <LuSparkles className='w-3 h-3 shrink-0' />
                     <span>
@@ -733,15 +733,15 @@ export default function EntryModal({
             </div>
 
             {/* Transaction Breakdown Toggle */}
-            <div className='p-3 bg-secondary/50 rounded-lg space-y-3 transition-all duration-200'>
-              <div className='flex items-center justify-between gap-2'>
-                <div className='space-y-0.5'>
+            <div className='p-3 bg-secondary/50 rounded-lg space-y-3 transition-all duration-200 w-full min-w-0'>
+              <div className='flex items-center justify-between gap-2 w-full min-w-0'>
+                <div className='space-y-0.5 min-w-0 flex-1 pr-2'>
                   <Label
                     className='font-medium text-foreground gap-1.5 flex items-center cursor-pointer'
                     htmlFor='split-toggle'
                   >
-                    <LuListPlus className='text-muted-foreground w-4 h-4' />{' '}
-                    Transaction Breakdown
+                    <LuListPlus className='text-muted-foreground w-4 h-4 shrink-0' />{' '}
+                    <span>Transaction Breakdown</span>
                   </Label>
                   <p className='text-xs text-muted-foreground'>
                     Split total into individual items.
@@ -751,6 +751,7 @@ export default function EntryModal({
                   id='split-toggle'
                   checked={isSplit}
                   onCheckedChange={handleSplitToggle}
+                  className='shrink-0'
                 />
               </div>
 
@@ -765,7 +766,7 @@ export default function EntryModal({
             </div>
 
             {/* Amount & Currency */}
-            <div className='grid gap-2'>
+            <div className='grid gap-2 w-full min-w-0'>
               <div className='flex items-center justify-between'>
                 <Label
                   htmlFor='amount'
@@ -779,14 +780,14 @@ export default function EntryModal({
                   </span>
                 )}
               </div>
-              <div className='flex gap-2'>
-                <div className='w-28 shrink-0'>
+              <div className='flex gap-2 w-full min-w-0'>
+                <div className='w-24 sm:w-28 shrink-0'>
                   <Select
                     value={entryCurrency}
                     onValueChange={setEntryCurrency}
                     disabled={isSplit}
                   >
-                    <SelectTrigger className='h-9 text-xs font-medium'>
+                    <SelectTrigger className='h-9 text-xs font-medium w-full'>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -802,7 +803,7 @@ export default function EntryModal({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className='relative flex-1'>
+                <div className='relative flex-1 min-w-0'>
                   <span className='pointer-events-none absolute inset-y-0 left-3 flex items-center font-medium text-muted-foreground text-sm select-none'>
                     {getCurrencySymbol(entryCurrency)}
                   </span>
@@ -818,7 +819,7 @@ export default function EntryModal({
                     disabled={isSplit}
                     required={!isSplit}
                     className={cn(
-                      'disabled:opacity-80 disabled:bg-muted/50 font-medium',
+                      'disabled:opacity-80 disabled:bg-muted/50 font-medium w-full',
                       getCurrencySymbol(entryCurrency).length > 1
                         ? 'pl-10'
                         : 'pl-8',
@@ -828,14 +829,14 @@ export default function EntryModal({
               </div>
 
               {conversion && (
-                <div className='flex items-center justify-between p-2 rounded-lg bg-muted/40 text-xs border border-border/50'>
+                <div className='flex flex-wrap items-center justify-between gap-1.5 p-2 rounded-lg bg-muted/40 text-xs border border-border/50 w-full min-w-0'>
                   <span className='text-muted-foreground'>
                     Converted to:{' '}
                     <strong className='text-foreground font-semibold'>
                       {formatCurrency(conversion.convertedAmount, currency)}
                     </strong>
                   </span>
-                  <span className='text-[11px] text-muted-foreground flex items-center gap-1.5'>
+                  <span className='text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap'>
                     <span>
                       Rate: 1 {entryCurrency} ={' '}
                       {conversion.effectiveRate < 1
@@ -854,7 +855,7 @@ export default function EntryModal({
             </div>
 
             {/* Type */}
-            <div className='grid gap-2'>
+            <div className='grid gap-2 w-full min-w-0'>
               <Label className='font-medium text-foreground/80'>
                 Type<span className='text-destructive'>*</span>
               </Label>
@@ -896,7 +897,7 @@ export default function EntryModal({
             </div>
 
             {/* Date */}
-            <div className='grid gap-2'>
+            <div className='grid gap-2 w-full min-w-0'>
               <Label
                 htmlFor='date'
                 className='font-medium text-foreground/80 gap-0.5'
@@ -907,7 +908,7 @@ export default function EntryModal({
             </div>
 
             {/* Category */}
-            <div className='grid gap-2'>
+            <div className='grid gap-2 w-full min-w-0'>
               <Label className='font-medium text-foreground/80'>Category</Label>
               <Select
                 value={categorySelectValue}
@@ -1000,7 +1001,7 @@ export default function EntryModal({
             </div>
 
             {/* Tags */}
-            <div className='grid gap-2'>
+            <div className='grid gap-2 w-full min-w-0'>
               <Label className='font-medium text-foreground/80'>Tags</Label>
               <TagPicker
                 tags={tags}
@@ -1015,11 +1016,11 @@ export default function EntryModal({
             </div>
 
             {/* Receipt / Attachment Upload */}
-            <div className='grid gap-2'>
-              <div className='flex items-center justify-between'>
+            <div className='grid gap-2 w-full min-w-0'>
+              <div className='flex flex-wrap items-center justify-between gap-1.5'>
                 <Label className='font-medium text-foreground/80 flex items-center gap-1.5'>
-                  <LuPaperclip className='w-3.5 h-3.5 text-muted-foreground' />
-                  Receipt / Attachment
+                  <LuPaperclip className='w-3.5 h-3.5 text-muted-foreground shrink-0' />
+                  <span>Receipt / Attachment</span>
                 </Label>
                 {lastScannedFile && receiptAction !== 'upload' && (
                   <Button
@@ -1037,7 +1038,7 @@ export default function EntryModal({
 
               {/* Case 1: Existing receipt attached and not removed */}
               {existingReceiptUrl && receiptAction === 'keep' && (
-                <div className='flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20'>
+                <div className='flex flex-col @xs:flex-row items-stretch @xs:items-center justify-between p-3 rounded-lg border border-border bg-muted/20 gap-2.5'>
                   <div
                     role='button'
                     tabIndex={0}
@@ -1075,7 +1076,7 @@ export default function EntryModal({
                         <LuReceipt className='w-4 h-4' />
                       </div>
                     )}
-                    <div className='min-w-0'>
+                    <div className='min-w-0 flex-1'>
                       <p className='text-xs font-medium truncate group-hover/thumb:text-primary transition-colors'>
                         Attached Receipt
                       </p>
@@ -1086,7 +1087,7 @@ export default function EntryModal({
                       </p>
                     </div>
                   </div>
-                  <div className='flex items-center gap-1.5 shrink-0'>
+                  <div className='flex items-center gap-1.5 shrink-0 justify-end'>
                     <Button
                       type='button'
                       variant='ghost'
@@ -1245,17 +1246,21 @@ export default function EntryModal({
             </div>
 
             {/* Recurring Switch */}
-            <div className='flex items-center justify-between mt-2 p-3 bg-secondary/50 rounded-lg'>
-              <div className='space-y-0.5'>
+            <div className='flex items-center justify-between mt-2 p-3 bg-secondary/50 rounded-lg gap-2'>
+              <div className='space-y-0.5 min-w-0 flex-1'>
                 <Label className='font-medium text-foreground gap-1.5 flex items-center'>
-                  <LuRepeat className='text-muted-foreground w-4 h-4' />{' '}
-                  Recurring Transaction
+                  <LuRepeat className='text-muted-foreground w-4 h-4 shrink-0' />{' '}
+                  <span>Recurring Transaction</span>
                 </Label>
                 <p className='text-xs text-muted-foreground'>
                   Repeat this transaction automatically in forecasts
                 </p>
               </div>
-              <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
+              <Switch
+                checked={isRecurring}
+                onCheckedChange={setIsRecurring}
+                className='shrink-0'
+              />
             </div>
 
             {/* Recurrence Interval (Conditional) */}

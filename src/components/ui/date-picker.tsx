@@ -158,7 +158,7 @@ export function DatePicker({
             className,
           )}
         >
-          <LuCalendar className='mr-2.5 h-4 w-4 text-muted-foreground shrink-0' />
+          <LuCalendar className='h-4 w-4 text-muted-foreground shrink-0' />
           {selectedDate ? (
             <span className='truncate font-medium text-foreground'>
               {format(selectedDate, dateFormat)}
