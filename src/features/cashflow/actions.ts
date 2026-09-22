@@ -180,17 +180,24 @@ async function checkBudgetThresholds(
   cashflowId: string,
   category: string,
   userId: string,
+  knownBudgetAmount?: number,
 ) {
   if (!category) return;
 
-  const { data: budget } = await supabase
-    .from('cashflow_budgets')
-    .select('amount')
-    .eq('cashflow_id', cashflowId)
-    .eq('category', category)
-    .maybeSingle();
+  let budgetAmount = knownBudgetAmount;
+  if (budgetAmount === undefined) {
+    const { data: budget } = await supabase
+      .from('cashflow_budgets')
+      .select('amount')
+      .eq('cashflow_id', cashflowId)
+      .eq('category', category)
+      .maybeSingle();
 
-  if (!budget || budget.amount <= 0) return;
+    if (!budget || budget.amount <= 0) return;
+    budgetAmount = budget.amount;
+  }
+
+  if (budgetAmount <= 0) return;
 
   const now = new Date();
   const year = now.getUTCFullYear();
@@ -208,7 +215,7 @@ async function checkBudgetThresholds(
     .lte('date', monthEnd);
 
   const totalSpent = (entries || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const ratio = totalSpent / budget.amount;
+  const ratio = totalSpent / budgetAmount;
 
   const targetType = ratio >= 1.0 ? 'budget_exceeded' : ratio >= 0.8 ? 'budget_warning' : null;
   if (!targetType) return;
@@ -226,7 +233,7 @@ async function checkBudgetThresholds(
   if (existing && existing.length > 0) return;
 
   if (targetType === 'budget_exceeded') {
-    const overage = (totalSpent - budget.amount).toFixed(2);
+    const overage = (totalSpent - budgetAmount).toFixed(2);
     await createNotification({
       userId,
       type: 'budget_exceeded',
@@ -240,7 +247,7 @@ async function checkBudgetThresholds(
       userId,
       type: 'budget_warning',
       title: 'Budget Warning ⚠️',
-      body: `${category} reached ${percentage}% of $${budget.amount} budget`,
+      body: `${category} reached ${percentage}% of $${budgetAmount} budget`,
       linkUrl: `/cashflow/${cashflowId}`,
     });
   }
@@ -1503,27 +1510,31 @@ export async function upsertBudget(formData: FormData) {
     return { error: 'Access denied' };
   }
 
-  const { error } = await supabase.from('cashflow_budgets').upsert(
-    {
-      cashflow_id: cashflowId,
-      category,
-      amount,
-      enable_rollover: !!enable_rollover,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'cashflow_id,category' },
-  );
+  const { data: savedBudget, error } = await supabase
+    .from('cashflow_budgets')
+    .upsert(
+      {
+        cashflow_id: cashflowId,
+        category,
+        amount,
+        enable_rollover: !!enable_rollover,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'cashflow_id,category' },
+    )
+    .select()
+    .single();
 
-  if (error) {
+  if (error || !savedBudget) {
     console.error('Failed to upsert budget:', error);
-    return { error: error.message };
+    return { error: error?.message ?? 'Failed to save budget' };
   }
 
-  await checkBudgetThresholds(supabase, cashflowId, category, user.id);
+  await checkBudgetThresholds(supabase, cashflowId, category, user.id, amount);
 
   revalidatePath('/cashflow');
   revalidatePath(`/cashflow/${cashflowId}`);
-  return { success: true };
+  return { success: true, budget: mapBudgetToDTO(savedBudget) };
 }
 
 export async function deleteBudget(budgetId: string) {
@@ -1564,7 +1575,7 @@ export async function deleteBudget(budgetId: string) {
   if (budget?.cashflow_id) {
     revalidatePath(`/cashflow/${budget.cashflow_id}`);
   }
-  return { success: true };
+  return { success: true, budgetId };
 }
 
 export async function getBudgets(cashflowId: string) {

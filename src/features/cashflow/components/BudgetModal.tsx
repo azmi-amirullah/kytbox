@@ -33,6 +33,7 @@ interface BudgetModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currency: string | null
+  onSuccess?: (budget: CashflowBudgetDTO) => void
 }
 
 export default function BudgetModal({
@@ -41,6 +42,7 @@ export default function BudgetModal({
   open,
   onOpenChange,
   currency,
+  onSuccess,
 }: BudgetModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -79,6 +81,9 @@ export default function BudgetModal({
       toast.success(isEdit ? 'Budget updated!' : 'Budget created!')
       setIsLoading(false)
       onOpenChange(false)
+      if (result.budget) {
+        onSuccess?.(result.budget)
+      }
     }
   }
 

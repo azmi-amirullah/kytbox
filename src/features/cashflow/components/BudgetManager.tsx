@@ -25,6 +25,8 @@ interface BudgetManagerProps {
   entries: CashflowEntryDTO[]
   currency: string | null
   canEdit: boolean
+  onBudgetChange?: (budget: CashflowBudgetDTO) => void
+  onBudgetDelete?: (budgetId: string) => void
 }
 
 export default function BudgetManager({
@@ -33,6 +35,8 @@ export default function BudgetManager({
   entries,
   currency,
   canEdit,
+  onBudgetChange,
+  onBudgetDelete,
 }: BudgetManagerProps) {
   const [isPending, startTransition] = useTransition()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -43,15 +47,24 @@ export default function BudgetManager({
   const [deletingBudgetId, setDeletingBudgetId] = useState<string | null>(null)
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null)
 
+  // ── Synchronized local budgets state (updated instantly on API response) ───
+  const [localBudgets, setLocalBudgets] = useState<CashflowBudgetDTO[]>(budgets)
+  const [prevBudgetsProp, setPrevBudgetsProp] = useState(budgets)
+
+  if (budgets !== prevBudgetsProp) {
+    setPrevBudgetsProp(budgets)
+    setLocalBudgets(budgets)
+  }
+
   // Sort budgets by spend percentage descending (highest risk first)
   const sortedBudgets = useMemo(() => {
-    if (budgets.length === 0) return budgets
+    if (localBudgets.length === 0) return localBudgets
 
     const now = new Date()
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
 
-    return [...budgets].sort((a, b) => {
+    return [...localBudgets].sort((a, b) => {
       const spentFor = (item: CashflowBudgetDTO) =>
         entries
           .filter((e) => {
@@ -66,7 +79,7 @@ export default function BudgetManager({
       const pctB = b.amount > 0 ? spentFor(b) / b.amount : 0
       return pctB - pctA
     })
-  }, [budgets, entries])
+  }, [localBudgets, entries])
 
   function openAdd() {
     setEditingBudget(null)
@@ -80,8 +93,26 @@ export default function BudgetManager({
     setIsModalOpen(true)
   }
 
+  function handleSaveSuccess(savedBudget: CashflowBudgetDTO) {
+    setLocalBudgets((prev) => {
+      const exists = prev.some(
+        (b) => b.id === savedBudget.id || b.category === savedBudget.category,
+      )
+      if (exists) {
+        return prev.map((b) =>
+          b.id === savedBudget.id || b.category === savedBudget.category
+            ? savedBudget
+            : b,
+        )
+      }
+      return [...prev, savedBudget]
+    })
+    onBudgetChange?.(savedBudget)
+  }
+
   async function handleDelete(budgetId: string) {
     setIsDeletingId(budgetId)
+
     startTransition(async () => {
       const result = await deleteBudget(budgetId)
       if (result.error) {
@@ -89,6 +120,8 @@ export default function BudgetManager({
         setIsDeletingId(null)
         setDeletingBudgetId(null)
       } else {
+        setLocalBudgets((prev) => prev.filter((b) => b.id !== budgetId))
+        onBudgetDelete?.(budgetId)
         toast.success('Budget removed')
         setDeletingBudgetId(null)
         setIsDeletingId(null)
@@ -164,6 +197,7 @@ export default function BudgetManager({
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         currency={currency}
+        onSuccess={handleSaveSuccess}
       />
 
       {/* Delete Confirmation Dialog */}

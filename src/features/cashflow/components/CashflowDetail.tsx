@@ -291,6 +291,34 @@ export default function CashflowDetail({
     setLocalGoals(goals)
   }
 
+  const [localBudgets, setLocalBudgets] = useState<CashflowBudgetDTO[]>(budgets)
+  const [prevBudgetsProp, setPrevBudgetsProp] = useState(budgets)
+
+  if (budgets !== prevBudgetsProp) {
+    setPrevBudgetsProp(budgets)
+    setLocalBudgets(budgets)
+  }
+
+  function handleBudgetChange(savedBudget: CashflowBudgetDTO) {
+    setLocalBudgets((prev) => {
+      const exists = prev.some(
+        (b) => b.id === savedBudget.id || b.category === savedBudget.category,
+      )
+      if (exists) {
+        return prev.map((b) =>
+          b.id === savedBudget.id || b.category === savedBudget.category
+            ? savedBudget
+            : b,
+        )
+      }
+      return [...prev, savedBudget]
+    })
+  }
+
+  function handleBudgetDelete(budgetId: string) {
+    setLocalBudgets((prev) => prev.filter((b) => b.id !== budgetId))
+  }
+
   function handleGoalChange(savedGoal: CashflowGoalDTO) {
     setLocalGoals((prev) => {
       const exists = prev.some((g) => g.id === savedGoal.id)
@@ -2705,10 +2733,12 @@ export default function CashflowDetail({
       {/* Budget Tracker */}
       <BudgetManager
         cashflowId={cashflow.id}
-        budgets={budgets}
+        budgets={localBudgets}
         entries={localEntries}
         currency={currency}
         canEdit={canEdit}
+        onBudgetChange={handleBudgetChange}
+        onBudgetDelete={handleBudgetDelete}
       />
 
       {/* Savings Goals */}

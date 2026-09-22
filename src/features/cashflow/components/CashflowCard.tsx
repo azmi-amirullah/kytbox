@@ -89,6 +89,35 @@ export default function CashflowCard({
     setLocalEntries(entries);
   }
 
+  // ── Synchronized local budgets state ─────────────────────────────────────────
+  const [localBudgets, setLocalBudgets] = useState<CashflowBudgetDTO[]>(budgets);
+  const [prevBudgetsProp, setPrevBudgetsProp] = useState(budgets);
+
+  if (budgets !== prevBudgetsProp) {
+    setPrevBudgetsProp(budgets);
+    setLocalBudgets(budgets);
+  }
+
+  function handleBudgetChange(savedBudget: CashflowBudgetDTO) {
+    setLocalBudgets((prev) => {
+      const exists = prev.some(
+        (b) => b.id === savedBudget.id || b.category === savedBudget.category,
+      );
+      if (exists) {
+        return prev.map((b) =>
+          b.id === savedBudget.id || b.category === savedBudget.category
+            ? savedBudget
+            : b,
+        );
+      }
+      return [...prev, savedBudget];
+    });
+  }
+
+  function handleBudgetDelete(budgetId: string) {
+    setLocalBudgets((prev) => prev.filter((b) => b.id !== budgetId));
+  }
+
   // Calculate card stats
   const income = localEntries
     .filter((e) => e.type === 'income')
@@ -356,10 +385,12 @@ export default function CashflowCard({
       <div className='p-4 border-t'>
         <BudgetManager
           cashflowId={cashflow.id}
-          budgets={budgets}
+          budgets={localBudgets}
           entries={localEntries}
           currency={currency}
           canEdit={isOwner}
+          onBudgetChange={handleBudgetChange}
+          onBudgetDelete={handleBudgetDelete}
         />
       </div>
 
