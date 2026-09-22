@@ -100,7 +100,7 @@ export async function compressReceiptImage(
 }
 
 /**
- * Performs client-side Zero-Storage receipt extraction using Gemini 3.8 Flash Multimodal AI.
+ * Performs client-side Zero-Storage receipt extraction using Gemini 3.5 Flash-Lite Multimodal AI.
  * The image is processed in browser memory and NEVER saved to permanent storage.
  */
 export async function extractReceiptData(

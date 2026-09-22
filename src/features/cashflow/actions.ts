@@ -43,6 +43,7 @@ import { createClient } from '@/lib/supabase/server';
 import { mapBudgetToDTO, mapGoalToDTO, mapCashflowEntryToDTO, mapCashflowRecurringRuleToDTO } from '@/lib/mappers';
 import type { CashflowEntryDTO } from '@/types/dto';
 import { createNotification } from '@/features/notifications';
+import { formatCurrency, DEFAULT_CURRENCY } from '@/lib/currency';
 import { shiftToCurrentMonth } from './math';
 import { getNextAvailableColorIndex } from './lib/tag-colors';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './constants';
@@ -232,22 +233,32 @@ async function checkBudgetThresholds(
 
   if (existing && existing.length > 0) return;
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('default_currency')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const userCurrency = profile?.default_currency || DEFAULT_CURRENCY;
+
   if (targetType === 'budget_exceeded') {
-    const overage = (totalSpent - budgetAmount).toFixed(2);
+    const overage = totalSpent - budgetAmount;
+    const formattedOverage = formatCurrency(overage, userCurrency);
     await createNotification({
       userId,
       type: 'budget_exceeded',
       title: 'Budget Exceeded 🔴',
-      body: `${category} is over budget by $${overage}`,
+      body: `${category} is over budget by ${formattedOverage}`,
       linkUrl: `/cashflow/${cashflowId}`,
     });
   } else if (targetType === 'budget_warning') {
     const percentage = Math.round(ratio * 100);
+    const formattedBudget = formatCurrency(budgetAmount, userCurrency);
     await createNotification({
       userId,
       type: 'budget_warning',
       title: 'Budget Warning ⚠️',
-      body: `${category} reached ${percentage}% of $${budgetAmount} budget`,
+      body: `${category} reached ${percentage}% of ${formattedBudget} budget`,
       linkUrl: `/cashflow/${cashflowId}`,
     });
   }

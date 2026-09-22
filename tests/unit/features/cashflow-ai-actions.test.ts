@@ -145,7 +145,7 @@ describe('parseReceiptImageWithAI Server Action', () => {
       }
     });
 
-    it('handles Gemini 429 rate limit error gracefully', async () => {
+    it('handles Gemini 429 rate limit error gracefully without retrying', async () => {
       global.fetch = vi.fn().mockResolvedValue(
         new Response('Rate limit exceeded', {
           status: 429,
@@ -163,46 +163,16 @@ describe('parseReceiptImageWithAI Server Action', () => {
       if (!result.success) {
         expect(result.error).toContain('429');
       }
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it('falls back to gemini-3.1-flash-lite when gemini-3.5-flash-lite returns 503 high demand', async () => {
-      const mockGeminiOutput = {
-        candidates: [
-          {
-            content: {
-              parts: [
-                {
-                  text: JSON.stringify({
-                    merchant: 'Fallback Cafe',
-                    amount: 25000,
-                    date: '2026-09-20',
-                    category: 'food',
-                    suggestedTags: ['Coffee'],
-                    confidence: 0.9,
-                  }),
-                },
-              ],
-            },
-          },
-        ],
-      };
-
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(
-          new Response('High demand spike', {
-            status: 503,
-            statusText: 'Service Unavailable',
-          }),
-        )
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(mockGeminiOutput), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }),
-        );
-      global.fetch = fetchMock;
+    it('handles Gemini 503 high demand error gracefully and fails fast', async () => {
+      global.fetch = vi.fn().mockResolvedValue(
+        new Response('High demand spike', {
+          status: 503,
+          statusText: 'Service Unavailable',
+        }),
+      );
 
       const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
       const result = await parseReceiptImageWithAI({
@@ -210,17 +180,15 @@ describe('parseReceiptImageWithAI Server Action', () => {
         mimeType: 'image/webp',
       });
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.merchant).toBe('Fallback Cafe');
-        expect(result.data.amount).toBe(25000);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('503');
       }
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(fetchMock.mock.calls[0]?.[0]).toContain('gemini-3.5-flash-lite');
-      expect(fetchMock.mock.calls[1]?.[0]).toContain('gemini-3.1-flash-lite');
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(global.fetch).mock.calls[0]?.[0]).toContain('gemini-3.5-flash-lite');
     });
 
-    it('fails fast without attempting fallback on 400 Bad Request', async () => {
+    it('fails fast on 400 Bad Request', async () => {
       const fetchMock = vi.fn().mockResolvedValue(
         new Response('Bad request payload', {
           status: 400,
