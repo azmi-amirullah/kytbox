@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock dependencies before importing ai-actions
-vi.mock('@/lib/auth-with-rate-limit', () => ({
-  getAuthenticatedUserWithRateLimit: vi.fn().mockResolvedValue({
+vi.mock('@/lib/auth', () => ({
+  getAuthenticatedUser: vi.fn().mockResolvedValue({
     user: { id: 'test-user-id', email: 'test@example.com' },
   }),
 }));
@@ -13,11 +13,15 @@ vi.mock('@sentry/nextjs', () => ({
 
 const mockEnv = {
   GEMINI_API_KEY: 'test-api-key',
+  UPSTASH_REDIS_REST_URL: 'https://test-redis.upstash.io',
+  UPSTASH_REDIS_REST_TOKEN: 'test-token',
 };
 
 vi.mock('@/env', () => ({
   env: mockEnv,
 }));
+
+const VALID_MOCK_BASE64 = 'a'.repeat(2500);
 
 describe('parseReceiptImageWithAI Server Action', () => {
   const originalFetch = global.fetch;
@@ -44,11 +48,44 @@ describe('parseReceiptImageWithAI Server Action', () => {
       }
     });
 
+    it('rejects base64 payload under 2000 chars as blank/truncated image', async () => {
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: 'tooshortbase64data',
+        mimeType: 'image/webp',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('Invalid receipt image input');
+      }
+    });
+
+    it('returns rate limit error when AI receipt scan limit is exceeded', async () => {
+      const redisModule = await import('@/lib/upstash/redis');
+      vi.spyOn(redisModule, 'checkRateLimit').mockResolvedValueOnce({
+        success: false,
+        limit: 10,
+        remaining: 0,
+        reset: Date.now() + 60000,
+      });
+
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: VALID_MOCK_BASE64,
+        mimeType: 'image/webp',
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('Receipt scanning limit reached');
+      }
+    });
+
     it('fails gracefully when GEMINI_API_KEY is not configured', async () => {
       mockEnv.GEMINI_API_KEY = '';
       const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
       const result = await parseReceiptImageWithAI({
-        base64: 'validbase64contenthere1234567890',
+        base64: VALID_MOCK_BASE64,
         mimeType: 'image/webp',
       });
       expect(result.success).toBe(false);
@@ -88,7 +125,7 @@ describe('parseReceiptImageWithAI Server Action', () => {
 
       const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
       const result = await parseReceiptImageWithAI({
-        base64: 'samplevalidbase64imagedata1234567890',
+        base64: VALID_MOCK_BASE64,
         mimeType: 'image/webp',
       });
 
@@ -134,7 +171,7 @@ describe('parseReceiptImageWithAI Server Action', () => {
 
       const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
       const result = await parseReceiptImageWithAI({
-        base64: 'samplevalidbase64imagedata1234567890',
+        base64: VALID_MOCK_BASE64,
         mimeType: 'image/webp',
       });
 
@@ -155,7 +192,7 @@ describe('parseReceiptImageWithAI Server Action', () => {
 
       const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
       const result = await parseReceiptImageWithAI({
-        base64: 'samplevalidbase64imagedata1234567890',
+        base64: VALID_MOCK_BASE64,
         mimeType: 'image/webp',
       });
 
@@ -176,7 +213,7 @@ describe('parseReceiptImageWithAI Server Action', () => {
 
       const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
       const result = await parseReceiptImageWithAI({
-        base64: 'samplevalidbase64imagedata1234567890',
+        base64: VALID_MOCK_BASE64,
         mimeType: 'image/webp',
       });
 
@@ -199,7 +236,7 @@ describe('parseReceiptImageWithAI Server Action', () => {
 
       const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
       const result = await parseReceiptImageWithAI({
-        base64: 'samplevalidbase64imagedata1234567890',
+        base64: VALID_MOCK_BASE64,
         mimeType: 'image/webp',
       });
 

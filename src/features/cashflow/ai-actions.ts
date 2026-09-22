@@ -2,13 +2,17 @@
 
 import { z } from 'zod';
 import { env } from '@/env';
-import { getAuthenticatedUserWithRateLimit } from '@/lib/auth-with-rate-limit';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { aiReceiptRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import * as Sentry from '@sentry/nextjs';
 import { EXPENSE_CATEGORIES, isTagDuplicateOfCategory } from './constants';
 import type { ExtractedReceiptData } from './lib/receipt-extractor';
 
 const parseReceiptImageInputSchema = z.object({
-  base64: z.string().min(10, 'Base64 data cannot be empty').max(10_000_000, 'Image data exceeds maximum size'),
+  base64: z
+    .string()
+    .min(2_000, 'Image data is too small or blank')
+    .max(10_000_000, 'Image data exceeds maximum size'),
   mimeType: z.enum(['image/webp', 'image/jpeg', 'image/png', 'image/jpg']),
 });
 
@@ -117,8 +121,15 @@ export async function parseReceiptImageWithAI(input: {
   mimeType: 'image/webp' | 'image/jpeg' | 'image/png' | 'image/jpg';
 }): Promise<ParseReceiptResult> {
   try {
-    // 1. Authenticate user & enforce Upstash rate limiting
-    await getAuthenticatedUserWithRateLimit();
+    // 1. Authenticate user & enforce dedicated AI rate limiting (15 req/min)
+    const { user } = await getAuthenticatedUser();
+    const { success } = await checkRateLimit(aiReceiptRateLimit, user.id);
+    if (!success) {
+      return {
+        success: false,
+        error: 'Receipt scanning limit reached. Please wait a minute before scanning again.',
+      };
+    }
 
     // 2. Validate input boundary
     const validation = parseReceiptImageInputSchema.safeParse(input);

@@ -22,6 +22,9 @@ export async function compressReceiptImage(
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
+    if (base64.length < 2000) {
+      throw new Error('The image appears to be blank or contains no legible text.');
+    }
     const mimeType =
       file.type === 'image/png'
         ? 'image/png'
@@ -39,6 +42,12 @@ export async function compressReceiptImage(
       URL.revokeObjectURL(objectUrl);
 
       let { width, height } = img;
+
+      if (width < 150 || height < 150) {
+        reject(new Error('Image resolution is too small to be a legible receipt (minimum 150x150).'));
+        return;
+      }
+
       const maxEdge = 1200;
       const currentLongEdge = Math.max(width, height);
 
@@ -56,7 +65,6 @@ export async function compressReceiptImage(
       if (!ctx) {
         // Fallback to direct file read if canvas context is unavailable
         if (file.size > 2 * 1024 * 1024) {
-          URL.revokeObjectURL(objectUrl);
           reject(new Error('Image is too large to process without canvas support.'));
           return;
         }
@@ -65,6 +73,10 @@ export async function compressReceiptImage(
           const result = reader.result;
           if (typeof result === 'string') {
             const base64 = result.split(',')[1] ?? '';
+            if (base64.length < 2000) {
+              reject(new Error('The image appears to be blank or contains no legible text.'));
+              return;
+            }
             resolve({ base64, mimeType: 'image/webp' });
           } else {
             reject(new Error('Failed to read image as base64'));
@@ -79,15 +91,24 @@ export async function compressReceiptImage(
 
       // Export as WebP
       const dataUrl = canvas.toDataURL('image/webp', 0.8);
+      let base64 = '';
+      let mimeType: 'image/webp' | 'image/jpeg' = 'image/webp';
       if (dataUrl.startsWith('data:image/webp')) {
-        const base64 = dataUrl.replace(/^data:image\/webp;base64,/, '');
-        resolve({ base64, mimeType: 'image/webp' });
+        base64 = dataUrl.replace(/^data:image\/webp;base64,/, '');
+        mimeType = 'image/webp';
       } else {
         // Fallback to JPEG if browser canvas doesn't support WebP export
         const jpegUrl = canvas.toDataURL('image/jpeg', 0.8);
-        const base64 = jpegUrl.replace(/^data:image\/jpeg;base64,/, '');
-        resolve({ base64, mimeType: 'image/jpeg' });
+        base64 = jpegUrl.replace(/^data:image\/jpeg;base64,/, '');
+        mimeType = 'image/jpeg';
       }
+
+      if (base64.length < 2000) {
+        reject(new Error('The image appears to be blank or contains no legible text.'));
+        return;
+      }
+
+      resolve({ base64, mimeType });
     };
 
     img.onerror = () => {

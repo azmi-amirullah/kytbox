@@ -48,6 +48,14 @@ export const uploadRateLimit = new Ratelimit({
   prefix: '@kytbox/upload-ratelimit',
 });
 
+// Rate limiter for AI receipt extraction (15 requests per min per user)
+export const aiReceiptRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(15, '1m'),
+  analytics: true,
+  prefix: '@kytbox/ai-receipt-ratelimit',
+});
+
 // Rate limiter for bio subscriptions (5 requests per min per IP)
 export const subscribeRateLimit = new Ratelimit({
   redis,
