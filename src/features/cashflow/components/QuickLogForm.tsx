@@ -25,7 +25,16 @@ import {
   LuUsers,
   LuPaperclip,
   LuX,
+  LuCamera,
+  LuImage,
+  LuChevronDown,
 } from 'react-icons/lu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'react-toastify';
 import { addEntry, getRecentEntriesForQuickLog } from '../actions';
 import {
@@ -95,7 +104,8 @@ export default function QuickLogForm({
   const [ocrStatus, setOcrStatus] = useState<string | null>(null);
   const [scannedReceiptFile, setScannedReceiptFile] = useState<File | null>(null);
   const [attachReceipt, setAttachReceipt] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const amountInputRef = useRef<HTMLInputElement>(null);
   const isAiScanRef = useRef(false);
 
@@ -431,30 +441,73 @@ export default function QuickLogForm({
 
             {/* Zero-Storage Scan Receipt Trigger & Optional Modal Close */}
             <div className='shrink-0 flex items-center gap-2'>
-              <Button
-                type='button'
-                variant='outline'
-                disabled={isScanningReceipt || isPending}
-                onClick={() => fileInputRef.current?.click()}
-                className='h-9 text-xs px-3 gap-1.5 border-primary/40 hover:bg-primary/10 text-primary cursor-pointer'
-                title='Extract receipt data instantly without uploading to storage'
-              >
-                {isScanningReceipt ? (
-                  <>
-                    <LuLoader className='w-3.5 h-3.5 animate-spin shrink-0' />
-                    <span className='truncate max-w-28'>
-                      {ocrStatus || 'Scanning...'}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <LuScanLine className='w-3.5 h-3.5' />
-                    <span>Scan</span>
-                  </>
-                )}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    disabled={isScanningReceipt || isPending}
+                    className='h-9 text-xs px-3 gap-1.5 border-primary/40 hover:bg-primary/10 text-primary cursor-pointer'
+                    title='Extract receipt data instantly without uploading to storage'
+                  >
+                    {isScanningReceipt ? (
+                      <>
+                        <LuLoader className='w-3.5 h-3.5 animate-spin shrink-0' />
+                        <span className='truncate max-w-28'>
+                          {ocrStatus || 'Scanning...'}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <LuScanLine className='w-3.5 h-3.5' />
+                        <span>Scan</span>
+                        <LuChevronDown className='w-3 h-3 opacity-60 ml-0.5' />
+                      </>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end' className='w-48'>
+                  <DropdownMenuItem
+                    onClick={() => cameraInputRef.current?.click()}
+                    className='cursor-pointer gap-2 py-2 text-xs'
+                  >
+                    <LuCamera className='w-4 h-4 text-primary shrink-0' />
+                    <div className='flex flex-col'>
+                      <span className='font-medium'>Take Photo</span>
+                      <span className='text-[10px] text-muted-foreground'>
+                        Use device camera
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => galleryInputRef.current?.click()}
+                    className='cursor-pointer gap-2 py-2 text-xs'
+                  >
+                    <LuImage className='w-4 h-4 text-primary shrink-0' />
+                    <div className='flex flex-col'>
+                      <span className='font-medium'>Choose from Gallery</span>
+                      <span className='text-[10px] text-muted-foreground'>
+                        Upload existing photo
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <input
-                ref={fileInputRef}
+                ref={cameraInputRef}
+                type='file'
+                accept='image/*'
+                capture='environment'
+                className='hidden'
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleReceiptScan(file);
+                  e.target.value = '';
+                }}
+              />
+              <input
+                ref={galleryInputRef}
                 type='file'
                 accept='image/*,image/jpeg,image/png,image/webp,image/avif'
                 className='hidden'
