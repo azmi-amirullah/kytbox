@@ -55,6 +55,11 @@ export async function compressReceiptImage(
 
       if (!ctx) {
         // Fallback to direct file read if canvas context is unavailable
+        if (file.size > 2 * 1024 * 1024) {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('Image is too large to process without canvas support.'));
+          return;
+        }
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result;
@@ -106,7 +111,21 @@ export async function extractReceiptData(
   const { base64, mimeType } = await compressReceiptImage(file);
 
   onProgress?.(50, 'Analyzing receipt with Gemini AI...');
-  const result = await parseReceiptImageWithAI({ base64, mimeType });
+  let result;
+  try {
+    result = await parseReceiptImageWithAI({ base64, mimeType });
+  } catch (err: unknown) {
+    const isNetwork =
+      err instanceof Error &&
+      (err.message.includes('Load failed') ||
+        err.message.includes('fetch') ||
+        err.name === 'TypeError');
+    throw new Error(
+      isNetwork
+        ? 'Network connection lost during receipt scanning. Please check your connection and try again.'
+        : 'Failed to scan receipt image.',
+    );
+  }
 
   if (!result.success) {
     throw new Error(result.error);
