@@ -106,9 +106,15 @@ Rules:
 5. suggestedTags: Provide 1 to 3 short keyword tags where the first character of each tag is uppercase (e.g. ["Coffee", "Cafe"], ["Groceries", "Supermarket"]). Never suggest a tag that duplicates the chosen category (e.g. if category is transport, do not include "Transport"; if food, do not include "Food").
 6. confidence: A number between 0.0 and 1.0 reflecting extraction certainty.`;
 
+const CANDIDATE_MODELS: readonly string[] = [
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+];
+
 /**
- * Server action to parse a receipt image directly using Gemini 3.8 Flash multimodal vision.
+ * Server action to parse a receipt image directly using Gemini multimodal vision.
  * Bypasses traditional OCR, preserving 2D layout, columns, and visual context.
+ * Automatically falls back to gemini-3.1-flash-lite if gemini-3.5-flash-lite encounters transient errors.
  */
 export async function parseReceiptImageWithAI(input: {
   base64: string;
@@ -132,88 +138,116 @@ export async function parseReceiptImageWithAI(input: {
     const normalizedMimeType =
       validation.data.mimeType === 'image/jpg' ? 'image/jpeg' : validation.data.mimeType;
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
-
     const prompt = `You are an expert financial receipt and transaction parser. Analyze the provided receipt image or transaction screenshot and extract structured cashflow data.
 
 ${RECEIPT_EXTRACTION_INSTRUCTIONS}`;
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                inlineData: {
-                  mimeType: normalizedMimeType,
-                  data: validation.data.base64,
-                },
+    const requestBody = JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              inlineData: {
+                mimeType: normalizedMimeType,
+                data: validation.data.base64,
               },
-              { text: prompt },
-            ],
-          },
-        ],
-        generationConfig: geminiGenerationConfig,
-      }),
-      signal: AbortSignal.timeout(8000),
+            },
+            { text: prompt },
+          ],
+        },
+      ],
+      generationConfig: geminiGenerationConfig,
     });
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => '');
-      return {
-        success: false,
-        error: `Gemini API returned status ${response.status}: ${errorBody.slice(0, 150)}`,
-      };
+    let lastError = 'Failed to scan receipt with Gemini AI';
+
+    for (const model of CANDIDATE_MODELS) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
+          signal: AbortSignal.timeout(8000),
+        });
+
+        if (!response.ok) {
+          const errorBody = await response.text().catch(() => '');
+          lastError = `Gemini API returned status ${response.status}: ${errorBody.slice(0, 150)}`;
+
+          // If transient error (429 rate limit, 500, 502, 503 high demand, 504), attempt next fallback model
+          if ([429, 500, 502, 503, 504].includes(response.status)) {
+            continue;
+          }
+
+          // Non-transient error (e.g. 400 Bad Request) - fail fast immediately
+          return {
+            success: false,
+            error: lastError,
+          };
+        }
+
+        const payload: unknown = await response.json();
+        const apiResult = geminiApiResponseSchema.safeParse(payload);
+
+        if (!apiResult.success) {
+          lastError = 'Unexpected response structure from Gemini API';
+          continue;
+        }
+
+        const candidate = apiResult.data.candidates[0];
+        const part = candidate?.content?.parts[0];
+        if (!part) {
+          lastError = 'No parts in Gemini response content';
+          continue;
+        }
+
+        const parsedJson: unknown = JSON.parse(part.text);
+        const parsedData = geminiReceiptSchema.safeParse(parsedJson);
+
+        if (!parsedData.success) {
+          lastError = 'Gemini JSON output failed schema validation';
+          continue;
+        }
+
+        const { merchant, amount, date, category, suggestedTags, confidence } = parsedData.data;
+
+        const formattedTags = (suggestedTags ?? [])
+          .map((tag) => {
+            const cleaned = tag.trim().replace(/^#/, '');
+            if (!cleaned) return '';
+            return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+          })
+          .filter(
+            (t): t is string =>
+              Boolean(t) && !isTagDuplicateOfCategory(t, category),
+          );
+
+        return {
+          success: true,
+          data: {
+            merchant,
+            amount,
+            date,
+            category,
+            suggestedTags: formattedTags,
+            confidence,
+          },
+        };
+      } catch (callErr) {
+        lastError = callErr instanceof Error ? callErr.message : 'Unknown AI parsing error';
+        // Network timeout / abort error — continue to fallback model
+        continue;
+      }
     }
-
-    const payload: unknown = await response.json();
-    const apiResult = geminiApiResponseSchema.safeParse(payload);
-
-    if (!apiResult.success) {
-      return { success: false, error: 'Unexpected response structure from Gemini API' };
-    }
-
-    const candidate = apiResult.data.candidates[0];
-    const part = candidate.content.parts[0];
-    if (!part) {
-      return { success: false, error: 'No parts in Gemini response content' };
-    }
-
-    const parsedJson: unknown = JSON.parse(part.text);
-    const parsedData = geminiReceiptSchema.safeParse(parsedJson);
-
-    if (!parsedData.success) {
-      return { success: false, error: 'Gemini JSON output failed schema validation' };
-    }
-
-    const { merchant, amount, date, category, suggestedTags, confidence } = parsedData.data;
-
-    const formattedTags = (suggestedTags ?? [])
-      .map((tag) => {
-        const cleaned = tag.trim().replace(/^#/, '');
-        if (!cleaned) return '';
-        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-      })
-      .filter(
-        (t): t is string =>
-          Boolean(t) && !isTagDuplicateOfCategory(t, category),
-      );
 
     return {
-      success: true,
-      data: {
-        merchant,
-        amount,
-        date,
-        category,
-        suggestedTags: formattedTags,
-        confidence,
-      },
+      success: false,
+      error: lastError,
     };
   } catch (err) {
     Sentry.captureException(err);

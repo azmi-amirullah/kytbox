@@ -163,6 +163,83 @@ describe('parseReceiptImageWithAI Server Action', () => {
       if (!result.success) {
         expect(result.error).toContain('429');
       }
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('falls back to gemini-3.1-flash-lite when gemini-3.5-flash-lite returns 503 high demand', async () => {
+      const mockGeminiOutput = {
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    merchant: 'Fallback Cafe',
+                    amount: 25000,
+                    date: '2026-09-20',
+                    category: 'food',
+                    suggestedTags: ['Coffee'],
+                    confidence: 0.9,
+                  }),
+                },
+              ],
+            },
+          },
+        ],
+      };
+
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response('High demand spike', {
+            status: 503,
+            statusText: 'Service Unavailable',
+          }),
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(mockGeminiOutput), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      global.fetch = fetchMock;
+
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: 'samplevalidbase64imagedata1234567890',
+        mimeType: 'image/webp',
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.merchant).toBe('Fallback Cafe');
+        expect(result.data.amount).toBe(25000);
+      }
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[0]?.[0]).toContain('gemini-3.5-flash-lite');
+      expect(fetchMock.mock.calls[1]?.[0]).toContain('gemini-3.1-flash-lite');
+    });
+
+    it('fails fast without attempting fallback on 400 Bad Request', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response('Bad request payload', {
+          status: 400,
+          statusText: 'Bad Request',
+        }),
+      );
+      global.fetch = fetchMock;
+
+      const { parseReceiptImageWithAI } = await import('@/features/cashflow/ai-actions');
+      const result = await parseReceiptImageWithAI({
+        base64: 'samplevalidbase64imagedata1234567890',
+        mimeType: 'image/webp',
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('400');
+      }
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 });
