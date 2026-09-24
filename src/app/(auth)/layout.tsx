@@ -4,6 +4,12 @@ import { BackgroundBlobs } from '@/components/background-blobs';
 export const metadata: Metadata = {
   title: 'Kytbox - Authentication',
   description: 'Login or create an account',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Kytbox App',
+  },
 };
 
 import { Header } from '@/components/header';

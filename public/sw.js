@@ -1,8 +1,8 @@
-const CACHE_NAME = 'kytbox-v2';
+const CACHE_NAME = 'kytbox-v2.1';
 const PRECACHE_ASSETS = [
   '/manifest.json',
   '/favicon.png',
-  '/icon.png'
+  '/icons/icon-192.png'
 ];
 
 // Install event - precache core static assets safely
