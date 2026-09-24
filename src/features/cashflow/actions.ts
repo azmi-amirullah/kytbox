@@ -458,7 +458,13 @@ async function resolveGoalId(
   supabase: SupabaseClient<Database>,
   category: string | null | undefined,
   goalId: string | undefined,
+  entryType?: 'income' | 'expense',
 ): Promise<{ goalId: string | null; category: string | null; error?: string }> {
+  // Savings and debt targets only take expense contributions. Lent targets take
+  // both: income for repayments collected, expense for newly lent money.
+  const isInvalidEntryType = (goalType: string) =>
+    Boolean(entryType) && goalType !== 'lent' && entryType !== 'expense';
+
   if (goalId) {
     const { data: goal, error } = await supabase
       .from('cashflow_goals')
@@ -478,6 +484,14 @@ async function resolveGoalId(
 
     if (!goal) {
       return { goalId: null, category: null, error: 'Target not found' };
+    }
+
+    if (isInvalidEntryType(goal.type)) {
+      return {
+        goalId: null,
+        category: null,
+        error: 'Target contributions must be expense entries',
+      };
     }
 
     const expectedPrefix =
@@ -563,6 +577,13 @@ async function resolveGoalId(
   }
 
   const match = matchingGoals[0];
+  if (isInvalidEntryType(match.type)) {
+    return {
+      goalId: null,
+      category: null,
+      error: 'Target contributions must be expense entries',
+    };
+  }
   const expectedPrefix =
     match.type === 'debt' ? 'Debt:' : match.type === 'lent' ? 'Lent:' : 'Goal:';
   return {
@@ -601,9 +622,6 @@ export async function addEntry(formData: FormData) {
 
   const goalEntryError = getGoalEntryValidationError(type, category);
   if (goalEntryError) return { error: goalEntryError };
-  if (goalId && type !== 'expense') {
-    return { error: 'Target contributions must be expense entries' };
-  }
 
   // Parallelize: rate limit + permission check
   const [{ success: rateLimitOk }, permission] = await Promise.all([
@@ -614,7 +632,7 @@ export async function addEntry(formData: FormData) {
   if (!rateLimitOk) throw new Error('Too many requests. Please slow down.');
   if (!permission.canEdit) return { error: permission.error || 'Access denied' };
 
-  const resolvedGoal = await resolveGoalId(supabase, category, goalId);
+  const resolvedGoal = await resolveGoalId(supabase, category, goalId, type);
   if (resolvedGoal.error) return { error: resolvedGoal.error };
 
   let splitItems: { itemName: string; category?: string | null; amount: number }[] | null = null;
@@ -817,9 +835,6 @@ export async function updateEntry(entryId: string, formData: FormData) {
 
   const goalEntryError = getGoalEntryValidationError(type, category);
   if (goalEntryError) return { error: goalEntryError };
-  if (goalId && type !== 'expense') {
-    return { error: 'Target contributions must be expense entries' };
-  }
 
   // Batch 1: rate limit + entry fetch are independent — run in parallel
   const [{ success: rateLimitOk }, { data: entry }] = await Promise.all([
@@ -852,7 +867,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
   });
   const resolvedGoal = preserveExistingGoal
     ? { goalId: entry.goal_id, category: entry.category }
-    : await resolveGoalId(supabase, category, goalId);
+    : await resolveGoalId(supabase, category, goalId, type);
   if (resolvedGoal.error) return { error: resolvedGoal.error };
 
   let splitItems: { itemName: string; category?: string | null; amount: number }[] | null = null;
@@ -2437,7 +2452,7 @@ export async function updateGoal(formData: FormData) {
 
   const { data: progress } = await supabase
     .from('cashflow_goal_progress')
-    .select('saved_amount, contribution_count')
+    .select('saved_amount, contribution_count, target_amount')
     .eq('goal_id', goalId)
     .maybeSingle();
 
@@ -2452,6 +2467,7 @@ export async function updateGoal(formData: FormData) {
         ? Number(progress.saved_amount)
         : (initialAmount ?? 0),
       progress?.contribution_count ? Number(progress.contribution_count) : 0,
+      progress?.target_amount,
     ),
   };
 }
@@ -2805,9 +2821,8 @@ export async function importCashflowEntries(
         const prefix = isGoal ? 'Goal:' : isDebt ? 'Debt:' : 'Lent:';
         const targetTitle = rawCat.slice(prefix.length).trim();
         const matched = goalsByTitle.get(targetTitle.toLowerCase());
-        const isValidType = isLent
-          ? entry.type === 'income'
-          : entry.type === 'expense';
+        // Lent targets accept both entry types; savings and debt need expenses.
+        const isValidType = isLent || entry.type === 'expense';
         if (matched && isValidType) {
           goalId = matched.id;
           const targetPrefix =
@@ -3037,7 +3052,7 @@ export async function createRecurringRule(cashflowId: string, formData: FormData
     return { error: permission.error || 'Access denied' };
   }
 
-  const resolvedGoal = await resolveGoalId(supabase, category, goalId ?? undefined);
+  const resolvedGoal = await resolveGoalId(supabase, category, goalId ?? undefined, type);
   if (resolvedGoal.error) return { error: resolvedGoal.error };
 
   const { data: insertedRule, error } = await supabase
@@ -3088,7 +3103,7 @@ export async function updateRecurringRule(ruleId: string, formData: FormData) {
     return { error: permission.error || 'Access denied' };
   }
 
-  const resolvedGoal = await resolveGoalId(supabase, category, goalId ?? undefined);
+  const resolvedGoal = await resolveGoalId(supabase, category, goalId ?? undefined, type);
   if (resolvedGoal.error) return { error: resolvedGoal.error };
 
   const { data: updatedRule, error } = await supabase

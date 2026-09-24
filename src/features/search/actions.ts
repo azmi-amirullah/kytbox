@@ -93,6 +93,23 @@ export async function globalSearch(query: string): Promise<GlobalSearchResult> {
         .limit(5),
     ])
 
+  const goalRows = goalResult.data ?? []
+
+  // Lent records grow with linked expense entries, so use the computed total.
+  const lentGoalIds = goalRows.filter((g) => g.type === 'lent').map((g) => g.id)
+  const lentTargetById = new Map<string, number>()
+  if (lentGoalIds.length > 0) {
+    const { data: lentProgress } = await supabase
+      .from('cashflow_goal_progress')
+      .select('goal_id, target_amount')
+      .in('goal_id', lentGoalIds)
+    for (const row of lentProgress ?? []) {
+      if (row.goal_id && row.target_amount !== null && row.target_amount !== undefined) {
+        lentTargetById.set(row.goal_id, Number(row.target_amount))
+      }
+    }
+  }
+
   const bio: SearchResultItem[] = (bioResult.data ?? []).map((link) => ({
     id: link.id,
     title: link.title,
@@ -121,14 +138,16 @@ export async function globalSearch(query: string): Promise<GlobalSearchResult> {
     },
   )
 
-  const cashflowGoals: SearchResultItem[] = (goalResult.data ?? []).map(
+  const cashflowGoals: SearchResultItem[] = goalRows.map(
     (goal) => {
       const bookTitle = cashflowTitleById.get(goal.cashflow_id)
       const bookStr = bookTitle ? `${bookTitle} · ` : ''
       const deadlineStr = goal.deadline ? ` · Due ${formatAppDate(goal.deadline)}` : ''
       const isDebt = goal.type === 'debt'
-      const typeLabel = isDebt ? 'Debt Paydown' : 'Savings Goal'
-      const amountLabel = isDebt ? `Total ${goal.target_amount}` : `Target ${goal.target_amount}`
+      const isLent = goal.type === 'lent'
+      const targetAmount = lentTargetById.get(goal.id) ?? goal.target_amount
+      const typeLabel = isDebt ? 'Debt Paydown' : isLent ? 'Lent Record' : 'Savings Goal'
+      const amountLabel = isDebt || isLent ? `Total ${targetAmount}` : `Target ${targetAmount}`
       return {
         id: goal.id,
         title: goal.title,

@@ -174,9 +174,9 @@ export function getGoalEntryValidationError(
     return isDebt ? 'A debt target must have a name' : 'A savings goal must have a name';
   }
   if (isLent) {
-    if (type !== 'income') {
-      return 'Lent repayments must be income entries';
-    }
+    // Lent targets accept both: income (repayment collected) and
+    // expense (new money lent out, which grows Total Lent).
+    return null;
   } else if (type !== 'expense') {
     return isDebt ? 'Debt payments must be expenses' : 'Savings goal entries must be expenses';
   }

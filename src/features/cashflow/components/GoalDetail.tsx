@@ -308,7 +308,7 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
         <div className='space-y-1.5'>
           <div className='flex justify-between text-sm'>
             <span className='text-muted-foreground'>
-              {goal.contribution_count} {isLent ? 'repayments in Kytbox' : isDebt ? 'payments in Kytbox' : 'contributions in Kytbox'}
+              {goal.contribution_count} {isLent ? 'entries in Kytbox' : isDebt ? 'payments in Kytbox' : 'contributions in Kytbox'}
               {goal.initial_amount > 0 ? ` · +${formatCurrency(goal.initial_amount, currency)} starting` : ''}
             </span>
             <span className='font-semibold'>{progress.toFixed(1)}%{isLent ? ' collected' : isDebt ? ' paid' : ''}</span>
@@ -399,15 +399,31 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
         <div className='flex items-center justify-between gap-3 flex-wrap'>
           <h2 className='text-base font-semibold flex items-center gap-2'>
             <LuTrendingUp className='w-4 h-4' />
-            {(isDebt ? 'Payments (' : 'Contributions (') + filtered.length + ')'}
+            {(isDebt
+              ? 'Payments ('
+              : isLent
+                ? 'Lending & Repayments ('
+                : 'Contributions (') + filtered.length + ')'}
           </h2>
           <div className='flex gap-2 flex-wrap'>
             <div className='relative'>
               <LuSearch className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground' />
               <Input
                 className='pl-8 h-8 w-44 text-sm'
-                placeholder={isDebt ? 'Search payments...' : 'Search contributions...'}
-                aria-label={isDebt ? 'Search payments' : 'Search contributions'}
+                placeholder={
+                  isDebt
+                    ? 'Search payments...'
+                    : isLent
+                      ? 'Search entries...'
+                      : 'Search contributions...'
+                }
+                aria-label={
+                  isDebt
+                    ? 'Search payments'
+                    : isLent
+                      ? 'Search entries'
+                      : 'Search contributions'
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -447,8 +463,16 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
               {entries.length === 0
                 ? isDebt
                   ? 'No payments yet. Add an entry with category "Debt: ' + goal.title + '" in any cashflow book.'
-                  : 'No contributions yet. Add an entry with category "Goal: ' + goal.title + '" in any cashflow book.'
-                : (isDebt ? 'No matching payments.' : 'No matching contributions.')}
+                  : isLent
+                    ? 'No entries yet. Add an expense with category "Lent: ' +
+                      goal.title +
+                      '" to record new money lent, or an income entry to record a repayment.'
+                    : 'No contributions yet. Add an entry with category "Goal: ' + goal.title + '" in any cashflow book.'
+                : isDebt
+                  ? 'No matching payments.'
+                  : isLent
+                    ? 'No matching entries.'
+                    : 'No matching contributions.'}
             </p>
           </div>
         ) : (
@@ -458,6 +482,9 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
                 <tr className='border-b bg-muted/30 text-muted-foreground text-xs uppercase tracking-wider'>
                   <th scope='col' className='text-left px-4 py-3 font-medium'>Date</th>
                   <th scope='col' className='text-left px-4 py-3 font-medium hidden sm:table-cell'>Description</th>
+                  {isLent && (
+                    <th scope='col' className='text-left px-4 py-3 font-medium hidden sm:table-cell'>Entry</th>
+                  )}
                   <th scope='col' className='text-right px-4 py-3 font-medium'>Amount</th>
                 </tr>
               </thead>
@@ -470,6 +497,20 @@ export default function GoalDetail({ goal, entries, currency }: GoalDetailProps)
                     <td className='px-4 py-3 text-muted-foreground hidden sm:table-cell max-w-xs truncate'>
                       {entry.description ?? '—'}
                     </td>
+                    {isLent && (
+                      <td className='px-4 py-3 hidden sm:table-cell'>
+                        <span
+                          className={cn(
+                            'inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-semibold',
+                            entry.type === 'income'
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                              : 'bg-muted text-muted-foreground border-border/60',
+                          )}
+                        >
+                          {entry.type === 'income' ? 'Repayment' : 'Lent out'}
+                        </span>
+                      </td>
+                    )}
                     <td
                       className={cn(
                         'px-4 py-3 text-right font-semibold tabular-nums',

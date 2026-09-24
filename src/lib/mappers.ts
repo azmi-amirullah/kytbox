@@ -472,6 +472,7 @@ export function mapGoalToDTO(
   cashflowTitle: string | null = null,
   savedAmount?: number,
   contributionCount = 0,
+  targetAmount?: number | null,
 ): CashflowGoalDTO {
   const initialAmount = Math.max(0, Number(row.initial_amount || 0));
   const effectiveSavedAmount =
@@ -484,7 +485,12 @@ export function mapGoalToDTO(
     cashflow_id: row.cashflow_id,
     cashflow_title: cashflowTitle,
     title: row.title,
-    target_amount: Number(row.target_amount),
+    // Lent targets grow with linked expense entries, so callers can pass the
+    // computed total from cashflow_goal_progress instead of the stored value.
+    target_amount:
+      targetAmount !== undefined && targetAmount !== null
+        ? Math.max(0, Number(targetAmount))
+        : Number(row.target_amount),
     initial_amount: initialAmount,
     saved_amount: effectiveSavedAmount,
     contribution_count: Math.max(0, Number(contributionCount)),

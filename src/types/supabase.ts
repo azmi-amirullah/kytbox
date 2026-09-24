@@ -1917,6 +1917,7 @@ export type Database = {
           contribution_count: number | null
           goal_id: string | null
           saved_amount: number | null
+          target_amount: number | null
         }
         Relationships: [
           {

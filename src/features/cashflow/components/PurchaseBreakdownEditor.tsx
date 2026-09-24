@@ -2,21 +2,16 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { LuPlus, LuTrash2 } from 'react-icons/lu';
 import { getCurrencySymbol } from '@/lib/currency';
-
-import { formatCategoryName } from '../constants';
 
 export interface SplitItemInput {
   id: string;
   itemName: string;
+  /**
+   * Legacy per-item category. No longer editable in the UI — kept so
+   * categories saved on older rows survive future edits. New items get ''.
+   */
   category: string;
   amount: string;
 }
@@ -25,14 +20,12 @@ interface PurchaseBreakdownEditorProps {
   items: SplitItemInput[];
   onChange: (items: SplitItemInput[]) => void;
   currency: string | null;
-  categories: string[];
 }
 
 export default function PurchaseBreakdownEditor({
   items,
   onChange,
   currency,
-  categories,
 }: PurchaseBreakdownEditorProps) {
   const currencySymbol = getCurrencySymbol(currency);
 
@@ -40,7 +33,7 @@ export default function PurchaseBreakdownEditor({
     const newItem: SplitItemInput = {
       id: crypto.randomUUID(),
       itemName: '',
-      category: categories[0] || 'General',
+      category: '',
       amount: '',
     };
     onChange([...items, newItem]);
@@ -120,27 +113,8 @@ export default function PurchaseBreakdownEditor({
                   </Button>
                 </div>
 
-                {/* Row 2: Category & Amount Fields */}
+                {/* Row 2: Amount Field */}
                 <div className="flex items-center gap-2 w-full">
-                  <div className="flex-1">
-                    <Select
-                      value={item.category}
-                      onValueChange={(val) => updateItem(item.id, 'category', val)}
-                    >
-                      <SelectTrigger className="h-8 text-xs bg-background capitalize w-full">
-                        <SelectValue placeholder="Category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="General" className="text-xs">General</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat} className="text-xs">
-                            {formatCategoryName(cat)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div className="flex-1 relative">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
                       {currencySymbol}

@@ -54,14 +54,20 @@ export async function getGoalDetailData(
   const [progressResult, entriesResult] = await Promise.all([
     supabase
       .from('cashflow_goal_progress')
-      .select('cashflow_id, goal_id, saved_amount, contribution_count')
+      .select('cashflow_id, goal_id, saved_amount, contribution_count, target_amount')
       .eq('goal_id', goal.id)
       .maybeSingle(),
-    supabase
-      .from('cashflow_entries')
-      .select('*')
-      .eq('goal_id', goal.id)
-      .eq('type', goal.type === 'lent' ? 'income' : 'expense')
+    // Lent records list repayments (income) and newly lent money (expense);
+    // savings and debt records only ever link expense contributions.
+    (
+      goal.type === 'lent'
+        ? supabase.from('cashflow_entries').select('*').eq('goal_id', goal.id)
+        : supabase
+            .from('cashflow_entries')
+            .select('*')
+            .eq('goal_id', goal.id)
+            .eq('type', 'expense')
+    )
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(1000),
@@ -90,6 +96,7 @@ export async function getGoalDetailData(
       cashflowTitle,
       progress?.saved_amount ?? 0,
       progress?.contribution_count ?? 0,
+      progress?.target_amount,
     ),
     entries,
     currency: profileResult.data?.default_currency ?? null,

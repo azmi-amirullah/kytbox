@@ -547,7 +547,7 @@ export default function RecurringManagerModal({
 
             {(() => {
               const matchingGoals = goals.filter((g) =>
-                formType === 'income' ? g.type === 'lent' : g.type !== 'lent',
+                formType === 'income' ? g.type === 'lent' : true,
               )
               if (matchingGoals.length === 0) return null
 
@@ -556,7 +556,7 @@ export default function RecurringManagerModal({
                   <Label htmlFor='rule-goal'>
                     {formType === 'income'
                       ? 'Link to Lent Repayment (Optional)'
-                      : 'Link to Goal or Debt (Optional)'}
+                      : 'Link to Goal, Debt or Lent (Optional)'}
                   </Label>
                   <Select value={formGoalId} onValueChange={setFormGoalId}>
                     <SelectTrigger id='rule-goal'>

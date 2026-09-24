@@ -397,6 +397,11 @@ function GoalForm({
                 className={cn('font-medium', getCurrencySymbol(currency || 'USD').length > 1 ? 'pl-10' : 'pl-8')}
               />
             </div>
+            {isLent && (
+              <p className="text-[11px] text-muted-foreground">
+                Extra money you lend later is added to this total automatically when you record it as an expense entry.
+              </p>
+            )}
           </div>
 
           {/* Initial Amount / Already Paid */}

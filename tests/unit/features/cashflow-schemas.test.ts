@@ -277,14 +277,18 @@ describe('Cashflow Server Schemas', () => {
       );
     });
 
-    it('validates and rejects lent categories correctly', () => {
+    it('validates lent categories for both entry types', () => {
       expect(
         getGoalEntryValidationError('income', 'Lent: Bob Dinner'),
       ).toBeNull();
+      // Expense entries record newly lent money and grow the lent total
       expect(
         getGoalEntryValidationError('expense', 'Lent: Bob Dinner'),
-      ).toBe('Lent repayments must be income entries');
+      ).toBeNull();
       expect(getGoalEntryValidationError('income', 'Lent: ')).toBe(
+        'A lent target must have a name',
+      );
+      expect(getGoalEntryValidationError('expense', 'Lent: ')).toBe(
         'A lent target must have a name',
       );
     });
@@ -398,6 +402,32 @@ describe('Cashflow Server Schemas', () => {
       expect(lentGoal.initial_amount).toBe(150);
       expect(lentGoal.saved_amount).toBe(300);
       expect(lentGoal.target_amount - lentGoal.saved_amount).toBe(300);
+    });
+
+    it('prefers the computed lent total from expense entries over the stored target', () => {
+      const lentGoal = mapGoalToDTO(
+        {
+          id: 'goal-id-lent',
+          cashflow_id: 'cashflow-id',
+          title: 'Concert Tickets for Friends',
+          target_amount: 600,
+          initial_amount: 150,
+          deadline: null,
+          is_deleted: false,
+          created_at: '2026-09-01T00:00:00.000Z',
+          type: 'lent',
+          image_url: null,
+        },
+        'Personal Budget',
+        300,
+        3,
+        900,
+      );
+
+      // 600 stored target + 300 in expense entries = 900 total lent
+      expect(lentGoal.target_amount).toBe(900);
+      expect(lentGoal.saved_amount).toBe(300);
+      expect(lentGoal.target_amount - lentGoal.saved_amount).toBe(600);
     });
 
     it('defaults saved_amount to initial_amount when no savedAmount is passed', () => {

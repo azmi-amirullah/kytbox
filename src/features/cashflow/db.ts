@@ -333,7 +333,7 @@ export async function getCashflowDetailData(
         .order('created_at', { ascending: true }),
       supabase
         .from('cashflow_goal_progress')
-        .select('cashflow_id, goal_id, saved_amount, contribution_count')
+        .select('cashflow_id, goal_id, saved_amount, contribution_count, target_amount')
         .in('cashflow_id', queryIds),
     ]);
 
@@ -448,6 +448,7 @@ export async function getCashflowDetailData(
       cashflowTitles.get(goal.cashflow_id) ?? null,
       progress?.saved_amount ?? 0,
       progress?.contribution_count ?? 0,
+      progress?.target_amount,
     );
   });
 

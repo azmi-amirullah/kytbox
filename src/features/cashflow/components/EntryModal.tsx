@@ -829,7 +829,6 @@ export default function EntryModal({
                   items={splitItems}
                   onChange={handleSplitItemsChange}
                   currency={currency}
-                  categories={EXPENSE_CATEGORIES.map((c) => c.value)}
                 />
               )}
             </div>
@@ -986,7 +985,11 @@ export default function EntryModal({
                     (g) => `goal-${g.id}` === v,
                   )
                   if (selectedGoal) {
-                    setType(selectedGoal.type === 'lent' ? 'income' : 'expense')
+                    // Savings and debt always record expenses. Lent records keep
+                    // the current type: income = repayment, expense = new lending.
+                    if (selectedGoal.type !== 'lent') {
+                      setType('expense')
+                    }
                     setGoalId(selectedGoal.id)
                     const targetPrefix =
                       selectedGoal.type === 'debt'
@@ -1068,6 +1071,29 @@ export default function EntryModal({
                             <SelectItem key={g.id} value={`goal-${g.id}`}>
                               <span className='flex flex-col items-start'>
                                 <span>Debt: {g.title}</span>
+                                {g.cashflow_title && (
+                                  <span className='text-[10px] text-muted-foreground'>
+                                    Cashflow: {g.cashflow_title}
+                                  </span>
+                                )}
+                              </span>
+                            </SelectItem>
+                          ))}
+                      </>
+                    )}
+                  {type === 'expense' &&
+                    activeGoals.filter((g) => g.type === 'lent').length > 0 && (
+                      <>
+                        <div className='h-px bg-border my-1.5' />
+                        <div className='px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider'>
+                          Money Lent
+                        </div>
+                        {activeGoals
+                          .filter((g) => g.type === 'lent')
+                          .map((g) => (
+                            <SelectItem key={g.id} value={`goal-${g.id}`}>
+                              <span className='flex flex-col items-start'>
+                                <span>Lent: {g.title}</span>
                                 {g.cashflow_title && (
                                   <span className='text-[10px] text-muted-foreground'>
                                     Cashflow: {g.cashflow_title}
