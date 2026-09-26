@@ -50,7 +50,14 @@ export function formatCurrencyCompact(
   currencyCode: string | null | undefined,
 ): string {
   const currency = getCurrency(currencyCode);
-  return `${currency.symbol} ${amount.toLocaleString(currency.locale)}`;
+  // Cap precision but never pad it: `maximumFractionDigits` alone keeps integer
+  // and 2-decimal output byte-identical, while stopping raw floats from leaking
+  // fraction digits (1218230.769 -> "1.218.230,769", which reads as ~1000x).
+  // `minimumFractionDigits` is deliberately NOT set — it would render "1,234.00".
+  const fractionDigits = ZERO_DECIMAL_CURRENCIES.has(currency.code) ? 0 : 2;
+  return `${currency.symbol} ${amount.toLocaleString(currency.locale, {
+    maximumFractionDigits: fractionDigits,
+  })}`;
 }
 
 export function getCurrencySymbol(code: string | null | undefined): string {
