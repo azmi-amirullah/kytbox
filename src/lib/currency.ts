@@ -60,6 +60,29 @@ export function formatCurrencyCompact(
   })}`;
 }
 
+// Deliberately omits the currency symbol and the separator space before the
+// unit: a 7-column cell has ~27px of content width at 320px, and "Rp " alone
+// costs 13px. `formatCurrency` still renders the symbol everywhere it matters.
+//
+// Significant rather than fractional digits: 2 sig digits caps output at 5
+// characters (worst case "9,9jt"), where `maximumFractionDigits: 1` reaches 7
+// ("999,9rb") and overflows a 320px cell. It also rounds away fractional
+// zero-decimal amounts (450.5 -> "450"), so `formatCompactAmount` never implies
+// a rupiah fraction, while keeping 1.500.000 -> "1,5jt" where `maximumFractionDigits: 0`
+// would overstate it as "2jt".
+export function formatCompactAmount(
+  amount: number,
+  currencyCode: string | null | undefined,
+): string {
+  const currency = getCurrency(currencyCode);
+  return new Intl.NumberFormat(currency.locale, {
+    notation: 'compact',
+    maximumSignificantDigits: 2,
+  })
+    .format(amount)
+    .replace(/\s+/g, '');
+}
+
 export function getCurrencySymbol(code: string | null | undefined): string {
   const currency = getCurrency(code);
   return currency.symbol;

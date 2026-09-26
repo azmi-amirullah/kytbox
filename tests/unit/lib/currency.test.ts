@@ -1,4 +1,4 @@
-import { getCurrency, formatCurrency, formatCurrencyCompact, getCurrencySymbol } from '@/lib/currency';
+import { getCurrency, formatCurrency, formatCurrencyCompact, formatCompactAmount, getCurrencySymbol } from '@/lib/currency';
 
 describe('getCurrency', () => {
   it('returns the correct currency for a known code', () => {
@@ -80,5 +80,45 @@ describe('formatCurrencyCompact', () => {
 
   it('handles zero', () => {
     expect(formatCurrencyCompact(0, 'USD')).toBe('$ 0');
+  });
+});
+
+describe('formatCompactAmount', () => {
+  it('actually compacts where formatCurrencyCompact only groups', () => {
+    expect(formatCompactAmount(1055800, 'IDR').length).toBeLessThan(
+      formatCurrencyCompact(1055800, 'IDR').length,
+    );
+  });
+
+  it('omits the currency symbol so a 7-column cell can fit the figure', () => {
+    expect(formatCompactAmount(10000000, 'IDR')).not.toContain('Rp');
+    expect(formatCompactAmount(10000000, 'USD')).not.toContain('$');
+  });
+
+  it('leaves sub-threshold amounts alone', () => {
+    expect(formatCompactAmount(0, 'USD')).toBe('0');
+    expect(formatCompactAmount(500, 'IDR')).toBe('500');
+  });
+
+  it('stays within the 5 characters a 320px day cell can render', () => {
+    const realisticExpenses = [
+      86, 1622, 86500, 450500, 999900, 1500000, 9900000, 10000000,
+    ];
+    for (const amount of realisticExpenses) {
+      expect(
+        formatCompactAmount(amount, 'IDR').length,
+        `${amount} renders too wide`,
+      ).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it('never implies a fraction of a zero-decimal currency', () => {
+    expect(formatCompactAmount(450.5, 'IDR')).toBe('450');
+    expect(formatCompactAmount(1055800.75, 'IDR')).toBe('1,1jt');
+  });
+
+  it('keeps the fractional unit where dropping it overstates the figure', () => {
+    expect(formatCompactAmount(1500000, 'IDR')).toBe('1,5jt');
+    expect(formatCompactAmount(1622, 'IDR')).toBe('1,6rb');
   });
 });

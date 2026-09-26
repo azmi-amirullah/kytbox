@@ -1,18 +1,17 @@
 'use client'
 
 import { format } from 'date-fns'
+import { LuTriangleAlert } from 'react-icons/lu'
 import {
-  LuArrowDownRight,
-  LuArrowUpRight,
-  LuTriangleAlert,
-} from 'react-icons/lu'
-import { formatCurrency, formatCurrencyCompact } from '@/lib/currency'
+  formatCompactAmount,
+  formatCurrency,
+  formatCurrencyCompact,
+} from '@/lib/currency'
 import { parseDateOnly } from '@/lib/date-only'
 import { cn } from '@/lib/utils'
 import type { DailyBalancePoint } from '../math'
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const MAX_VISIBLE_CHIPS = 2
 
 interface CashHorizonCalendarProps {
   days: DailyBalancePoint[]
@@ -48,15 +47,15 @@ export function CashHorizonCalendar({
   const trailingBlanks = (7 - ((leadBlanks + days.length) % 7)) % 7
 
   return (
-    <div className='w-full min-w-0 overflow-hidden rounded-lg border border-border/60 bg-card'>
+    <div className='@container w-full min-w-0 overflow-hidden rounded-lg border border-border/60 bg-card'>
       <div
         aria-hidden='true'
-        className='grid grid-cols-7 border-b border-border/60 bg-muted/30'
+        className='grid grid-cols-7 gap-px border-b border-border/60 bg-border/50'
       >
         {WEEK_DAYS.map((day) => (
           <div
             key={day}
-            className='py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'
+            className='bg-muted/30 py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'
           >
             {day}
           </div>
@@ -69,8 +68,12 @@ export function CashHorizonCalendar({
         ))}
 
         {days.map((day) => {
-          const visibleEvents = day.events.slice(0, MAX_VISIBLE_CHIPS)
-          const overflowCount = day.events.length - visibleEvents.length
+          const incomeTotal = day.events
+            .filter((event) => event.type === 'income')
+            .reduce((sum, event) => sum + event.amount, 0)
+          const expenseTotal = day.events
+            .filter((event) => event.type === 'expense')
+            .reduce((sum, event) => sum + event.amount, 0)
 
           return (
             <button
@@ -79,7 +82,7 @@ export function CashHorizonCalendar({
               onClick={() => onDaySelect(day.date)}
               aria-label={buildDayLabel(day, currency)}
               className={cn(
-                'flex min-h-14 cursor-pointer flex-col gap-1 bg-card p-1.5 text-left transition-colors',
+                'flex min-h-14 cursor-pointer flex-col gap-1 bg-card p-1 text-left transition-colors @2xl:p-1.5',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                 day.isToday && 'bg-primary/[0.07]',
                 day.isAtRisk && 'bg-destructive/[0.07]',
@@ -101,7 +104,7 @@ export function CashHorizonCalendar({
                 </span>
                 {day.isAtRisk && (
                   <LuTriangleAlert
-                    className='h-3 w-3 shrink-0 text-destructive'
+                    className='hidden h-3 w-3 shrink-0 text-destructive @2xl:block'
                     aria-hidden='true'
                   />
                 )}
@@ -109,7 +112,7 @@ export function CashHorizonCalendar({
 
               <span
                 className={cn(
-                  'truncate font-mono text-[10px] font-semibold tabular-nums',
+                  'hidden truncate font-mono text-[10px] font-semibold tabular-nums @2xl:block',
                   day.isAtRisk
                     ? 'text-destructive'
                     : day.balance < 0
@@ -120,36 +123,28 @@ export function CashHorizonCalendar({
                 {formatCurrencyCompact(day.balance, currency)}
               </span>
 
-              {visibleEvents.map((event) => (
-                <span
-                  key={`${event.source}-${event.id}-${event.description}`}
-                  className={cn(
-                    'inline-flex min-w-0 items-center gap-1 rounded border px-1 py-0.5 text-[9px] font-medium leading-none',
-                    event.type === 'income'
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                      : 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300',
-                  )}
-                >
-                  {event.type === 'income' ? (
-                    <LuArrowUpRight
-                      className='h-2.5 w-2.5 shrink-0'
-                      aria-hidden='true'
-                    />
-                  ) : (
-                    <LuArrowDownRight
-                      className='h-2.5 w-2.5 shrink-0'
-                      aria-hidden='true'
-                    />
-                  )}
-                  <span className='truncate'>{event.description}</span>
+              <span className='flex flex-wrap items-center gap-x-1 gap-y-0.5'>
+                {day.isAtRisk && (
+                  <LuTriangleAlert
+                    className='h-2.5 w-2.5 shrink-0 text-destructive @2xl:hidden'
+                    aria-hidden='true'
+                  />
+                )}
+                <span className='flex min-w-0 flex-col gap-y-0.5'>
+                  <span className='hidden truncate text-[11px] font-semibold leading-none tabular-nums text-emerald-700 dark:text-emerald-300 @2xl:block'>
+                    +{formatCurrency(incomeTotal, currency)}
+                  </span>
+                  <span className='truncate text-[9px] font-semibold leading-none tabular-nums text-emerald-700 dark:text-emerald-300 @2xl:hidden'>
+                    +{formatCompactAmount(incomeTotal, currency)}
+                  </span>
+                  <span className='hidden truncate text-[11px] font-semibold leading-none tabular-nums text-rose-700 dark:text-rose-300 @2xl:block'>
+                    -{formatCurrency(expenseTotal, currency)}
+                  </span>
+                  <span className='truncate text-[9px] font-semibold leading-none tabular-nums text-rose-700 dark:text-rose-300 @2xl:hidden'>
+                    -{formatCompactAmount(expenseTotal, currency)}
+                  </span>
                 </span>
-              ))}
-
-              {overflowCount > 0 && (
-                <span className='text-[9px] font-semibold text-muted-foreground'>
-                  +{overflowCount} more
-                </span>
-              )}
+              </span>
             </button>
           )
         })}

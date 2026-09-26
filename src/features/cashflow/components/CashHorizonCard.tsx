@@ -4,8 +4,8 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { format } from 'date-fns'
 import { toast } from 'react-toastify'
 import {
-  LuArrowDownRight,
-  LuArrowUpRight,
+  LuArrowDown,
+  LuArrowUp,
   LuCalendar,
   LuCalendarDays,
   LuCheck,
@@ -347,7 +347,7 @@ export function CashHorizonCard({
               ? `Expected ${formatAppDate(nextIncomeDay.date)}`
               : `No income in ${formatMonthLabel(viewMonth)}`
           }
-          icon={<LuArrowUpRight className='w-3.5 h-3.5' />}
+          icon={<LuArrowUp className='w-3.5 h-3.5' />}
           tone={nextIncomeDay ? 'positive' : 'default'}
         />
       </div>
@@ -376,14 +376,14 @@ export function CashHorizonCard({
         </span>
         <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground'>
           <span className='inline-flex items-center gap-1'>
-            <LuArrowUpRight
+            <LuArrowUp
               className='w-3 h-3 text-emerald-600 dark:text-emerald-400'
               aria-hidden='true'
             />
             Income
           </span>
           <span className='inline-flex items-center gap-1'>
-            <LuArrowDownRight
+            <LuArrowDown
               className='w-3 h-3 text-rose-600 dark:text-rose-400'
               aria-hidden='true'
             />
@@ -407,7 +407,8 @@ export function CashHorizonCard({
       </div>
       <p className='mt-2 text-[11px] text-muted-foreground'>
         Past days show recorded entries. Later days add scheduled bills and
-        recurring rules that have not been posted yet.
+        recurring rules that have not been posted yet. Select a day to see
+        amounts and full bill details.
       </p>
 
       {/* Day Detail Dialog */}
@@ -462,9 +463,9 @@ export function CashHorizonCard({
                             aria-hidden='true'
                           >
                             {isIncome ? (
-                              <LuArrowUpRight className='w-4 h-4' />
+                              <LuArrowUp className='w-4 h-4' />
                             ) : (
-                              <LuArrowDownRight className='w-4 h-4' />
+                              <LuArrowDown className='w-4 h-4' />
                             )}
                           </span>
                           <div className='min-w-0 flex-1'>
