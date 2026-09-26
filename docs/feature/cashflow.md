@@ -260,6 +260,7 @@ stateDiagram-v2
   - 🔴🔴 **Over Budget** (`> limit`): Limit exceeded — dark red bar and badge.
   - Comparisons use raw amounts (`spent > budget.amount`) to avoid floating-point imprecision from percentage math.
 - **Risk-Sorted Display**: Budget cards sorted by spend percentage descending — highest risk surfaces first.
+- **Burn Pace Projection**: Each card extrapolates the current daily rate to month end (`spent / elapsedDays * daysInMonth`, rounded to a whole currency unit at the source). The line renders **unconditionally** so the card keeps a stable height — only its color escalates: muted when the projection is inside the limit, amber when it breaches the (rollover-adjusted) `effectiveLimit` while actual spend is still under it, and muted again once the over-budget badge already owns the alarm.
 - **Owner-Only Management**: Create, edit, and delete budgets. Editors can read; public viewers cannot see any budget data.
 - **Unique Category Enforcement**: One budget per category per cashflow — enforced at DB level via `UNIQUE(cashflow_id, category)` constraint and `UPSERT` logic.
 - **Security**: Dedicated `cashflow_budgets` table with RLS. Owner policy covers all operations; editor policy uses `auth.jwt() ->> 'email'` for safe email comparison without touching `auth.users`.
@@ -305,6 +306,7 @@ stateDiagram-v2
 ✅ Savings Goals on `/cashflow/[id]` with cross-book goal contributions  
 ✅ Recurring Entry Auto-Generation (`generateRecurringEntries` server action & auto-gen banner)  
 ✅ Duplicate Cashflow Book (`duplicateCashflow` action)  
+✅ Burn Pace Projection on budget cards (month-end overrun early warning)  
 
 ---
 

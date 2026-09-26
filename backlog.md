@@ -19,6 +19,10 @@
 | 💰 **Cashflow** | **Payday-to-Payday Custom Budget Cycles** | 🔥🔥 | Low | Backlog |
 | 💰 **Cashflow** | **50/30/20 Macro Allocation Health Score** | 🔥🔥 | Low | Backlog |
 | 💰 **Cashflow** | **Subscription Creep & Price Spike Watchdog** | 🔥 | Low | Backlog |
+| 💰 **Cashflow** | **Auto-Detect Recurring Bills from History** | 🔥🔥 | Low | Backlog |
+| 💰 **Cashflow** | **Bill & Payday Calendar Sync (`.ics` Feed)** | 🔥🔥 | Low | Backlog |
+| 💰 **Cashflow** | **Entry Reconciliation & Import Matching** | 🔥🔥 | Medium | Backlog |
+| 💰 **Cashflow** | **Zero-Based "Underfunded" Assignment Panel** | 🔥🔥 | Medium | Backlog |
 | 🏎️ **Garage** | **Service Invoice & Receipt Photo Attachment** | 🔥🔥 | Low | Ready |
 | 🏎️ **Garage** | **OBD-II Fault Code (DTC) Offline Lookup** | 🔥🔥🔥 | Medium | Ready |
 | 🏎️ **Garage** | **Tire Tread & Brake Wear Depth Tracker** | 🔥🔥 | Low | Backlog |
@@ -108,6 +112,38 @@
   * If `new_amount > baseline_amount * 1.10`, display an inline warning badge with 1-click options: `[Update Baseline]` or `[Flag for Review]`.
   * **30-Day Annual Warning & Zombie Sentinel**: Alerts 30 days and 7 days prior to annual renewals; flags recurring commitments unreviewed for > 60 days.
 * **Complexity**: Low (Pure in-memory math check on entry creation and dashboard load; zero heavy background workers).
+
+### 10. Auto-Detect Recurring Bills from Entry History
+* **Problem**: `cashflow_recurring_rules` require manual setup. That setup friction is the single biggest blocker to the Safe-to-Spend engine and the Bill Calendar — a feature nobody configures is a feature nobody gets. Competitors (Monarch) market automatic recurring-charge detection as a headline capability.
+* **Solution**:
+  * Scan a book's entry history for normalized merchant signatures matching 2+ occurrences on a consistent cadence (monthly ±3 days, yearly ±7 days).
+  * Present a one-click review queue: `[✓ Netflix $15.99 — monthly, last 3 on the 14th] [Create rule] [Dismiss]`.
+  * Confidence-gated: only propose on ≥3 matches or 2 matches with identical amount; never silently create rules.
+* **Complexity**: Low (Single grouped SQL query over existing entries + a review UI; zero new tables).
+
+### 11. Bill & Payday Calendar Sync (`.ics` Subscription Feed)
+* **Problem**: Bills only surface when the user *opens* Kytbox. Real bills collide with real life — users need upcoming bills and paydays sitting next to meetings in the calendar they already check daily.
+* **Solution**:
+  * Authenticated route handler emitting RFC 5545 iCalendar events generated from `cashflow_recurring_rules` (bills, paydays, annual renewals).
+  * Opaque, revocable token URL (never exposes cashflow IDs); re-generable from settings to revoke access.
+  * Mirrors the iCal pattern already planned for List boards — same route-handler approach, reusable helper.
+* **Complexity**: Low (One route handler + a token column; no third-party calendar API dependency).
+
+### 12. Entry Reconciliation & Import Matching
+* **Problem**: Backlog #4 only catches duplicates *during* CSV import. It does nothing for the real trust-destroyer: a manual entry and an imported entry describing the same transaction, both counted, silently double-inflating spending and breaking every derived number (Safe-to-Spend, budgets, reports).
+* **Solution**:
+  * Fuzzy match pass over existing entries: `(±2 days, exact amount, normalized merchant via existing `merchant-rules.ts` cleaner)` — same normalization already used by import.
+  * Surface matches in a review queue; resolving either **merges** (keeps earliest, preserves tags/receipt) or **dismisses** the pairing permanently.
+  * Optional `matched_entry_id` column for durable "don't re-flag this pair" state.
+* **Complexity**: Medium (One batched range query for detection; merge path needs an atomic server action + RLS review).
+
+### 13. Zero-Based "Underfunded" Assignment Panel
+* **Problem**: Kytbox tells users what they *spent*, never what is **still unassigned**. Income lands, categories get partially funded, and the remainder silently absorbs into overspending — the exact failure YNAB's "give every dollar a job" method was built to prevent. This is the widest methodological gap versus the market leader.
+* **Solution**:
+  * Aggregate this cycle's income against the sum of assigned budget limits: `unassigned = income - Σ effectiveLimit`.
+  * Compact panel: *"Income $4,000 — $610 not yet given a job"* with a 1-click "Assign to [category]" shortcut.
+  * Reuses `enable_rollover` / `effectiveLimit` math already computed in `calculateBudgetStatus` — no new aggregation path.
+* **Complexity**: Medium (Requires a defined cycle anchor; pairs naturally with backlog #7 Payday-to-Payday cycles).
 
 ---
 

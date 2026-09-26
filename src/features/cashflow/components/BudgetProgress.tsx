@@ -31,7 +31,7 @@ export default function BudgetProgress({
     () => calculateBudgetStatus(budget, entries),
     [entries, budget],
   );
-  const { spent, pct, isOverBudget, isAtLimit, isWarning, hasRollover, rolloverSurplus, effectiveLimit, availableSpend } = status;
+  const { spent, pct, isOverBudget, isAtLimit, isWarning, hasRollover, rolloverSurplus, effectiveLimit, availableSpend, projectedSpend, isPaceRisk } = status;
 
   const barColor = isOverBudget
     ? 'bg-red-700'
@@ -50,6 +50,13 @@ export default function BudgetProgress({
         : 'text-emerald-600 dark:text-emerald-400';
 
   const categoryLabel = formatCategoryName(budget.category);
+
+  const today = new Date();
+  const paceDeadlineLabel = new Date(
+    today.getFullYear(),
+    today.getMonth() + 1,
+    0,
+  ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   return (
     <div className='bg-card border rounded-xl p-4 space-y-3'>
@@ -142,6 +149,27 @@ export default function BudgetProgress({
           )}
         </span>
       </div>
+
+      {/* Burn pace projection — a forecast, not just an alarm.
+          Always rendered (3 stable lines → no layout shift on state change);
+          only the color escalates when the pace breaches the limit. */}
+      {projectedSpend !== undefined && (
+        <p
+          role='status'
+          className={cn(
+            'text-[11px]',
+            isOverBudget
+              // Over-budget badge above already owns the alarm; stay quiet here.
+              ? 'text-muted-foreground'
+              : isPaceRisk
+                ? 'font-semibold text-amber-600 dark:text-amber-400'
+                : 'text-muted-foreground'
+          )}
+        >
+          At this pace: {formatCurrencyCompact(projectedSpend, currency)} by{' '}
+          {paceDeadlineLabel}
+        </p>
+      )}
     </div>
   );
 }

@@ -90,6 +90,10 @@ export interface BudgetStatus {
   effectiveLimit?: number;
   availableSpend?: number;
   hasRollover?: boolean;
+  /** Linear projection of month-end spend from the current elapsed-days pace. */
+  projectedSpend?: number;
+  /** True when the pace projection breaches the effective limit while still under it. */
+  isPaceRisk?: boolean;
 }
 
 /**
@@ -405,6 +409,13 @@ export function calculateBudgetStatus(
     })
     .reduce((sum, e) => sum + Number(e.amount), 0);
 
+  // Linear burn-pace projection: today's per-day rate extrapolated to month end.
+  // Rounded at the source — a raw float fed to formatCurrencyCompact renders
+  // fraction digits (e.g. 1218230.769 -> "1.218.230,769"), which reads as ~1000x.
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const elapsedDays = Math.max(1, now.getDate());
+  const projectedSpend = Math.round((spent / elapsedDays) * daysInMonth);
+
   if (budget.enable_rollover) {
     const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
     const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
@@ -444,6 +455,8 @@ export function calculateBudgetStatus(
       effectiveLimit,
       availableSpend,
       hasRollover: true,
+      projectedSpend,
+      isPaceRisk: !isOverBudget && projectedSpend > effectiveLimit,
     };
   }
 
@@ -464,6 +477,8 @@ export function calculateBudgetStatus(
     effectiveLimit: budget.amount,
     availableSpend: budget.amount - spent,
     hasRollover: false,
+    projectedSpend,
+    isPaceRisk: !isOverBudget && projectedSpend > budget.amount,
   };
 }
 

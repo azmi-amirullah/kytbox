@@ -336,6 +336,71 @@ describe('calculateBudgetStatus', () => {
   });
 });
 
+describe('calculateBudgetStatus burn pace', () => {
+  // TODAY = Mar 15 2026: 15 of 31 days elapsed, so projected = spent / 15 * 31
+  const budget: CashflowBudgetDTO = {
+    id: 'b-pace',
+    cashflow_id: 'cf-1',
+    category: 'food',
+    amount: 500,
+    period: 'monthly'
+  };
+  const spend = (amount: number) =>
+    calculateBudgetStatus(budget, [createEntry({ amount, category: 'food', date: '2026-03-15' })], TODAY);
+
+  it('projects month-end spend from the current daily pace', () => {
+    expect(spend(150).projectedSpend).toBe(310); // 150 / 15 * 31, exact
+  });
+
+  it('rounds the projection to a whole currency unit', () => {
+    // formatCurrencyCompact passes the raw float to toLocaleString, so an
+    // unrounded value renders fraction digits (1218230.769 -> "1.218.230,769").
+    const s = spend(158); // 158 / 15 * 31 = 326.533...
+    expect(s.projectedSpend).toBe(327);
+    expect(Number.isInteger(s.projectedSpend ?? 0)).toBe(true);
+  });
+
+  it('flags pace risk when the projection breaches the limit while still under it', () => {
+    const s = spend(300); // 620 projected vs 500 limit
+    expect(s.isOverBudget).toBe(false);
+    expect(s.isPaceRisk).toBe(true);
+  });
+
+  it('does not flag pace risk while the projection stays inside the limit', () => {
+    const s = spend(200); // 413 projected vs 500 limit
+    expect(s.isPaceRisk).toBe(false);
+  });
+
+  it('suppresses pace risk once already over budget (the over-budget badge owns that state)', () => {
+    const s = spend(501);
+    expect(s.isOverBudget).toBe(true);
+    expect(s.isPaceRisk).toBe(false);
+  });
+
+  it('never divides by zero on the first day of the month', () => {
+    const APR_1 = new Date('2026-04-01T12:00:00Z');
+    const s = calculateBudgetStatus(
+      budget,
+      [createEntry({ amount: 100, category: 'food', date: '2026-04-01' })],
+      APR_1,
+    );
+    expect(s.projectedSpend).toBeCloseTo(100 / 1 * 30, 5); // April has 30 days
+  });
+
+  it('keeps the rollover effective limit as the pace target', () => {
+    const rolloverBudget: CashflowBudgetDTO = { ...budget, enable_rollover: true };
+    const entries = [
+      createEntry({ amount: 100, category: 'food', date: '2026-02-15' }),
+      createEntry({ amount: 250, category: 'food', date: '2026-03-15' }),
+    ];
+    const s = calculateBudgetStatus(rolloverBudget, entries, TODAY);
+    // prev month spent 100 -> surplus 400 -> effective limit 900
+    expect(s.effectiveLimit).toBe(900);
+    expect(s.projectedSpend).toBe(517); // 250 / 15 * 31 = 516.66..., rounded
+    expect(s.isPaceRisk).toBe(false);
+  });
+});
+
 describe('resolveFilterRange', () => {
   it('resolves "this-month" correctly', () => {
     const range = resolveFilterRange({ preset: 'this-month', custom: { from: null, to: null } }, TODAY);
