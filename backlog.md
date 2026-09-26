@@ -11,7 +11,6 @@
 | App / Domain | Feature | Impact | Effort | Status |
 | :--- | :--- | :---: | :---: | :---: |
 | 💰 **Cashflow** | **Inter-Book Account Transfers & Net Worth** | 🔥🔥🔥 | Medium | **Top Priority** |
-| 💰 **Cashflow** | **Cash Horizon & Bill Due-Date Calendar** | 🔥🔥🔥 | Medium | **High Priority** |
 | 💰 **Cashflow** | **Debt Snowball & Avalanche Payoff Planner** | 🔥🔥 | Medium | Scheduled |
 | 💰 **Cashflow** | **Smart CSV Import & Duplicate Detection** | 🔥🔥 | Low | Ready |
 | 💰 **Cashflow** | **"Can I Afford It?" Purchase Sandbox** | 🔥🔥🔥 | Low | Ready |
@@ -53,22 +52,14 @@
   * Unlocks a unified **Consolidated Net Worth & Total Liquidity** widget across all active books on `/cashflow`.
 * **Complexity**: Medium (Schema addition, isolation in `math.ts` aggregation, and atomic server action).
 
-### 2. Cash Horizon & Bill Due-Date Calendar
-* **Problem**: `SafeToSpendCard` provides a single static number, but personal finance is a timing problem. Users need to know *when* upcoming bills hit relative to their next paycheck to avoid liquidity cliffs.
-* **Solution**:
-  * An interactive monthly calendar grid visualizing recurring rules (subscriptions, bills, payroll) and past entries.
-  * Projected daily balance graph highlighting days where balance dips near zero before expected income arrives.
-  * 1-click "Mark as Paid / Post Entry" directly from bill chips.
-* **Complexity**: Medium (Leverages existing `@/components/ui` and List calendar patterns; purely calculated from `recurringRules` and `entries`).
-
-### 3. Debt Snowball & Avalanche Payoff Planner
+### 2. Debt Snowball & Avalanche Payoff Planner
 * **Problem**: Users with multiple debts in `goals` (marked `type: 'debt'`) have no guidance on whether to pay off the smallest balance first (Snowball) or highest interest first (Avalanche).
 * **Solution**:
   * Payoff simulator comparing total interest saved and payoff horizon under both strategies.
   * Calculates monthly contribution recommendations based on monthly surplus from `SafeToSpend`.
 * **Complexity**: Medium (Pure mathematical modeling with clear interactive charts).
 
-### 4. Smart CSV Import with Duplicate Detection & Clean Merchant Parsing
+### 3. Smart CSV Import with Duplicate Detection & Clean Merchant Parsing
 * **Problem**: When importing monthly bank CSV statements, overlapping date ranges create duplicate entries, and messy bank descriptions (`POS DEBIT 0918 SQ *STORE 123`) clutter transaction tables.
 * **Solution**:
   * During the CSV preview step in `ImportCsvModal`, batch-check existing entries matching `(date ± 2 days, exact amount, normalized description)`.
@@ -76,7 +67,7 @@
   * Regex cleaner strips common banking noise (`POS DEBIT`, `PURCHASE AUTHORIZATION`, trailing store IDs).
 * **Complexity**: Low (Single batched SQL range query; zero row-by-row N+1 DB calls).
 
-### 5. "Can I Afford It?" Purchase Sandbox (Impulse Buy Guard)
+### 4. "Can I Afford It?" Purchase Sandbox (Impulse Buy Guard)
 * **Problem**: Users see a $1,200 laptop or $450 flight and experience decision paralysis. Backward-looking expense charts don't tell them if this purchase will blow up next month's rent or derail their savings goal.
 * **Solution**:
   * Ephemeral simulator modal where users input `Amount`, `Category`, and `Date`.
@@ -84,28 +75,28 @@
   * Single click converts the simulated transaction into a real expense entry.
 * **Complexity**: Low (Purely client-side preview via `safe-to-spend.ts`; zero DB writes until explicitly committed).
 
-### 6. 1-Click Split Settlement Sync (`/split/[token]` → Cashflow Book)
+### 5. 1-Click Split Settlement Sync (`/split/[token]` → Cashflow Book)
 * **Problem**: Users settle shared trip/roommate expenses in `/split/[token]`, but then have to manually open Cashflow and recreate an income/expense entry to keep their personal ledger accurate.
 * **Solution**:
   * Authenticated `[ 📥 Record Settlement to Cashflow ]` button on `/split/[token]` net-balance settlement cards.
   * Pre-selects user's default cashflow book, auto-labels `[Split: {Group Title}] Settlement from {Name}`, and creates the entry in 1 click.
 * **Complexity**: Low (Reuses existing `createEntry` Server Action via clean feature boundary).
 
-### 7. Payday-to-Payday / Custom Budget Cycles (Bi-Weekly & Custom Cut-Off Days)
+### 6. Payday-to-Payday / Custom Budget Cycles (Bi-Weekly & Custom Cut-Off Days)
 * **Problem**: Calendar-month budgets (1st–31st) desync for users paid bi-weekly, on the 15th/25th, or on the last Friday of the month, making month-start envelope budgeting artificially constrained.
 * **Solution**:
   * Add `budget_cycle_start_day: integer default 1` to `cashflows`.
   * Date filter pills, envelope allocations, and safe-to-spend projections anchor dynamically to `[cycleStart, cycleEnd]` instead of hardcoding `startOfMonth(now())`.
 * **Complexity**: Low (Single column addition on `cashflows` and date utility extension).
 
-### 8. "Needs vs. Wants vs. Savings" (50/30/20) Macro Allocation Health Score
+### 7. "Needs vs. Wants vs. Savings" (50/30/20) Macro Allocation Health Score
 * **Problem**: Category pie charts with 20+ slices provide micro-details but fail to answer the macro question: *Is my core lifestyle sustainable?*
 * **Solution**:
   * Categories map to macro buckets: `Need` (Essentials), `Want` (Discretionary), or `Savings/Debt`.
   * Compact 50/30/20 benchmark card on Cashflow Dashboard tracking actual ratio vs target.
 * **Complexity**: Low (Pre-populated default mapping dictionary on existing categories; zero DB migration required if stored in category metadata).
 
-### 9. Subscription Creep & Price Spike Watchdog
+### 8. Subscription Creep & Price Spike Watchdog
 * **Problem**: Recurring subscription fees silently increase ($12.99 becomes $15.99; utility surges), and users don't notice for months.
 * **Solution**:
   * When logging or importing an entry matching an active recurring rule, compare `amount` against the rule's baseline.
@@ -113,7 +104,7 @@
   * **30-Day Annual Warning & Zombie Sentinel**: Alerts 30 days and 7 days prior to annual renewals; flags recurring commitments unreviewed for > 60 days.
 * **Complexity**: Low (Pure in-memory math check on entry creation and dashboard load; zero heavy background workers).
 
-### 10. Auto-Detect Recurring Bills from Entry History
+### 9. Auto-Detect Recurring Bills from Entry History
 * **Problem**: `cashflow_recurring_rules` require manual setup. That setup friction is the single biggest blocker to the Safe-to-Spend engine and the Bill Calendar — a feature nobody configures is a feature nobody gets. Competitors (Monarch) market automatic recurring-charge detection as a headline capability.
 * **Solution**:
   * Scan a book's entry history for normalized merchant signatures matching 2+ occurrences on a consistent cadence (monthly ±3 days, yearly ±7 days).
@@ -121,7 +112,7 @@
   * Confidence-gated: only propose on ≥3 matches or 2 matches with identical amount; never silently create rules.
 * **Complexity**: Low (Single grouped SQL query over existing entries + a review UI; zero new tables).
 
-### 11. Bill & Payday Calendar Sync (`.ics` Subscription Feed)
+### 10. Bill & Payday Calendar Sync (`.ics` Subscription Feed)
 * **Problem**: Bills only surface when the user *opens* Kytbox. Real bills collide with real life — users need upcoming bills and paydays sitting next to meetings in the calendar they already check daily.
 * **Solution**:
   * Authenticated route handler emitting RFC 5545 iCalendar events generated from `cashflow_recurring_rules` (bills, paydays, annual renewals).
@@ -129,21 +120,21 @@
   * Mirrors the iCal pattern already planned for List boards — same route-handler approach, reusable helper.
 * **Complexity**: Low (One route handler + a token column; no third-party calendar API dependency).
 
-### 12. Entry Reconciliation & Import Matching
-* **Problem**: Backlog #4 only catches duplicates *during* CSV import. It does nothing for the real trust-destroyer: a manual entry and an imported entry describing the same transaction, both counted, silently double-inflating spending and breaking every derived number (Safe-to-Spend, budgets, reports).
+### 11. Entry Reconciliation & Import Matching
+* **Problem**: Backlog #3 only catches duplicates *during* CSV import. It does nothing for the real trust-destroyer: a manual entry and an imported entry describing the same transaction, both counted, silently double-inflating spending and breaking every derived number (Safe-to-Spend, budgets, reports).
 * **Solution**:
   * Fuzzy match pass over existing entries: `(±2 days, exact amount, normalized merchant via existing `merchant-rules.ts` cleaner)` — same normalization already used by import.
   * Surface matches in a review queue; resolving either **merges** (keeps earliest, preserves tags/receipt) or **dismisses** the pairing permanently.
   * Optional `matched_entry_id` column for durable "don't re-flag this pair" state.
 * **Complexity**: Medium (One batched range query for detection; merge path needs an atomic server action + RLS review).
 
-### 13. Zero-Based "Underfunded" Assignment Panel
+### 12. Zero-Based "Underfunded" Assignment Panel
 * **Problem**: Kytbox tells users what they *spent*, never what is **still unassigned**. Income lands, categories get partially funded, and the remainder silently absorbs into overspending — the exact failure YNAB's "give every dollar a job" method was built to prevent. This is the widest methodological gap versus the market leader.
 * **Solution**:
   * Aggregate this cycle's income against the sum of assigned budget limits: `unassigned = income - Σ effectiveLimit`.
   * Compact panel: *"Income $4,000 — $610 not yet given a job"* with a 1-click "Assign to [category]" shortcut.
   * Reuses `enable_rollover` / `effectiveLimit` math already computed in `calculateBudgetStatus` — no new aggregation path.
-* **Complexity**: Medium (Requires a defined cycle anchor; pairs naturally with backlog #7 Payday-to-Payday cycles).
+* **Complexity**: Medium (Requires a defined cycle anchor; pairs naturally with backlog #6 Payday-to-Payday cycles).
 
 ---
 

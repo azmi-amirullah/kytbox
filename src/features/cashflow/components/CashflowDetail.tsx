@@ -132,6 +132,18 @@ const ActivityLogDrawer = dynamic(
   () => import('./ActivityLogDrawer').then((mod) => mod.ActivityLogDrawer),
   { ssr: false },
 )
+const CashHorizonCard = dynamic(
+  () => import('./CashHorizonCard').then((mod) => mod.CashHorizonCard),
+  {
+    ssr: false,
+    loading: () => (
+      <Loader
+        className='min-h-90 py-12 bg-card border rounded-xl'
+        text='Loading cash horizon...'
+      />
+    ),
+  },
+)
 
 import { ProjectionsView } from './ProjectionsView'
 import {
@@ -2718,6 +2730,16 @@ export default function CashflowDetail({
               }
             : undefined
         }
+      />
+
+      {/* Cash Horizon & Bill Due-Date Calendar */}
+      <CashHorizonCard
+        cashflowId={cashflow.id}
+        entries={localEntries}
+        recurringRules={localRecurringRules}
+        currency={currency}
+        canEdit={canEdit}
+        onEntryCreated={handleEntrySuccess}
       />
 
       {/* Runway & Burn Rate Engine (The Survival Clock) */}

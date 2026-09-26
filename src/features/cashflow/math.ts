@@ -4,6 +4,7 @@ import type {
   CashflowBudgetDTO,
   CashflowChartAggregateDTO,
 } from '@/types/dto';
+import { parseDateOnly, toLocalDateOnlyString } from '@/lib/date-only';
 
 /**
  * Enriched recurring item with calculated projection metadata.
@@ -1205,6 +1206,321 @@ export function generateFinancialReportData(
     incomeCategories,
     topExpenses,
     entries: sortedEntries,
+  };
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * A single scheduled movement inside a Cash Horizon day.
+ */
+export interface DailyBalanceEvent {
+  id: string;
+  description: string;
+  amount: number;
+  type: 'income' | 'expense';
+  category: string | null;
+  /** `entry` = recorded or scheduled row, `recurring` = projected rule occurrence. */
+  source: 'entry' | 'recurring';
+}
+
+/**
+ * Projected end-of-day balance for one calendar day.
+ */
+export interface DailyBalancePoint {
+  date: string; // YYYY-MM-DD
+  balance: number;
+  netDelta: number;
+  isPast: boolean;
+  isToday: boolean;
+  isAtRisk: boolean;
+  events: DailyBalanceEvent[];
+}
+
+export interface DailyBalanceProjectionOptions {
+  entries: CashflowEntryDTO[];
+  recurringRules: CashflowRecurringRuleDTO[];
+  rangeStart: string; // YYYY-MM-DD, inclusive
+  rangeEnd: string; // YYYY-MM-DD, inclusive
+  referenceDate?: Date;
+  /** Balance at or below this value marks a liquidity cliff. Defaults to 0. */
+  atRiskThreshold?: number;
+}
+
+export interface DailyBalanceProjection {
+  days: DailyBalancePoint[];
+  /** Settled balance on `referenceDate`, derived from entries dated on or before it. */
+  currentBalance: number;
+  endingBalance: number;
+  lowestBalance: number;
+  lowestDate: string | null;
+  /** Days whose projected balance is at or below the at-risk threshold. */
+  atRiskDates: string[];
+  /** First day after `referenceDate` carrying income, within the range. */
+  nextIncomeDate: string | null;
+}
+
+function appendDailyEvent(
+  map: Map<string, DailyBalanceEvent[]>,
+  date: string,
+  event: DailyBalanceEvent
+): void {
+  const existing = map.get(date);
+  if (existing) {
+    existing.push(event);
+  } else {
+    map.set(date, [event]);
+  }
+}
+
+function sumDailyEventDeltas(events: DailyBalanceEvent[] | undefined): number {
+  if (!events) return 0;
+  let sum = 0;
+  for (const event of events) {
+    sum += event.type === 'income' ? event.amount : -event.amount;
+  }
+  return sum;
+}
+
+/**
+ * Lists the dates a recurring rule falls due inside an inclusive date range.
+ * Monthly rules clamp to the real month length; yearly rules fire on their
+ * anniversary month only.
+ */
+function getRecurringOccurrences(
+  rule: CashflowRecurringRuleDTO,
+  rangeStart: string,
+  rangeEnd: string
+): string[] {
+  const occurrences: string[] = [];
+  const startParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(rule.start_date);
+  const activeFrom = startParts ? rule.start_date : '';
+
+  if (rule.recurrence_interval === 'yearly') {
+    if (!startParts) return occurrences;
+
+    const startMonth = Number(startParts[2]);
+    const anniversaryDay = rule.day_of_month || Number(startParts[3]) || 1;
+    const firstYear = Number(rangeStart.slice(0, 4));
+    const lastYear = Number(rangeEnd.slice(0, 4));
+
+    for (let year = firstYear; year <= lastYear; year += 1) {
+      const maxDay = new Date(year, startMonth, 0).getDate();
+      const date = toLocalDateOnlyString(
+        new Date(year, startMonth - 1, Math.min(anniversaryDay, maxDay))
+      );
+      if (date >= rangeStart && date <= rangeEnd && date >= activeFrom) {
+        occurrences.push(date);
+      }
+    }
+    return occurrences;
+  }
+
+  const rangeStartDate = parseDateOnly(rangeStart);
+  const rangeEndDate = parseDateOnly(rangeEnd);
+  const endYear = rangeEndDate.getFullYear();
+  const endMonth = rangeEndDate.getMonth() + 1;
+  const desiredDay = rule.day_of_month || 1;
+  let year = rangeStartDate.getFullYear();
+  let month = rangeStartDate.getMonth() + 1;
+
+  while (year < endYear || (year === endYear && month <= endMonth)) {
+    const maxDay = new Date(year, month, 0).getDate();
+    const date = toLocalDateOnlyString(
+      new Date(year, month - 1, Math.min(desiredDay, maxDay))
+    );
+    if (date >= rangeStart && date <= rangeEnd && date >= activeFrom) {
+      occurrences.push(date);
+    }
+    if (month === 12) {
+      year += 1;
+      month = 1;
+    } else {
+      month += 1;
+    }
+  }
+
+  return occurrences;
+}
+
+/**
+ * Projects the end-of-day balance for every day of an inclusive date range.
+ *
+ * Days on or before `referenceDate` are reconstructed backwards from the settled
+ * balance using recorded entries only. Later days add scheduled entries plus the
+ * recurring-rule occurrences that have not been posted yet, so a bill that
+ * already exists as an entry is never counted twice.
+ */
+export function calculateDailyBalanceProjection({
+  entries,
+  recurringRules,
+  rangeStart,
+  rangeEnd,
+  referenceDate = new Date(),
+  atRiskThreshold = 0,
+}: DailyBalanceProjectionOptions): DailyBalanceProjection {
+  const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+  const refDate = toLocalDateOnlyString(referenceDate);
+
+  let settledBalance = 0;
+  for (const entry of entries) {
+    if (entry.date > refDate) continue;
+    const amount = Number(entry.amount) || 0;
+    if (entry.type === 'income') settledBalance += amount;
+    else if (entry.type === 'expense') settledBalance -= amount;
+  }
+  const currentBalance = round2(settledBalance);
+
+  const rangeStartDate = parseDateOnly(rangeStart);
+  const rangeEndDate = parseDateOnly(rangeEnd);
+  const isRangeValid =
+    !isNaN(rangeStartDate.getTime()) &&
+    !isNaN(rangeEndDate.getTime()) &&
+    rangeEndDate.getTime() >= rangeStartDate.getTime();
+
+  if (!isRangeValid) {
+    return {
+      days: [],
+      currentBalance,
+      endingBalance: currentBalance,
+      lowestBalance: currentBalance,
+      lowestDate: null,
+      atRiskDates: [],
+      nextIncomeDate: null,
+    };
+  }
+
+  const dayCount =
+    Math.round(
+      (rangeEndDate.getTime() - rangeStartDate.getTime()) / MS_PER_DAY
+    ) + 1;
+  const dates: string[] = [];
+  for (let i = 0; i < dayCount; i += 1) {
+    dates.push(
+      toLocalDateOnlyString(
+        new Date(
+          rangeStartDate.getFullYear(),
+          rangeStartDate.getMonth(),
+          rangeStartDate.getDate() + i
+        )
+      )
+    );
+  }
+
+  const eventsByDate = new Map<string, DailyBalanceEvent[]>();
+  const scheduledKeysByDate = new Map<string, Set<string>>();
+  // Backwards reconstruction needs entries past the range end when the
+  // reference date lies beyond it (viewing a past month).
+  const entryUpperBound = refDate > rangeEnd ? refDate : rangeEnd;
+
+  for (const entry of entries) {
+    if (entry.date < rangeStart || entry.date > entryUpperBound) continue;
+
+    const amount = Number(entry.amount) || 0;
+    const isIncome = entry.type === 'income';
+    const isExpense = entry.type === 'expense';
+    if (!isIncome && !isExpense) continue;
+
+    appendDailyEvent(eventsByDate, entry.date, {
+      id: entry.id,
+      description: entry.description,
+      amount,
+      type: isIncome ? 'income' : 'expense',
+      category: entry.category,
+      source: 'entry',
+    });
+
+    if (entry.date > refDate && entry.date <= rangeEnd) {
+      let keys = scheduledKeysByDate.get(entry.date);
+      if (!keys) {
+        keys = new Set<string>();
+        scheduledKeysByDate.set(entry.date, keys);
+      }
+      if (entry.recurring_rule_id) keys.add(`rule:${entry.recurring_rule_id}`);
+      keys.add(`name:${entry.description.trim().toLowerCase()}|${entry.type}`);
+    }
+  }
+
+  for (const rule of recurringRules) {
+    if (!rule.is_active) continue;
+
+    const nameKey = `name:${rule.description.trim().toLowerCase()}|${rule.type}`;
+    for (const date of getRecurringOccurrences(rule, rangeStart, rangeEnd)) {
+      if (date <= refDate) continue;
+
+      const scheduled = scheduledKeysByDate.get(date);
+      if (scheduled?.has(`rule:${rule.id}`) || scheduled?.has(nameKey)) continue;
+
+      appendDailyEvent(eventsByDate, date, {
+        id: rule.id,
+        description: rule.description,
+        amount: Number(rule.amount) || 0,
+        type: rule.type,
+        category: rule.category,
+        source: 'recurring',
+      });
+    }
+  }
+
+  let entryDeltaToReference = 0;
+  for (const [date, events] of eventsByDate) {
+    if (date <= refDate) entryDeltaToReference += sumDailyEventDeltas(events);
+  }
+
+  const days: DailyBalancePoint[] = [];
+  const atRiskDates: string[] = [];
+  let nextIncomeDate: string | null = null;
+  let pastRunning = 0;
+  let futureRunning = 0;
+  let lowestBalance = Number.POSITIVE_INFINITY;
+  let lowestDate: string | null = null;
+
+  for (const date of dates) {
+    const events = eventsByDate.get(date) ?? [];
+    const netDelta = sumDailyEventDeltas(events);
+    let balance: number;
+
+    if (date <= refDate) {
+      pastRunning += netDelta;
+      balance = currentBalance - (entryDeltaToReference - pastRunning);
+    } else {
+      futureRunning += netDelta;
+      balance = currentBalance + futureRunning;
+      if (!nextIncomeDate && events.some((event) => event.type === 'income')) {
+        nextIncomeDate = date;
+      }
+    }
+
+    const roundedBalance = round2(balance);
+    const isAtRisk = roundedBalance <= atRiskThreshold;
+
+    if (roundedBalance < lowestBalance) {
+      lowestBalance = roundedBalance;
+      lowestDate = date;
+    }
+    if (isAtRisk) atRiskDates.push(date);
+
+    days.push({
+      date,
+      balance: roundedBalance,
+      netDelta: round2(netDelta),
+      isPast: date < refDate,
+      isToday: date === refDate,
+      isAtRisk,
+      events,
+    });
+  }
+
+  const lastDay = days[days.length - 1];
+
+  return {
+    days,
+    currentBalance,
+    endingBalance: lastDay.balance,
+    lowestBalance,
+    lowestDate,
+    atRiskDates,
+    nextIncomeDate,
   };
 }
 
