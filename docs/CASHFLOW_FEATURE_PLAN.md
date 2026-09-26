@@ -153,6 +153,49 @@ blind-accepted.
   `violations: []`.
 - Playwright needs credentials + test data → **ask before running E2E**.
 
+### 4.3 Cell design (iterated after ship)
+
+The shipped spec above called for bill chips; the cells were reworked to show
+money instead. Current behaviour lives entirely in
+`src/features/cashflow/components/CashHorizonCalendar.tsx`:
+
+- **Every cell reads balance → income → expense**, green above red. Income is
+  always line 1, expense line 2.
+- **Two formatting tiers, split by CSS only** (no JS breakpoint detection):
+  full `formatCurrency` at `@2xl` and above, `formatCompactAmount` below it.
+  A day cell has ~27px of content width at 320px, where `Rp 44.000` cannot
+  fit.
+- **`formatCompactAmount` uses `maximumSignificantDigits: 2`**, added to
+  `src/lib/currency.ts` with unit tests in `tests/unit/lib/currency.test.ts`.
+  `maximumFractionDigits: 1` reaches 7 characters (`999,9rb`) and overflows
+  320px; `maximumFractionDigits: 0` lies — `1500000` renders `2jt` instead of
+  `1,5jt`. It is symbol-free and space-stripped so it never contradicts
+  `formatCurrencyCompact`'s zero-decimal rule.
+- **Empty days are blank, not zero-filled.** Amounts render only when
+  `day.events.length > 0`; the balance and the at-risk flag always render. A
+  day that has an expense but no income still shows `+Rp 0`, so the two-red
+  stack this replaced cannot recur, while a day with nothing scheduled shows
+  only its date and balance.
+- **`+` / `-` signs are the WCAG 1.4.1 indicator** — colour is never the sole
+  cue. They appear on both tiers.
+- **The at-risk ⚠ sits in the date row at every width** rather than the
+  amounts row. Below ~360px it wraps to a second line of that row instead of
+  overflowing: a 35px cell cannot hold the 20px date pill and a 12px marker
+  side by side.
+- **Header columns** reuse the body's `gap-px bg-border/50` separator technique
+  with `bg-muted/30` label cells, so header rules align with the grid.
+- **`LuArrowUp` / `LuArrowDown`** replace `LuArrowUpRight` /
+  `LuArrowDownRight` on the legend, the Next Income stat and the day-detail
+  rows — the diagonal glyph reads as an external-link affordance.
+
+**Gate: `tests/e2e/cash-horizon-calendar.test.ts` (9 tests).** No
+pre-existing test reached this component — a11y test 5 scans the `/cashflow`
+hub, which has no calendar, and visual test 7 uses `fullPage: false` on a page
+where the calendar sits below the fold — and the calendar is date-dependent,
+so it cannot be screenshot-baselined either. It asserts cell fit and the
+blank-vs-amounts contract at 320/375/414, full amounts beside the balance at
+768/1440, at-risk marker placement, and runs axe scoped to the day cells.
+
 ---
 
 ## 5. Rules (all still in force)

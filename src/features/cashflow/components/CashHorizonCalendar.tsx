@@ -68,6 +68,7 @@ export function CashHorizonCalendar({
         ))}
 
         {days.map((day) => {
+          const hasEvents = day.events.length > 0
           const incomeTotal = day.events
             .filter((event) => event.type === 'income')
             .reduce((sum, event) => sum + event.amount, 0)
@@ -89,7 +90,7 @@ export function CashHorizonCalendar({
                 !day.isToday && !day.isAtRisk && 'hover:bg-muted/30',
               )}
             >
-              <span className='flex items-center justify-between gap-1'>
+              <span className='flex flex-wrap items-center justify-between gap-y-0.5'>
                 <span
                   className={cn(
                     'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums',
@@ -104,7 +105,7 @@ export function CashHorizonCalendar({
                 </span>
                 {day.isAtRisk && (
                   <LuTriangleAlert
-                    className='hidden h-3 w-3 shrink-0 text-destructive @2xl:block'
+                    className='h-3 w-3 shrink-0 text-destructive'
                     aria-hidden='true'
                   />
                 )}
@@ -123,13 +124,7 @@ export function CashHorizonCalendar({
                 {formatCurrencyCompact(day.balance, currency)}
               </span>
 
-              <span className='flex flex-wrap items-center gap-x-1 gap-y-0.5'>
-                {day.isAtRisk && (
-                  <LuTriangleAlert
-                    className='h-2.5 w-2.5 shrink-0 text-destructive @2xl:hidden'
-                    aria-hidden='true'
-                  />
-                )}
+              {hasEvents && (
                 <span className='flex min-w-0 flex-col gap-y-0.5'>
                   <span className='hidden truncate text-[11px] font-semibold leading-none tabular-nums text-emerald-700 dark:text-emerald-300 @2xl:block'>
                     +{formatCurrency(incomeTotal, currency)}
@@ -144,7 +139,7 @@ export function CashHorizonCalendar({
                     -{formatCompactAmount(expenseTotal, currency)}
                   </span>
                 </span>
-              </span>
+              )}
             </button>
           )
         })}
