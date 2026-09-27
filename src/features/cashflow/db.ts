@@ -69,11 +69,23 @@ export async function getCashflowDashboardData(
         .eq('email', normalizedEmail)
     : Promise.resolve({ data: [], error: null });
 
-  // Parallelize profile and shares queries
-  const [profileResult, sharesResult] = await Promise.all([
-    profilePromise,
-    sharesPromise,
-  ]);
+  // Owned summaries never depend on the shares lookup, so they join this wave
+  const buildOwnedSummariesQuery = () =>
+    supabase
+      .from('cashflow_summaries')
+      .select(
+        'id, user_id, title, created_at, updated_at, is_public, is_pinned, is_archived, last_entry_at, entry_count, income, expense, balance',
+      )
+      .order('created_at', { ascending: false })
+      .eq('user_id', userId);
+
+  // Parallelize profile, shares and owned summaries queries
+  const [profileResult, sharesResult, ownedSummariesResult] =
+    await Promise.all([
+      profilePromise,
+      sharesPromise,
+      buildOwnedSummariesQuery(),
+    ]);
 
   let profile = profileResult.data;
   let shares = sharesResult.data;
@@ -135,6 +147,17 @@ export async function getCashflowDashboardData(
     }
   }
 
+  let ownedSummaries = ownedSummariesResult.data;
+  if (ownedSummariesResult.error) {
+    console.warn('cashflow_dashboard_summary_lookup_retrying', ownedSummariesResult.error);
+    const retryOwned = await buildOwnedSummariesQuery();
+    if (retryOwned.error) {
+      console.error('cashflow_dashboard_summary_lookup_failed_after_retry', retryOwned.error);
+      throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED', { cause: retryOwned.error });
+    }
+    ownedSummaries = retryOwned.data;
+  }
+
   const pinnedShareIds = new Set(
     shares?.filter((s) => s.is_pinned !== false).map((s) => s.cashflow_id) || [],
   );
@@ -147,55 +170,74 @@ export async function getCashflowDashboardData(
 
   const allShareIds = shares?.map((s) => s.cashflow_id) || [];
 
-  // Helper to build the cashflow_summaries query
-  const buildSummariesQuery = () => {
-    const q = supabase
+  // Shared rows are the only summaries that depend on the shares lookup
+  const buildSharedSummariesQuery = () =>
+    supabase
       .from('cashflow_summaries')
       .select(
         'id, user_id, title, created_at, updated_at, is_public, is_pinned, is_archived, last_entry_at, entry_count, income, expense, balance',
       )
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .in('id', allShareIds);
 
-    if (allShareIds.length > 0) {
-      return q.or(`user_id.eq.${userId},id.in.(${allShareIds.join(',')})`);
-    }
-    return q.eq('user_id', userId);
-  };
+  const sharedSummariesPromise =
+    allShareIds.length > 0
+      ? buildSharedSummariesQuery()
+      : Promise.resolve({ data: [], error: null });
 
-  const { data: initialSummariesData, error: cashflowSummariesError } =
-    await buildSummariesQuery();
-  let cashflowSummariesData = initialSummariesData;
-
-  if (cashflowSummariesError) {
-    console.warn('cashflow_dashboard_summary_lookup_retrying', cashflowSummariesError);
-    const retrySummaries = await buildSummariesQuery();
-    if (retrySummaries.error) {
-      console.error('cashflow_dashboard_summary_lookup_failed_after_retry', retrySummaries.error);
-      throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED', { cause: retrySummaries.error });
-    }
-    cashflowSummariesData = retrySummaries.data;
+  // Active summaries (active owned + pinned shares) to aggregate charts for.
+  // Pinned share ids are valid ids on their own (FK to cashflows), so chart
+  // aggregation no longer has to wait for the shared rows.
+  const ownedRows = ownedSummaries || [];
+  const activeSummaryIds: string[] = [];
+  const ownedIdSet = new Set<string>();
+  for (const row of ownedRows) {
+    if (!row.id) continue;
+    ownedIdSet.add(row.id);
+    if (!row.is_archived) activeSummaryIds.push(row.id);
+  }
+  for (const shareId of pinnedShareIds) {
+    if (shareId && !ownedIdSet.has(shareId)) activeSummaryIds.push(shareId);
   }
 
-  // Active summaries (active owned + pinned shares) to aggregate charts for
-  const activeSummaryIds: string[] = (cashflowSummariesData || [])
-    .filter(
-      (c) =>
-        (c.user_id === userId && !c.is_archived) ||
-        (c.user_id !== userId && !!c.id && pinnedShareIds.has(c.id)),
-    )
-    .map((c) => c.id)
-    .filter((id): id is string => Boolean(id));
+  const aggregatesPromise =
+    activeSummaryIds.length > 0
+      ? supabase.rpc('get_cashflow_chart_aggregates', {
+          p_cashflow_ids: activeSummaryIds,
+        })
+      : Promise.resolve({ data: null, error: null });
+
+  const [sharedSummariesResult, aggregatesResult] = await Promise.all([
+    sharedSummariesPromise,
+    aggregatesPromise,
+  ]);
+
+  let sharedSummaries = sharedSummariesResult.data;
+  if (sharedSummariesResult.error && allShareIds.length > 0) {
+    console.warn('cashflow_dashboard_shared_summary_lookup_retrying', sharedSummariesResult.error);
+    const retryShared = await buildSharedSummariesQuery();
+    if (retryShared.error) {
+      console.error('cashflow_dashboard_shared_summary_lookup_failed_after_retry', retryShared.error);
+      throw new Error('CASHFLOW_DASHBOARD_LOOKUP_FAILED', { cause: retryShared.error });
+    }
+    sharedSummaries = retryShared.data;
+  }
+
+  // Owned rows win over a self-share duplicate; keep the original
+  // ORDER BY created_at DESC across the merged set
+  const cashflowSummariesData = [
+    ...ownedRows,
+    ...(sharedSummaries || []).filter((row) => row.id && !ownedIdSet.has(row.id)),
+  ].sort(
+    (a, b) =>
+      new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+  );
 
   // Fetch pre-aggregated chart buckets for dashboard charts via RPC
   let aggregates: CashflowChartAggregateDTO[] = [];
 
   if (activeSummaryIds.length > 0) {
-    const { data: aggregateRows, error: aggregateError } = await supabase.rpc(
-      'get_cashflow_chart_aggregates',
-      {
-        p_cashflow_ids: activeSummaryIds,
-      }
-    );
+    const { data: aggregateRows, error: aggregateError } = aggregatesResult;
 
     if (aggregateError) {
       console.warn('cashflow_dashboard_aggregates_lookup_failed_falling_back', aggregateError);

@@ -59,7 +59,10 @@ import {
   formatCategoryName,
   isTagDuplicateOfCategory,
 } from '../constants'
-import { resolveMerchantCategory } from '../lib/merchant-rules'
+import {
+  learnMerchantRulesFromEntries,
+  resolveMerchantCategory,
+} from '../lib/merchant-rules'
 import { extractReceiptData } from '../lib/receipt-extractor'
 import PurchaseBreakdownEditor, {
   type SplitItemInput,
@@ -186,9 +189,14 @@ export default function EntryModal({
   const receiptGalleryScanRef = useRef<HTMLInputElement>(null)
   const isAiScanRef = useRef(false)
 
+  // Index once per entries update so description keystrokes only re-match
+  const learnedIndex = useMemo(() => {
+    return learnMerchantRulesFromEntries(recentEntries)
+  }, [recentEntries])
+
   const merchantMatch = useMemo(() => {
-    return resolveMerchantCategory(description, type, recentEntries)
-  }, [description, type, recentEntries])
+    return resolveMerchantCategory(description, type, learnedIndex)
+  }, [description, type, learnedIndex])
 
   // Auto-apply category and tags when merchant is recognized (same behavior as /quick)
   const isEdit = Boolean(entry)

@@ -56,28 +56,37 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
 
   if (!user) redirect('/login')
 
-  let data
-  try {
-    data = await getGoalDetailData(supabase, goalId, user.id, user.email)
-  } catch (error) {
-    if (error instanceof Error && error.message === 'GOAL_NOT_FOUND') notFound()
-    throw error
-  }
-
-  const { goal, entries, currency } = data
-
-  const profileResult = await supabase
+  // Profile and goal detail are independent, so dispatch them together
+  const profilePromise = supabase
     .from('profiles')
     .select('username, avatar_url, display_name, role')
     .eq('id', user.id)
-    .single()
+    .single();
 
-  if (profileResult.error) {
-    console.error('cashflow_goal_profile_lookup_failed', profileResult.error)
-    throw new Error('GOAL_PROFILE_LOOKUP_FAILED')
+  const detailPromise = getGoalDetailData(supabase, goalId, user.id, user.email).then(
+    (value) => ({ ok: true as const, value }),
+    (error: unknown) => ({ ok: false as const, error }),
+  );
+
+  const [detail, profileResult] = await Promise.all([
+    detailPromise,
+    profilePromise,
+  ]);
+
+  if (!detail.ok) {
+    if (detail.error instanceof Error && detail.error.message === 'GOAL_NOT_FOUND')
+      notFound();
+    throw detail.error;
   }
 
-  const profile = profileResult.data
+  const { goal, entries, currency } = detail.value;
+
+  if (profileResult.error) {
+    console.error('cashflow_goal_profile_lookup_failed', profileResult.error);
+    throw new Error('GOAL_PROFILE_LOOKUP_FAILED');
+  }
+
+  const profile = profileResult.data;
 
   const userData =
     user && profile

@@ -10,6 +10,8 @@ import {
   getPinnedCashflows,
   PinnedCashflowsSection,
 } from '@/features/cashflow'
+import type { CashflowWithSummaryDTO } from '@/types/dto'
+import type { Json } from '@/types/supabase'
 import { QuickStats } from './components/QuickStats'
 import { QuickActions } from './components/QuickActions'
 import { ActivityFeed } from './components/ActivityFeed'
@@ -32,86 +34,54 @@ const COMING_SOON_APPS = KYTBOX_APPS.filter(
   (app) => app.status === 'coming_soon',
 )
 
+type OverviewStats = {
+  clicksCount: number
+  cashflowBalance: number
+  openItemsCount: number
+}
+
+function readOverviewStats(data: Json): OverviewStats | null {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    return null
+  }
+
+  const { clicks_count, cashflow_balance, active_tasks_count } = data
+  if (typeof clicks_count !== 'number') return null
+  if (typeof cashflow_balance !== 'number') return null
+  if (typeof active_tasks_count !== 'number') return null
+
+  return {
+    clicksCount: clicks_count,
+    cashflowBalance: cashflow_balance,
+    openItemsCount: active_tasks_count,
+  }
+}
+
 async function AsyncQuickStats({
   userId,
-  userEmail,
   defaultCurrency,
 }: {
   userId: string
-  userEmail: string | undefined
   defaultCurrency: string | null
 }) {
   const supabase = await createClient()
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const { data, error } = await supabase.rpc('get_dashboard_overview', {
+    p_user_id: userId,
+    // The activity feed streams from get_recent_activity, so skip the duplicate aggregation.
+    p_activity_limit: 0,
+  })
 
-  let sharedCashflowIds: string[] = []
-  if (userEmail) {
-    const { data: shares, error: sharesError } = await supabase
-      .from('cashflow_shares')
-      .select('cashflow_id')
-      .eq('email', userEmail.trim().toLowerCase())
-      .eq('is_included_in_totals', true)
-
-    if (sharesError) {
-      console.error('AsyncQuickStats shares error:', sharesError.message)
-    } else if (shares) {
-      sharedCashflowIds = shares
-        .map((s) => s.cashflow_id)
-        .filter((id): id is string => Boolean(id))
-    }
+  if (error) {
+    console.error('AsyncQuickStats overview error:', error.message)
   }
 
-  let cashflowQuery = supabase
-    .from('cashflow_summaries')
-    .select('balance')
-
-  if (sharedCashflowIds.length > 0) {
-    cashflowQuery = cashflowQuery.or(
-      `and(user_id.eq.${userId},is_archived.eq.false),id.in.(${sharedCashflowIds.join(',')})`,
-    )
-  } else {
-    cashflowQuery = cashflowQuery
-      .eq('user_id', userId)
-      .eq('is_archived', false)
-  }
-
-  const [clicksRes, cashflowsRes, tasksRes] = await Promise.all([
-    supabase
-      .from('link_events')
-      .select('id, links!inner(user_id)', { count: 'exact', head: true })
-      .eq('links.user_id', userId)
-      .gte('created_at', sevenDaysAgo.toISOString()),
-    cashflowQuery,
-    supabase
-      .from('list_items')
-      .select('id, lists!inner(user_id)', { count: 'exact', head: true })
-      .eq('is_completed', false)
-      .eq('lists.user_id', userId),
-  ])
-
-  if (clicksRes.error) {
-    console.error('AsyncQuickStats clicks error:', clicksRes.error.message)
-  }
-  if (cashflowsRes.error) {
-    console.error('AsyncQuickStats cashflows error:', cashflowsRes.error.message)
-  }
-  if (tasksRes.error) {
-    console.error('AsyncQuickStats tasks error:', tasksRes.error.message)
-  }
-
-  const clicksCount = clicksRes.count || 0
-  const cashflowBalance = (cashflowsRes.data || []).reduce(
-    (acc, curr) => acc + (Number(curr.balance) || 0),
-    0,
-  )
-  const openItemsCount = tasksRes.count || 0
+  const overview = data === null ? null : readOverviewStats(data)
 
   return (
     <QuickStats
-      clicksCount={clicksCount}
-      cashflowBalance={cashflowBalance}
-      openItemsCount={openItemsCount}
+      clicksCount={overview?.clicksCount ?? 0}
+      cashflowBalance={overview?.cashflowBalance ?? 0}
+      openItemsCount={overview?.openItemsCount ?? 0}
       defaultCurrency={defaultCurrency}
     />
   )
@@ -134,6 +104,24 @@ async function AsyncActivityFeed({ userId }: { userId: string }) {
   return <ActivityFeed activities={recentActivity || []} />
 }
 
+async function AsyncPinnedCashflows({
+  cashflows,
+  defaultCurrency,
+}: {
+  cashflows: Promise<CashflowWithSummaryDTO[]>
+  defaultCurrency: string | null
+}) {
+  const pinned = await cashflows
+  if (pinned.length === 0) return null
+
+  return (
+    <PinnedCashflowsSection
+      pinnedCashflows={pinned}
+      defaultCurrency={defaultCurrency}
+    />
+  )
+}
+
 /**
  * Platform Home - Activity Feed Dashboard
  * Dynamic view aggregating statistics and recent activities across all Kytbox apps.
@@ -141,11 +129,8 @@ async function AsyncActivityFeed({ userId }: { userId: string }) {
 export default async function AppHomePage() {
   const { user, profile } = await getAuthenticatedUserAndProfile()
   const supabase = await createClient()
-  const pinnedCashflows = await getPinnedCashflows(
-    supabase,
-    user.id,
-    user.email,
-  )
+  // Started eagerly so stats, activity and pinned cashflows stream in parallel.
+  const pinnedCashflows = getPinnedCashflows(supabase, user.id, user.email)
 
   return (
     <div className='mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8 md:py-10 lg:px-8'>
@@ -172,18 +157,17 @@ export default async function AppHomePage() {
       >
         <AsyncQuickStats
           userId={user.id}
-          userEmail={user.email}
           defaultCurrency={profile?.default_currency || null}
         />
       </Suspense>
 
       {/* Quick Access (Pinned Cashflows) */}
-      {pinnedCashflows.length > 0 && (
-        <PinnedCashflowsSection
-          pinnedCashflows={pinnedCashflows}
+      <Suspense fallback={null}>
+        <AsyncPinnedCashflows
+          cashflows={pinnedCashflows}
           defaultCurrency={profile?.default_currency || null}
         />
-      )}
+      </Suspense>
 
       {/* Apps Section */}
       <section

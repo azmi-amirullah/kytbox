@@ -28,13 +28,22 @@ export default async function QuickLogPage({
 
   const { bookId } = await searchParams;
 
-  // Resolve books user has access to (both owned and shared)
-  const accessibleBooks = await getAccessibleCashflows(
-    supabase,
-    user.id,
-    user.email,
-    bookId,
-  );
+  const fetchRecentEntries = (cashflowId: string) =>
+    supabase
+      .from('cashflow_entries')
+      .select(
+        'id, cashflow_id, goal_id, description, amount, type, category, date, is_recurring, recurrence_interval, yearly_calculation, tags, receipt_url, original_currency, original_amount, exchange_rate, recurring_rule_id, created_at',
+      )
+      .eq('cashflow_id', cashflowId)
+      .order('date', { ascending: false })
+      .limit(1000);
+
+  // Resolve books user has access to (both owned and shared). When the URL
+  // already names the book, prefetch its entries alongside that lookup.
+  const [accessibleBooks, prefetchedEntries] = await Promise.all([
+    getAccessibleCashflows(supabase, user.id, user.email, bookId),
+    bookId ? fetchRecentEntries(bookId) : Promise.resolve(null),
+  ]);
 
   // Filter for books the user has permission to log entries into (owner or edit role only - never read-only)
   const editableBooks = accessibleBooks.filter(
@@ -51,14 +60,12 @@ export default async function QuickLogPage({
   const activeBookId = validUrlBookId || editableBooks[0].id;
 
   // Fetch recent entries to power in-memory merchant learning
-  const { data: rawEntries } = await supabase
-    .from('cashflow_entries')
-    .select(
-      'id, cashflow_id, goal_id, description, amount, type, category, date, is_recurring, recurrence_interval, yearly_calculation, tags, receipt_url, original_currency, original_amount, exchange_rate, recurring_rule_id, created_at',
-    )
-    .eq('cashflow_id', activeBookId)
-    .order('date', { ascending: false })
-    .limit(1000);
+  const entriesResult =
+    prefetchedEntries && validUrlBookId === activeBookId
+      ? prefetchedEntries
+      : await fetchRecentEntries(activeBookId);
+
+  const rawEntries = entriesResult.data;
 
   const recentEntries = rawEntries
     ? rawEntries.map((row) => mapCashflowEntryToDTO(row))

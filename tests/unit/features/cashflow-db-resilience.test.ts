@@ -93,6 +93,13 @@ describe('getCashflowDashboardData Resilience & Fault Tolerance', () => {
             eq: vi.fn().mockResolvedValue({ data: [], error: null }),
           };
         }
+        if (table === 'cashflow_summaries') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockResolvedValue({ data: [mockSummaryRow], error: null }),
+          };
+        }
         throw new Error(`Unexpected table ${table}`);
       }),
     } as unknown as SupabaseClient<Database>;
@@ -119,6 +126,13 @@ describe('getCashflowDashboardData Resilience & Fault Tolerance', () => {
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+          };
+        }
+        if (table === 'cashflow_summaries') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockResolvedValue({ data: [mockSummaryRow], error: null }),
           };
         }
         throw new Error(`Unexpected table ${table}`);
@@ -262,21 +276,17 @@ describe('getCashflowDashboardData Resilience & Fault Tolerance', () => {
           };
         }
         if (table === 'cashflow_summaries') {
+          const sharedRow = {
+            ...mockSummaryRow,
+            id: 'cf-shared-1',
+            user_id: 'other-user',
+            title: 'Shared Cashflow',
+          };
           return {
             select: vi.fn().mockReturnThis(),
             order: vi.fn().mockReturnThis(),
-            or: vi.fn().mockResolvedValue({
-              data: [
-                mockSummaryRow,
-                {
-                  ...mockSummaryRow,
-                  id: 'cf-shared-1',
-                  user_id: 'other-user',
-                  title: 'Shared Cashflow',
-                },
-              ],
-              error: null,
-            }),
+            eq: vi.fn().mockResolvedValue({ data: [mockSummaryRow], error: null }),
+            in: vi.fn().mockResolvedValue({ data: [sharedRow], error: null }),
           };
         }
         throw new Error(`Unexpected table ${table}`);
