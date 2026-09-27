@@ -117,40 +117,19 @@ async function AsyncQuickStats({
   )
 }
 
-async function AsyncPinnedCashflows({
-  userId,
-  userEmail,
-  defaultCurrency,
-}: {
-  userId: string
-  userEmail: string | undefined
-  defaultCurrency: string | null
-}) {
-  const supabase = await createClient()
-  const pinnedCashflows = await getPinnedCashflows(
-    supabase,
-    userId,
-    userEmail,
-  )
-
-  if (!pinnedCashflows || pinnedCashflows.length === 0) {
-    return null
-  }
-
-  return (
-    <PinnedCashflowsSection
-      pinnedCashflows={pinnedCashflows}
-      defaultCurrency={defaultCurrency}
-    />
-  )
-}
-
 async function AsyncActivityFeed({ userId }: { userId: string }) {
   const supabase = await createClient()
-  const { data: recentActivity } = await supabase.rpc('get_recent_activity', {
-    p_user_id: userId,
-    p_limit: 10,
-  })
+  const { data: recentActivity, error } = await supabase.rpc(
+    'get_recent_activity',
+    {
+      p_user_id: userId,
+      p_limit: 10,
+    },
+  )
+
+  if (error) {
+    console.error('AsyncActivityFeed error:', error.message)
+  }
 
   return <ActivityFeed activities={recentActivity || []} />
 }
@@ -161,6 +140,12 @@ async function AsyncActivityFeed({ userId }: { userId: string }) {
  */
 export default async function AppHomePage() {
   const { user, profile } = await getAuthenticatedUserAndProfile()
+  const supabase = await createClient()
+  const pinnedCashflows = await getPinnedCashflows(
+    supabase,
+    user.id,
+    user.email,
+  )
 
   return (
     <div className='mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8 md:py-10 lg:px-8'>
@@ -193,13 +178,12 @@ export default async function AppHomePage() {
       </Suspense>
 
       {/* Quick Access (Pinned Cashflows) */}
-      <Suspense fallback={null}>
-        <AsyncPinnedCashflows
-          userId={user.id}
-          userEmail={user.email}
+      {pinnedCashflows.length > 0 && (
+        <PinnedCashflowsSection
+          pinnedCashflows={pinnedCashflows}
           defaultCurrency={profile?.default_currency || null}
         />
-      </Suspense>
+      )}
 
       {/* Apps Section */}
       <section
