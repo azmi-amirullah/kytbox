@@ -7,6 +7,7 @@ import { aiReceiptRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import * as Sentry from '@sentry/nextjs';
 import { EXPENSE_CATEGORIES, isTagDuplicateOfCategory } from './constants';
 import type { ExtractedReceiptData } from './lib/receipt-extractor';
+import { sanitizeReceiptLineItems } from './lib/receipt-line-items';
 
 const parseReceiptImageInputSchema = z.object({
   base64: z
@@ -32,12 +33,18 @@ const geminiApiResponseSchema = z.object({
     .min(1),
 });
 
+const geminiLineItemSchema = z.object({
+  name: z.string().min(1),
+  amount: z.number().positive(),
+});
+
 const geminiReceiptSchema = z.object({
   merchant: z.string().nullable(),
   amount: z.number().nullable(),
   date: z.string().nullable(),
   category: z.string().nullable(),
   suggestedTags: z.array(z.string()).optional().default([]),
+  items: z.array(geminiLineItemSchema).nullable().optional(),
   confidence: z.number().min(0).max(1),
 });
 
@@ -78,12 +85,25 @@ const geminiGenerationConfig = {
         items: { type: 'STRING' },
         description: '1 to 3 relevant tags with the first character uppercase (e.g. ["Coffee", "Cafe"], ["Groceries", "Supermarket"]). Must NOT duplicate the chosen category.',
       },
+      items: {
+        type: 'ARRAY',
+        description:
+          'Itemized lines from the receipt. Empty array when no itemized list is visible.',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            name: { type: 'STRING', description: 'Item name as printed' },
+            amount: { type: 'NUMBER', description: 'Item amount as a positive number' },
+          },
+          required: ['name', 'amount'],
+        },
+      },
       confidence: {
         type: 'NUMBER',
         description: 'Confidence score between 0.0 and 1.0',
       },
     },
-    required: ['merchant', 'amount', 'date', 'category', 'suggestedTags', 'confidence'],
+    required: ['merchant', 'amount', 'date', 'category', 'suggestedTags', 'items', 'confidence'],
   },
 };
 
@@ -108,7 +128,11 @@ Rules:
    - If date cannot be determined, return null.
 4. category: Choose the single best category slug from the valid categories list above based on the items or merchant type. If unsure, use "other".
 5. suggestedTags: Provide 1 to 3 short keyword tags where the first character of each tag is uppercase (e.g. ["Coffee", "Cafe"], ["Groceries", "Supermarket"]). Never suggest a tag that duplicates the chosen category (e.g. if category is transport, do not include "Transport"; if food, do not include "Food").
-6. confidence: A number between 0.0 and 1.0 reflecting extraction certainty.`;
+6. items: Extract every itemized line shown on the receipt (name and amount).
+   - The amounts MUST sum to the extracted total, so include tax, service charge, tip, and any fee as their own line when the receipt lists them separately.
+   - Never include the subtotal, the total itself, cash tendered, or change.
+   - Return [] when the receipt shows no itemized list (e.g. a transfer screenshot or a summary-only receipt).
+7. confidence: A number between 0.0 and 1.0 reflecting extraction certainty.`;
 
 const GEMINI_RECEIPT_MODEL = 'gemini-3.5-flash-lite';
 
@@ -204,7 +228,7 @@ ${RECEIPT_EXTRACTION_INSTRUCTIONS}`;
       return { success: false, error: 'Gemini JSON output failed schema validation' };
     }
 
-    const { merchant, amount, date, category, suggestedTags, confidence } = parsedData.data;
+    const { merchant, amount, date, category, suggestedTags, items, confidence } = parsedData.data;
 
     const formattedTags = (suggestedTags ?? [])
       .map((tag) => {
@@ -217,6 +241,8 @@ ${RECEIPT_EXTRACTION_INSTRUCTIONS}`;
           Boolean(t) && !isTagDuplicateOfCategory(t, category),
       );
 
+    const lineItems = sanitizeReceiptLineItems(items ?? [], amount);
+
     return {
       success: true,
       data: {
@@ -225,6 +251,7 @@ ${RECEIPT_EXTRACTION_INSTRUCTIONS}`;
         date,
         category,
         suggestedTags: formattedTags,
+        items: lineItems,
         confidence,
       },
     };

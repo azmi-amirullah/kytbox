@@ -188,6 +188,8 @@ export default function EntryModal({
   const receiptCameraScanRef = useRef<HTMLInputElement>(null)
   const receiptGalleryScanRef = useRef<HTMLInputElement>(null)
   const isAiScanRef = useRef(false)
+  /** Last amount entered/scanned outside the breakdown, restored when the toggle turns off. */
+  const standaloneAmountRef = useRef<string | null>(null)
 
   // Index once per entries update so description keystrokes only re-match
   const learnedIndex = useMemo(() => {
@@ -287,6 +289,7 @@ export default function EntryModal({
           : []
       setIsSplit(items.length > 0)
       setSplitItems(items)
+      standaloneAmountRef.current = null
       setTags(entry?.tags ?? [])
       setReceiptFile(null)
       if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
@@ -397,6 +400,7 @@ export default function EntryModal({
       setLastScannedFile(file)
       if (extracted.amount !== null && !isSplit) {
         setAmount(extracted.amount.toString())
+        standaloneAmountRef.current = extracted.amount.toString()
       }
       if (extracted.merchant) {
         isAiScanRef.current = true
@@ -417,6 +421,20 @@ export default function EntryModal({
             targetCat,
           ),
         )
+      }
+      // Only turn the breakdown on when the scan found a real multi-line list
+      const aiItems = extracted.items ?? []
+      if (!isSplit && splitItems.length === 0 && aiItems.length > 1) {
+        const mappedItems: SplitItemInput[] = aiItems.map((item) => ({
+          id: crypto.randomUUID(),
+          itemName: item.name,
+          category: '',
+          amount: item.amount.toString(),
+        }))
+        setSplitItems(mappedItems)
+        setIsSplit(true)
+        const itemSum = aiItems.reduce((acc, item) => acc + item.amount, 0)
+        if (itemSum > 0) setAmount((Math.round(itemSum * 100) / 100).toFixed(2))
       }
       toast.success(
         extracted.merchant || extracted.amount
@@ -479,8 +497,10 @@ export default function EntryModal({
   }
 
   const handleSplitToggle = (checked: boolean) => {
-    setIsSplit(checked)
     if (checked) {
+      // Seed the value the amount field returns to when the breakdown turns off
+      standaloneAmountRef.current = amount
+      setIsSplit(true)
       if (splitItems.length === 0) {
         const defaultItem: SplitItemInput = {
           id: crypto.randomUUID(),
@@ -493,7 +513,17 @@ export default function EntryModal({
         handleSplitItemsChange(updated)
       } else {
         handleSplitItemsChange(splitItems)
+        const sum = splitItems.reduce(
+          (acc, item) => acc + (parseFloat(item.amount) || 0),
+          0,
+        )
+        if (sum > 0) setAmount((Math.round(sum * 100) / 100).toFixed(2))
       }
+    } else {
+      setIsSplit(false)
+      const restored = standaloneAmountRef.current
+      standaloneAmountRef.current = null
+      if (restored !== null) setAmount(restored)
     }
   }
 
@@ -592,7 +622,7 @@ export default function EntryModal({
         }
       }
 
-      if (validItems.length === 0 && splitItems.length > 0) {
+      if (validItems.length === 0) {
         const msg =
           'Please add at least one item or turn off Transaction Breakdown.'
         setError(msg)
@@ -601,9 +631,10 @@ export default function EntryModal({
         return
       }
 
-      if (validItems.length > 0) {
-        formData.append('itemsJson', JSON.stringify(validItems))
-      }
+      formData.append('itemsJson', JSON.stringify(validItems))
+    } else {
+      // Explicit empty array so the server clears breakdown rows saved earlier
+      formData.append('itemsJson', '[]')
     }
 
     if (tags.length > 0) {
@@ -890,7 +921,10 @@ export default function EntryModal({
                     step='any'
                     min='0.01'
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      setAmount(e.target.value)
+                      standaloneAmountRef.current = e.target.value
+                    }}
                     placeholder='0.00'
                     disabled={isSplit}
                     required={!isSplit}

@@ -36,6 +36,10 @@ describe('Direct Multimodal Receipt Extractor', () => {
       date: '2026-09-15',
       category: 'food',
       suggestedTags: ['coffee'],
+      items: [
+        { name: 'Latte', amount: 6.5 },
+        { name: 'Croissant', amount: 4 },
+      ],
       confidence: 0.95,
     };
 

@@ -185,7 +185,42 @@ test.describe.serial('Cashflow Domain E2E Suite', () => {
     await expect(editDialog).toBeVisible()
     await expect(editDialog.locator('input[placeholder*="Item 1 name"]')).toHaveValue('Groceries')
     await expect(editDialog.locator('input[placeholder*="Item 2 name"]')).toHaveValue('Cleaning Supplies')
+
+    // Turn the breakdown off and verify the saved rows are cleared
+    await editDialog.locator('#split-toggle').click()
+    await expect(editDialog.locator('input[placeholder*="Item 1 name"]')).not.toBeVisible()
+    await editDialog.getByRole('button', { name: /Save|Update/i }).click()
+    await expect(editDialog).not.toBeVisible({ timeout: 10_000 })
+
+    await expect(row.getByText(/2 items/i)).not.toBeVisible({ timeout: 10_000 })
+    await row.getByRole('button').first().click()
+    await expect(editDialog.locator('input[placeholder*="Item 1 name"]')).not.toBeVisible()
+    await expect(editDialog.getByRole('button', { name: /Cancel|Close/i }).first()).toBeVisible()
     await editDialog.getByRole('button', { name: /Cancel|Close/i }).first().click()
+  })
+
+  // --------------------------------------------------------------------------
+  // 2.2 Turning the breakdown off restores the standalone amount
+  // --------------------------------------------------------------------------
+  test('2.2 Breakdown off restores the amount typed before enabling it', async ({ page }) => {
+    await page.goto(mainCashflowUrl)
+
+    await page.getByRole('button', { name: /Add Entry/i }).first().click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+
+    await dialog.locator('#description').fill(`Standalone Amount ${runId}`)
+    await dialog.locator('#amount').fill('100')
+
+    await dialog.locator('#split-toggle').click()
+    const itemAmount = dialog.locator('input[type="number"][placeholder="0.00"]').first()
+    await itemAmount.fill('99.5')
+    await expect(dialog.locator('#amount')).toHaveValue('99.50')
+
+    await dialog.locator('#split-toggle').click()
+    await expect(dialog.locator('#amount')).toHaveValue('100')
+
+    await dialog.getByRole('button', { name: /Cancel|Close/i }).first().click()
   })
 
   // --------------------------------------------------------------------------

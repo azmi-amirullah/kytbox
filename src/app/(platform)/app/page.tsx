@@ -10,7 +10,6 @@ import {
   getPinnedCashflows,
   PinnedCashflowsSection,
 } from '@/features/cashflow'
-import type { CashflowWithSummaryDTO } from '@/types/dto'
 import type { Json } from '@/types/supabase'
 import { QuickStats } from './components/QuickStats'
 import { QuickActions } from './components/QuickActions'
@@ -104,24 +103,6 @@ async function AsyncActivityFeed({ userId }: { userId: string }) {
   return <ActivityFeed activities={recentActivity || []} />
 }
 
-async function AsyncPinnedCashflows({
-  cashflows,
-  defaultCurrency,
-}: {
-  cashflows: Promise<CashflowWithSummaryDTO[]>
-  defaultCurrency: string | null
-}) {
-  const pinned = await cashflows
-  if (pinned.length === 0) return null
-
-  return (
-    <PinnedCashflowsSection
-      pinnedCashflows={pinned}
-      defaultCurrency={defaultCurrency}
-    />
-  )
-}
-
 /**
  * Platform Home - Activity Feed Dashboard
  * Dynamic view aggregating statistics and recent activities across all Kytbox apps.
@@ -129,8 +110,11 @@ async function AsyncPinnedCashflows({
 export default async function AppHomePage() {
   const { user, profile } = await getAuthenticatedUserAndProfile()
   const supabase = await createClient()
-  // Started eagerly so stats, activity and pinned cashflows stream in parallel.
-  const pinnedCashflows = getPinnedCashflows(supabase, user.id, user.email)
+  const pinnedCashflows = await getPinnedCashflows(
+    supabase,
+    user.id,
+    user.email,
+  )
 
   return (
     <div className='mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8 md:py-10 lg:px-8'>
@@ -162,12 +146,12 @@ export default async function AppHomePage() {
       </Suspense>
 
       {/* Quick Access (Pinned Cashflows) */}
-      <Suspense fallback={null}>
-        <AsyncPinnedCashflows
-          cashflows={pinnedCashflows}
+      {pinnedCashflows.length > 0 && (
+        <PinnedCashflowsSection
+          pinnedCashflows={pinnedCashflows}
           defaultCurrency={profile?.default_currency || null}
         />
-      </Suspense>
+      )}
 
       {/* Apps Section */}
       <section

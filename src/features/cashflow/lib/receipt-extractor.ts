@@ -1,4 +1,5 @@
 import { parseReceiptImageWithAI } from '../ai-actions';
+import type { ReceiptLineItem } from './receipt-line-items';
 
 export interface ExtractedReceiptData {
   merchant: string | null;
@@ -6,6 +7,8 @@ export interface ExtractedReceiptData {
   date: string | null;
   category: string | null;
   suggestedTags?: string[];
+  /** Itemized lines when the receipt shows a real breakdown. Never a single item. */
+  items?: ReceiptLineItem[];
   rawText?: string;
   confidence: number;
 }
