@@ -37,6 +37,13 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   skipProxyUrlNormalize: true,
   serverExternalPackages: ['sharp'],
+  outputFileTracingIncludes: {
+    '/cashflow/*': [
+      'node_modules/sharp/**/*',
+      'node_modules/@img/sharp-linux-x64/**/*',
+      'node_modules/@img/sharp-libvips-linux-x64/**/*',
+    ],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: '3mb',
