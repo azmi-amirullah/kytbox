@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kytbox-v2.1';
+const CACHE_NAME = 'kytbox-v2.2';
 const PRECACHE_ASSETS = [
   '/manifest.json',
   '/favicon.png',
@@ -26,14 +26,14 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => name.startsWith('kytbox-') && name !== CACHE_NAME)
           .map((name) => caches.delete(name))
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// Fetch event - Stale-while-revalidate for static assets, network-first for pages
+// Fetch event - immutable assets cache-first, mutable public assets network-first
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -42,52 +42,61 @@ self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests like analytics or Supabase DB queries
   if (url.origin !== self.location.origin) return;
 
-  // Static assets (images, CSS, JS, fonts) -> Cache first, fallback to network
-  if (
-    url.pathname.startsWith('/_next/static') ||
-    url.pathname.startsWith('/icons/') ||
-    url.pathname.startsWith('/screenshots/') ||
-    url.pathname.endsWith('.png') ||
-    url.pathname.endsWith('.svg') ||
-    url.pathname === '/manifest.json'
-  ) {
+  // Next.js static assets use content-hashed URLs, so cache-first is safe.
+  if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        const cachedResponse = await cache.match(event.request);
         if (cachedResponse) return cachedResponse;
-        return fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return networkResponse;
-        });
-      })
+
+        const networkResponse = await fetch(event.request);
+        if (networkResponse.ok) {
+          void cache.put(event.request, networkResponse.clone()).catch((error) => {
+            console.warn('Failed to cache Next.js asset:', event.request.url, error);
+          });
+        }
+        return networkResponse;
+      })()
     );
     return;
   }
 
-  // HTML Navigation routes -> Network first, dynamic cache, fallback to offline shell
-  if (event.request.mode === 'navigate') {
+  // Public assets can keep the same URL across deployments, so refresh them first.
+  if (
+    url.pathname.startsWith('/icons/') ||
+    url.pathname.startsWith('/screenshots/') ||
+    /^\/[^/]+\.(?:avif|gif|ico|jpe?g|png|svg|webp)$/i.test(url.pathname) ||
+    url.pathname === '/manifest.json'
+  ) {
     event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          // Cache successfully loaded pages dynamically (only status 200 and not redirected)
-          if (networkResponse && networkResponse.status === 200 && !networkResponse.redirected) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        try {
+          const networkResponse = await fetch(event.request, { cache: 'no-cache' });
+          if (networkResponse.ok) {
+            void cache.put(event.request, networkResponse.clone()).catch((error) => {
+              console.warn('Failed to cache public asset:', event.request.url, error);
             });
           }
           return networkResponse;
-        })
+        } catch (error) {
+          const cachedResponse = await cache.match(event.request);
+          if (cachedResponse) return cachedResponse;
+          throw error;
+        }
+      })()
+    );
+    return;
+  }
+
+  // Never cache page navigations because they may contain user-specific data.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
         .catch(() => {
-          return caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) return cachedResponse;
-            // Return beautiful custom offline fallback page directly
-            return new Response(
-              `<!DOCTYPE html>
+          return new Response(
+            `<!DOCTYPE html>
               <html lang="en">
               <head>
                 <meta charset="utf-8">
@@ -136,11 +145,13 @@ self.addEventListener('fetch', (event) => {
                 </div>
               </body>
               </html>`,
-              {
-                headers: { 'Content-Type': 'text/html' }
-              }
-            );
-          });
+            {
+              headers: {
+                'Cache-Control': 'no-store',
+                'Content-Type': 'text/html',
+              },
+            }
+          );
         })
     );
   }

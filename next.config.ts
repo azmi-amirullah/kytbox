@@ -6,6 +6,13 @@ const analyzeBundles = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
+const deploymentId =
+  process.env.NODE_ENV === 'production'
+    ? process.env.VERCEL_DEPLOYMENT_ID?.replace(/^dpl_/, '') ||
+      process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 32) ||
+      Date.now().toString()
+    : undefined;
+
 const securityHeaders = [
   {
     key: 'Strict-Transport-Security',
@@ -22,6 +29,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  deploymentId,
   images: {
     formats: ['image/avif', 'image/webp'],
     qualities: [60, 75],
