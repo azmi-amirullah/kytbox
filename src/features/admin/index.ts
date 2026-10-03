@@ -7,3 +7,5 @@ export * from './components/UserResourceBadges';
 export * from './components/UserSearchFilter';
 export * from './components/UserPagination';
 export * from './components/UserDirectoryTable';
+export * from './components/TokenUsageUserTable';
+export * from './components/TokenUsageHistory';

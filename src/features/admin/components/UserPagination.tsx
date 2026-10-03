@@ -8,6 +8,9 @@ interface UserPaginationProps {
   totalCount: number;
   pageSize: number;
   search?: string;
+  basePath?: string;
+  itemLabel?: string;
+  queryParams?: Record<string, string>;
 }
 
 export function UserPagination({
@@ -16,6 +19,9 @@ export function UserPagination({
   totalCount,
   pageSize,
   search,
+  basePath = '/admin/users',
+  itemLabel = 'users',
+  queryParams,
 }: UserPaginationProps) {
   if (totalCount === 0) return null;
 
@@ -25,8 +31,10 @@ export function UserPagination({
   const getPageUrl = (targetPage: number) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
+    Object.entries(queryParams ?? {}).forEach(([key, value]) => params.set(key, value));
     params.set('page', targetPage.toString());
-    return `/admin/users?${params.toString()}`;
+    if (pageSize !== 25) params.set('pageSize', pageSize.toString());
+    return `${basePath}?${params.toString()}`;
   };
 
   return (
@@ -34,19 +42,19 @@ export function UserPagination({
       <p className='text-sm text-muted-foreground'>
         Showing <span className='font-medium text-foreground'>{startIdx}</span>{' '}
         to <span className='font-medium text-foreground'>{endIdx}</span> of{' '}
-        <span className='font-medium text-foreground'>{totalCount}</span> users
+        <span className='font-medium text-foreground'>{totalCount}</span> {itemLabel}
       </p>
 
       <div className='flex items-center gap-2'>
         {page > 1 ? (
-          <Button variant='outline' size='sm' asChild className='h-8'>
+          <Button variant='outline' size='sm' asChild className='h-11'>
             <Link href={getPageUrl(page - 1)}>
               <LuChevronLeft className='mr-1 h-4 w-4' />
               Previous
             </Link>
           </Button>
         ) : (
-          <Button variant='outline' size='sm' disabled className='h-8'>
+          <Button variant='outline' size='sm' disabled className='h-11'>
             <LuChevronLeft className='mr-1 h-4 w-4' />
             Previous
           </Button>
@@ -57,14 +65,14 @@ export function UserPagination({
         </span>
 
         {page < totalPages ? (
-          <Button variant='outline' size='sm' asChild className='h-8'>
+          <Button variant='outline' size='sm' asChild className='h-11'>
             <Link href={getPageUrl(page + 1)}>
               Next
               <LuChevronRight className='ml-1 h-4 w-4' />
             </Link>
           </Button>
         ) : (
-          <Button variant='outline' size='sm' disabled className='h-8'>
+          <Button variant='outline' size='sm' disabled className='h-11'>
             Next
             <LuChevronRight className='ml-1 h-4 w-4' />
           </Button>

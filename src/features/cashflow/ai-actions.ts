@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { env } from '@/env';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { aiReceiptRateLimit, checkRateLimit } from '@/lib/upstash/redis';
 import * as Sentry from '@sentry/nextjs';
 import { EXPENSE_CATEGORIES, isTagDuplicateOfCategory } from './constants';
@@ -15,6 +16,15 @@ const parseReceiptImageInputSchema = z.object({
     .min(2_000, 'Image data is too small or blank')
     .max(10_000_000, 'Image data exceeds maximum size'),
   mimeType: z.enum(['image/webp', 'image/jpeg', 'image/png', 'image/jpg']),
+});
+
+const geminiUsageMetadataSchema = z.object({
+  promptTokenCount: z.number().int().nonnegative(),
+  candidatesTokenCount: z.number().int().nonnegative(),
+});
+
+const geminiUsageResponseSchema = z.object({
+  usageMetadata: geminiUsageMetadataSchema.optional(),
 });
 
 const geminiApiResponseSchema = z.object({
@@ -31,7 +41,34 @@ const geminiApiResponseSchema = z.object({
       }),
     )
     .min(1),
+  usageMetadata: geminiUsageMetadataSchema.optional(),
 });
+
+async function recordAiTokenUsage(
+  userId: string,
+  usage?: z.infer<typeof geminiUsageMetadataSchema>,
+) {
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase.rpc('increment_ai_token_usage', {
+      p_user_id: userId,
+      p_scan_count: 1,
+      p_input_tokens: usage?.promptTokenCount ?? 0,
+      p_output_tokens: usage?.candidatesTokenCount ?? 0,
+    });
+
+    if (error) {
+      Sentry.captureException(
+        new Error(`Failed to record Gemini token usage: ${error.message}`),
+        { tags: { feature: 'ai-token-usage' } },
+      );
+    }
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: { feature: 'ai-token-usage' },
+    });
+  }
+}
 
 const geminiLineItemSchema = z.object({
   name: z.string().min(1),
@@ -208,7 +245,25 @@ ${RECEIPT_EXTRACTION_INSTRUCTIONS}`;
       };
     }
 
-    const payload: unknown = await response.json();
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      await recordAiTokenUsage(user.id);
+      throw error;
+    }
+
+    const usageResult = geminiUsageResponseSchema.safeParse(payload);
+    if (usageResult.success && usageResult.data.usageMetadata) {
+      await recordAiTokenUsage(user.id, usageResult.data.usageMetadata);
+    } else {
+      await recordAiTokenUsage(user.id);
+      Sentry.captureMessage('Gemini response did not include valid token usage metadata', {
+        level: 'warning',
+        tags: { feature: 'ai-token-usage' },
+      });
+    }
+
     const apiResult = geminiApiResponseSchema.safeParse(payload);
 
     if (!apiResult.success) {
@@ -242,11 +297,18 @@ ${RECEIPT_EXTRACTION_INSTRUCTIONS}`;
       );
 
     const lineItems = sanitizeReceiptLineItems(items ?? [], amount);
+    const singleItemName = items?.length === 1 ? items[0]?.name.trim() : '';
+    const normalizedMerchant = merchant?.trim();
+    const merchantWithSingleItem = singleItemName
+      ? normalizedMerchant
+        ? `${normalizedMerchant} - ${singleItemName}`
+        : singleItemName
+      : merchant;
 
     return {
       success: true,
       data: {
-        merchant,
+        merchant: merchantWithSingleItem,
         amount,
         date,
         category,

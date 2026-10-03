@@ -1363,6 +1363,38 @@ export type Database = {
           },
         ]
       }
+      ai_token_usage_daily: {
+        Row: {
+          input_tokens: number
+          output_tokens: number
+          scan_count: number
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          input_tokens?: number
+          output_tokens?: number
+          scan_count?: number
+          usage_date: string
+          user_id: string
+        }
+        Update: {
+          input_tokens?: number
+          output_tokens?: number
+          scan_count?: number
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_token_usage_daily_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1999,6 +2031,52 @@ export type Database = {
       create_support_ticket: {
         Args: { p_category: string; p_message: string; p_subject: string }
         Returns: string
+      }
+      get_admin_ai_token_usage: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          avatar_url: string | null
+          display_name: string | null
+          email: string | null
+          id: string | null
+          input_tokens: number | null
+          output_tokens: number | null
+          scan_count: number | null
+          total_count: number
+          total_input_tokens: number
+          total_output_tokens: number
+          total_scan_count: number
+          username: string | null
+        }[]
+      }
+      get_admin_ai_token_usage_history: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_period?: string
+          p_user_id: string
+        }
+        Returns: {
+          avatar_url: string | null
+          bucket_date: string | null
+          display_name: string | null
+          email: string | null
+          id: string | null
+          input_tokens: number | null
+          output_tokens: number | null
+          scan_count: number | null
+          total_count: number
+          username: string | null
+        }[]
+      }
+      increment_ai_token_usage: {
+        Args: {
+          p_input_tokens: number
+          p_output_tokens: number
+          p_scan_count: number
+          p_user_id: string
+        }
+        Returns: undefined
       }
       get_admin_users_overview: {
         Args: { p_limit?: number; p_offset?: number; p_search?: string }
